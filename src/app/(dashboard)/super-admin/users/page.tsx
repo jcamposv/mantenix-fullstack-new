@@ -32,11 +32,16 @@ interface User {
   } | null
 }
 
+interface UsersResponse {
+  users?: User[]
+  items?: User[]
+}
+
 export default function SuperAdminUsersPage() {
   const router = useRouter()
   const { data: users, loading, refetch } = useTableData<User>({
     endpoint: '/api/super-admin/users',
-    transform: (data) => data.users || data.items || data || []
+    transform: (data) => (data as UsersResponse).users || (data as UsersResponse).items || (data as User[]) || []
   })
 
   const handleEdit = (userId: string) => {

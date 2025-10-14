@@ -8,7 +8,7 @@ export const getPriorityBadge = (priority: string) => {
   const variants = {
     LOW: "secondary",
     MEDIUM: "default", 
-    HIGH: "warning",
+    HIGH: "outline",
     CRITICAL: "destructive"
   } as const
 

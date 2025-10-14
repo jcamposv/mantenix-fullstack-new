@@ -41,7 +41,7 @@ export function UserForm({
       email: initialData?.email || "",
       password: mode === "invite" || mode === "edit" ? undefined : "",
       role: initialData?.role || "TECNICO",
-      companyId: initialData?.companyId || currentUser?.companyId || undefined,
+      companyId: initialData?.companyId || currentUser?.company?.id || undefined,
       timezone: initialData?.timezone || "UTC",
       locale: initialData?.locale || "en",
     },
@@ -54,7 +54,7 @@ export function UserForm({
     // Apply business rules based on current user role
     if (currentUser?.role !== "SUPER_ADMIN") {
       // Non-super-admin users should use their own company
-      data.companyId = currentUser?.companyId
+      data.companyId = currentUser?.company?.id
       
       // Restrict role selection for non-super-admin users
       const allowedRoles = ["TECNICO", "SUPERVISOR", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]
@@ -73,7 +73,7 @@ export function UserForm({
   // Filter companies and roles based on current user permissions
   const filteredCompanies = currentUser?.role === "SUPER_ADMIN" 
     ? companies 
-    : companies.filter(c => c.id === currentUser?.companyId)
+    : companies.filter(c => c.id === currentUser?.company?.id)
 
   const getFormTitle = () => {
     if (title) return title

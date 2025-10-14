@@ -23,7 +23,7 @@ export const buildBreadcrumbs = (currentPath: string): BreadcrumbItem[] => {
       const isEdit = segment === "edit"
       
       if (!isId || isEdit) {
-        let name = getDisplayName(currentRoute)
+        const name = getDisplayName(currentRoute)
         
         // For edit routes, we want to show the parent collection name first
         if (isEdit && i > 0) {

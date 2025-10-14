@@ -5,8 +5,8 @@ import { AlertPriority, AlertType, AlertStatus } from "@prisma/client"
 export const createAlertSchema = z.object({
   title: z.string().min(1, "El título es requerido").max(200, "El título es muy largo"),
   description: z.string().min(1, "La descripción es requerida").max(2000, "La descripción es muy larga"),
-  type: z.nativeEnum(AlertType, { errorMap: () => ({ message: "Tipo de alerta inválido" }) }),
-  priority: z.nativeEnum(AlertPriority, { errorMap: () => ({ message: "Prioridad inválida" }) }),
+  type: z.nativeEnum(AlertType, { message: "Tipo de alerta inválido" }),
+  priority: z.nativeEnum(AlertPriority, { message: "Prioridad inválida" }),
   location: z.string().max(200, "La ubicación es muy larga").optional(),
   equipmentId: z.string().max(100, "ID de equipo muy largo").optional(),
   images: z.array(z.string().url("URL de imagen inválida")).optional().default([]),

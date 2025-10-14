@@ -3,8 +3,8 @@ import { toast } from "sonner"
 
 interface UseTableDataOptions<T> {
   endpoint: string
-  transform?: (data: any) => T[]
-  dependencies?: any[]
+  transform?: (data: unknown) => T[]
+  dependencies?: unknown[]
 }
 
 export function useTableData<T>({ endpoint, transform, dependencies = [] }: UseTableDataOptions<T>) {
@@ -41,7 +41,7 @@ export function useTableData<T>({ endpoint, transform, dependencies = [] }: UseT
 
   useEffect(() => {
     fetchData()
-  }, dependencies)
+  }, dependencies) // eslint-disable-line react-hooks/exhaustive-deps
 
   const refetch = () => {
     fetchData()

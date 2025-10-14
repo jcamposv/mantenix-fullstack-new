@@ -1,3 +1,5 @@
+import type { AuthenticatedSession } from "@/types/auth.types"
+
 /**
  * Helper para manejo de permisos
  * Contiene utilidades para verificar permisos y roles
@@ -132,7 +134,7 @@ export class PermissionHelper {
     return adminRoles.includes(userRole as typeof adminRoles[number])
   }
 
-  static async requirePermission(session: any, permission: string): Promise<void> {
+  static async requirePermission(session: AuthenticatedSession, permission: string): Promise<void> {
     if (!this.hasPermission(session.user.role, permission)) {
       throw new Error("No tienes permisos para realizar esta acción")
     }

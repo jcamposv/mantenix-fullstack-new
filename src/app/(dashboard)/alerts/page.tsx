@@ -58,7 +58,7 @@ export default function AlertsPage() {
   const router = useRouter()
   const { data: alerts, loading, refetch } = useTableData<Alert>({
     endpoint: '/api/alerts',
-    transform: (data: AlertsResponse) => data.alerts || data || []
+    transform: (data) => (data as AlertsResponse).alerts || []
   })
 
   // Listen for real-time alert updates

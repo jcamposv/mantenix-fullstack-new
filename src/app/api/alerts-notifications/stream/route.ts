@@ -6,7 +6,7 @@ import { headers } from "next/headers"
 const connections = new Map<string, ReadableStreamDefaultController[]>()
 
 // Helper function to broadcast to all connections for a user
-export function broadcastToUser(userId: string, data: any) {
+function broadcastToUser(userId: string, data: unknown) {
   const userConnections = connections.get(userId) || []
   const encoder = new TextEncoder()
   const message = encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
@@ -29,7 +29,7 @@ export function broadcastToUser(userId: string, data: any) {
 }
 
 // Helper function to broadcast to all users (for system-wide notifications)
-export function broadcastToAll(data: any) {
+function broadcastToAll(data: unknown) {
   const encoder = new TextEncoder()
   const message = encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
   
@@ -52,6 +52,7 @@ export function broadcastToAll(data: any) {
 }
 
 // GET /api/notifications/stream - Server-Sent Events endpoint for real-time notifications
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
     // Verify authentication
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest) {
               timestamp: new Date().toISOString()
             })}\n\n`)
             controller.enqueue(heartbeat)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error) {
             console.log(`Heartbeat failed for user ${userId}, connection likely closed`)
             clearInterval(keepAliveInterval)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Role } from "@prisma/client"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sendInviteEmail } from "@/lib/email"
@@ -54,6 +55,13 @@ export async function POST(request: NextRequest) {
 
     // Validate client company belongs to the tenant (only for company admins)
     if (isExternalUser && clientCompanyId && session.user.role === "ADMIN_EMPRESA") {
+      if (!session.user.companyId) {
+        return NextResponse.json(
+          { error: "Admin user has no associated company" },
+          { status: 400 }
+        )
+      }
+
       const clientCompany = await prisma.clientCompany.findFirst({
         where: {
           id: clientCompanyId,
@@ -159,7 +167,7 @@ export async function POST(request: NextRequest) {
     const invitation = await prisma.userInvitation.create({
       data: {
         email,
-        role: role as any,
+        role: role as Role,
         companyId: targetCompanyId,
         isExternalUser: isExternalUser || false,
         clientCompanyId: isExternalUser ? clientCompanyId : null,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { Role } from "@prisma/client"
 import { AuthService, UserService } from "@/server"
 import { createUserSchema, userFiltersSchema } from "../../schemas/user-schemas"
 import bcrypt from "bcrypt"
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       return sessionResult
     }
 
-    const filters = { role, companyId, clientCompanyId, siteId, isActive, search }
+    const filters = { role: role as Role | undefined, companyId, clientCompanyId, siteId, isActive, search }
     const result = await UserService.getList(sessionResult, filters, page, limit)
     return NextResponse.json(result)
 
@@ -58,7 +59,8 @@ export async function POST(request: NextRequest) {
     const user = await UserService.create(userData, sessionResult)
     
     // Return user without password and include temp password for setup
-    const { password, ...userResponse } = user as any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userResponse } = user as unknown as Record<string, unknown> & { password?: string }
     return NextResponse.json({
       ...userResponse,
       tempPassword // Include for initial setup

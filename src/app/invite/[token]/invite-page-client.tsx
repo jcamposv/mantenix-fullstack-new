@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { InviteForm } from "@/components/invite-form"
-import { Loader2, CheckCircle, XCircle } from "lucide-react"
+import { Loader2, XCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { CompanyBranding } from "@/types/branding"
@@ -48,6 +48,7 @@ export function InvitePageClient({ initialCompanyBranding }: InvitePageClientPro
 
   useEffect(() => {
     verifyInvitation()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   const verifyInvitation = async () => {
@@ -94,6 +95,7 @@ export function InvitePageClient({ initialCompanyBranding }: InvitePageClientPro
         const errorData = await response.json()
         setError(errorData.error || "Failed to create account")
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError("Failed to create account")
     } finally {

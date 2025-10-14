@@ -2,26 +2,29 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
+import type { AuthenticatedSession } from "@/types/auth.types"
 
 // POST /api/notifications/alerts/[id]/read - Mark alert notification as read
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación
-    const session = await auth.api.getSession({
+    const sessionResult = await auth.api.getSession({
       headers: await headers()
     })
 
-    if (!session?.user) {
+    if (!sessionResult?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const alertId = params.id
+    const session = sessionResult as AuthenticatedSession
+
+    const { id: alertId } = await params
 
     // Verificar que la alerta existe y el usuario tiene acceso
-    let whereClause: any = { id: alertId }
+    const whereClause: Record<string, unknown> = { id: alertId }
 
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede acceder a todas las alertas

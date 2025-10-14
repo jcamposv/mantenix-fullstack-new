@@ -6,10 +6,10 @@ import { updateUserSchema } from "../../../schemas/user-schemas"
 // GET /api/admin/users/[id] - Obtener usuario específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -23,7 +23,8 @@ export async function GET(
     }
 
     // Remove password from response
-    const { password, ...userResponse } = user as any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userResponse } = user as unknown as Record<string, unknown> & { password?: string }
     return NextResponse.json(userResponse)
 
   } catch (error) {
@@ -42,10 +43,10 @@ export async function GET(
 // PATCH /api/admin/users/[id] - Actualizar usuario
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -62,7 +63,8 @@ export async function PATCH(
     }
 
     // Remove password from response
-    const { password, ...userResponse } = updatedUser as any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userResponse } = updatedUser as unknown as Record<string, unknown> & { password?: string }
     return NextResponse.json(userResponse)
 
   } catch (error) {
@@ -96,10 +98,10 @@ export async function PATCH(
 // DELETE /api/admin/users/[id] - Eliminar usuario
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {

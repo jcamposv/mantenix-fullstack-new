@@ -4,12 +4,13 @@ import { AuthService, ClientCompanyService } from "@/server"
 import { updateClientCompanySchema } from "../../../schemas/client-company-schemas"
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export const GET = async (request: NextRequest, { params }: RouteParams) => {
   try {
-    const { id } = params
+    const resolvedParams = await params
+    const { id } = resolvedParams
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -44,7 +45,8 @@ export const GET = async (request: NextRequest, { params }: RouteParams) => {
 
 export const PUT = async (request: NextRequest, { params }: RouteParams) => {
   try {
-    const { id } = params
+    const resolvedParams = await params
+    const { id } = resolvedParams
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -89,7 +91,8 @@ export const PUT = async (request: NextRequest, { params }: RouteParams) => {
 
 export const DELETE = async (request: NextRequest, { params }: RouteParams) => {
   try {
-    const { id } = params
+    const resolvedParams = await params
+    const { id } = resolvedParams
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {

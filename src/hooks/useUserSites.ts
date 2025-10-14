@@ -13,6 +13,16 @@ interface Site {
   }
 }
 
+interface ApiSite {
+  id: string
+  name: string
+  address?: string | null
+  clientCompany: {
+    id: string
+    name: string
+  }
+}
+
 interface UseUserSitesReturn {
   sites: Site[]
   loading: boolean
@@ -57,11 +67,11 @@ export function useUserSites(): UseUserSitesReturn {
           const response = await fetch(endpoint)
           
           if (response.ok) {
-            const data = await response.json()
-            setSites(data.map((site: any) => ({
+            const data = await response.json() as ApiSite[]
+            setSites(data.map((site) => ({
               id: site.id,
               name: site.name,
-              address: site.address,
+              address: site.address || undefined,
               clientCompany: {
                 id: site.clientCompany.id,
                 name: site.clientCompany.name
@@ -83,6 +93,7 @@ export function useUserSites(): UseUserSitesReturn {
     }
 
     fetchSites()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.role, needsSiteSelection])
 
   return {

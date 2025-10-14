@@ -15,7 +15,7 @@ export default function EditUserPage() {
 
   useEffect(() => {
     fetchUser()
-  }, [id])
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUser = async () => {
     try {

@@ -1,4 +1,4 @@
-import type { Company, CompanyTier } from "@prisma/client"
+import type { Company, Tier } from "@prisma/client"
 
 export interface CompanyWithRelations extends Company {
   _count?: {
@@ -28,7 +28,7 @@ export interface CompanyBasicInfo {
 export interface CreateCompanyData {
   name: string
   subdomain: string
-  tier?: CompanyTier
+  tier?: Tier
   primaryColor?: string
   secondaryColor?: string
   backgroundColor?: string
@@ -40,7 +40,7 @@ export interface CreateCompanyData {
 export interface UpdateCompanyData {
   name?: string
   subdomain?: string
-  tier?: CompanyTier
+  tier?: Tier
   primaryColor?: string
   secondaryColor?: string
   backgroundColor?: string
@@ -53,7 +53,7 @@ export interface UpdateCompanyData {
 }
 
 export interface CompanyFilters {
-  tier?: CompanyTier
+  tier?: Tier
   isActive?: boolean
   search?: string
 }

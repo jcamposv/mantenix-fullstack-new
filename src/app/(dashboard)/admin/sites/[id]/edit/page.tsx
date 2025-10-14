@@ -16,7 +16,7 @@ export default function EditSitePage() {
 
   useEffect(() => {
     fetchSite()
-  }, [id])
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSite = async () => {
     try {

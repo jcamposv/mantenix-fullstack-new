@@ -7,16 +7,25 @@ import { useMemo } from "react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useUserRole } from "@/hooks/useUserRole"
 import type { CompanyBranding } from "@/types/branding"
+import type { ServerUser, UserPermissions } from "./sidebar-types"
 import { BASE_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER } from "./navigation-config"
 import { getInitials, getAvatarUrl } from "./sidebar-utils"
 
 interface UseSidebarDataProps {
   companyBranding?: CompanyBranding | null
+  serverUser?: ServerUser | null
+  userPermissions?: UserPermissions
 }
 
-export function useSidebarData({ companyBranding }: UseSidebarDataProps) {
+export function useSidebarData({ companyBranding, serverUser, userPermissions }: UseSidebarDataProps) {
   const { user, loading } = useCurrentUser()
-  const { isSuperAdmin, isCompanyAdmin } = useUserRole()
+  const { isSuperAdmin: clientIsSuperAdmin, isCompanyAdmin: clientIsCompanyAdmin } = useUserRole()
+  
+  // Use server-side data when available, fallback to client-side
+  const isSuperAdmin = userPermissions?.isSuperAdmin ?? clientIsSuperAdmin
+  const isCompanyAdmin = userPermissions?.isCompanyAdmin ?? clientIsCompanyAdmin
+  const effectiveUser = serverUser ?? user
+  const effectiveLoading = serverUser ? false : loading
 
   // Debug logs
   if (process.env.NODE_ENV === 'development') {
@@ -30,15 +39,15 @@ export function useSidebarData({ companyBranding }: UseSidebarDataProps) {
 
   // Current user with avatar and initials
   const currentUser = useMemo(() => {
-    if (!user) return FALLBACK_USER
+    if (!effectiveUser) return FALLBACK_USER
 
     return {
-      name: user.name,
-      email: user.email,
-      avatar: getAvatarUrl(user.image, user.name),
-      initials: getInitials(user.name),
+      name: effectiveUser.name,
+      email: effectiveUser.email,
+      avatar: getAvatarUrl(effectiveUser.image ?? null, effectiveUser.name),
+      initials: getInitials(effectiveUser.name),
     }
-  }, [user])
+  }, [effectiveUser])
 
   // Navigation items
   const navItems = useMemo(() => BASE_NAV_ITEMS, [])
@@ -61,11 +70,11 @@ export function useSidebarData({ companyBranding }: UseSidebarDataProps) {
 
   // Company info for TeamSwitcher
   const companyInfo = useMemo(() => ({
-    name: companyBranding?.name || user?.company?.name || "Mantenix",
+    name: companyBranding?.name || effectiveUser?.company?.name || "Mantenix",
     logo: companyBranding?.logo || "/images/mantenix-logo-black.svg",
     hasCustomBranding: !!(companyBranding?.logo),
     plan: "Enterprise", // Can be made dynamic based on company tier
-  }), [companyBranding, user])
+  }), [companyBranding, effectiveUser])
 
   return {
     currentUser,
@@ -74,7 +83,7 @@ export function useSidebarData({ companyBranding }: UseSidebarDataProps) {
     companyInfo,
     isSuperAdmin,
     isCompanyAdmin,
-    loading,
+    loading: effectiveLoading,
   }
 }
 

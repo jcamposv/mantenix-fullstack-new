@@ -25,33 +25,23 @@ async function createTestUser() {
     },
   })
 
-  // Create user with plain text password - Better Auth will hash it during signup
+  // Create user with all profile data included
   const user = await prisma.user.upsert({
     where: { email: 'admin@acme.com' },
     update: {},
     create: {
       email: 'admin@acme.com',
       name: 'John Doe',
-      emailVerified: new Date(),
-      // We'll let Better Auth handle the password during actual signup
-    },
-  })
-
-  // Create user profile
-  await prisma.userProfile.upsert({
-    where: { id: user.id },
-    update: {},
-    create: {
-      id: user.id,
+      emailVerified: true,
       companyId: company.id,
       role: 'ADMIN_EMPRESA',
       timezone: 'America/New_York',
       locale: 'en',
-      preferences: {
+      preferences: JSON.stringify({
         theme: 'light',
         notifications: { email: true, browser: true },
-      },
-      mfaEnabled: false,
+      }),
+      // We'll let Better Auth handle the password during actual signup
     },
   })
 

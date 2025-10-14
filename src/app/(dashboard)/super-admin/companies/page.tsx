@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import Image from "next/image"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { toast } from "sonner"
@@ -21,11 +22,16 @@ interface Company {
   }
 }
 
+interface CompaniesResponse {
+  companies?: Company[]
+  items?: Company[]
+}
+
 export default function CompaniesPage() {
   const router = useRouter()
   const { data: companies, loading, refetch } = useTableData<Company>({
     endpoint: '/api/admin/companies',
-    transform: (data) => data.companies || data.items || data || []
+    transform: (data) => (data as CompaniesResponse).companies || (data as CompaniesResponse).items || (data as Company[]) || []
   })
 
   const handleEdit = (companyId: string) => {
@@ -67,9 +73,11 @@ export default function CompaniesPage() {
         return (
           <div className="flex items-center space-x-2">
             {company.logo && (
-              <img 
+              <Image 
                 src={company.logo} 
                 alt={company.name} 
+                width={32}
+                height={32}
                 className="h-8 w-8 rounded-full object-cover"
               />
             )}

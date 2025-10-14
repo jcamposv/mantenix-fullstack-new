@@ -45,19 +45,30 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
   }
 }
 
-async function getAvailableCompanies() {
+async function getServerSideData() {
   try {
     const user = await getCurrentUserWithRole()
     
-    console.log('Server Debug - getAvailableCompanies:', {
-      hasUser: !!user,
-      userRole: user?.role,
-      userId: user?.id
-    })
+    if (!user) {
+      return {
+        user: null,
+        availableCompanies: null,
+        userPermissions: {
+          isSuperAdmin: false,
+          isCompanyAdmin: false
+        }
+      }
+    }
+
+    const userPermissions = {
+      isSuperAdmin: user.role === 'SUPER_ADMIN',
+      isCompanyAdmin: user.role === 'ADMIN_EMPRESA'
+    }
     
     // Only fetch companies for super admin users
-    if (user && user.role === 'SUPER_ADMIN') {
-      const companies = await prisma.company.findMany({
+    let availableCompanies = null
+    if (userPermissions.isSuperAdmin) {
+      availableCompanies = await prisma.company.findMany({
         where: {
           isActive: true
         },
@@ -72,27 +83,37 @@ async function getAvailableCompanies() {
           name: 'asc'
         }
       })
-      
-      console.log('Server Debug - Found companies:', companies.length)
-      return companies
     }
     
-    return null
+    return {
+      user,
+      availableCompanies,
+      userPermissions
+    }
   } catch (error) {
-    console.warn('Failed to fetch available companies:', error)
-    return null
+    console.warn('Failed to fetch server side data:', error)
+    return {
+      user: null,
+      availableCompanies: null,
+      userPermissions: {
+        isSuperAdmin: false,
+        isCompanyAdmin: false
+      }
+    }
   }
 }
 
 export default async function Page({ children }: { children: React.ReactNode }) {
   const companyBranding = await getCompanyBranding()
-  const availableCompanies = await getAvailableCompanies()
+  const { user, availableCompanies, userPermissions } = await getServerSideData()
   
   return (
     <SidebarProvider>
       <AppSidebar 
         companyBranding={companyBranding} 
         availableCompanies={availableCompanies}
+        serverUser={user}
+        userPermissions={userPermissions}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">

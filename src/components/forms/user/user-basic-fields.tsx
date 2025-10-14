@@ -11,7 +11,7 @@ import { UserFormData } from "./user-form-schema"
 
 interface UserBasicFieldsProps {
   control: Control<UserFormData>
-  mode: "create" | "invite"
+  mode: "create" | "invite" | "edit"
 }
 
 export function UserBasicFields({ control, mode }: UserBasicFieldsProps) {

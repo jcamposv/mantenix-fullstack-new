@@ -18,7 +18,9 @@ interface ExtendedAppSidebarProps extends AppSidebarProps, React.ComponentProps<
 
 export function AppSidebar({ 
   companyBranding, 
-  availableCompanies, 
+  availableCompanies,
+  serverUser,
+  userPermissions,
   ...props 
 }: ExtendedAppSidebarProps) {
   const {
@@ -29,7 +31,11 @@ export function AppSidebar({
     isSuperAdmin,
     isCompanyAdmin,
     loading,
-  } = useSidebarData({ companyBranding })
+  } = useSidebarData({ 
+    companyBranding, 
+    serverUser, 
+    userPermissions 
+  })
 
   return (
     <Sidebar collapsible="icon" {...props}>

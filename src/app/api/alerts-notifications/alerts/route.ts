@@ -2,18 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
+import type { AuthenticatedSession } from "@/types/auth.types"
 
 // GET /api/notifications/alerts - Get alert notifications for current user
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación
-    const session = await auth.api.getSession({
+    const sessionResult = await auth.api.getSession({
       headers: await headers()
     })
 
-    if (!session?.user) {
+    if (!sessionResult?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
+
+    const session = sessionResult as AuthenticatedSession
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Construir filtros basados en el rol del usuario
-    let whereClause: any = {}
+    const whereClause: Record<string, unknown> = {}
 
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las alertas

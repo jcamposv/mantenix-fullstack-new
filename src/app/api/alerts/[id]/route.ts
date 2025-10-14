@@ -7,10 +7,10 @@ import { updateAlertSchema } from "../../schemas/alert-schemas"
 // GET /api/alerts/[id] - Obtener alerta específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -37,10 +37,10 @@ export async function GET(
 // PATCH /api/alerts/[id] - Actualizar alerta
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -77,10 +77,10 @@ export async function PATCH(
 // DELETE /api/alerts/[id] - Eliminar alerta (solo para casos especiales)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {

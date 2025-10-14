@@ -39,13 +39,18 @@ interface Site {
   }
 }
 
+interface SitesResponse {
+  sites?: Site[]
+  items?: Site[]
+}
+
 export default function SitesPage() {
   const [filteredClientCompany, setFilteredClientCompany] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: allSites, loading, refetch } = useTableData<Site>({
     endpoint: '/api/admin/sites',
-    transform: (data) => data.sites || data.items || data || []
+    transform: (data) => (data as SitesResponse).sites || (data as SitesResponse).items || (data as Site[]) || []
   })
 
   useEffect(() => {

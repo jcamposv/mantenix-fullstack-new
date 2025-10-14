@@ -5,10 +5,10 @@ import { updateSiteSchema } from "../../../schemas/site-schemas"
 
 export const GET = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -43,10 +43,10 @@ export const GET = async (
 
 export const PUT = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -88,10 +88,10 @@ export const PUT = async (
 
 export const DELETE = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const { id } = params
+    const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {

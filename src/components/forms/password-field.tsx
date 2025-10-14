@@ -56,7 +56,7 @@ export function PasswordField({
         </button>
       </div>
       {errors[name] && (
-        <p className="text-sm text-red-600 mt-1">{errors[name]?.message}</p>
+        <p className="text-sm text-red-600 mt-1">{errors[name]?.message as string}</p>
       )}
     </Field>
   )

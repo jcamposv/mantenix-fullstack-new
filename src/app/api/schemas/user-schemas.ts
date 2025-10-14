@@ -5,7 +5,7 @@ export const createUserSchema = z.object({
   name: z.string().min(1, "El nombre es requerido").max(100, "El nombre es muy largo"),
   email: z.string().email("Email inválido"),
   role: z.enum(["SUPER_ADMIN", "ADMIN_EMPRESA", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO", "TECNICO"], {
-    errorMap: () => ({ message: "Rol inválido" })
+    message: "Rol inválido"
   }),
   companyId: z.string().optional(),
   clientCompanyId: z.string().optional(),

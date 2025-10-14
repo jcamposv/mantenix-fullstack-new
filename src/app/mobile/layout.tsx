@@ -1,4 +1,3 @@
-import { headers } from "next/headers"
 import { getCurrentUserWithRole } from "@/lib/auth-utils"
 import { Toaster } from "@/components/ui/sonner"
 import { redirect } from "next/navigation"

@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
-import { Shield } from "lucide-react"
 import { toast } from "sonner"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { RoleBadge } from "@/components/common/role-badge"
@@ -26,11 +25,16 @@ interface User {
   } | null
 }
 
+interface UsersResponse {
+  users?: User[]
+  items?: User[]
+}
+
 export default function UsersPage() {
   const router = useRouter()
   const { data: users, loading, refetch } = useTableData<User>({
     endpoint: '/api/admin/users',
-    transform: (data) => data.users || data.items || data || []
+    transform: (data) => (data as UsersResponse).users || (data as UsersResponse).items || (data as User[]) || []
   })
 
   const handleAddUser = () => {

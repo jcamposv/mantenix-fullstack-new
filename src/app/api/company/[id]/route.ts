@@ -6,7 +6,7 @@ import type { AuthenticatedSession } from "@/types/auth.types"
 
 export const GET = async (
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
     const session = await auth.api.getSession({
@@ -17,7 +17,8 @@ export const GET = async (
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const company = await CompanyService.getBasicInfoById(session, params.id)
+    const { id } = await params
+    const company = await CompanyService.getBasicInfoById(session, id)
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 })

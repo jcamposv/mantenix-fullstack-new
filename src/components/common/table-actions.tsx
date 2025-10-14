@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash2, Eye, Shield, UserX } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Eye, UserX } from "lucide-react"
 
 interface TableAction {
   label: string

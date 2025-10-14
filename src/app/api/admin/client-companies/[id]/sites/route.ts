@@ -3,10 +3,10 @@ import { AuthService, ClientCompanyService, SiteService } from "@/server"
 
 export const GET = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const { id: clientCompanyId } = params
+    const { id: clientCompanyId } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {

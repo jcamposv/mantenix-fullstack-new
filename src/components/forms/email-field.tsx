@@ -26,7 +26,7 @@ export function EmailField({
         aria-invalid={!!errors.email}
       />
       {errors.email && (
-        <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+        <p className="text-sm text-red-600 mt-1">{errors.email.message as string}</p>
       )}
     </Field>
   )

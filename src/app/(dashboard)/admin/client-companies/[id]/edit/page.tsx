@@ -15,7 +15,7 @@ export default function EditClientCompanyPage() {
 
   useEffect(() => {
     fetchClientCompany()
-  }, [id])
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchClientCompany = async () => {
     try {

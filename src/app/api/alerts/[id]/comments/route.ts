@@ -6,10 +6,10 @@ import { createCommentSchema } from "../../../schemas/comment-schemas"
 // POST /api/alerts/[id]/comments - Crear comentario en alerta
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const alertId = params.id
+    const { id: alertId } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {
@@ -50,10 +50,10 @@ export async function POST(
 // GET /api/alerts/[id]/comments - Obtener comentarios de alerta
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const alertId = params.id
+    const { id: alertId } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
     
     if (sessionResult instanceof NextResponse) {

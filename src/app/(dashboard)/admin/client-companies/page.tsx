@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { Building2, Mail, Phone, MapPin } from "lucide-react"
 import Image from "next/image"
@@ -36,11 +35,17 @@ interface ClientCompany {
   }
 }
 
+interface ClientCompaniesResponse {
+  clientCompanies?: ClientCompany[]
+  companies?: ClientCompany[]
+  items?: ClientCompany[]
+}
+
 export default function ClientCompaniesPage() {
   const router = useRouter()
   const { data: clientCompanies, loading, refetch } = useTableData<ClientCompany>({
     endpoint: '/api/admin/client-companies',
-    transform: (data) => data.clientCompanies || data.companies || data.items || data || []
+    transform: (data) => (data as ClientCompaniesResponse).clientCompanies || (data as ClientCompaniesResponse).companies || (data as ClientCompaniesResponse).items || (data as ClientCompany[]) || []
   })
 
   const handleAddClientCompany = () => {

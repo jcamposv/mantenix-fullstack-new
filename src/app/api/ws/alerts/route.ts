@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Alternativa con Server-Sent Events (SSE)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
   

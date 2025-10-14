@@ -98,7 +98,7 @@ export class ClientCompanyRepository {
     })
   }
 
-  static async findWithRelatedData(id: string): Promise<ClientCompanyWithRelations | null> {
+  static async findWithRelatedData(id: string) {
     return await prisma.clientCompany.findUnique({
       where: { id },
       include: {

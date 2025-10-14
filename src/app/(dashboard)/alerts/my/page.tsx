@@ -76,9 +76,9 @@ export default function MyAlertsPage() {
       const data: AlertsResponse = await response.json()
       
       if (tab === 'reported') {
-        setReportedAlerts(data.alerts || data.items || data || [])
+        setReportedAlerts(data.alerts  || data || [])
       } else {
-        setAssignedAlerts(data.alerts || data.items || data || [])
+        setAssignedAlerts(data.alerts  || data || [])
       }
     } catch (error) {
       console.error('Error fetching my alerts:', error)
@@ -103,7 +103,7 @@ export default function MyAlertsPage() {
     const variants = {
       LOW: "secondary",
       MEDIUM: "default", 
-      HIGH: "warning",
+      HIGH: "outline",
       CRITICAL: "destructive"
     } as const
 

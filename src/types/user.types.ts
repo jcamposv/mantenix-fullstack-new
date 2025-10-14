@@ -12,7 +12,7 @@ export interface UserWithRelations extends User {
   site?: {
     id: string
     name: string
-    address: string
+    address: string | null
   } | null
   _count?: {
     alertsReported: number

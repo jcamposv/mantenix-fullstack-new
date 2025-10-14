@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -109,6 +110,7 @@ export default function AlertDetailPage() {
     if (alertId) {
       fetchAlert()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alertId])
 
   const fetchAlert = async () => {
@@ -373,12 +375,14 @@ export default function AlertDetailPage() {
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
               {alert.images.map((image, index) => (
-                <img
-                  key={index}
-                  src={image}
-                  alt={`Imagen ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg border"
-                />
+                <div key={index} className="relative w-full h-32 rounded-lg border overflow-hidden">
+                  <Image
+                    src={image}
+                    alt={`Imagen ${index + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               ))}
             </div>
           </CardContent>

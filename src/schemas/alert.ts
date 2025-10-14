@@ -12,9 +12,9 @@ export const alertSchema = z.object({
     "ENVIRONMENTAL_ISSUE",
     "OPERATIONAL_ISSUE",
     "OTHER"
-  ], { errorMap: () => ({ message: "Selecciona un tipo de alerta" }) }),
+  ], { message: "Selecciona un tipo de alerta" }),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"], { 
-    errorMap: () => ({ message: "Selecciona una prioridad" }) 
+    message: "Selecciona una prioridad"
   }),
   location: z.string().max(200, "La ubicación es muy larga").optional(),
   equipmentId: z.string().max(100, "ID de equipo muy largo").optional(),

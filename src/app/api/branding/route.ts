@@ -141,7 +141,7 @@ export async function PUT(request: NextRequest) {
     
     // Validate branding data
     const validatedData = validateBrandingData(body)
-    if (!validatedData.success) {
+    if (!validatedData.success || !validatedData.data) {
       return NextResponse.json(
         { error: "Invalid branding data", details: validatedData.errors },
         { status: 400 }
@@ -223,62 +223,63 @@ function extractSubdomainFromUrl(url: string): string | null {
 /**
  * Validate branding data
  */
-function validateBrandingData(data: any): {
+function validateBrandingData(data: unknown): {
   success: boolean
-  data?: any
+  data?: Record<string, string>
   errors?: string[]
 } {
   const errors: string[] = []
-  const validatedData: any = {}
+  const validatedData: Record<string, string> = {}
+  const input = data as Record<string, unknown>
   
   // Validate logo URLs
-  if (data.logo) {
-    if (!isValidUrl(data.logo)) {
+  if (input.logo && typeof input.logo === 'string') {
+    if (!isValidUrl(input.logo)) {
       errors.push("Invalid logo URL")
     } else {
-      validatedData.logo = data.logo
+      validatedData.logo = input.logo
     }
   }
   
-  if (data.logoSmall) {
-    if (!isValidUrl(data.logoSmall)) {
+  if (input.logoSmall && typeof input.logoSmall === 'string') {
+    if (!isValidUrl(input.logoSmall)) {
       errors.push("Invalid small logo URL")
     } else {
-      validatedData.logoSmall = data.logoSmall
+      validatedData.logoSmall = input.logoSmall
     }
   }
   
   // Validate color formats (hex colors)
-  if (data.primaryColor) {
-    if (!isValidHexColor(data.primaryColor)) {
+  if (input.primaryColor && typeof input.primaryColor === 'string') {
+    if (!isValidHexColor(input.primaryColor)) {
       errors.push("Invalid primary color format")
     } else {
-      validatedData.primaryColor = data.primaryColor
+      validatedData.primaryColor = input.primaryColor
     }
   }
   
-  if (data.secondaryColor) {
-    if (!isValidHexColor(data.secondaryColor)) {
+  if (input.secondaryColor && typeof input.secondaryColor === 'string') {
+    if (!isValidHexColor(input.secondaryColor)) {
       errors.push("Invalid secondary color format")
     } else {
-      validatedData.secondaryColor = data.secondaryColor
+      validatedData.secondaryColor = input.secondaryColor
     }
   }
   
-  if (data.backgroundColor) {
-    if (!isValidHexColor(data.backgroundColor)) {
+  if (input.backgroundColor && typeof input.backgroundColor === 'string') {
+    if (!isValidHexColor(input.backgroundColor)) {
       errors.push("Invalid background color format")
     } else {
-      validatedData.backgroundColor = data.backgroundColor
+      validatedData.backgroundColor = input.backgroundColor
     }
   }
   
   // Validate custom font
-  if (data.customFont) {
-    if (typeof data.customFont !== "string" || data.customFont.length > 50) {
+  if (input.customFont) {
+    if (typeof input.customFont !== "string" || input.customFont.length > 50) {
       errors.push("Invalid custom font name")
     } else {
-      validatedData.customFont = data.customFont
+      validatedData.customFont = input.customFont
     }
   }
   
