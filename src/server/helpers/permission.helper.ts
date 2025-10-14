@@ -28,7 +28,11 @@ export class PermissionHelper {
     DELETE_USER: 'delete_user',
     VIEW_ALL_USERS: 'view_all_users',
     VIEW_COMPANY_USERS: 'view_company_users',
-    VIEW_CLIENT_USERS: 'view_client_users'
+    VIEW_CLIENT_USERS: 'view_client_users',
+    CREATE_CLIENT_COMPANY: 'create_client_company',
+    UPDATE_CLIENT_COMPANY: 'update_client_company',
+    DELETE_CLIENT_COMPANY: 'delete_client_company',
+    VIEW_CLIENT_COMPANIES: 'view_client_companies'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -41,7 +45,11 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_USER,
       this.PERMISSIONS.UPDATE_USER,
       this.PERMISSIONS.DELETE_USER,
-      this.PERMISSIONS.VIEW_ALL_USERS
+      this.PERMISSIONS.VIEW_ALL_USERS,
+      this.PERMISSIONS.CREATE_CLIENT_COMPANY,
+      this.PERMISSIONS.UPDATE_CLIENT_COMPANY,
+      this.PERMISSIONS.DELETE_CLIENT_COMPANY,
+      this.PERMISSIONS.VIEW_CLIENT_COMPANIES
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -52,7 +60,11 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_USER,
       this.PERMISSIONS.UPDATE_USER,
       this.PERMISSIONS.DELETE_USER,
-      this.PERMISSIONS.VIEW_COMPANY_USERS
+      this.PERMISSIONS.VIEW_COMPANY_USERS,
+      this.PERMISSIONS.CREATE_CLIENT_COMPANY,
+      this.PERMISSIONS.UPDATE_CLIENT_COMPANY,
+      this.PERMISSIONS.DELETE_CLIENT_COMPANY,
+      this.PERMISSIONS.VIEW_CLIENT_COMPANIES
     ],
     [this.ROLES.CLIENTE_ADMIN_GENERAL]: [
       this.PERMISSIONS.CREATE_ALERT,

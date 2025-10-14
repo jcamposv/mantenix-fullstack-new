@@ -56,7 +56,7 @@ export default function ClientCompaniesPage() {
       const response = await fetch('/api/admin/client-companies')
       if (response.ok) {
         const data = await response.json()
-        setClientCompanies(data)
+        setClientCompanies(data.clientCompanies || [])
       } else {
         console.error('Error al cargar empresas cliente')
       }
