@@ -3,23 +3,15 @@
 import { useState, useEffect, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Eye, MoreHorizontal, Calendar, Clock, MapPin, MessageCircle, User } from "lucide-react"
+import { Eye, Clock, MapPin, MessageCircle } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { alertTypes, alertPriorities } from "@/schemas/alert"
-import { getInitials } from "@/components/sidebar/sidebar-utils"
 import { useAlertUpdates } from "@/hooks/useAlertUpdates"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { TableActions } from "@/components/common/table-actions"
 
 interface Alert {
   id: string
@@ -75,7 +67,7 @@ export default function AlertsPage() {
       if (!response.ok) throw new Error('Error fetching alerts')
       
       const data: AlertsResponse = await response.json()
-      setAlerts(data.alerts)
+      setAlerts(data.alerts || data.items || data || [])
     } catch (error) {
       console.error('Error fetching alerts:', error)
     } finally {
@@ -206,11 +198,7 @@ export default function AlertsPage() {
         const reportedBy = row.original.reportedBy
         return (
           <div className="flex items-center space-x-2">
-            <Avatar className="h-6 w-6 flex-shrink-0">
-              <AvatarFallback className="text-xs">
-                {getInitials(reportedBy.name)}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar name={reportedBy.name} size="sm" />
             <span className="truncate text-sm">{reportedBy.name}</span>
           </div>
         )
@@ -249,22 +237,15 @@ export default function AlertsPage() {
       id: "actions",
       cell: ({ row }) => {
         const alert = row.original
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleView(alert.id)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver detalles
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
+        const actions = [
+          {
+            label: "Ver detalles",
+            icon: Eye,
+            onClick: () => handleView(alert.id)
+          }
+        ]
+        
+        return <TableActions actions={actions} />
       },
     },
   ]

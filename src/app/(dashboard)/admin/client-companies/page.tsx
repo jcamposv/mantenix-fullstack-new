@@ -1,20 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Edit, MoreHorizontal, Trash2, Building2, Mail, Phone, MapPin } from "lucide-react"
+import { Building2, Mail, Phone, MapPin } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
+import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
+import { useTableData } from "@/components/hooks/use-table-data"
 
 interface ClientCompany {
   id: string
@@ -43,29 +37,11 @@ interface ClientCompany {
 }
 
 export default function ClientCompaniesPage() {
-  const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([])
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
-
-  useEffect(() => {
-    fetchClientCompanies()
-  }, [])
-
-  const fetchClientCompanies = async () => {
-    try {
-      const response = await fetch('/api/admin/client-companies')
-      if (response.ok) {
-        const data = await response.json()
-        setClientCompanies(data.clientCompanies || [])
-      } else {
-        console.error('Error al cargar empresas cliente')
-      }
-    } catch (error) {
-      console.error('Error fetching client companies:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: clientCompanies, loading, refetch } = useTableData<ClientCompany>({
+    endpoint: '/api/admin/client-companies',
+    transform: (data) => data.clientCompanies || data.companies || data.items || data || []
+  })
 
   const handleAddClientCompany = () => {
     router.push("/admin/client-companies/new")
@@ -79,17 +55,17 @@ export default function ClientCompaniesPage() {
     router.push(`/admin/sites?clientCompanyId=${companyId}`)
   }
 
-  const handleDelete = async (companyId: string, companyName: string) => {
-    if (confirm(`¿Está seguro que desea desactivar "${companyName}"?`)) {
+  const handleDelete = async (company: ClientCompany) => {
+    if (confirm(`¿Está seguro que desea desactivar "${company.name}"?`)) {
       try {
-        const response = await fetch(`/api/admin/client-companies/${companyId}`, {
+        const response = await fetch(`/api/admin/client-companies/${company.id}`, {
           method: 'DELETE'
         })
         
         if (response.ok) {
           const result = await response.json()
           toast.success(result.message || 'Empresa cliente desactivada exitosamente')
-          fetchClientCompanies() // Refresh the list
+          refetch()
         } else {
           const error = await response.json()
           toast.error(error.error || 'Error al desactivar la empresa cliente')
@@ -204,40 +180,23 @@ const columns: ColumnDef<ClientCompany>[] = [
       return new Date(row.getValue("createdAt")).toLocaleDateString()
     },
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const company = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleViewSites(company.id)}>
-              <MapPin className="mr-2 h-4 w-4" />
-              Ver Sedes
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEdit(company.id)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleDelete(company.id, company.name)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Desactivar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const company = row.original
+        const actions = [
+          {
+            label: "Ver Sedes",
+            icon: MapPin,
+            onClick: () => handleViewSites(company.id)
+          },
+          createEditAction(() => handleEdit(company.id)),
+          createDeleteAction(() => handleDelete(company))
+        ]
+        
+        return <TableActions actions={actions} />
+      },
     },
-  },
 ]
 
   return (

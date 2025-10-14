@@ -1,19 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Edit, MoreHorizontal, Trash2, Shield, Building2, Users } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Building2, Users } from "lucide-react"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { RoleBadge } from "@/components/common/role-badge"
+import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
+import { useTableData } from "@/components/hooks/use-table-data"
 
 interface User {
   id: string
@@ -55,19 +50,9 @@ const columns: ColumnDef<User>[] = [
     header: "User",
     cell: ({ row }) => {
       const user = row.original
-      const initials = user.name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-
       return (
         <div className="flex items-center space-x-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.image || undefined} alt={user.name} />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
+          <UserAvatar name={user.name} image={user.image} />
           <div>
             <div className="font-medium">{user.name}</div>
             <div className="text-sm text-muted-foreground">{user.email}</div>
@@ -80,14 +65,10 @@ const columns: ColumnDef<User>[] = [
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => {
-      const role = row.getValue("role") as string
       const user = row.original
       return (
         <div className="space-y-1">
-          <Badge variant={getRoleBadgeVariant(role)}>
-            <Shield className="mr-1 h-3 w-3" />
-            {role.replace('_', ' ')}
-          </Badge>
+          <RoleBadge role={row.getValue("role")} />
           {user.isExternalUser && (
             <Badge variant="outline" className="text-xs">
               <Users className="mr-1 h-3 w-3" />

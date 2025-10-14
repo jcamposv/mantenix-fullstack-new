@@ -3,23 +3,16 @@
 import { useState, useEffect, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Eye, MoreHorizontal, Clock, MapPin, MessageCircle, User, UserCheck } from "lucide-react"
+import { Eye, Clock, MapPin, MessageCircle, User, UserCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { alertTypes, alertPriorities } from "@/schemas/alert"
-import { getInitials } from "@/components/sidebar/sidebar-utils"
 import { useAlertUpdates } from "@/hooks/useAlertUpdates"
 import { useRouter } from "next/navigation"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { TableActions } from "@/components/common/table-actions"
 
 interface Alert {
   id: string
@@ -83,9 +76,9 @@ export default function MyAlertsPage() {
       const data: AlertsResponse = await response.json()
       
       if (tab === 'reported') {
-        setReportedAlerts(data.alerts)
+        setReportedAlerts(data.alerts || data.items || data || [])
       } else {
-        setAssignedAlerts(data.alerts)
+        setAssignedAlerts(data.alerts || data.items || data || [])
       }
     } catch (error) {
       console.error('Error fetching my alerts:', error)
@@ -219,11 +212,7 @@ export default function MyAlertsPage() {
 
         return (
           <div className="flex items-center space-x-2">
-            <Avatar className="h-6 w-6 flex-shrink-0">
-              <AvatarFallback className="text-xs">
-                {getInitials(person.name)}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar name={person.name} size="sm" />
             <span className="truncate text-sm">{person.name}</span>
           </div>
         )
@@ -262,22 +251,15 @@ export default function MyAlertsPage() {
       id: "actions",
       cell: ({ row }) => {
         const alert = row.original
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleView(alert.id)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver detalles
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
+        const actions = [
+          {
+            label: "Ver detalles",
+            icon: Eye,
+            onClick: () => handleView(alert.id)
+          }
+        ]
+        
+        return <TableActions actions={actions} />
       },
     },
   ]

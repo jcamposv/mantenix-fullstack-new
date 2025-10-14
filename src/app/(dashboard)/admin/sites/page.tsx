@@ -6,14 +6,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Edit, MoreHorizontal, Trash2, MapPin, Building2, Users } from "lucide-react"
+import { MapPin, Building2, Users } from "lucide-react"
 import { toast } from "sonner"
+import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
+import { useTableData } from "@/components/hooks/use-table-data"
 
 interface Site {
   id: string
@@ -44,39 +40,23 @@ interface Site {
 }
 
 export default function SitesPage() {
-  const [sites, setSites] = useState<Site[]>([])
-  const [loading, setLoading] = useState(true)
   const [filteredClientCompany, setFilteredClientCompany] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: allSites, loading, refetch } = useTableData<Site>({
+    endpoint: '/api/admin/sites',
+    transform: (data) => data.sites || data.items || data || []
+  })
 
   useEffect(() => {
     const clientCompanyId = searchParams.get('clientCompanyId')
     setFilteredClientCompany(clientCompanyId)
-    fetchSites()
   }, [searchParams])
 
-  const fetchSites = async () => {
-    try {
-      const response = await fetch('/api/admin/sites')
-      if (response.ok) {
-        const data = await response.json()
-        const sitesData = data.sites || []
-        const clientCompanyId = searchParams.get('clientCompanyId')
-        
-        // Filter sites by client company if specified
-        const filteredSites = clientCompanyId 
-          ? sitesData.filter((site: Site) => site.clientCompany.id === clientCompanyId)
-          : sitesData
-          
-        setSites(filteredSites)
-      }
-    } catch (error) {
-      console.error('Error fetching sites:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Filter sites by client company if specified
+  const sites = filteredClientCompany 
+    ? allSites.filter((site: Site) => site.clientCompany.id === filteredClientCompany)
+    : allSites
 
   const handleAddSite = () => {
     router.push("/admin/sites/new")
@@ -86,17 +66,17 @@ export default function SitesPage() {
     router.push(`/admin/sites/${siteId}/edit`)
   }
 
-  const handleDelete = async (siteId: string, siteName: string) => {
-    if (confirm(`¿Está seguro que desea desactivar "${siteName}"?`)) {
+  const handleDelete = async (site: Site) => {
+    if (confirm(`¿Está seguro que desea desactivar "${site.name}"?`)) {
       try {
-        const response = await fetch(`/api/admin/sites/${siteId}`, {
+        const response = await fetch(`/api/admin/sites/${site.id}`, {
           method: 'DELETE'
         })
         
         if (response.ok) {
           const result = await response.json()
           toast.success(result.message || 'Sede desactivada exitosamente')
-          fetchSites() // Refresh the list
+          refetch()
         } else {
           const error = await response.json()
           toast.error(error.error || 'Error al desactivar la sede')
@@ -201,30 +181,12 @@ export default function SitesPage() {
       id: "actions",
       cell: ({ row }) => {
         const site = row.original
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(site.id)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleDelete(site.id, site.name)}
-                className="text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Desactivar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
+        const actions = [
+          createEditAction(() => handleEdit(site.id)),
+          createDeleteAction(() => handleDelete(site))
+        ]
+        
+        return <TableActions actions={actions} />
       },
     },
   ]
