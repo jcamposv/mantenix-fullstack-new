@@ -43,127 +43,6 @@ interface Site {
   }
 }
 
-const columns: ColumnDef<Site>[] = [
-  {
-    accessorKey: "name",
-    header: "Sede",
-    cell: ({ row }) => {
-      const site = row.original
-      return (
-        <div className="space-y-1">
-          <div className="font-medium">{site.name}</div>
-          {site.address && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <MapPin className="mr-1 h-3 w-3" />
-              {site.address}
-            </div>
-          )}
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "clientCompany.name",
-    header: "Empresa Cliente",
-    cell: ({ row }) => {
-      const site = row.original
-      return (
-        <div className="space-y-1">
-          <div className="flex items-center">
-            <Building2 className="mr-1 h-3 w-3 text-muted-foreground" />
-            <span className="font-medium">{site.clientCompany.name}</span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Tenant: {site.clientCompany.tenantCompany.name}
-          </div>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "contactName",
-    header: "Contacto",
-    cell: ({ row }) => {
-      const site = row.original
-      if (!site.contactName) {
-        return <span className="text-muted-foreground">Sin contacto</span>
-      }
-      return (
-        <div>
-          <div className="font-medium">{site.contactName}</div>
-          {site.email && (
-            <div className="text-sm text-muted-foreground">{site.email}</div>
-          )}
-          {site.phone && (
-            <div className="text-sm text-muted-foreground">{site.phone}</div>
-          )}
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "_count.siteUsers",
-    header: "Usuarios",
-    cell: ({ row }) => {
-      const userCount = row.original._count.siteUsers
-      return (
-        <div className="flex items-center">
-          <Users className="mr-1 h-3 w-3 text-muted-foreground" />
-          <span>{userCount} asignados</span>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "timezone", 
-    header: "Zona Horaria",
-    cell: ({ row }) => {
-      return (
-        <Badge variant="outline" className="text-xs">
-          {row.getValue("timezone")}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Creado",
-    cell: ({ row }) => {
-      return new Date(row.getValue("createdAt")).toLocaleDateString()
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const site = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(site.id)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleDelete(site.id, site.name)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Desactivar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
-  },
-]
-
 export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
@@ -228,6 +107,127 @@ export default function SitesPage() {
       }
     }
   }
+
+  const columns: ColumnDef<Site>[] = [
+    {
+      accessorKey: "name",
+      header: "Sede",
+      cell: ({ row }) => {
+        const site = row.original
+        return (
+          <div className="space-y-1">
+            <div className="font-medium">{site.name}</div>
+            {site.address && (
+              <div className="flex items-center text-sm text-muted-foreground">
+                <MapPin className="mr-1 h-3 w-3" />
+                {site.address}
+              </div>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "clientCompany.name",
+      header: "Empresa Cliente",
+      cell: ({ row }) => {
+        const site = row.original
+        return (
+          <div className="space-y-1">
+            <div className="flex items-center">
+              <Building2 className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">{site.clientCompany.name}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Tenant: {site.clientCompany.tenantCompany.name}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "contactName",
+      header: "Contacto",
+      cell: ({ row }) => {
+        const site = row.original
+        if (!site.contactName) {
+          return <span className="text-muted-foreground">Sin contacto</span>
+        }
+        return (
+          <div>
+            <div className="font-medium">{site.contactName}</div>
+            {site.email && (
+              <div className="text-sm text-muted-foreground">{site.email}</div>
+            )}
+            {site.phone && (
+              <div className="text-sm text-muted-foreground">{site.phone}</div>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "_count.siteUsers",
+      header: "Usuarios",
+      cell: ({ row }) => {
+        const userCount = row.original._count.siteUsers
+        return (
+          <div className="flex items-center">
+            <Users className="mr-1 h-3 w-3 text-muted-foreground" />
+            <span>{userCount} asignados</span>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "timezone", 
+      header: "Zona Horaria",
+      cell: ({ row }) => {
+        return (
+          <Badge variant="outline" className="text-xs">
+            {row.getValue("timezone")}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Creado",
+      cell: ({ row }) => {
+        return new Date(row.getValue("createdAt")).toLocaleDateString()
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const site = row.original
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(site.id)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDelete(site.id, site.name)}
+                className="text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Desactivar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+  ]
 
   const getTitle = () => {
     if (filteredClientCompany && sites.length > 0) {
