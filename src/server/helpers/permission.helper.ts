@@ -36,7 +36,11 @@ export class PermissionHelper {
     CREATE_SITE: 'create_site',
     UPDATE_SITE: 'update_site',
     DELETE_SITE: 'delete_site',
-    VIEW_SITES: 'view_sites'
+    VIEW_SITES: 'view_sites',
+    CREATE_COMPANY: 'create_company',
+    UPDATE_COMPANY: 'update_company',
+    DELETE_COMPANY: 'delete_company',
+    VIEW_COMPANIES: 'view_companies'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -57,7 +61,11 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_SITE,
       this.PERMISSIONS.UPDATE_SITE,
       this.PERMISSIONS.DELETE_SITE,
-      this.PERMISSIONS.VIEW_SITES
+      this.PERMISSIONS.VIEW_SITES,
+      this.PERMISSIONS.CREATE_COMPANY,
+      this.PERMISSIONS.UPDATE_COMPANY,
+      this.PERMISSIONS.DELETE_COMPANY,
+      this.PERMISSIONS.VIEW_COMPANIES
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -122,5 +130,11 @@ export class PermissionHelper {
       this.ROLES.CLIENTE_ADMIN_SEDE
     ] as const
     return adminRoles.includes(userRole as typeof adminRoles[number])
+  }
+
+  static async requirePermission(session: any, permission: string): Promise<void> {
+    if (!this.hasPermission(session.user.role, permission)) {
+      throw new Error("No tienes permisos para realizar esta acción")
+    }
   }
 }

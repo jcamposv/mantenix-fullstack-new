@@ -1,34 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { CompanyService } from "@/server/services/company.service"
+import { brandingQuerySchema } from "@/app/api/schemas/company-schemas"
 
-export async function GET(request: NextRequest) {
+export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
-    const subdomain = searchParams.get('subdomain')
-
-    if (!subdomain) {
-      return NextResponse.json(
-        { error: "Subdomain is required" },
-        { status: 400 }
-      )
-    }
-
-    // Find company by subdomain
-    const company = await prisma.company.findUnique({
-      where: { 
-        subdomain: subdomain,
-        isActive: true 
-      },
-      select: {
-        name: true,
-        logo: true,
-        logoSmall: true,
-        primaryColor: true,
-        secondaryColor: true,
-        backgroundColor: true,
-        customFont: true
-      }
+    const { subdomain } = brandingQuerySchema.parse({
+      subdomain: searchParams.get('subdomain')
     })
+
+    const company = await CompanyService.getBrandingBySubdomain(subdomain)
 
     if (!company) {
       return NextResponse.json(
@@ -41,9 +22,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("Error fetching company branding:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

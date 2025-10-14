@@ -122,7 +122,7 @@ export default function CompaniesPage() {
       const response = await fetch('/api/admin/companies')
       if (response.ok) {
         const data = await response.json()
-        setCompanies(data)
+        setCompanies(data.companies || [])
       }
     } catch (error) {
       console.error('Error fetching companies:', error)

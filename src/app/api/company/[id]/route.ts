@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+import { CompanyService } from "@/server/services/company.service"
+import type { AuthenticatedSession } from "@/types/auth.types"
 
-export async function GET(
+export const GET = async (
   request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   try {
-    const company = await prisma.company.findUnique({
-      where: { id: params.id },
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        logo: true,
-        isActive: true,
-      }
-    })
+    const session = await auth.api.getSession({
+      headers: await headers()
+    }) as AuthenticatedSession
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const company = await CompanyService.getBasicInfoById(session, params.id)
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 })
@@ -24,6 +26,9 @@ export async function GET(
     return NextResponse.json(company)
   } catch (error) {
     console.error('Error fetching company:', error)
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
