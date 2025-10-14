@@ -1,0 +1,458 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN_EMPRESA
+  SUPERVISOR
+  TECNICO
+  CLIENTE_ADMIN_GENERAL    // Admin general que puede ver todas las sedes del cliente y generar alertas
+  CLIENTE_ADMIN_SEDE       // Admin de sede específica que puede ver progreso de órdenes de su sede
+  CLIENTE_OPERARIO         // Operario que puede reportar errores/incidencias
+}
+
+enum Tier {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum AuditStatus {
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGE
+  MFA_ENABLED
+  MFA_DISABLED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  PERMISSION_DENIED
+  SUSPICIOUS_ACTIVITY
+}
+
+enum AlertPriority {
+  LOW       // Baja - No urgente, puede esperar
+  MEDIUM    // Media - Requiere atención pronto
+  HIGH      // Alta - Requiere atención inmediata
+  CRITICAL  // Crítica - Requiere acción inmediata
+}
+
+enum AlertType {
+  EQUIPMENT_FAILURE      // Falla de equipo/maquinaria
+  MAINTENANCE_REQUIRED   // Mantenimiento correctivo requerido
+  PREVENTIVE_MAINTENANCE // Mantenimiento preventivo programado
+  SAFETY_ISSUE          // Problema de seguridad
+  SUPPLY_SHORTAGE       // Falta de suministros/materiales
+  ENVIRONMENTAL_ISSUE   // Problema ambiental (temperatura, humedad, etc.)
+  OPERATIONAL_ISSUE     // Problema operacional
+  OTHER                 // Otro tipo de problema
+}
+
+enum AlertStatus {
+  OPEN        // Recién creada, sin asignar
+  ASSIGNED    // Asignada a un técnico
+  IN_PROGRESS // En proceso de resolución
+  RESOLVED    // Resuelta, esperando confirmación
+  CLOSED      // Cerrada y confirmada
+}
+
+// ============================================================================
+// BETTER AUTH CORE TABLES (with extensions)
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Better Auth extension fields (following best practices)
+  role            Role      @default(TECNICO)
+  companyId       String?
+  isExternalUser  Boolean   @default(false)
+  clientCompanyId String?
+  siteId          String?   // Site assignment for users (optional for company users, required for external users)
+  avatar          String?
+  timezone        String    @default("UTC")
+  locale          String    @default("en")
+  preferences     String?   // JSON as string
+  isLocked        Boolean   @default(false)
+  lockedUntil     DateTime?
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  mfaEnabled      Boolean   @default(false)
+  isMfaVerified   Boolean   @default(false)
+  
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  company       Company?  @relation(fields: [companyId], references: [id])
+  clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id])
+  site          Site?     @relation(fields: [siteId], references: [id])
+  auditLogs     AuditLog[]
+  securityEvents SecurityEvent[]
+  invitationsCreated UserInvitation[] @relation("UserInvitationsCreated")
+  clientCompaniesCreated ClientCompany[] @relation("ClientCompanyCreator")
+  sitesCreated  Site[]    @relation("SiteCreator")
+  
+  // Alert relations
+  alertComments AlertComment[] // Comentarios en alertas
+  alertsReported Alert[] @relation("AlertReporter")
+  alertsAssigned Alert[] @relation("AlertAssignee")
+  alertsResolved Alert[] @relation("AlertResolver")
+  alertNotifications AlertNotification[]
+
+  @@map("user")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  expiresAt     DateTime
+  token         String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  ipAddress     String?
+  userAgent     String?
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verification")
+}
+
+// ============================================================================
+// BUSINESS LOGIC TABLES
+// ============================================================================
+
+model Company {
+  id              String            @id @default(cuid())
+  name            String
+  subdomain       String            @unique
+  logo            String?
+  logoSmall       String?
+  primaryColor    String            @default("#3b82f6")
+  secondaryColor  String            @default("#64748b")
+  backgroundColor String            @default("#ffffff")
+  customFont      String?
+  mfaEnforced     Boolean           @default(false)
+  ipWhitelist     String[]          @default([])
+  tier            Tier              @default(STARTER)
+  isActive        Boolean           @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  // Relations
+  users           User[]
+  auditLogs       AuditLog[]
+  securityEvents  SecurityEvent[]
+  invitations     UserInvitation[]
+  clientCompanies ClientCompany[]
+
+  @@index([subdomain])
+  @@index([isActive])
+  @@map("companies")
+}
+
+model ClientCompany {
+  id          String    @id @default(cuid())
+  name        String
+  companyId   String?   // Company ID or legal ID (cedula juridica)
+  logo        String?   // Logo image URL
+  address     String?
+  phone       String?
+  email       String?
+  contactName String?
+  latitude    Float?    // Location coordinates
+  longitude   Float?    // Location coordinates
+  notes       String?
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  tenantCompanyId   String    // The tenant company this client belongs to
+  tenantCompany     Company   @relation(fields: [tenantCompanyId], references: [id], onDelete: Cascade)
+  createdBy         String    // User who created this client company
+  createdByUser     User      @relation("ClientCompanyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  
+  // External users belonging to this client company
+  externalUsers     User[]
+  userInvitations   UserInvitation[]
+  
+  // Sites belonging to this client company
+  sites             Site[]
+
+  @@index([tenantCompanyId])
+  @@index([isActive])
+  @@map("client_companies")
+}
+
+model Site {
+  id              String    @id @default(cuid())
+  name            String
+  address         String?
+  phone           String?
+  email           String?
+  contactName     String?
+  latitude        Float?    // Location coordinates
+  longitude       Float?    // Location coordinates
+  timezone        String    @default("UTC")
+  notes           String?
+  isActive        Boolean   @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  clientCompanyId String
+  clientCompany   ClientCompany @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
+  createdBy       String
+  createdByUser   User      @relation("SiteCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  
+  // Users assigned to this site
+  siteUsers       User[]
+  userInvitations UserInvitation[]
+  
+  // Alerts for this site
+  alerts          Alert[]
+  
+  @@index([clientCompanyId])
+  @@index([isActive])
+  @@map("sites")
+}
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  companyId    String
+  userId       String?
+  action       String
+  resource     String
+  resourceId   String?
+  ipAddress    String
+  userAgent    String?
+  status       AuditStatus @default(SUCCESS)
+  details      String?
+  createdAt    DateTime    @default(now())
+  
+  // Relations
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, companyId])
+  @@map("audit_logs")
+}
+
+model SecurityEvent {
+  id           String            @id @default(cuid())
+  companyId    String
+  userId       String?
+  type         SecurityEventType
+  severity     String            @default("INFO")
+  description  String
+  ipAddress    String
+  userAgent    String?
+  metadata     String?           // JSON as string
+  resolved     Boolean           @default(false)
+  resolvedAt   DateTime?
+  resolvedBy   String?
+  createdAt    DateTime          @default(now())
+  
+  // Relations
+  company      Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user         User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([type, severity])
+  @@index([resolved])
+  @@map("security_events")
+}
+
+model UserInvitation {
+  id              String   @id @default(cuid())
+  email           String
+  role            Role
+  companyId       String
+  isExternalUser  Boolean  @default(false)
+  clientCompanyId String?
+  siteId          String?  // Site assignment for the invited user
+  token           String   @unique
+  expiresAt       DateTime
+  used            Boolean  @default(false)
+  usedAt          DateTime?
+  createdBy       String
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator       User          @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)
+  clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
+  site          Site?         @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([token])
+  @@index([companyId])
+  @@index([createdBy])
+  @@index([clientCompanyId])
+  @@index([siteId])
+  @@map("user_invitations")
+}
+
+// ============================================================================
+// ALERTS SYSTEM
+// ============================================================================
+
+model Alert {
+  id          String      @id @default(cuid())
+  title       String      // Título corto de la alerta
+  description String      // Descripción detallada del problema
+  type        AlertType   // Tipo de alerta (falla de equipo, mantenimiento, etc.)
+  priority    AlertPriority // Prioridad de la alerta
+  status      AlertStatus @default(OPEN) // Estado actual de la alerta
+  
+  // Información de ubicación específica (opcional)
+  location    String?     // Ubicación específica dentro de la sede (ej: "Sala de máquinas A", "Oficina 201")
+  equipmentId String?     // ID del equipo afectado (si aplica)
+  
+  // Multimedia attachments
+  images      String[]    // Array de URLs de imágenes
+  documents   String[]    // Array de URLs de documentos
+  
+  // Metadata
+  estimatedResolutionTime Int? // Tiempo estimado de resolución en minutos
+  actualResolutionTime    Int? // Tiempo real de resolución en minutos
+  resolutionNotes        String? // Notas sobre cómo se resolvió
+  
+  // Timestamps
+  reportedAt  DateTime    @default(now()) // Cuando se reportó la alerta
+  assignedAt  DateTime?   // Cuando se asignó a un técnico
+  resolvedAt  DateTime?   // Cuando se marcó como resuelta
+  closedAt    DateTime?   // Cuando se cerró la alerta
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations - Asociada a una sede específica
+  siteId      String
+  site        Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  // Usuario que reportó la alerta
+  reportedById String
+  reportedBy   User       @relation("AlertReporter", fields: [reportedById], references: [id], onDelete: Restrict)
+  
+  // Usuario asignado para resolver la alerta (técnico)
+  assignedToId String?
+  assignedTo   User?      @relation("AlertAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  // Usuario que resolvió la alerta
+  resolvedById String?
+  resolvedBy   User?      @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  
+  // Historial de comentarios/actualizaciones
+  comments     AlertComment[]
+  notifications AlertNotification[]
+  
+  @@index([siteId, status])
+  @@index([priority, status])
+  @@index([reportedById])
+  @@index([assignedToId])
+  @@index([type])
+  @@index([reportedAt])
+  @@map("alerts")
+}
+
+model AlertComment {
+  id        String   @id @default(cuid())
+  content   String   // Contenido del comentario
+  isInternal Boolean @default(false) // Si es un comentario interno (solo para técnicos) o público
+  createdAt DateTime @default(now())
+  
+  // Relations
+  alertId   String
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  
+  @@index([alertId])
+  @@index([authorId])
+  @@map("alert_comments")
+}
+
+model AlertNotification {
+  id        String   @id @default(cuid())
+  type      String   // Tipo de notificación: "email", "push", "in_app"
+  status    String   @default("pending") // "pending", "sent", "delivered", "failed"
+  sentAt    DateTime?
+  deliveredAt DateTime?
+  errorMessage String?
+  metadata  String?  // JSON con datos adicionales (email template, push payload, etc.)
+  createdAt DateTime @default(now())
+  
+  // Relations
+  alertId   String
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  userId    String   // Usuario que debe recibir la notificación
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([alertId])
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("alert_notifications")
+}
