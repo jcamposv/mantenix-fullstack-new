@@ -1,64 +1,24 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { headers } from "next/headers"
+import { AuthService, UserService } from "@/server"
 
-export async function GET() {
+export const GET = async () => {
   try {
-    // Check authentication and authorization
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const sessionResult = await AuthService.getAuthenticatedSession()
+    
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
     // Only super admins can access this endpoint
-    if (session.user.role !== "SUPER_ADMIN") {
+    if (sessionResult.user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ 
         error: "Forbidden - Only super admins can view all users" 
       }, { status: 403 })
     }
 
-    // Fetch all users with their companies and client companies
-    const users = await prisma.user.findMany({
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
-            subdomain: true
-          }
-        },
-        clientCompany: {
-          select: {
-            id: true,
-            name: true,
-            contactName: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const users = await UserService.getAllUsers()
+    return NextResponse.json(users)
 
-    // Transform data for frontend
-    const transformedUsers = users.map(user => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      role: user.role,
-      image: user.image,
-      isExternalUser: user.isExternalUser,
-      createdAt: user.createdAt.toISOString(),
-      company: user.company,
-      clientCompany: user.clientCompany
-    }))
-
-    return NextResponse.json(transformedUsers)
   } catch (error) {
     console.error("Error fetching users:", error)
     return NextResponse.json(

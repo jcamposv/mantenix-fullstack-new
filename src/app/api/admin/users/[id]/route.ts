@@ -1,304 +1,135 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { headers } from "next/headers"
+import { z } from "zod"
+import { AuthService, UserService } from "@/server"
+import { updateUserSchema } from "../../../schemas/user-schemas"
 
+// GET /api/admin/users/[id] - Obtener usuario específico
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params
-
-    // Check authentication and authorization
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const sessionResult = await AuthService.getAuthenticatedSession()
+    
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
-    // Check if user can view users
-    const canViewUsers = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_EMPRESA"
-    if (!canViewUsers) {
-      return NextResponse.json({ 
-        error: "Forbidden - Only administrators can view users" 
-      }, { status: 403 })
-    }
-
-    // Build query based on user role
-    let whereClause: any = { id }
-    if (session.user.role === "ADMIN_EMPRESA") {
-      if (!session.user.companyId) {
-        return NextResponse.json({ error: "Admin user has no associated company" }, { status: 400 })
-      }
-      whereClause.companyId = session.user.companyId
-    }
-
-    const user = await prisma.user.findFirst({
-      where: whereClause,
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
-            subdomain: true
-          }
-        }
-      }
-    })
+    const user = await UserService.getById(id, sessionResult)
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    // Remove password from response
+    const { password, ...userResponse } = user as any
+    return NextResponse.json(userResponse)
+
   } catch (error) {
+    if (error instanceof Error && error.message === "Rol no autorizado para gestionar usuarios") {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
+
     console.error("Error fetching user:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Error interno del servidor" },
       { status: 500 }
     )
   }
 }
 
-export async function PUT(
+// PATCH /api/admin/users/[id] - Actualizar usuario
+export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params
-
-    // Check authentication and authorization
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const canUpdateUsers = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_EMPRESA"
-    if (!canUpdateUsers) {
-      return NextResponse.json({ 
-        error: "Forbidden - Only administrators can update users" 
-      }, { status: 403 })
-    }
-
-    // Verify user exists and user has access
-    let whereClause: any = { id }
-    if (session.user.role === "ADMIN_EMPRESA") {
-      if (!session.user.companyId) {
-        return NextResponse.json({ error: "Admin user has no associated company" }, { status: 400 })
-      }
-      whereClause.companyId = session.user.companyId
-    }
-
-    const existingUser = await prisma.user.findFirst({
-      where: whereClause
-    })
-
-    if (!existingUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Prevent users from editing themselves to avoid lockout
-    if (existingUser.id === session.user.id) {
-      return NextResponse.json({ 
-        error: "No puedes editar tu propio usuario. Contacta a otro administrador." 
-      }, { status: 400 })
+    const sessionResult = await AuthService.getAuthenticatedSession()
+    
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
     const body = await request.json()
-    const {
-      name,
-      email,
-      role,
-      companyId,
-      timezone,
-      locale
-    } = body
+    const validatedData = updateUserSchema.parse(body)
 
-    // Validate required fields
-    if (!name || !email) {
-      return NextResponse.json(
-        { error: "El nombre y email son requeridos" },
-        { status: 400 }
-      )
+    const updatedUser = await UserService.update(id, validatedData, sessionResult)
+    
+    if (!updatedUser) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     }
 
-    // Check if email is already taken by another user
-    const emailExists = await prisma.user.findFirst({
-      where: { 
-        email,
-        id: { not: id }
-      }
-    })
+    // Remove password from response
+    const { password, ...userResponse } = updatedUser as any
+    return NextResponse.json(userResponse)
 
-    if (emailExists) {
-      return NextResponse.json(
-        { error: "El email ya está en uso por otro usuario" },
-        { status: 400 }
-      )
-    }
-
-    // For company admins, validate role restrictions
-    if (session.user.role === "ADMIN_EMPRESA") {
-      // Company admins cannot assign super admin or other company admin roles
-      if (role === "SUPER_ADMIN" || role === "ADMIN_EMPRESA") {
-        return NextResponse.json(
-          { error: "Los administradores de empresa no pueden asignar roles de super administrador o administrador de empresa" },
-          { status: 403 }
-        )
-      }
-      
-      // Company admins can only assign users to their own company
-      if (companyId && companyId !== session.user.companyId) {
-        return NextResponse.json(
-          { error: "Solo puedes asignar usuarios a tu propia empresa" },
-          { status: 403 }
-        )
-      }
-    }
-
-    // Validate company exists if provided
-    if (companyId) {
-      const company = await prisma.company.findUnique({
-        where: { id: companyId }
-      })
-
-      if (!company) {
-        return NextResponse.json(
-          { error: "Empresa no encontrada" },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Update user
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        name,
-        email,
-        role: role || existingUser.role,
-        companyId: companyId || existingUser.companyId,
-        timezone: timezone || existingUser.timezone,
-        locale: locale || existingUser.locale,
-        updatedAt: new Date()
-      },
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
-            subdomain: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(updatedUser)
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Datos inválidos", details: error.issues },
+        { status: 400 }
+      )
+    }
+
+    if (error instanceof Error) {
+      if (error.message === "No tienes permisos para actualizar usuarios") {
+        return NextResponse.json({ error: error.message }, { status: 403 })
+      }
+      if (error.message === "Ya existe un usuario con este email") {
+        return NextResponse.json({ error: error.message }, { status: 409 })
+      }
+      if (error.message.includes("No puedes asignar")) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+    }
+
     console.error("Error updating user:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Error interno del servidor" },
       { status: 500 }
     )
   }
 }
 
+// DELETE /api/admin/users/[id] - Eliminar usuario
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params
-
-    // Check authentication and authorization
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const sessionResult = await AuthService.getAuthenticatedSession()
+    
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
-    const canDeleteUsers = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_EMPRESA"
-    if (!canDeleteUsers) {
-      return NextResponse.json({ 
-        error: "Forbidden - Only administrators can delete users" 
-      }, { status: 403 })
+    const deletedUser = await UserService.delete(id, sessionResult)
+    
+    if (!deletedUser) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     }
-
-    // Verify user exists and user has access
-    let whereClause: any = { id }
-    if (session.user.role === "ADMIN_EMPRESA") {
-      if (!session.user.companyId) {
-        return NextResponse.json({ error: "Admin user has no associated company" }, { status: 400 })
-      }
-      whereClause.companyId = session.user.companyId
-    }
-
-    const existingUser = await prisma.user.findFirst({
-      where: whereClause,
-      include: {
-        createdByUser: true,
-        siteUsers: true
-      }
-    })
-
-    if (!existingUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Prevent users from deleting themselves
-    if (existingUser.id === session.user.id) {
-      return NextResponse.json({ 
-        error: "No puedes desactivar tu propio usuario" 
-      }, { status: 400 })
-    }
-
-    // Check if user has site assignments
-    if (existingUser.siteUsers.length > 0) {
-      return NextResponse.json({ 
-        error: "No se puede desactivar un usuario asignado a sedes. Primero reasigne a otro usuario o remueva de todas las sedes." 
-      }, { status: 400 })
-    }
-
-    // Check for pending invitations created by this user
-    const pendingInvitations = await prisma.userInvitation.count({
-      where: {
-        createdByUserId: id,
-        used: false,
-        expiresAt: { gt: new Date() }
-      }
-    })
-
-    if (pendingInvitations > 0) {
-      return NextResponse.json({ 
-        error: "No se puede desactivar un usuario con invitaciones pendientes. Primero cancele todas las invitaciones." 
-      }, { status: 400 })
-    }
-
-    // Soft delete the user
-    await prisma.user.update({
-      where: { id },
-      data: {
-        isActive: false,
-        deletedAt: new Date()
-      }
-    })
 
     return NextResponse.json({ 
-      message: "Usuario desactivado exitosamente",
+      message: "Usuario eliminado exitosamente",
       id 
     })
+
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "No tienes permisos para eliminar usuarios") {
+        return NextResponse.json({ error: error.message }, { status: 403 })
+      }
+      if (error.message === "No puedes eliminar tu propio usuario") {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+    }
+
     console.error("Error deleting user:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Error interno del servidor" },
       { status: 500 }
     )
   }

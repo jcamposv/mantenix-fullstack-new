@@ -22,7 +22,13 @@ export class PermissionHelper {
     VIEW_CLIENT_ALERTS: 'view_client_alerts',
     VIEW_SITE_ALERTS: 'view_site_alerts',
     VIEW_ASSIGNED_ALERTS: 'view_assigned_alerts',
-    CREATE_COMMENT: 'create_comment'
+    CREATE_COMMENT: 'create_comment',
+    CREATE_USER: 'create_user',
+    UPDATE_USER: 'update_user',
+    DELETE_USER: 'delete_user',
+    VIEW_ALL_USERS: 'view_all_users',
+    VIEW_COMPANY_USERS: 'view_company_users',
+    VIEW_CLIENT_USERS: 'view_client_users'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -31,20 +37,29 @@ export class PermissionHelper {
       this.PERMISSIONS.UPDATE_ALERT,
       this.PERMISSIONS.DELETE_ALERT,
       this.PERMISSIONS.VIEW_ALL_ALERTS,
-      this.PERMISSIONS.CREATE_COMMENT
+      this.PERMISSIONS.CREATE_COMMENT,
+      this.PERMISSIONS.CREATE_USER,
+      this.PERMISSIONS.UPDATE_USER,
+      this.PERMISSIONS.DELETE_USER,
+      this.PERMISSIONS.VIEW_ALL_USERS
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
       this.PERMISSIONS.UPDATE_ALERT,
       this.PERMISSIONS.DELETE_ALERT,
       this.PERMISSIONS.VIEW_COMPANY_ALERTS,
-      this.PERMISSIONS.CREATE_COMMENT
+      this.PERMISSIONS.CREATE_COMMENT,
+      this.PERMISSIONS.CREATE_USER,
+      this.PERMISSIONS.UPDATE_USER,
+      this.PERMISSIONS.DELETE_USER,
+      this.PERMISSIONS.VIEW_COMPANY_USERS
     ],
     [this.ROLES.CLIENTE_ADMIN_GENERAL]: [
       this.PERMISSIONS.CREATE_ALERT,
       this.PERMISSIONS.UPDATE_ALERT,
       this.PERMISSIONS.VIEW_CLIENT_ALERTS,
-      this.PERMISSIONS.CREATE_COMMENT
+      this.PERMISSIONS.CREATE_COMMENT,
+      this.PERMISSIONS.VIEW_CLIENT_USERS
     ],
     [this.ROLES.CLIENTE_ADMIN_SEDE]: [
       this.PERMISSIONS.CREATE_ALERT,

@@ -4,12 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ClientCompanyForm } from "@/components/forms/client-company/client-company-form"
 import { toast } from "sonner"
+import type { ClientCompanySubmitData } from "@/schemas/client-company"
 
 export default function NewClientCompanyPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: ClientCompanySubmitData) => {
     setLoading(true)
     try {
       const response = await fetch('/api/admin/client-companies', {
