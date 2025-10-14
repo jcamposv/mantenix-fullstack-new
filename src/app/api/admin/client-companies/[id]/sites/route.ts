@@ -1,86 +1,50 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { headers } from "next/headers"
+import { AuthService, ClientCompanyService, SiteService } from "@/server"
 
-export async function GET(
+export const GET = async (
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+) => {
   try {
     const { id: clientCompanyId } = params
-
-    // Check authentication and authorization
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const sessionResult = await AuthService.getAuthenticatedSession()
+    
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
-    // Check if user can view sites
-    const canViewSites = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_EMPRESA"
-    if (!canViewSites) {
-      return NextResponse.json({ 
-        error: "Forbidden - Only administrators can view sites" 
-      }, { status: 403 })
-    }
-
-    // Validate client company exists and user has access
-    let clientCompanyWhereClause: any = { 
-      id: clientCompanyId,
-      isActive: true 
-    }
-
-    if (session.user.role === "ADMIN_EMPRESA") {
-      if (!session.user.companyId) {
-        return NextResponse.json({ error: "Admin user has no associated company" }, { status: 400 })
-      }
-      clientCompanyWhereClause.tenantCompanyId = session.user.companyId
-    }
-
-    const clientCompany = await prisma.clientCompany.findFirst({
-      where: clientCompanyWhereClause
-    })
-
+    // Verificar que la empresa cliente existe y el usuario tiene acceso
+    const clientCompany = await ClientCompanyService.getById(clientCompanyId, sessionResult)
     if (!clientCompany) {
       return NextResponse.json({ 
-        error: "Client company not found or access denied" 
+        error: "Empresa cliente no encontrada o acceso denegado" 
       }, { status: 404 })
     }
 
-    // Fetch sites for this client company
-    const sites = await prisma.site.findMany({
-      where: {
-        clientCompanyId,
-        isActive: true
-      },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        phone: true,
-        email: true,
-        contactName: true,
-        timezone: true,
-        createdAt: true,
-        _count: {
-          select: {
-            siteUsers: true
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    })
+    // Obtener sedes de esta empresa cliente
+    const sites = await SiteService.getAll(sessionResult)
+    
+    // Filtrar solo las sedes de esta empresa cliente
+    const filteredSites = sites.filter(site => site.clientCompanyId === clientCompanyId)
 
-    return NextResponse.json(sites)
+    return NextResponse.json(filteredSites)
+
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "No tienes permisos para ver sedes") {
+        return NextResponse.json({ error: error.message }, { status: 403 })
+      }
+      if (error.message === "Rol no autorizado para gestionar empresas cliente") {
+        return NextResponse.json({ error: error.message }, { status: 403 })
+      }
+      if (error.message.includes("Usuario sin")) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+    }
+
     console.error("Error fetching sites for client company:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Error interno del servidor" },
       { status: 500 }
     )
   }

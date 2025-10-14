@@ -32,7 +32,11 @@ export class PermissionHelper {
     CREATE_CLIENT_COMPANY: 'create_client_company',
     UPDATE_CLIENT_COMPANY: 'update_client_company',
     DELETE_CLIENT_COMPANY: 'delete_client_company',
-    VIEW_CLIENT_COMPANIES: 'view_client_companies'
+    VIEW_CLIENT_COMPANIES: 'view_client_companies',
+    CREATE_SITE: 'create_site',
+    UPDATE_SITE: 'update_site',
+    DELETE_SITE: 'delete_site',
+    VIEW_SITES: 'view_sites'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -49,7 +53,11 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_CLIENT_COMPANY,
       this.PERMISSIONS.UPDATE_CLIENT_COMPANY,
       this.PERMISSIONS.DELETE_CLIENT_COMPANY,
-      this.PERMISSIONS.VIEW_CLIENT_COMPANIES
+      this.PERMISSIONS.VIEW_CLIENT_COMPANIES,
+      this.PERMISSIONS.CREATE_SITE,
+      this.PERMISSIONS.UPDATE_SITE,
+      this.PERMISSIONS.DELETE_SITE,
+      this.PERMISSIONS.VIEW_SITES
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -64,20 +72,26 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_CLIENT_COMPANY,
       this.PERMISSIONS.UPDATE_CLIENT_COMPANY,
       this.PERMISSIONS.DELETE_CLIENT_COMPANY,
-      this.PERMISSIONS.VIEW_CLIENT_COMPANIES
+      this.PERMISSIONS.VIEW_CLIENT_COMPANIES,
+      this.PERMISSIONS.CREATE_SITE,
+      this.PERMISSIONS.UPDATE_SITE,
+      this.PERMISSIONS.DELETE_SITE,
+      this.PERMISSIONS.VIEW_SITES
     ],
     [this.ROLES.CLIENTE_ADMIN_GENERAL]: [
       this.PERMISSIONS.CREATE_ALERT,
       this.PERMISSIONS.UPDATE_ALERT,
       this.PERMISSIONS.VIEW_CLIENT_ALERTS,
       this.PERMISSIONS.CREATE_COMMENT,
-      this.PERMISSIONS.VIEW_CLIENT_USERS
+      this.PERMISSIONS.VIEW_CLIENT_USERS,
+      this.PERMISSIONS.VIEW_SITES
     ],
     [this.ROLES.CLIENTE_ADMIN_SEDE]: [
       this.PERMISSIONS.CREATE_ALERT,
       this.PERMISSIONS.UPDATE_ALERT,
       this.PERMISSIONS.VIEW_SITE_ALERTS,
-      this.PERMISSIONS.CREATE_COMMENT
+      this.PERMISSIONS.CREATE_COMMENT,
+      this.PERMISSIONS.VIEW_SITES
     ],
     [this.ROLES.CLIENTE_OPERARIO]: [
       this.PERMISSIONS.CREATE_ALERT,

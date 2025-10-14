@@ -182,12 +182,13 @@ export default function SitesPage() {
       const response = await fetch('/api/admin/sites')
       if (response.ok) {
         const data = await response.json()
+        const sitesData = data.sites || []
         const clientCompanyId = searchParams.get('clientCompanyId')
         
         // Filter sites by client company if specified
         const filteredSites = clientCompanyId 
-          ? data.filter((site: Site) => site.clientCompany.id === clientCompanyId)
-          : data
+          ? sitesData.filter((site: Site) => site.clientCompany.id === clientCompanyId)
+          : sitesData
           
         setSites(filteredSites)
       }
