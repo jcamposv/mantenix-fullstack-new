@@ -8,7 +8,7 @@ export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
     : z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   role: z.enum(["SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]),
   companyId: z.string().optional(),
-  isExternalUser: z.boolean().default(false),
+  isExternalUser: z.boolean(),
   clientCompanyId: z.string().optional(),
   siteId: z.string().optional(),
   timezone: z.string(),

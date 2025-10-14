@@ -22,9 +22,13 @@ import { getRoleBadgeVariant } from "./user-form-utils"
 interface UserRoleFieldProps {
   control: Control<UserFormData>
   selectedRole: string
+  restrictedMode?: boolean
 }
 
-export function UserRoleField({ control, selectedRole }: UserRoleFieldProps) {
+export function UserRoleField({ control, selectedRole, restrictedMode = false }: UserRoleFieldProps) {
+  const availableRoles = restrictedMode 
+    ? ROLES.filter(role => !["SUPER_ADMIN", "ADMIN_EMPRESA"].includes(role.value))
+    : ROLES
   return (
     <FormField<UserFormData>
       control={control}
@@ -39,7 +43,7 @@ export function UserRoleField({ control, selectedRole }: UserRoleFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {ROLES.map((role) => (
+              {availableRoles.map((role) => (
                 <SelectItem key={role.value} value={role.value}>
                   <div className="flex items-center space-x-2">
                     <Badge variant={getRoleBadgeVariant(role.value)}>
@@ -56,7 +60,7 @@ export function UserRoleField({ control, selectedRole }: UserRoleFieldProps) {
           {selectedRole && (
             <FormDescription>
               Selected: <Badge variant={getRoleBadgeVariant(selectedRole)}>
-                {ROLES.find(r => r.value === selectedRole)?.label}
+                {availableRoles.find(r => r.value === selectedRole)?.label}
               </Badge>
             </FormDescription>
           )}

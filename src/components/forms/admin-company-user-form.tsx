@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
-import { createAdminUserSchema, type AdminUserFormData } from "@/schemas/admin-user"
+import { createAdminUserSchema, type AdminUserFormData, EXTERNAL_ROLES } from "@/schemas/admin-user"
 import { AdminUserBasicInfo } from "./admin-user/admin-user-basic-info"
 import { AdminUserExternal } from "./admin-user/admin-user-external"
 import { AdminUserRoleSettings } from "./admin-user/admin-user-role-settings"
@@ -51,7 +51,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       email: "",
       password: mode === "invite" ? undefined : "",
       role: "TECNICO",
-      companyId: currentUser?.companyId,
+      companyId: currentUser?.company?.id,
       isExternalUser: false,
       clientCompanyId: undefined,
       siteId: undefined,
@@ -65,8 +65,8 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
   const selectedRole = form.watch("role")
 
   useEffect(() => {
-    if (currentUser?.companyId) {
-      form.setValue("companyId", currentUser.companyId)
+    if (currentUser?.company?.id) {
+      form.setValue("companyId", currentUser.company.id)
     }
   }, [currentUser, form])
 
@@ -95,8 +95,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
 
   // Clear site selection if role doesn't require site
   useEffect(() => {
-    const { EXTERNAL_ROLES } = require("@/schemas/admin-user")
-    const roleRequiresSite = EXTERNAL_ROLES.find((role: any) => role.value === selectedRole)?.requiresSite || false
+    const roleRequiresSite = EXTERNAL_ROLES.find((role) => role.value === selectedRole)?.requiresSite || false
     
     if (isExternalUser && !roleRequiresSite) {
       form.setValue("siteId", undefined)
@@ -109,7 +108,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       const response = await fetch('/api/admin/client-companies')
       if (response.ok) {
         const data = await response.json()
-        setClientCompanies(data)
+        setClientCompanies(data.clientCompanies || data.companies || data.items || data || [])
       }
     } catch (error) {
       console.error('Error fetching client companies:', error)
@@ -124,7 +123,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       const response = await fetch(`/api/admin/client-companies/${clientCompanyId}/sites`)
       if (response.ok) {
         const data = await response.json()
-        setSites(data)
+        setSites(data.sites || data.items || data || [])
       }
     } catch (error) {
       console.error('Error fetching sites:', error)
@@ -135,7 +134,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
 
   const handleSubmit = (data: AdminUserFormData) => {
     // Always set the company to the current user's company for admin company users
-    data.companyId = currentUser?.companyId
+    data.companyId = currentUser?.company?.id
     
     // If not external user, remove client company id and site id
     if (!data.isExternalUser) {

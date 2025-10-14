@@ -21,13 +21,15 @@ interface UserCompanyFieldProps {
   companies: Company[]
   loadingCompanies: boolean
   needsCompany: boolean
+  readOnly?: boolean
 }
 
 export function UserCompanyField({ 
   control, 
   companies, 
   loadingCompanies, 
-  needsCompany 
+  needsCompany,
+  readOnly = false 
 }: UserCompanyFieldProps) {
   if (!needsCompany) {
     return null
@@ -43,7 +45,7 @@ export function UserCompanyField({
           <Select 
             onValueChange={field.onChange} 
             defaultValue={field.value}
-            disabled={loadingCompanies}
+            disabled={loadingCompanies || readOnly}
           >
             <FormControl>
               <SelectTrigger>
