@@ -1,6 +1,4 @@
 "use client"
-
-import { useState, useEffect, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
@@ -12,6 +10,7 @@ import { useAlertUpdates } from "@/hooks/useAlertUpdates"
 import { useRouter } from "next/navigation"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { TableActions } from "@/components/common/table-actions"
+import { useTableData } from "@/components/hooks/use-table-data"
 
 interface Alert {
   id: string
@@ -56,32 +55,15 @@ interface AlertsResponse {
 }
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([])
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
-
-  const fetchAlerts = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/alerts')
-      if (!response.ok) throw new Error('Error fetching alerts')
-      
-      const data: AlertsResponse = await response.json()
-      setAlerts(data.alerts || data.items || data || [])
-    } catch (error) {
-      console.error('Error fetching alerts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchAlerts()
-  }, [fetchAlerts])
+  const { data: alerts, loading, refetch } = useTableData<Alert>({
+    endpoint: '/api/alerts',
+    transform: (data: AlertsResponse) => data.alerts || data || []
+  })
 
   // Listen for real-time alert updates
   useAlertUpdates({
-    onRefreshNeeded: fetchAlerts
+    onRefreshNeeded: refetch
   })
 
   const getPriorityBadge = (priority: string) => {
@@ -91,7 +73,7 @@ export default function AlertsPage() {
     const variants = {
       LOW: "secondary",
       MEDIUM: "default", 
-      HIGH: "warning",
+      HIGH: "outline",
       CRITICAL: "destructive"
     } as const
 

@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { SiteForm } from "@/components/forms/site-form"
 import { toast } from "sonner"
+import type { SiteFormData } from "@/schemas/site"
 
 export default function EditSitePage() {
   const [loading, setLoading] = useState(false)
-  const [initialData, setInitialData] = useState(null)
+  const [initialData, setInitialData] = useState<SiteFormData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const params = useParams()
@@ -49,7 +50,7 @@ export default function EditSitePage() {
     }
   }
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: SiteFormData) => {
     setLoading(true)
     try {
       const response = await fetch(`/api/admin/sites/${id}`, {

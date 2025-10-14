@@ -72,7 +72,7 @@ export default function CriticalAlertsPage() {
       if (!response.ok) throw new Error('Error fetching critical alerts')
       
       const data: AlertsResponse = await response.json()
-      setAlerts(data.alerts || data.items || data || [])
+      setAlerts(data.alerts  || data || [])
     } catch (error) {
       console.error('Error fetching critical alerts:', error)
     } finally {

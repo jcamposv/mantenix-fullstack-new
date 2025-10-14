@@ -53,8 +53,6 @@ export function useUserRole() {
     }
   }
 
-  console.log(userRole, 'user role')
-
   return {
     ...userRole,
     loading: loading || isLoading

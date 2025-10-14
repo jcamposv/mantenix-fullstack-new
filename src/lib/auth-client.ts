@@ -54,7 +54,6 @@ export function useAuth() {
   // Get user from actual session structure and cast to ExtendedUser
   const enhancedUser = (session.data?.user as ExtendedUser) || null
 
-  console.log('Session data:', session)
   
   return {
     user: enhancedUser,

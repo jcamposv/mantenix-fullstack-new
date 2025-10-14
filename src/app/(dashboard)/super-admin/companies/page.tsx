@@ -1,18 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Edit, MoreHorizontal, Trash2 } from "lucide-react"
+import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
+import { useTableData } from "@/components/hooks/use-table-data"
+import { toast } from "sonner"
 
 interface Company {
   id: string
@@ -27,113 +21,106 @@ interface Company {
   }
 }
 
-const columns: ColumnDef<Company>[] = [
-  {
-    accessorKey: "name",
-    header: "Company Name",
-    cell: ({ row }) => {
-      const company = row.original
-      return (
-        <div className="flex items-center space-x-2">
-          {company.logo && (
-            <img 
-              src={company.logo} 
-              alt={company.name} 
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          )}
-          <div>
-            <div className="font-medium">{company.name}</div>
-            <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.ai</div>
-          </div>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "tier",
-    header: "Tier",
-    cell: ({ row }) => {
-      const tier = row.getValue("tier") as string
-      return (
-        <Badge variant={tier === "ENTERPRISE" ? "default" : tier === "PROFESSIONAL" ? "secondary" : "outline"}>
-          {tier}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "_count.users",
-    header: "Users",
-    cell: ({ row }) => {
-      return <div className="text-center">{row.original._count.users}</div>
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Created",
-    cell: ({ row }) => {
-      return new Date(row.getValue("createdAt")).toLocaleDateString()
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const company = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => console.log("Edit", company.id)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => console.log("Delete", company.id)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
-  },
-]
-
 export default function CompaniesPage() {
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { data: companies, loading, refetch } = useTableData<Company>({
+    endpoint: '/api/admin/companies',
+    transform: (data) => data.companies || data.items || data || []
+  })
 
-  useEffect(() => {
-    fetchCompanies()
-  }, [])
+  const handleEdit = (companyId: string) => {
+    router.push(`/super-admin/companies/${companyId}/edit`)
+  }
 
-  const fetchCompanies = async () => {
-    try {
-      const response = await fetch('/api/admin/companies')
-      if (response.ok) {
-        const data = await response.json()
-        setCompanies(data.companies || [])
+  const handleDelete = async (company: Company) => {
+    if (confirm(`¿Está seguro que desea desactivar "${company.name}"?`)) {
+      try {
+        const response = await fetch(`/api/super-admin/companies/${company.id}`, {
+          method: 'DELETE'
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          toast.success(result.message || 'Empresa desactivada exitosamente')
+          refetch()
+        } else {
+          const error = await response.json()
+          toast.error(error.error || 'Error al desactivar la empresa')
+        }
+      } catch (error) {
+        console.error('Error deleting company:', error)
+        toast.error('Error al desactivar la empresa')
       }
-    } catch (error) {
-      console.error('Error fetching companies:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleAddCompany = () => {
     router.push("/super-admin/companies/new")
   }
+
+  const columns: ColumnDef<Company>[] = [
+    {
+      accessorKey: "name",
+      header: "Company Name",
+      cell: ({ row }) => {
+        const company = row.original
+        return (
+          <div className="flex items-center space-x-2">
+            {company.logo && (
+              <img 
+                src={company.logo} 
+                alt={company.name} 
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            )}
+            <div>
+              <div className="font-medium">{company.name}</div>
+              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.ai</div>
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "tier",
+      header: "Tier",
+      cell: ({ row }) => {
+        const tier = row.getValue("tier") as string
+        return (
+          <Badge variant={tier === "ENTERPRISE" ? "default" : tier === "PROFESSIONAL" ? "secondary" : "outline"}>
+            {tier}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "_count.users",
+      header: "Users",
+      cell: ({ row }) => {
+        return <div className="text-center">{row.original._count.users}</div>
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Created",
+      cell: ({ row }) => {
+        return new Date(row.getValue("createdAt")).toLocaleDateString()
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const company = row.original
+
+        return (
+          <TableActions actions={[
+            createEditAction(() => handleEdit(company.id)),
+            createDeleteAction(() => handleDelete(company))
+          ]} />
+        )
+      },
+    },
+  ]
 
   return (
     <div className="container mx-auto py-6">

@@ -4,12 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { AdminCompanyUserForm } from "@/components/forms/admin-company-user-form"
 import { toast } from "sonner"
+import type { AdminUserFormData } from "@/schemas/admin-user"
 
 export default function AdminCompanyInviteUserPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: AdminUserFormData) => {
     setLoading(true)
     try {
       // Send invitation instead of creating user directly

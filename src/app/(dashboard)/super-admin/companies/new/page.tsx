@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CompanyForm } from "@/components/forms/company/company-form"
+import type { CompanySubmitData } from "@/schemas/company"
 
 export default function NewCompanyPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: CompanySubmitData) => {
     setLoading(true)
     try {
       const response = await fetch('/api/admin/companies', {
