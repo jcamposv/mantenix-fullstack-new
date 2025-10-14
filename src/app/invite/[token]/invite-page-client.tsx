@@ -62,6 +62,7 @@ export function InvitePageClient({ initialCompanyBranding }: InvitePageClientPro
         const errorData = await response.json()
         setError(errorData.error || "Invalid invitation")
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError("Failed to verify invitation")
     } finally {
