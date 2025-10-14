@@ -9,7 +9,7 @@
  * - MFA setup for admin users (Better Auth 2FA)
  */
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Role } from '@prisma/client'
 import { auth } from '../src/lib/auth'
 
 const prisma = new PrismaClient()
@@ -42,7 +42,7 @@ async function createUserViaAPI(email: string, password: string, name: string, r
         where: { id: result.user.id },
         data: {
           emailVerified: true,
-          role: role as any,
+          role: role as Role,
           companyId,
           timezone: "UTC",
           locale: "es",
