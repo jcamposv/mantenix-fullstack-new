@@ -75,6 +75,12 @@ enum AlertStatus {
   CLOSED      // Cerrada y confirmada
 }
 
+enum AssetStatus {
+  OPERATIVO              // Activo en funcionamiento normal
+  EN_MANTENIMIENTO      // En proceso de mantenimiento
+  FUERA_DE_SERVICIO     // No disponible para uso
+}
+
 // ============================================================================
 // BETTER AUTH CORE TABLES (with extensions)
 // ============================================================================
@@ -123,6 +129,9 @@ model User {
   alertsAssigned Alert[] @relation("AlertAssignee")
   alertsResolved Alert[] @relation("AlertResolver")
   alertNotifications AlertNotification[]
+  
+  // Asset relations - Comentado, responsabilidad movida a WorkOrder
+  // assetsResponsible Asset[] @relation("AssetResponsable")
 
   @@map("user")
 }
@@ -271,9 +280,58 @@ model Site {
   // Alerts for this site
   alerts          Alert[]
   
+  // Assets in this site
+  assets          Asset[]
+  
   @@index([clientCompanyId])
   @@index([isActive])
   @@map("sites")
+}
+
+model Asset {
+  id                     String      @id @default(cuid())
+  name                   String      // Asset descriptive name
+  code                   String      // Internal code or serial number
+  description            String?     // Asset details, usage, or technical information
+  location               String      // Location within the site
+  images                 String[]    @default([]) // Array of image URLs
+  registrationDate       DateTime    @default(now()) // Date when the asset was registered
+  status                 AssetStatus @default(OPERATIVO) // Current asset status
+  
+  // Optional technical fields
+  manufacturer           String?     // Asset brand or manufacturer
+  model                  String?     // Model or technical reference
+  serialNumber           String?     // Physical serial number
+  purchaseDate           DateTime?   // Acquisition date
+  estimatedLifespan      Int?        // Estimated lifespan in years
+  // lastRevision         DateTime?   // Last maintenance performed - Moved to WorkOrder
+  // nextMaintenance      DateTime?   // Next suggested preventive maintenance date - Moved to WorkOrder
+  category               String?     // Asset type (vehicle, machinery, tool, etc.)
+  customFields           Json?       // Custom fields per company
+  
+  // Status control
+  isActive               Boolean     @default(true)
+  deletedAt              DateTime?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  
+  // Relations
+  siteId                 String      // Relation to the site where it's located
+  site                   Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  // responsibleId        String?     // Responsible user or assigned technician - Moved to WorkOrder
+  // responsible          User?       @relation("AssetResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  
+  // Work orders related to this asset (for future implementation)
+  // workOrders           WorkOrder[]
+  
+  @@unique([code, siteId]) // Code must be unique per site
+  @@index([siteId])
+  @@index([status])
+  @@index([category])
+  // @@index([responsibleId])   // Commented - Moved to WorkOrder
+  @@index([isActive])
+  // @@index([nextMaintenance]) // Commented - Moved to WorkOrder
+  @@map("assets")
 }
 
 model AuditLog {

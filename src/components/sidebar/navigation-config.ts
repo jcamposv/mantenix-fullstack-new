@@ -12,6 +12,7 @@ import {
   SquareTerminal,
   Users,
   Bell,
+  Package,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -95,6 +96,12 @@ export const ADMIN_NAV_ITEMS = [
     url: "/admin/sites",
     icon: MapPin,
     role: "ADMIN_EMPRESA" // Only company admins can see sites
+  },
+  {
+    name: "Activos",
+    url: "/admin/assets",
+    icon: Package,
+    role: "ADMIN_EMPRESA" // Only company admins can see assets
   },
   {
     name: "Usuarios",
