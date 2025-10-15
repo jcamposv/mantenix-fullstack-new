@@ -86,22 +86,24 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
-    name: "Compañías Cliente",
+    name: "Clientes",
     url: "/admin/client-companies", 
     icon: Building2,
-    role: "ADMIN_EMPRESA" // Only company admins can see client companies
-  },
-  {
-    name: "Sites (Sedes)",
-    url: "/admin/sites",
-    icon: MapPin,
-    role: "ADMIN_EMPRESA" // Only company admins can see sites
-  },
-  {
-    name: "Activos",
-    url: "/admin/assets",
-    icon: Package,
-    role: "ADMIN_EMPRESA" // Only company admins can see assets
+    role: "ADMIN_EMPRESA", // Only company admins can see client companies
+    items: [
+      {
+        title: "Clientes",
+        url: "/admin/client-companies",
+      },
+      {
+        title: "Sedes",
+        url: "/admin/sites",
+      },
+      {
+        title: "Activos",
+        url: "/admin/assets",
+      },
+    ],
   },
   {
     name: "Usuarios",
