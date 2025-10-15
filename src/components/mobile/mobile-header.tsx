@@ -18,8 +18,13 @@ import { Menu, AlertTriangle, LogOut, Building2 } from "lucide-react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
+import type { CompanyBranding } from "@/types/branding"
 
-export function MobileHeader() {
+interface MobileHeaderProps {
+  companyBranding?: CompanyBranding | null
+}
+
+export function MobileHeader({ companyBranding }: MobileHeaderProps) {
   const { user } = useCurrentUser()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
@@ -45,26 +50,37 @@ export function MobileHeader() {
 
   if (!user) return null
 
+  // Determine logo and company name from branding (like in dashboard)
+  const displayLogo = companyBranding?.logo || user.company?.logo
+  const hasCustomBranding = !!(companyBranding?.logo)
+  const companyName = companyBranding?.name || user.company?.name || "Mantenix"
+
   return (
     <header className="bg-background p-4 ">
       <div className="flex items-center justify-between">
         {/* Logo y título */}
         <div className="flex items-center gap-3">
-          {user.company?.logo ? (
-            <div className="relative w-14 h-14">
+          {displayLogo ? (
+            <div className="relative w-12 h-12">
               <Image
-                src={user.company.logo}
-                alt={user.company.name}
+                src={displayLogo}
+                alt={`${companyName} logo`}
                 fill
                 className="object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = "/images/mantenix-logo-black.svg"
+                }}
               />
             </div>
           ) : (
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-primary-foreground" />
+            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-primary-foreground" />
             </div>
           )}
           <div>
+            <h1 className="font-semibold text-foreground">
+              {companyName}
+            </h1>
             {user.site?.name && (
               <p className="text-sm text-muted-foreground">{user.site.name}</p>
             )}
@@ -104,7 +120,7 @@ export function MobileHeader() {
                   </div>
                 </SheetTitle>
                 <SheetDescription>
-                  {user.company?.name}
+                  {companyName}
                   {user.site?.name && ` • ${user.site.name}`}
                 </SheetDescription>
               </SheetHeader>
