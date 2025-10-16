@@ -13,6 +13,7 @@ import {
   Users,
   Bell,
   Package,
+  FileTemplate,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -59,6 +60,10 @@ export const BASE_NAV_ITEMS = [
         title: "Crear Orden",
         url: "/work-orders/new",
       },
+      {
+        title: "Templates",
+        url: "/admin/work-order-templates",
+      },
     ],
   },
   {
@@ -102,6 +107,10 @@ export const ADMIN_NAV_ITEMS = [
       {
         title: "Activos",
         url: "/admin/assets",
+      },
+      {
+        title: "Templates OT",
+        url: "/admin/work-order-templates",
       },
     ],
   },

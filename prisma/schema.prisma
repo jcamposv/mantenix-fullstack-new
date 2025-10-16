@@ -132,6 +132,9 @@ model User {
   
   // Asset relations - Comentado, responsabilidad movida a WorkOrder
   // assetsResponsible Asset[] @relation("AssetResponsable")
+  
+  // Work Order Template relations
+  workOrderTemplatesCreated WorkOrderTemplate[] @relation("WorkOrderTemplateCreator")
 
   @@map("user")
 }
@@ -210,6 +213,7 @@ model Company {
   securityEvents  SecurityEvent[]
   invitations     UserInvitation[]
   clientCompanies ClientCompany[]
+  workOrderTemplates WorkOrderTemplate[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -513,4 +517,122 @@ model AlertNotification {
   @@index([status])
   @@index([type])
   @@map("alert_notifications")
+}
+
+// ============================================================================
+// WORK ORDER TEMPLATES SYSTEM
+// ============================================================================
+
+enum WorkOrderTemplateStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum WorkOrderTemplatePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CustomFieldType {
+  TEXT           // Input de texto simple
+  TEXTAREA       // Área de texto multilinea
+  NUMBER         // Input numérico
+  SELECT         // Select con opciones predefinidas
+  RADIO          // Radio buttons
+  CHECKBOX       // Checkbox individual
+  CHECKLIST      // Lista de checkboxes (instrucciones)
+  DATE           // Selector de fecha
+  TIME           // Selector de hora
+  DATETIME       // Selector de fecha y hora
+  IMAGE_BEFORE   // Campo para imágenes antes
+  IMAGE_AFTER    // Campo para imágenes después
+  VIDEO_BEFORE   // Campo para videos antes
+  VIDEO_AFTER    // Campo para videos después
+  FILE           // Campo para archivos generales
+}
+
+model WorkOrderTemplate {
+  id          String                   @id @default(cuid())
+  name        String                   // Nombre del template
+  description String?                  // Descripción del template
+  category    String?                  // Categoría del template (Preventivo, Correctivo, etc.)
+  priority    WorkOrderTemplatePriority @default(MEDIUM) // Prioridad por defecto
+  status      WorkOrderTemplateStatus  @default(ACTIVE) // Estado del template
+  
+  // Campos estimados por defecto
+  estimatedDuration    Int?            // Duración estimada en minutos
+  estimatedCost        Float?          // Costo estimado
+  
+  // Configuración de asignación por defecto
+  assignmentConfig    Json?           // Configuración de roles que deben ser asignados
+  // Estructura ejemplo:
+  // {
+  //   "requiredRoles": ["TECNICO", "SUPERVISOR"],
+  //   "optionalRoles": ["ADMIN_EMPRESA"],
+  //   "autoAssign": true, // Si se debe auto-asignar basado en disponibilidad
+  //   "requiresApproval": true // Si requiere aprobación del supervisor
+  // }
+  
+  // Instrucciones y procedimientos base
+  instructions         String?         // Instrucciones generales
+  safetyNotes         String?         // Notas de seguridad
+  tools               String[]        @default([]) // Array de herramientas necesarias
+  materials           String[]        @default([]) // Array de materiales necesarios
+  
+  // Campos personalizados dinámicos - Estructura JSON que define los campos
+  customFields        Json?           // Configuración de campos personalizados
+  // Estructura ejemplo:
+  // {
+  //   "fields": [
+  //     {
+  //       "id": "checklist_1",
+  //       "type": "CHECKLIST",
+  //       "label": "Pasos de mantenimiento",
+  //       "required": true,
+  //       "options": ["Revisar aceite", "Cambiar filtro", "Limpiar componentes"],
+  //       "order": 1
+  //     },
+  //     {
+  //       "id": "condition_select",
+  //       "type": "SELECT",
+  //       "label": "Condición del equipo",
+  //       "required": true,
+  //       "options": ["Excelente", "Bueno", "Regular", "Malo"],
+  //       "order": 2
+  //     },
+  //     {
+  //       "id": "images_before",
+  //       "type": "IMAGE_BEFORE",
+  //       "label": "Fotos antes del mantenimiento",
+  //       "required": true,
+  //       "order": 3
+  //     }
+  //   ]
+  // }
+  
+  // Control de acceso y propiedad
+  companyId           String          // Empresa propietaria del template
+  createdBy           String          // Usuario que creó el template
+  
+  // Timestamps
+  isActive            Boolean         @default(true)
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  // Relations
+  company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator             User            @relation("WorkOrderTemplateCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  
+  // Future relations with work orders
+  // workOrders          WorkOrder[]     @relation("WorkOrderFromTemplate")
+  
+  @@index([companyId])
+  @@index([status])
+  @@index([category])
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("work_order_templates")
 }

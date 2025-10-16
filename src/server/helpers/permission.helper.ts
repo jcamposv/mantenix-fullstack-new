@@ -46,7 +46,11 @@ export class PermissionHelper {
     CREATE_ASSET: 'create_asset',
     UPDATE_ASSET: 'update_asset',
     DELETE_ASSET: 'delete_asset',
-    VIEW_ASSETS: 'view_assets'
+    VIEW_ASSETS: 'view_assets',
+    CREATE_WORK_ORDER_TEMPLATE: 'create_work_order_template',
+    UPDATE_WORK_ORDER_TEMPLATE: 'update_work_order_template',
+    DELETE_WORK_ORDER_TEMPLATE: 'delete_work_order_template',
+    VIEW_WORK_ORDER_TEMPLATES: 'view_work_order_templates'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -75,7 +79,11 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      this.PERMISSIONS.CREATE_WORK_ORDER_TEMPLATE,
+      this.PERMISSIONS.UPDATE_WORK_ORDER_TEMPLATE,
+      this.PERMISSIONS.DELETE_WORK_ORDER_TEMPLATE,
+      this.PERMISSIONS.VIEW_WORK_ORDER_TEMPLATES
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -98,7 +106,11 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      this.PERMISSIONS.CREATE_WORK_ORDER_TEMPLATE,
+      this.PERMISSIONS.UPDATE_WORK_ORDER_TEMPLATE,
+      this.PERMISSIONS.DELETE_WORK_ORDER_TEMPLATE,
+      this.PERMISSIONS.VIEW_WORK_ORDER_TEMPLATES
     ],
     [this.ROLES.CLIENTE_ADMIN_GENERAL]: [
       this.PERMISSIONS.CREATE_ALERT,
