@@ -3,43 +3,13 @@
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { FileText, User, Calendar, Settings } from "lucide-react"
+import { User, Calendar, Settings } from "lucide-react"
 import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
 
-const getPriorityBadgeVariant = (priority: string) => {
-  switch (priority) {
-    case "LOW":
-      return "secondary"
-    case "MEDIUM":
-      return "default"
-    case "HIGH":
-      return "destructive"
-    case "URGENT":
-      return "destructive"
-    default:
-      return "outline"
-  }
-}
-
-const getPriorityLabel = (priority: string) => {
-  switch (priority) {
-    case "LOW":
-      return "Baja"
-    case "MEDIUM":
-      return "Media"
-    case "HIGH":
-      return "Alta"
-    case "URGENT":
-      return "Urgente"
-    default:
-      return priority
-  }
-}
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
@@ -121,19 +91,7 @@ export default function WorkOrderTemplatesPage() {
             )}
           </div>
         )
-      },
-    },
-    {
-      accessorKey: "priority",
-      header: "Prioridad",
-      cell: ({ row }) => {
-        const priority = row.getValue("priority") as string
-        return (
-          <Badge variant={getPriorityBadgeVariant(priority)}>
-            {getPriorityLabel(priority)}
-          </Badge>
-        )
-      },
+      }
     },
     {
       accessorKey: "status",
@@ -174,32 +132,7 @@ export default function WorkOrderTemplatesPage() {
           style: 'currency',
           currency: 'CRC'
         }).format(cost)
-      },
-    },
-    {
-      accessorKey: "assignmentConfig",
-      header: "Asignación",
-      cell: ({ row }) => {
-        const template = row.original
-        const config = template.assignmentConfig
-        
-        if (!config?.requiredRoles?.length) {
-          return <span className="text-muted-foreground">-</span>
-        }
-        
-        return (
-          <div className="space-y-1">
-            <div className="text-sm">
-              {config.requiredRoles.length} rol(es) requerido(s)
-            </div>
-            {config.requiresApproval && (
-              <div className="text-xs text-muted-foreground">
-                Requiere aprobación
-              </div>
-            )}
-          </div>
-        )
-      },
+      }
     },
     {
       accessorKey: "customFields",

@@ -528,13 +528,6 @@ enum WorkOrderTemplateStatus {
   INACTIVE
 }
 
-enum WorkOrderTemplatePriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
 enum CustomFieldType {
   TEXT           // Input de texto simple
   TEXTAREA       // Área de texto multilinea
@@ -558,22 +551,11 @@ model WorkOrderTemplate {
   name        String                   // Nombre del template
   description String?                  // Descripción del template
   category    String?                  // Categoría del template (Preventivo, Correctivo, etc.)
-  priority    WorkOrderTemplatePriority @default(MEDIUM) // Prioridad por defecto
   status      WorkOrderTemplateStatus  @default(ACTIVE) // Estado del template
   
   // Campos estimados por defecto
   estimatedDuration    Int?            // Duración estimada en minutos
   estimatedCost        Float?          // Costo estimado
-  
-  // Configuración de asignación por defecto
-  assignmentConfig    Json?           // Configuración de roles que deben ser asignados
-  // Estructura ejemplo:
-  // {
-  //   "requiredRoles": ["TECNICO", "SUPERVISOR"],
-  //   "optionalRoles": ["ADMIN_EMPRESA"],
-  //   "autoAssign": true, // Si se debe auto-asignar basado en disponibilidad
-  //   "requiresApproval": true // Si requiere aprobación del supervisor
-  // }
   
   // Instrucciones y procedimientos base
   instructions         String?         // Instrucciones generales
