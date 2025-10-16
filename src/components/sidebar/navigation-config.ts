@@ -6,14 +6,11 @@
 import {
   Bot,
   Building2,
-  MapPin,
   PieChart,
   Settings2,
   SquareTerminal,
   Users,
   Bell,
-  Package,
-  FileTemplate,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
