@@ -122,12 +122,6 @@ export default function EditWorkOrderTemplatePage({ params }: EditWorkOrderTempl
     description: template.description,
     category: template.category,
     status: template.status,
-    estimatedDuration: template.estimatedDuration,
-    estimatedCost: template.estimatedCost,
-    instructions: template.instructions,
-    safetyNotes: template.safetyNotes,
-    tools: template.tools,
-    materials: template.materials,
     customFields: template.customFields
   } : undefined
 

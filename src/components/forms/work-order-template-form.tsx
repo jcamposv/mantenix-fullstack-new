@@ -12,9 +12,6 @@ import {
   type WorkOrderTemplateFormData
 } from "@/schemas/work-order-template"
 import { TemplateBasicInfo } from "./work-order-template/template-basic-info"
-import { TemplateEstimations } from "./work-order-template/template-estimations"
-import { TemplateInstructions } from "./work-order-template/template-instructions"
-import { TemplateResources } from "./work-order-template/template-resources"
 import { TemplateCustomFields } from "./work-order-template/template-custom-fields"
 
 interface WorkOrderTemplateFormProps {
@@ -39,12 +36,6 @@ export function WorkOrderTemplateForm({
       description: initialData?.description || null,
       category: initialData?.category || null,
       status: initialData?.status || "ACTIVE",
-      estimatedDuration: initialData?.estimatedDuration || null,
-      estimatedCost: initialData?.estimatedCost || null,
-      instructions: initialData?.instructions || null,
-      safetyNotes: initialData?.safetyNotes || null,
-      tools: initialData?.tools || [],
-      materials: initialData?.materials || [],
       customFields: initialData?.customFields || null
     }
   })
@@ -84,37 +75,6 @@ export function WorkOrderTemplateForm({
             </CardHeader>
             <CardContent className="space-y-4">
               <TemplateBasicInfo form={form} />
-            </CardContent>
-          </Card>
-
-          {/* Estimaciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Estimaciones</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <TemplateEstimations form={form} />
-            </CardContent>
-          </Card>
-
-
-          {/* Instrucciones y Seguridad */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Instrucciones y Seguridad</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <TemplateInstructions form={form} />
-            </CardContent>
-          </Card>
-
-          {/* Herramientas y Materiales */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recursos Necesarios</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <TemplateResources form={form} />
             </CardContent>
           </Card>
 

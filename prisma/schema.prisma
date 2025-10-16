@@ -553,16 +553,6 @@ model WorkOrderTemplate {
   category    String?                  // Categoría del template (Preventivo, Correctivo, etc.)
   status      WorkOrderTemplateStatus  @default(ACTIVE) // Estado del template
   
-  // Campos estimados por defecto
-  estimatedDuration    Int?            // Duración estimada en minutos
-  estimatedCost        Float?          // Costo estimado
-  
-  // Instrucciones y procedimientos base
-  instructions         String?         // Instrucciones generales
-  safetyNotes         String?         // Notas de seguridad
-  tools               String[]        @default([]) // Array de herramientas necesarias
-  materials           String[]        @default([]) // Array de materiales necesarios
-  
   // Campos personalizados dinámicos - Estructura JSON que define los campos
   customFields        Json?           // Configuración de campos personalizados
   // Estructura ejemplo:

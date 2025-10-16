@@ -106,35 +106,6 @@ export default function WorkOrderTemplatesPage() {
       },
     },
     {
-      accessorKey: "estimatedDuration",
-      header: "Duración Est.",
-      cell: ({ row }) => {
-        const duration = row.getValue("estimatedDuration") as number | null
-        if (!duration) return <span className="text-muted-foreground">-</span>
-        
-        const hours = Math.floor(duration / 60)
-        const minutes = duration % 60
-        
-        if (hours > 0) {
-          return `${hours}h ${minutes > 0 ? `${minutes}m` : ''}`
-        }
-        return `${minutes}m`
-      },
-    },
-    {
-      accessorKey: "estimatedCost",
-      header: "Costo Est.",
-      cell: ({ row }) => {
-        const cost = row.getValue("estimatedCost") as number | null
-        if (!cost) return <span className="text-muted-foreground">-</span>
-        
-        return new Intl.NumberFormat('es-CR', {
-          style: 'currency',
-          currency: 'CRC'
-        }).format(cost)
-      }
-    },
-    {
       accessorKey: "customFields",
       header: "Campos",
       cell: ({ row }) => {

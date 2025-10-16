@@ -2,7 +2,6 @@ import type { Role } from "@prisma/client"
 
 // Enum types from Prisma
 export type WorkOrderTemplateStatus = "ACTIVE" | "INACTIVE"
-export type WorkOrderTemplatePriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
 
 // Custom field types for dynamic form building
 export type CustomFieldType =
@@ -22,13 +21,6 @@ export type CustomFieldType =
   | "VIDEO_AFTER"    // Campo para videos después
   | "FILE"           // Campo para archivos generales
 
-// Configuration for assignment roles
-export interface AssignmentConfig {
-  requiredRoles: Role[]         // Roles que deben ser asignados obligatoriamente
-  optionalRoles?: Role[]        // Roles que pueden ser asignados opcionalmente
-  autoAssign?: boolean          // Si se debe auto-asignar basado en disponibilidad
-  requiresApproval?: boolean    // Si requiere aprobación del supervisor
-}
 
 // Custom field configuration for dynamic forms
 export interface CustomField {
@@ -61,15 +53,7 @@ export interface WorkOrderTemplate {
   name: string
   description: string | null
   category: string | null
-  priority: WorkOrderTemplatePriority
   status: WorkOrderTemplateStatus
-  estimatedDuration: number | null
-  estimatedCost: number | null
-  assignmentConfig: AssignmentConfig | null
-  instructions: string | null
-  safetyNotes: string | null
-  tools: string[]
-  materials: string[]
   customFields: CustomFieldsConfig | null
   companyId: string
   createdBy: string
@@ -102,15 +86,7 @@ export interface CreateWorkOrderTemplateData {
   name: string
   description?: string
   category?: string
-  priority?: WorkOrderTemplatePriority
   status?: WorkOrderTemplateStatus
-  estimatedDuration?: number
-  estimatedCost?: number
-  assignmentConfig?: AssignmentConfig
-  instructions?: string
-  safetyNotes?: string
-  tools?: string[]
-  materials?: string[]
   customFields?: CustomFieldsConfig
 }
 
@@ -119,15 +95,7 @@ export interface UpdateWorkOrderTemplateData {
   name?: string
   description?: string
   category?: string
-  priority?: WorkOrderTemplatePriority
   status?: WorkOrderTemplateStatus
-  estimatedDuration?: number
-  estimatedCost?: number
-  assignmentConfig?: AssignmentConfig
-  instructions?: string
-  safetyNotes?: string
-  tools?: string[]
-  materials?: string[]
   customFields?: CustomFieldsConfig
 }
 
@@ -135,7 +103,6 @@ export interface UpdateWorkOrderTemplateData {
 export interface WorkOrderTemplateFilters {
   category?: string
   status?: WorkOrderTemplateStatus
-  priority?: WorkOrderTemplatePriority
   search?: string
   isActive?: boolean
   createdBy?: string

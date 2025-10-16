@@ -84,12 +84,6 @@ export const workOrderTemplateSchema = z.object({
   description: z.string().nullable().optional(),
   category: z.string().nullable().optional(),
   status: workOrderTemplateStatusSchema.optional(),
-  estimatedDuration: z.number().min(1, "La duración debe ser mayor a 0").nullable().optional(),
-  estimatedCost: z.number().min(0, "El costo debe ser mayor o igual a 0").nullable().optional(),
-  instructions: z.string().nullable().optional(),
-  safetyNotes: z.string().nullable().optional(),
-  tools: z.array(z.string()).optional(),
-  materials: z.array(z.string()).optional(),
   customFields: customFieldsConfigSchema.nullable().optional()
 })
 

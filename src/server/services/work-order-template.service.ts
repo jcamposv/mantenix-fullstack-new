@@ -41,15 +41,13 @@ export class WorkOrderTemplateService {
     if (filters) {
       if (filters.category) whereClause.category = filters.category
       if (filters.status) whereClause.status = filters.status
-      if (filters.priority) whereClause.priority = filters.priority
       if (filters.createdBy) whereClause.createdBy = filters.createdBy
       if (filters.isActive !== undefined) whereClause.isActive = filters.isActive
       if (filters.search) {
         whereClause.OR = [
           { name: { contains: filters.search, mode: 'insensitive' } },
           { description: { contains: filters.search, mode: 'insensitive' } },
-          { category: { contains: filters.search, mode: 'insensitive' } },
-          { instructions: { contains: filters.search, mode: 'insensitive' } }
+          { category: { contains: filters.search, mode: 'insensitive' } }
         ]
       }
     }
@@ -136,15 +134,7 @@ export class WorkOrderTemplateService {
       name: templateData.name,
       description: templateData.description,
       category: templateData.category,
-      priority: templateData.priority || "MEDIUM",
       status: templateData.status || "ACTIVE",
-      estimatedDuration: templateData.estimatedDuration,
-      estimatedCost: templateData.estimatedCost,
-      assignmentConfig: (templateData.assignmentConfig ?? undefined) as Prisma.InputJsonValue | undefined,
-      instructions: templateData.instructions,
-      safetyNotes: templateData.safetyNotes,
-      tools: templateData.tools || [],
-      materials: templateData.materials || [],
       customFields: (templateData.customFields ?? undefined) as Prisma.InputJsonValue | undefined,
       company: { connect: { id: session.user.companyId } },
       creator: { connect: { id: session.user.id } }
@@ -189,15 +179,7 @@ export class WorkOrderTemplateService {
       name: templateData.name,
       description: templateData.description,
       category: templateData.category,
-      priority: templateData.priority,
       status: templateData.status,
-      estimatedDuration: templateData.estimatedDuration,
-      estimatedCost: templateData.estimatedCost,
-      assignmentConfig: (templateData.assignmentConfig ?? undefined) as Prisma.InputJsonValue | undefined,
-      instructions: templateData.instructions,
-      safetyNotes: templateData.safetyNotes,
-      tools: templateData.tools,
-      materials: templateData.materials,
       customFields: (templateData.customFields ?? undefined) as Prisma.InputJsonValue | undefined,
       updatedAt: new Date()
     }
