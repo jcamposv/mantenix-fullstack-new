@@ -55,7 +55,7 @@ export const BASE_NAV_ITEMS = [
       },
       {
         title: "Crear Orden",
-        url: "/work-orders/new",
+        url: "/work-orders/new/select-template",
       },
       {
         title: "Templates",
@@ -112,13 +112,13 @@ export const ADMIN_NAV_ITEMS = [
     ],
   },
   {
-    name: "Usuarios",
+    name: "Usuarios del Sistema",
     url: "/super-admin/users", // Super admin uses super-admin route
     icon: Users,
     role: "SUPER_ADMIN"
   },
   {
-    name: "Usuarios",
+    name: "Usuarios de la Empresa",
     url: "/admin/users", // Company admin uses admin route
     icon: Users,
     role: "ADMIN_EMPRESA"
