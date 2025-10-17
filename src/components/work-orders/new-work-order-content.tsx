@@ -45,7 +45,8 @@ export function NewWorkOrderContent() {
   const [activeTab, setActiveTab] = useState("basic")
 
   const form = useForm<CreateWorkOrderData>({
-    resolver: zodResolver(createWorkOrderSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createWorkOrderSchema) as any,
     defaultValues: {
       title: "",
       description: "",
@@ -112,7 +113,7 @@ export function NewWorkOrderContent() {
     }
   }, [templateId, templates, form])
 
-  const handleSubmit = async (data: CreateWorkOrderData) => {
+  const handleSubmit = async (data: CreateWorkOrderData): Promise<void> => {
     try {
       setLoading(true)
 
@@ -195,17 +196,8 @@ export function NewWorkOrderContent() {
   }
 
   return (
-    <div className="container mx-auto py-6 max-w-4xl">
+    <div className=" mx-auto py-6">
       <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
-        </Button>
-        
         <div>
           <h1 className="text-2xl font-bold">Nueva Orden de Trabajo</h1>
           <p className="text-muted-foreground">
@@ -277,7 +269,7 @@ export function NewWorkOrderContent() {
                     onClick={() => setActiveTab("advanced")}
                     disabled={!isBasicFormValid()}
                   >
-                    Continuar
+                    Crear Orden de Trabajo
                   </Button>
                 </div>
               </TabsContent>

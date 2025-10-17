@@ -56,7 +56,7 @@ export function WorkOrderTemplateForm({
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           <p className="text-muted-foreground">
             {mode === "create" 
               ? "Configure un template para estandarizar órdenes de trabajo"
@@ -87,20 +87,8 @@ export function WorkOrderTemplateForm({
               <TemplateCustomFields form={form} />
             </CardContent>
           </Card>
-
-          {/* Acciones */}
-          <Card>
-            <CardContent className="pt-6">
-              <Separator className="mb-6" />
-              <div className="flex gap-4">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="min-w-[120px]"
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {submitLabel}
-                </Button>
+      
+          <div className="gap-4 flex justify-between">
                 <Button
                   type="button"
                   variant="outline"
@@ -109,9 +97,15 @@ export function WorkOrderTemplateForm({
                 >
                   Cancelar
                 </Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="min-w-[120px]"
+                >
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {submitLabel}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
         </form>
       </Form>
     </div>

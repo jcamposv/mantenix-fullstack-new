@@ -63,17 +63,8 @@ export default function WorkOrderDetailPage() {
   const customFieldValues = workOrder.customFieldValues as Record<string, unknown> || {}
 
   return (
-    <div className="container mx-auto py-6 max-w-4xl">
+    <div className="py-6">
       <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
-        </Button>
-        
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{workOrder.number}</h1>

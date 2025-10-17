@@ -37,7 +37,8 @@ export function WorkOrderForm({
   templates = []
 }: WorkOrderFormProps) {
   const internalForm = useForm<CreateWorkOrderData>({
-    resolver: zodResolver(createWorkOrderSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createWorkOrderSchema) as any,
     defaultValues: {
       title: initialData?.title || "",
       description: initialData?.description || "",

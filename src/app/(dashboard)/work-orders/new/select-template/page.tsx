@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, Calendar, Settings, ArrowLeft, FileText, Plus } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { User, Settings, ArrowLeft, FileText, Plus, Search, LayoutTemplate, Clock } from "lucide-react"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { TemplatePreviewModal } from "@/components/work-orders/template-preview-modal"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
@@ -35,10 +35,10 @@ const getStatusLabel = (status: string) => {
 }
 
 export default function SelectTemplatePage() {
-  console.log("SelectTemplatePage component loaded")
   const router = useRouter()
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplateWithRelations | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
   
   const { data: templates, loading } = useTableData<WorkOrderTemplateWithRelations>({
     endpoint: '/api/work-order-templates',
@@ -63,170 +63,194 @@ export default function SelectTemplatePage() {
     setSelectedTemplate(null)
   }
 
-  const columns: ColumnDef<WorkOrderTemplateWithRelations>[] = [
-    {
-      accessorKey: "name",
-      header: "Template",
-      cell: ({ row }) => {
-        const template = row.original
-        return (
-          <div className="space-y-1">
-            <div className="font-medium">{template.name}</div>
-            {template.description && (
-              <div className="text-sm text-muted-foreground line-clamp-2">
-                {template.description}
-              </div>
-            )}
-            {template.category && (
-              <div className="text-xs text-muted-foreground">
-                {template.category}
-              </div>
-            )}
-          </div>
-        )
-      }
-    },
-    {
-      accessorKey: "status",
-      header: "Estado",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string
-        return (
-          <Badge variant={getStatusBadgeVariant(status)}>
-            {getStatusLabel(status)}
-          </Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "customFields",
-      header: "Campos Personalizados",
-      cell: ({ row }) => {
-        const template = row.original
-        const fieldsCount = (template.customFields as { fields?: unknown[] })?.fields?.length || 0
-        
-        return (
-          <div className="space-y-1">
-            <div className="flex items-center">
-              <Settings className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="text-sm">
-                {fieldsCount} campo(s)
-              </span>
-            </div>
-            {fieldsCount > 0 && (
-              <div className="text-xs text-muted-foreground">
-                Campos personalizados configurados
-              </div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "creator",
-      header: "Creado por",
-      cell: ({ row }) => {
-        const template = row.original
-        return (
-          <div className="space-y-1">
-            <div className="flex items-center">
-              <User className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="text-sm">{template.creator?.name}</span>
-            </div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Calendar className="mr-1 h-3 w-3" />
-              {new Date(template.createdAt).toLocaleDateString()}
-            </div>
-          </div>
-        )
-      },
-    },
-    {
-      id: "actions",
-      header: "Acciones",
-      cell: ({ row }) => {
-        const template = row.original
-        return (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleViewTemplate(template)}
-            >
-              <FileText className="mr-1 h-3 w-3" />
-              Ver
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleSelectTemplate(template.id)}
-            >
-              <Plus className="mr-1 h-3 w-3" />
-              Usar
-            </Button>
-          </div>
-        )
-      },
-    },
-  ]
+  // Filter templates based on search term
+  const filteredTemplates = templates.filter(template =>
+    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.category?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const activeTemplates = filteredTemplates.filter(template => template.status === "ACTIVE")
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
-        </Button>
-        
+    <div className="container mx-auto py-6 max-w-7xl">
+      <div className="mb-6">      
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Seleccionar Template</h1>
-            <p className="text-muted-foreground">
-              Elige un template para crear tu orden de trabajo o continúa sin template
+            <h1 className="text-3xl font-bold tracking-tight">Seleccionar Template</h1>
+            <p className="text-muted-foreground mt-2">
+              Elige un template para acelerar la creación de tu orden de trabajo
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6">
-        {/* Quick action card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>¿Quieres crear sin template?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Puedes crear una orden de trabajo completamente personalizada sin usar ningún template.
-            </p>
-            <Button 
-              variant="outline" 
-              onClick={handleCreateWithoutTemplate}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Sin Template
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="space-y-8">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar templates por nombre, descripción o categoría..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-        {/* Templates table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Templates Disponibles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              columns={columns}
-              data={templates}
-              searchKey="name"
-              searchPlaceholder="Buscar templates..."
-              loading={loading}
-            />
-          </CardContent>
-        </Card>
+        {/* Templates grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-muted rounded"></div>
+                    <div className="h-3 bg-muted rounded w-2/3"></div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <div className="h-8 bg-muted rounded w-full"></div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div>
+            {activeTemplates.length === 0 ? (
+              <div className="text-center py-12">
+                <LayoutTemplate className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">
+                  {searchTerm ? "No se encontraron templates" : "No hay templates disponibles"}
+                </h3>
+                <p className="text-muted-foreground">
+                  {searchTerm 
+                    ? "Intenta con otros términos de búsqueda" 
+                    : "Los administradores pueden crear templates para acelerar la creación de órdenes"
+                  }
+                </p>
+                {searchTerm && (
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => setSearchTerm("")}
+                  >
+                    Limpiar búsqueda
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">
+                    Opciones Disponibles ({activeTemplates.length + 1})
+                  </h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Create without template option */}
+                  <Card className="border-dashed hover:border-solid transition-colors">
+                    <CardHeader>
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 bg-muted rounded-lg">
+                          <Plus className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">Crear sin Template</CardTitle>
+                          <CardDescription className="mt-1">
+                            Crea una orden de trabajo completamente personalizada desde cero
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardFooter>
+                      <Button onClick={handleCreateWithoutTemplate} className="w-full">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Crear Orden de Trabajo
+                      </Button>
+                    </CardFooter>
+                  </Card>
+
+                  {activeTemplates.map((template) => {
+                    const fieldsCount = (template.customFields as { fields?: unknown[] })?.fields?.length || 0
+                    
+                    return (
+                      <Card key={template.id} className="hover:shadow-md transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">{template.name}</CardTitle>
+                              {template.category && (
+                                <Badge variant="outline" className="mt-2">
+                                  {template.category}
+                                </Badge>
+                              )}
+                            </div>
+                            <Badge variant={getStatusBadgeVariant(template.status)}>
+                              {getStatusLabel(template.status)}
+                            </Badge>
+                          </div>
+                          {template.description && (
+                            <CardDescription className="line-clamp-2">
+                              {template.description}
+                            </CardDescription>
+                          )}
+                        </CardHeader>
+                        
+                        <CardContent>
+                          <div className="space-y-3">
+                            {/* Custom fields info */}
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>{fieldsCount} campo(s) personalizado(s)</span>
+                            </div>
+                            
+                            <Separator />
+                            
+                            {/* Creator and date */}
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <User className="mr-2 h-4 w-4" />
+                                <span>{template.creator?.name}</span>
+                              </div>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Clock className="mr-2 h-4 w-4" />
+                                <span>{new Date(template.createdAt).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                        
+                        <CardFooter>
+                          <div className="flex gap-2 w-full">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleViewTemplate(template)}
+                            >
+                              <FileText className="mr-2 h-4 w-4" />
+                              Vista Previa
+                            </Button>
+                            <Button
+                              className="flex-1"
+                              onClick={() => handleSelectTemplate(template.id)}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Usar Template
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Template Preview Modal */}
