@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PermissionHelper } from "@/server/helpers/permission.helper";  
 
 export async function middleware(request: NextRequest) {
   try {
@@ -32,7 +33,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Super admins can access any subdomain
+    // Role-based route protection
+    const pathname = request.nextUrl.pathname
+    const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, PermissionHelper.ROLES.SUPERVISOR, PermissionHelper.ROLES.CLIENTE_OPERARIO] as const
+    const dashboardOnlyRoles = [PermissionHelper.ROLES.SUPER_ADMIN, PermissionHelper.ROLES.ADMIN_EMPRESA, PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL, PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE] as const
+
+    // Super admins can access any subdomain and any route
     if (user.role === 'SUPER_ADMIN') {
       return NextResponse.next()
     }
@@ -48,6 +54,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(correctUrl))
     }
 
+    // Check if mobile-only user is trying to access dashboard routes
+    if ((mobileOnlyRoles as readonly string[]).includes(user.role) && !pathname.startsWith('/mobile')) {
+      return NextResponse.redirect(new URL("/mobile", request.url))
+    }
+
+    // Check if dashboard-only user is trying to access mobile routes
+    if ((dashboardOnlyRoles as readonly string[]).includes(user.role) && pathname.startsWith('/mobile')) {
+      return NextResponse.redirect(new URL("/", request.url))
+    }
+
     return NextResponse.next()
   } catch (error) {
     console.error('Middleware error:', error)
@@ -57,5 +73,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   runtime: "nodejs",
-  matcher: ["/", "/dashboard/:path*"],
+  matcher: [
+    "/", 
+    "/dashboard/:path*", 
+    "/admin/:path*", 
+    "/super-admin/:path*", 
+    "/work-orders/:path*", 
+    "/alerts/:path*", 
+    "/users/:path*", 
+    "/mobile/:path*"
+  ],
 }

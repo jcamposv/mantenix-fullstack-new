@@ -5,6 +5,7 @@ import { NotificationService } from "./notification.service"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { AlertFilters, PaginatedAlertsResponse, AlertWithRelations } from "@/types/alert.types"
 import type { CreateAlertInput, UpdateAlertInput } from "../../app/api/schemas/alert-schemas"
+import { PermissionHelper } from "../helpers/permission.helper"
 
 /**
  * Servicio de lógica de negocio para alertas
@@ -18,12 +19,12 @@ export class AlertService {
   static buildWhereClause(session: AuthenticatedSession, alertId?: string, filters?: AlertFilters): Prisma.AlertWhereInput {
     const whereClause: Prisma.AlertWhereInput = alertId ? { id: alertId } : {}
 
-    if (session.user.role === "SUPER_ADMIN") {
+    if (session.user.role === PermissionHelper.ROLES.SUPER_ADMIN) {
       // Super admin puede ver cualquier alerta
       if (filters?.siteId) {
         whereClause.siteId = filters.siteId
       }
-    } else if (session.user.role === "ADMIN_EMPRESA") {
+    } else if (session.user.role === PermissionHelper.ROLES.ADMIN_EMPRESA) {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
@@ -35,7 +36,7 @@ export class AlertService {
       if (filters?.siteId) {
         whereClause.siteId = filters.siteId
       }
-    } else if (session.user.role === "CLIENTE_ADMIN_GENERAL") {
+    } else if (session.user.role === PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL) {
       if (!session.user.clientCompanyId) {
         throw new Error("Usuario sin empresa cliente asociada")
       }
@@ -45,11 +46,23 @@ export class AlertService {
       if (filters?.siteId) {
         whereClause.siteId = filters.siteId
       }
-    } else if (["CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO", "TECNICO"].includes(session.user.role)) {
+    } else if (([PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE, PermissionHelper.ROLES.CLIENTE_OPERARIO] as readonly string[]).includes(session.user.role)) {
       if (!session.user.siteId) {
         throw new Error("Usuario sin sede asociada")
       }
       whereClause.siteId = session.user.siteId
+    } else if (([PermissionHelper.ROLES.TECNICO, PermissionHelper.ROLES.SUPERVISOR] as readonly string[]).includes(session.user.role)) {
+      if (!session.user.companyId) {
+        throw new Error("Usuario sin empresa asociada")
+      }
+      whereClause.site = {
+        clientCompany: {
+          tenantCompanyId: session.user.companyId
+        }
+      }
+      if (session.user.siteId) {
+        whereClause.siteId = session.user.siteId
+      }
     } else {
       throw new Error("Rol no autorizado para acceder a alertas")
     }
@@ -102,9 +115,9 @@ export class AlertService {
     // Determinar siteId basado en el rol del usuario
     let siteId = alertData.siteId
     
-    if (session.user.role === "CLIENTE_ADMIN_SEDE" || 
-        session.user.role === "CLIENTE_OPERARIO" || 
-        session.user.role === "TECNICO") {
+    if (([PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE, 
+      PermissionHelper.ROLES.CLIENTE_OPERARIO, 
+      PermissionHelper.ROLES.TECNICO] as readonly string[]).includes(session.user.role)) {
       if (!session.user.siteId) {
         throw new Error("Usuario sin sede asociada")
       }
