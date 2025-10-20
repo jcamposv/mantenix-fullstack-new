@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
-import { AddAssetForm } from "@/components/mobile/add-asset-form"
+import { AddAssetForm } from "@/components/forms/mobile/add-asset-form"
 import { 
   ArrowLeft, 
   Calendar, 
