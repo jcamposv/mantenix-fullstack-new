@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Camera, Video, Upload, Check } from "lucide-react"
+import { MediaField } from "@/components/forms/mobile/media-field"
 import type { CustomField } from "@/schemas/work-order-template"
 
 interface WorkOrderCustomFieldsProps {
@@ -187,93 +188,9 @@ export function WorkOrderCustomFields({
 
       case "IMAGE_BEFORE":
       case "IMAGE_AFTER":
-        return (
-          <div className="space-y-2">
-            {!readOnly && (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const input = document.createElement('input')
-                  input.type = 'file'
-                  input.accept = 'image/*'
-                  input.multiple = field.multiple ?? false
-                  input.capture = 'environment'
-                  input.onchange = (e) => {
-                    const target = e.target as HTMLInputElement
-                    handleFileChange(field.id, target.files)
-                  }
-                  input.click()
-                }}
-              >
-                <Camera className="mr-2 h-4 w-4" />
-                {field.type === "IMAGE_BEFORE" ? "Tomar Foto Antes" : "Tomar Foto Después"}
-              </Button>
-            )}
-            {mediaFiles[field.id] && (
-              <div className="grid grid-cols-2 gap-2">
-                {mediaFiles[field.id].map((file, index) => (
-                  <div key={index} className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`${field.type} ${index + 1}`}
-                      className="w-full h-20 object-cover rounded border"
-                    />
-                    <div className="absolute top-1 right-1 bg-green-600 text-white rounded-full p-1">
-                      <Check className="h-3 w-3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-
       case "VIDEO_BEFORE":
       case "VIDEO_AFTER":
-        return (
-          <div className="space-y-2">
-            {!readOnly && (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const input = document.createElement('input')
-                  input.type = 'file'
-                  input.accept = 'video/*'
-                  input.capture = 'environment'
-                  input.onchange = (e) => {
-                    const target = e.target as HTMLInputElement
-                    handleFileChange(field.id, target.files)
-                  }
-                  input.click()
-                }}
-              >
-                <Video className="mr-2 h-4 w-4" />
-                {field.type === "VIDEO_BEFORE" ? "Grabar Video Antes" : "Grabar Video Después"}
-              </Button>
-            )}
-            {mediaFiles[field.id] && (
-              <div className="space-y-2">
-                {mediaFiles[field.id].map((file, index) => (
-                  <div key={index} className="relative">
-                    <video
-                      src={URL.createObjectURL(file)}
-                      className="w-full h-32 object-cover rounded border"
-                      controls
-                    />
-                    <div className="absolute top-1 right-1 bg-green-600 text-white rounded-full p-1">
-                      <Check className="h-3 w-3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )
+        return <MediaField field={field} readOnly={readOnly} />
 
       case "FILE":
         return (
