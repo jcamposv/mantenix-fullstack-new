@@ -80,6 +80,7 @@ export interface WorkOrderWithRelations extends WorkOrder {
     code: string
     manufacturer: string | null
     model: string | null
+    location: string | null
   } | null
   template?: {
     id: string
@@ -185,7 +186,7 @@ export interface WorkOrderFilters {
   type?: WorkOrderType
   priority?: WorkOrderPriority
   status?: WorkOrderStatus
-  assignedToMe?: boolean
+  assignedToMe?: boolean | string
   createdByMe?: boolean
   scheduledDateFrom?: Date
   scheduledDateTo?: Date

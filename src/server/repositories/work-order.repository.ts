@@ -53,9 +53,12 @@ export class WorkOrderRepository {
 
       // Assignment filter
       if (filters.assignedToMe) {
-        whereClause.assignments = {
-          some: {
-            userId: filters.assignedToMe.toString() // This should be the actual user ID
+        const userId = typeof filters.assignedToMe === 'string' ? filters.assignedToMe : undefined
+        if (userId) {
+          whereClause.assignments = {
+            some: {
+              userId: userId
+            }
           }
         }
       }
@@ -211,7 +214,8 @@ export class WorkOrderRepository {
             name: true,
             code: true,
             manufacturer: true,
-            model: true
+            model: true,
+            location: true
           }
         },
         template: {
@@ -308,7 +312,8 @@ export class WorkOrderRepository {
             name: true,
             code: true,
             manufacturer: true,
-            model: true
+            model: true,
+            location: true
           }
         },
         template: {
@@ -404,7 +409,8 @@ export class WorkOrderRepository {
             name: true,
             code: true,
             manufacturer: true,
-            model: true
+            model: true,
+            location: true
           }
         },
         template: {
@@ -568,7 +574,7 @@ export class WorkOrderRepository {
     pagination?: { page: number; limit: number }
   ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
     return await this.findMany(
-      { ...filters, assignedToMe: true },
+      { ...filters, assignedToMe: userId },
       pagination,
       undefined // companyId will be applied through filters if needed
     )

@@ -103,6 +103,10 @@ export class WorkOrderService {
       }
     }
 
+    // Determine status based on assignments
+    const hasAssignments = workOrderData.assignedUserIds && workOrderData.assignedUserIds.length > 0
+    const defaultStatus = hasAssignments ? "ASSIGNED" : "DRAFT"
+
     // Prepare data for creation
     const createData: Prisma.WorkOrderCreateInput = {
       number,
@@ -110,7 +114,7 @@ export class WorkOrderService {
       description: workOrderData.description,
       type: workOrderData.type,
       priority: workOrderData.priority || "MEDIUM",
-      status: workOrderData.status || "DRAFT",
+      status: workOrderData.status || defaultStatus,
       scheduledDate: workOrderData.scheduledDate,
       estimatedDuration: workOrderData.estimatedDuration,
       estimatedCost: workOrderData.estimatedCost,

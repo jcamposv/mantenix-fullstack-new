@@ -5,14 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
 import { 
   workOrderTemplateSchema, 
   type WorkOrderTemplateFormData
 } from "@/schemas/work-order-template"
-import { TemplateBasicInfo } from "./work-order-template/template-basic-info"
-import { TemplateCustomFields } from "./work-order-template/template-custom-fields"
+import { TemplateBasicInfo } from "../../work-order-template/template-basic-info"
+import { TemplateCustomFields } from "../../work-order-template/template-custom-fields"
 
 interface WorkOrderTemplateFormProps {
   onSubmit: (data: WorkOrderTemplateFormData) => void

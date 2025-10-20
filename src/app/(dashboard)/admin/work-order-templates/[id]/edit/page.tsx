@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { WorkOrderTemplateForm } from "@/components/forms/work-order-template-form"
+import { WorkOrderTemplateForm } from "@/components/forms/mobile/work-order-complete/work-order-template-form"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
