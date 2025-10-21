@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
+import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 
 export default function WorkOrderDetailPage() {
@@ -297,21 +298,10 @@ export default function WorkOrderDetailPage() {
               <CardTitle>Campos Personalizados</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(customFieldValues).map(([key, value]) => (
-                  <div key={key}>
-                    <label className="text-sm font-medium capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
-                    </label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {typeof value === 'boolean' 
-                        ? (value ? 'Sí' : 'No')
-                        : value?.toString() || 'N/A'
-                      }
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <WorkOrderCustomFieldsDisplay
+                customFields={workOrder.template?.customFields}
+                customFieldValues={customFieldValues}
+              />
             </CardContent>
           </Card>
         )}

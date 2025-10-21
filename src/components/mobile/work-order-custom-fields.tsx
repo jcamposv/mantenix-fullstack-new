@@ -15,11 +15,13 @@ import type { CustomField } from "@/schemas/work-order-template"
 
 interface WorkOrderCustomFieldsProps {
   customFields?: { fields: CustomField[] }
+  workOrderId: string
   readOnly?: boolean
 }
 
 export function WorkOrderCustomFields({ 
   customFields, 
+  workOrderId,
   readOnly = false
 }: WorkOrderCustomFieldsProps) {
   const form = useFormContext()
@@ -190,7 +192,7 @@ export function WorkOrderCustomFields({
       case "IMAGE_AFTER":
       case "VIDEO_BEFORE":
       case "VIDEO_AFTER":
-        return <MediaField field={field} readOnly={readOnly} />
+        return <MediaField field={field} workOrderId={workOrderId} readOnly={readOnly} />
 
       case "FILE":
         return (

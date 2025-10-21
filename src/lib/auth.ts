@@ -175,7 +175,16 @@ export const auth = betterAuth({
     ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`] 
     : [
         "http://localhost:3000", 
-        "http://*.localhost:3000"  // Allow any subdomain in development
+        "http://*.localhost:3000",  // Allow any subdomain in development
+        "http://192.168.68.120:3000", // Allow mobile testing
+        "http://192.168.1.*:3000",    // Allow common network ranges
+        "http://192.168.0.*:3000",
+        "http://10.0.0.*:3000",
+        "https://*.ngrok-free.app",   // Allow ngrok tunnels
+        "https://*.ngrok-free.dev",   // Allow ngrok tunnels (new domain)
+        "https://*.ngrok.app",        // Allow ngrok tunnels (paid)
+        "https://*.ngrok.io",         // Allow ngrok tunnels (legacy)
+        "https://*.ngrok.dev"         // Allow ngrok dev domains
       ],
     
   // CORS configuration
@@ -184,7 +193,16 @@ export const auth = betterAuth({
       ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`]
       : [
           "http://localhost:3000", 
-          "http://*.localhost:3000"  // Allow any subdomain in development
+          "http://*.localhost:3000",  // Allow any subdomain in development
+          "http://192.168.68.120:3000", // Allow mobile testing
+          "http://192.168.1.*:3000",    // Allow common network ranges
+          "http://192.168.0.*:3000",
+          "http://10.0.0.*:3000",
+          "https://*.ngrok-free.app",   // Allow ngrok tunnels
+          "https://*.ngrok-free.dev",   // Allow ngrok tunnels (new domain)
+          "https://*.ngrok.app",        // Allow ngrok tunnels (paid)
+          "https://*.ngrok.io",         // Allow ngrok tunnels (legacy)
+          "https://*.ngrok.dev"         // Allow ngrok dev domains
         ],
     credentials: true,
   },

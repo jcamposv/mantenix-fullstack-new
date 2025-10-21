@@ -16,6 +16,7 @@ import type { CustomField } from "@/schemas/work-order-template"
 
 interface WorkOrderCompleteFormProps {
   customFields?: { fields: CustomField[] }
+  workOrderId: string
   initialValues?: Partial<MobileCompleteWorkOrderData>
   onSubmit: (data: MobileCompleteWorkOrderData) => Promise<void>
   onCancel: (notes?: string) => Promise<void>
@@ -24,6 +25,7 @@ interface WorkOrderCompleteFormProps {
 
 export function WorkOrderCompleteForm({
   customFields,
+  workOrderId,
   initialValues,
   onSubmit,
   onCancel,
@@ -59,6 +61,7 @@ export function WorkOrderCompleteForm({
           <>
             <WorkOrderCustomFields
               customFields={customFields}
+              workOrderId={workOrderId}
               readOnly={false}
             />
             <Separator />

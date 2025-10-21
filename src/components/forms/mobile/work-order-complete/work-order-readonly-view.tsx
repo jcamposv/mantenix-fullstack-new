@@ -10,12 +10,14 @@ import type { CustomField } from "@/schemas/work-order-template"
 
 interface WorkOrderReadonlyViewProps {
   customFields?: { fields: CustomField[] }
+  workOrderId: string
   customFieldValues?: Record<string, unknown>
   completionNotes?: string
 }
 
 export function WorkOrderReadonlyView({
   customFields,
+  workOrderId,
   customFieldValues,
   completionNotes
 }: WorkOrderReadonlyViewProps) {
@@ -41,6 +43,7 @@ export function WorkOrderReadonlyView({
           <Form {...form}>
             <WorkOrderCustomFields
               customFields={customFields}
+              workOrderId={workOrderId}
               readOnly={true}
             />
           </Form>

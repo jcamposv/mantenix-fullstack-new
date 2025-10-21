@@ -85,6 +85,7 @@ export default function MobileWorkOrderDetailPage() {
           <CardContent>
             <WorkOrderCompleteForm
               customFields={workOrder.template.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
+              workOrderId={workOrderId}
               initialValues={initialFormValues}
               onSubmit={handleCompleteWork}
               onCancel={handleCancelWork}
@@ -98,6 +99,7 @@ export default function MobileWorkOrderDetailPage() {
       {isCompleted && (
         <WorkOrderReadonlyView
           customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
+          workOrderId={workOrderId}
           customFieldValues={workOrder.customFieldValues as Record<string, unknown>}
           completionNotes={workOrder.completionNotes ?? undefined}
         />
