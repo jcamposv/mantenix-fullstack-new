@@ -5,13 +5,14 @@ import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Edit, User, Building, Wrench, Clock, DollarSign, FileText, Shield } from "lucide-react"
+import { Edit, User, Building, Wrench, Clock, DollarSign, FileText, Shield } from "lucide-react"
 import { toast } from "sonner"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
 import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
+import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 
 export default function WorkOrderDetailPage() {
   const router = useRouter()
@@ -299,7 +300,7 @@ export default function WorkOrderDetailPage() {
             </CardHeader>
             <CardContent>
               <WorkOrderCustomFieldsDisplay
-                customFields={workOrder.template?.customFields}
+                customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
                 customFieldValues={customFieldValues}
               />
             </CardContent>
