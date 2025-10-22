@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Specify the root directory for Turbopack to avoid ambiguity with multiple lockfiles
+  turbopack: {
+    root: __dirname,
+  },
   // Configure allowed image domains and timeout
   images: {
     // Increase timeout for large images from S3

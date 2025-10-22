@@ -4,6 +4,8 @@
  * Used in: Login, Invite, and other auth forms
  */
 
+import Image from "next/image"
+
 interface AuthFormFooterProps {
   showTerms?: boolean
 }
@@ -20,10 +22,12 @@ export function AuthFormFooter({ showTerms = false }: AuthFormFooterProps) {
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:opacity-80 transition-opacity"
           >
-            <img 
+            <Image 
               src="/images/mantenix-logo-black.svg" 
               alt="Mantenix" 
-              className="h-4 dark:invert"
+              width={80}
+              height={16}
+              className="h-4 w-auto dark:invert"
             />
           </a>
         </div>

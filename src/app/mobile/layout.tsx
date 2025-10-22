@@ -8,6 +8,8 @@ import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import type { CompanyBranding } from "@/types/branding"
 
+export const dynamic = 'force-dynamic'
+
 async function getCompanyBranding(): Promise<CompanyBranding | null> {
   try {
     const headersList = await headers()

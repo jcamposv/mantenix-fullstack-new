@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Eye, Edit, Calendar, Building, User, Clock } from "lucide-react"
 import { WorkOrderStatusBadge } from "./work-order-status-badge"
 import { WorkOrderPriorityBadge } from "./work-order-priority-badge"

@@ -18,7 +18,7 @@ export function encrypt(text: string, key: string): string {
 export function decrypt(encryptedText: string, key: string): string {
   const algorithm = 'aes-256-gcm'
   const parts = encryptedText.split(':')
-  const iv = Buffer.from(parts[0], 'hex')
+  // const iv = Buffer.from(parts[0], 'hex') // IV not used in createDecipher
   const encrypted = parts[1]
   
   const decipher = crypto.createDecipher(algorithm, key)

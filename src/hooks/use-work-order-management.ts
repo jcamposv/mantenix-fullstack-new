@@ -128,6 +128,7 @@ export function useWorkOrderManagement(workOrderId: string) {
 
   useEffect(() => {
     fetchWorkOrder()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workOrderId])
 
   return {

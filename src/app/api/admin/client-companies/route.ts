@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, ClientCompanyService } from "@/server"
 import { createClientCompanySchema, clientCompanyFiltersSchema } from "../../schemas/client-company-schemas"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)

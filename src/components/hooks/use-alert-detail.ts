@@ -11,6 +11,7 @@ export function useAlertDetail(alertId: string) {
 
   useEffect(() => {
     fetchAlert()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alertId])
 
   const fetchAlert = async () => {

@@ -1,15 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown, Plus } from "lucide-react"
+import Image from "next/image"
+import { ChevronsUpDown } from "lucide-react"
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -76,18 +75,19 @@ export function TeamSwitcher({
               >
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-transparent text-sidebar-primary-foreground">
                   {company.hasCustomBranding ? (
-                    <img 
+                    <Image 
                       src={company.logo} 
                       alt={`${company.name} logo`}
+                      width={24}
+                      height={24}
                       className="size-6 object-contain"
-                      onError={(e) => {
-                        e.currentTarget.src = "/images/mantenix-logo-black.svg"
-                      }}
                     />
                   ) : (
-                    <img 
+                    <Image 
                       src="/images/mantenix-logo-black.svg" 
                       alt="Mantenix logo"
+                      width={24}
+                      height={24}
                       className="size-6 object-contain dark:invert"
                     />
                   )}
@@ -116,18 +116,19 @@ export function TeamSwitcher({
                 >
                   <div className="flex size-6 items-center justify-center rounded-md border">
                     {companyItem.logo ? (
-                      <img 
+                      <Image 
                         src={companyItem.logo} 
                         alt={`${companyItem.name} logo`}
+                        width={16}
+                        height={16}
                         className="size-4 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = "/images/mantenix-logo-black.svg"
-                        }}
                       />
                     ) : (
-                      <img 
+                      <Image 
                         src="/images/mantenix-logo-black.svg" 
                         alt="Mantenix logo"
+                        width={16}
+                        height={16}
                         className="size-4 object-contain dark:invert"
                       />
                     )}
@@ -158,18 +159,19 @@ export function TeamSwitcher({
         >
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-transparent text-sidebar-primary-foreground">
             {company.hasCustomBranding ? (
-              <img 
+              <Image 
                 src={company.logo} 
                 alt={`${company.name} logo`}
+                width={24}
+                height={24}
                 className="size-6 object-contain"
-                onError={(e) => {
-                  e.currentTarget.src = "/images/mantenix-logo-black.svg"
-                }}
               />
             ) : (
-              <img 
+              <Image 
                 src="/images/mantenix-logo-black.svg" 
                 alt="Mantenix logo"
+                width={24}
+                height={24}
                 className="size-6 object-contain dark:invert"
               />
             )}

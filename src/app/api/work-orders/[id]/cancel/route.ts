@@ -3,6 +3,8 @@ import { AuthService } from '@/server/services/auth.service'
 import { WorkOrderService } from '@/server/services/work-order.service'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

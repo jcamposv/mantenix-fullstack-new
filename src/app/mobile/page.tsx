@@ -62,17 +62,6 @@ const statusLabels = {
   CLOSED: "Cerrada"
 }
 
-const typeLabels = {
-  EQUIPMENT_FAILURE: "Falla de Equipo",
-  MAINTENANCE_REQUIRED: "Mantenimiento",
-  PREVENTIVE_MAINTENANCE: "Preventivo",
-  SAFETY_ISSUE: "Seguridad",
-  SUPPLY_SHORTAGE: "Suministros",
-  ENVIRONMENTAL_ISSUE: "Ambiental",
-  OPERATIONAL_ISSUE: "Operacional",
-  OTHER: "Otro"
-}
-
 export default function FieldPage() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,6 +73,7 @@ export default function FieldPage() {
 
   useEffect(() => {
     fetchAlerts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchAlerts = async () => {

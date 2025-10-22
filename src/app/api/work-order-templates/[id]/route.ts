@@ -3,6 +3,8 @@ import { WorkOrderTemplateService } from "@/server/services/work-order-template.
 import { AuthService } from "@/server/services/auth.service"
 import { updateWorkOrderTemplateSchema } from "@/app/api/schemas/work-order-template-schemas"
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

@@ -24,12 +24,11 @@ interface CustomPieLabelProps {
   innerRadius?: string | number
   outerRadius?: string | number
   percent?: number
-  index?: number
   [key: string]: unknown
 }
 
 const renderCustomizedLabel = ({
-  cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0, index = 0
+  cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0
 }: CustomPieLabelProps) => {
   const cxNum = typeof cx === 'string' ? parseFloat(cx) : cx
   const cyNum = typeof cy === 'string' ? parseFloat(cy) : cy

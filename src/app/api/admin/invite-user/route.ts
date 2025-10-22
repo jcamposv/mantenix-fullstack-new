@@ -6,6 +6,8 @@ import { sendInviteEmail } from "@/lib/email"
 import { headers } from "next/headers"
 import crypto from "crypto"
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication and authorization

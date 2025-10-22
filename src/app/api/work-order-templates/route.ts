@@ -6,6 +6,8 @@ import {
   workOrderTemplateFiltersSchema 
 } from "@/app/api/schemas/work-order-template-schemas"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated session

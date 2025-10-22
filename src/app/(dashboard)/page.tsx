@@ -1,7 +1,5 @@
 "use client"
 
-import { WorkOrdersOverview } from "@/components/dashboard/work-orders-overview"
-import { StatusDistributionChart } from "@/components/dashboard/status-distribution-chart"
 import { useWorkOrdersDashboard } from "@/hooks/use-work-orders-dashboard"
 import { DashboardError } from "@/components/dashboard/dashboard-error"
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading"
@@ -11,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Building2, 
   Users, 
   AlertTriangle, 
   TrendingUp,
@@ -55,14 +52,6 @@ export default function Home() {
       </div>
     )
   }
-
-  // Generate status distribution from real stats
-  const statusDistribution = stats ? [
-    { name: "Completadas", value: stats.completed, color: "#22c55e" },
-    { name: "En Progreso", value: stats.inProgress, color: "#3b82f6" },
-    { name: "Pendientes", value: stats.pending, color: "#f59e0b" },
-    { name: "Vencidas", value: stats.overdue, color: "#ef4444" }
-  ] : []
 
   return (
     <div className="container mx-auto py-6">

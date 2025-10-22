@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma"
 import { getCurrentUserWithRole } from "@/lib/auth-utils"
 import type { CompanyBranding } from "@/types/branding"
 
+export const dynamic = 'force-dynamic'
+
 async function getCompanyBranding(): Promise<CompanyBranding | null> {
   try {
     const headersList = await headers()

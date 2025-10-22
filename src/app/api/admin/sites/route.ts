@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, SiteService } from "@/server"
 import { createSiteSchema, siteFiltersSchema } from "../../schemas/site-schemas"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)

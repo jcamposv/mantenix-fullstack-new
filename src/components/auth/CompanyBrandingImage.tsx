@@ -4,6 +4,8 @@
  * Used in: Login, Invite, and other auth forms
  */
 
+import Image from "next/image"
+
 interface CompanyBrandingImageProps {
   displayCompanyName: string
 }
@@ -11,13 +13,12 @@ interface CompanyBrandingImageProps {
 export function CompanyBrandingImage({ displayCompanyName }: CompanyBrandingImageProps) {
   return (
     <div className="bg-muted relative hidden lg:block">
-      <img
+      <Image
         src="/images/baner-1.jpg"
         alt={`${displayCompanyName} branding`}
-        className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-        onError={(e) => {
-          e.currentTarget.src = "/images/logo-1.jpg"
-        }}
+        fill
+        className="object-cover dark:brightness-[0.2] dark:grayscale"
+        priority
       />
     </div>
   )

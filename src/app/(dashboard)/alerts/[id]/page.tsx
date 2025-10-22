@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { AlertHeader } from "@/components/alerts/alert-header"
@@ -9,10 +10,24 @@ import { AlertPeopleCard } from "@/components/alerts/alert-people-card"
 import { AlertCommentsSection } from "@/components/alerts/alert-comments-section"
 import { useAlertDetail } from "@/components/hooks/use-alert-detail"
 
-export default function AlertDetailPage({ params }: { params: { id: string } }) {
-  const { alert, loading, updatingStatus, updateStatus, addComment } = useAlertDetail(params.id)
+interface AlertDetailPageProps {
+  params: Promise<{ id: string }>
+}
 
-  if (loading) {
+export default function AlertDetailPage({ params }: AlertDetailPageProps) {
+  const [alertId, setAlertId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const resolveParams = async () => {
+      const resolvedParams = await params
+      setAlertId(resolvedParams.id)
+    }
+    resolveParams()
+  }, [params])
+
+  const { alert, loading, updatingStatus, updateStatus, addComment } = useAlertDetail(alertId || "")
+
+  if (!alertId || loading) {
     return (
       <div className="container mx-auto py-6 px-4">
         <div className="space-y-6">

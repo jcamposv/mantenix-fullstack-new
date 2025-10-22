@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { ImageIcon, VideoIcon, Play, ExternalLink, Loader2 } from "lucide-react"
 import { useWorkOrderMediaSignedUrl } from "@/hooks/use-work-order-media-signed-url"

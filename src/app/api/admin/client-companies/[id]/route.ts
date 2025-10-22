@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, ClientCompanyService } from "@/server"
 import { updateClientCompanySchema } from "../../../schemas/client-company-schemas"
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

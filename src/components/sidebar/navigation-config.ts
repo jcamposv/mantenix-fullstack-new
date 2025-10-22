@@ -6,7 +6,6 @@
 import {
   Bot,
   Building2,
-  PieChart,
   Settings2,
   SquareTerminal,
   Users,

@@ -3,6 +3,7 @@ import { z } from "zod"
 import { AuthService, AlertService } from "@/server"
 import { updateAlertSchema } from "../../schemas/alert-schemas"
 
+export const dynamic = 'force-dynamic'
 
 // GET /api/alerts/[id] - Obtener alerta específica
 export async function GET(

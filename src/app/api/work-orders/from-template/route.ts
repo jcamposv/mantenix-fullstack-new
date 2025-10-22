@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { workOrderPrioritySchema } from '@/schemas/work-order'
 import type { WorkOrderFromTemplateData } from '@/types/work-order.types'
 
+export const dynamic = 'force-dynamic'
+
 const createFromTemplateSchema = z.object({
   templateId: z.string().min(1, "Template ID es requerido"),
   title: z.string().min(1, "El título es requerido").max(255),

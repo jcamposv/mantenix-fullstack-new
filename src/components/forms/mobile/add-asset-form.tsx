@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -238,10 +239,13 @@ export function AddAssetForm({ siteId, onAssetCreated, trigger }: AddAssetFormPr
             </Button>
             {image && (
               <div className="mt-2">
-                <img
+                <Image
                   src={URL.createObjectURL(image)}
                   alt="Vista previa"
+                  width={400}
+                  height={128}
                   className="w-full h-32 object-cover rounded border"
+                  unoptimized
                 />
               </div>
             )}

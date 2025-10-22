@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AuthService } from '@/server/services/auth.service'
 import { WorkOrderService } from '@/server/services/work-order.service'
 
+export const dynamic = 'force-dynamic'
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()

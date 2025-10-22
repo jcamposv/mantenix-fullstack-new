@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { X, Check } from "lucide-react"
 
 type MediaFieldType = "IMAGE_BEFORE" | "IMAGE_AFTER" | "VIDEO_BEFORE" | "VIDEO_AFTER"
@@ -33,10 +34,13 @@ export function MediaPreview({
               preload="metadata"
             />
           ) : (
-            <img
+            <Image
               src={URL.createObjectURL(file)}
               alt={`${fieldType} ${index + 1}`}
+              width={200}
+              height={96}
               className="w-full h-24 object-cover rounded-lg border"
+              unoptimized
             />
           )}
           

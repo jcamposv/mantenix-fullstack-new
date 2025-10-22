@@ -135,7 +135,7 @@ export default function WorkOrdersListPage() {
     },
     {
       accessorKey: "site",
-      header: ({ column }) => (
+      header: () => (
         <div className="hidden lg:block">Sede</div>
       ),
       cell: ({ row }) => {
@@ -170,7 +170,7 @@ export default function WorkOrdersListPage() {
     },
     {
       accessorKey: "scheduledDate",
-      header: ({ column }) => (
+      header: () => (
         <div className="hidden md:block">Fecha</div>
       ),
       cell: ({ row }) => {

@@ -3,6 +3,8 @@ import { AuthService } from '@/server/services/auth.service'
 import { WorkOrderService } from '@/server/services/work-order.service'
 import type { WorkOrderFilters } from '@/types/work-order.types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()

@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, RefreshCw, Wifi, WifiOff } from "lucide-react"
+import { AlertTriangle, RefreshCw, WifiOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

@@ -2,6 +2,8 @@ import {  NextResponse } from "next/server"
 import { WorkOrderTemplateService } from "@/server/services/work-order-template.service"
 import { AuthService } from "@/server/services/auth.service"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Get authenticated session

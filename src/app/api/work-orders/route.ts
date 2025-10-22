@@ -4,6 +4,8 @@ import { WorkOrderService } from '@/server/services/work-order.service'
 import { createWorkOrderSchema } from '@/schemas/work-order'
 import type { CreateWorkOrderData, WorkOrderFilters, WorkOrderType, WorkOrderPriority, WorkOrderStatus } from '@/types/work-order.types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()

@@ -112,7 +112,8 @@ export function MediaCaptureModal({
             {isVideo ? (
               <Folder className="mr-3 h-5 w-5" />
             ) : (
-              <Image className="mr-3 h-5 w-5" />
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image className="mr-3 h-5 w-5" aria-hidden="true" />
             )}
             <div className="text-left">
               <div className="font-medium">{labels.galleryAction}</div>

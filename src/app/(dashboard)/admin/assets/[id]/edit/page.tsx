@@ -24,6 +24,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
 
   useEffect(() => {
     fetchAsset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchAsset = async () => {

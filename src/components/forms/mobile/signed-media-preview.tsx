@@ -152,7 +152,7 @@ function LocalMediaItem({
   onRemove?: () => void
   readOnly: boolean
 }) {
-  const [objectUrl, setObjectUrl] = useState<string>(() => URL.createObjectURL(file))
+  const [objectUrl] = useState<string>(() => URL.createObjectURL(file))
 
   return (
     <div className="relative aspect-square">

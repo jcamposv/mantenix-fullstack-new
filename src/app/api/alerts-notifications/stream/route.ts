@@ -2,6 +2,8 @@ import { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 
+export const dynamic = 'force-dynamic'
+
 // Global map to store SSE connections by user ID
 const connections = new Map<string, ReadableStreamDefaultController[]>()
 

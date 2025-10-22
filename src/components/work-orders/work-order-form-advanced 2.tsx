@@ -82,7 +82,7 @@ export function WorkOrderFormAdvanced({ form, users = [] }: WorkOrderFormAdvance
           <FormField
             control={form.control}
             name="assignedUserIds"
-            render={({ field }) => (
+            render={() => (
               <FormItem>
                 <FormLabel>Usuarios Asignados</FormLabel>
                 <div className="space-y-2">

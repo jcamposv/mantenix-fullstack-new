@@ -4,6 +4,8 @@ import { WorkOrderService } from '@/server/services/work-order.service'
 import { workOrderAssignmentSchema } from '@/schemas/work-order'
 import type { WorkOrderAssignmentData } from '@/types/work-order.types'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

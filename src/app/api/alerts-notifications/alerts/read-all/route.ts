@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/notifications/alerts/read-all - Mark all alert notifications as read
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(request: NextRequest) {

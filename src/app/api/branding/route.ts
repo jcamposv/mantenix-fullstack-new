@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
 
+export const dynamic = 'force-dynamic'
+
 // Cache duration in seconds (5 minutes)
 const CACHE_DURATION = 5 * 60
 

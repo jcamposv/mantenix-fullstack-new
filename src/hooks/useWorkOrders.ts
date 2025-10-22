@@ -74,6 +74,7 @@ export function useWorkOrders(options: UseWorkOrdersOptions = {}) {
 
   useEffect(() => {
     fetchWorkOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(options)])
 
   return {
@@ -135,6 +136,7 @@ export function useMyWorkOrders(options: UseWorkOrdersOptions = {}) {
 
   useEffect(() => {
     fetchMyWorkOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(options)])
 
   return {

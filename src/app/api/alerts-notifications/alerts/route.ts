@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
 import type { AuthenticatedSession } from "@/types/auth.types"
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/notifications/alerts - Get alert notifications for current user
 export async function GET(request: NextRequest) {
   try {

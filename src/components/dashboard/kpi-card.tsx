@@ -27,14 +27,6 @@ export function KPICard({
   trend = "neutral",
   className
 }: KPICardProps) {
-  const getTrendColor = () => {
-    switch (trend) {
-      case "up": return "text-green-600"
-      case "down": return "text-red-600"
-      default: return "text-muted-foreground"
-    }
-  }
-
   const getTrendBadgeVariant = () => {
     switch (trend) {
       case "up": return "default"

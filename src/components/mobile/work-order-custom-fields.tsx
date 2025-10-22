@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Camera, Video, Upload, Check } from "lucide-react"
+import { Upload, Check } from "lucide-react"
 import { MediaField } from "@/components/forms/mobile/media-field"
 import type { CustomField } from "@/schemas/work-order-template"
 

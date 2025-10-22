@@ -70,7 +70,6 @@ export function DataTable<TData, TValue>({
   onAdd,
   addLabel = "Add New",
   loading = false,
-  hideHeader = false,
   initialColumnVisibility = {},
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])

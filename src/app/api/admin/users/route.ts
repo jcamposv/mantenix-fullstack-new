@@ -5,6 +5,8 @@ import { AuthService, UserService } from "@/server"
 import { createUserSchema, userFiltersSchema } from "../../schemas/user-schemas"
 import bcrypt from "bcrypt"
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/users - Obtener usuarios
 export async function GET(request: NextRequest) {
   try {
