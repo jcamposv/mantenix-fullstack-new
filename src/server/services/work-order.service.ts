@@ -1,0 +1,468 @@
+import { Prisma } from '@prisma/client'
+import { WorkOrderRepository } from '@/server/repositories/work-order.repository'
+import { WorkOrderTemplateRepository } from '@/server/repositories/work-order-template.repository'
+import type { 
+  CreateWorkOrderData,
+  UpdateWorkOrderData,
+  CompleteWorkOrderData,
+  WorkOrderWithRelations,
+  WorkOrderFilters,
+  WorkOrderAssignmentData,
+  WorkOrderFromTemplateData,
+  WorkOrderStats
+} from '@/types/work-order.types'
+import type { AuthenticatedSession } from '@/types/auth.types'
+
+export class WorkOrderService {
+  /**
+   * Get all work orders with filtering and pagination
+   */
+  static async getWorkOrders(
+    session: AuthenticatedSession,
+    filters?: WorkOrderFilters,
+    pagination?: { page: number; limit: number }
+  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+    // Permission check - users can only see work orders from their company
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // For external users, filter by their site
+    const enhancedFilters = { ...filters }
+    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+      enhancedFilters.siteId = session.user.siteId
+    }
+
+    return await WorkOrderRepository.findMany(
+      enhancedFilters,
+      pagination,
+      session.user.companyId
+    )
+  }
+
+  /**
+   * Get work order by ID
+   */
+  static async getWorkOrderById(
+    session: AuthenticatedSession,
+    id: string
+  ): Promise<WorkOrderWithRelations | null> {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    const workOrder = await WorkOrderRepository.findById(id, session.user.companyId)
+
+    // Additional permission check for external users
+    if (workOrder && session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+      if (workOrder.siteId !== session.user.siteId) {
+        throw new Error("No tienes permisos para ver esta orden de trabajo")
+      }
+    }
+
+    return workOrder
+  }
+
+  /**
+   * Create new work order
+   */
+  static async createWorkOrder(
+    session: AuthenticatedSession,
+    workOrderData: CreateWorkOrderData
+  ): Promise<WorkOrderWithRelations> {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // Permission check - only certain roles can create work orders
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR']
+    if (!allowedRoles.includes(session.user.role)) {
+      throw new Error("No tienes permisos para crear órdenes de trabajo")
+    }
+
+    // For external users, ensure they can only create work orders for their site
+    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+      if (workOrderData.siteId !== session.user.siteId) {
+        throw new Error("Solo puedes crear órdenes de trabajo para tu sede")
+      }
+    }
+
+    // Generate work order number
+    const number = await WorkOrderRepository.generateNumber(session.user.companyId)
+
+    // Validate template if provided
+    let templateData = null
+    if (workOrderData.templateId) {
+      templateData = await WorkOrderTemplateRepository.findFirst({
+        id: workOrderData.templateId,
+        companyId: session.user.companyId,
+        isActive: true
+      })
+      if (!templateData) {
+        throw new Error("Template no encontrado")
+      }
+    }
+
+    // Determine status based on assignments
+    const hasAssignments = workOrderData.assignedUserIds && workOrderData.assignedUserIds.length > 0
+    const defaultStatus = hasAssignments ? "ASSIGNED" : "DRAFT"
+
+    // Prepare data for creation
+    const createData: Prisma.WorkOrderCreateInput = {
+      number,
+      title: workOrderData.title,
+      description: workOrderData.description,
+      type: workOrderData.type,
+      priority: workOrderData.priority || "MEDIUM",
+      status: workOrderData.status || defaultStatus,
+      scheduledDate: workOrderData.scheduledDate,
+      estimatedDuration: workOrderData.estimatedDuration,
+      estimatedCost: workOrderData.estimatedCost,
+      instructions: workOrderData.instructions,
+      safetyNotes: workOrderData.safetyNotes,
+      tools: workOrderData.tools || [],
+      materials: workOrderData.materials || [],
+      customFieldValues: (workOrderData.customFieldValues ?? undefined) as Prisma.InputJsonValue | undefined,
+      company: { connect: { id: session.user.companyId } },
+      site: { connect: { id: workOrderData.siteId } },
+      creator: { connect: { id: session.user.id } }
+    }
+
+    // Add asset if provided
+    if (workOrderData.assetId) {
+      createData.asset = { connect: { id: workOrderData.assetId } }
+    }
+
+    // Add template if provided
+    if (workOrderData.templateId) {
+      createData.template = { connect: { id: workOrderData.templateId } }
+    }
+
+    // Create work order
+    const workOrder = await WorkOrderRepository.create(createData)
+
+    // Create assignments
+    if (workOrderData.assignedUserIds && workOrderData.assignedUserIds.length > 0) {
+      await WorkOrderRepository.createAssignments(
+        workOrder.id,
+        workOrderData.assignedUserIds,
+        session.user.id
+      )
+    }
+
+    // Return the complete work order with assignments
+    return await WorkOrderRepository.findById(workOrder.id, session.user.companyId) as WorkOrderWithRelations
+  }
+
+  /**
+   * Create work order from template
+   */
+  static async createFromTemplate(
+    session: AuthenticatedSession,
+    templateData: WorkOrderFromTemplateData
+  ): Promise<WorkOrderWithRelations> {
+    // Get template data
+    const template = await WorkOrderTemplateRepository.findFirst({
+      id: templateData.templateId,
+      companyId: session.user.companyId,
+      isActive: true
+    })
+
+    if (!template) {
+      throw new Error("Template no encontrado")
+    }
+
+    // Create work order data based on template
+    const workOrderData: CreateWorkOrderData = {
+      title: templateData.title,
+      description: templateData.description || template.description || undefined,
+      type: "PREVENTIVO", // Default, can be customized
+      priority: templateData.priority || "MEDIUM",
+      siteId: templateData.siteId,
+      assetId: templateData.assetId,
+      templateId: template.id,
+      customFieldValues: templateData.customFieldValues,
+      scheduledDate: templateData.scheduledDate,
+      instructions: templateData.instructions,
+      safetyNotes: templateData.safetyNotes,
+      tools: templateData.tools,
+      materials: templateData.materials,
+      assignedUserIds: templateData.assignedUserIds
+    }
+
+    return await this.createWorkOrder(session, workOrderData)
+  }
+
+  /**
+   * Update work order
+   */
+  static async updateWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    updateData: UpdateWorkOrderData
+  ): Promise<WorkOrderWithRelations | null> {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Permission check - only creator, supervisors, and assigned users can update
+    const canUpdate = 
+      existingWorkOrder.createdBy === session.user.id ||
+      ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role) ||
+      existingWorkOrder.assignments?.some(assignment => assignment.userId === session.user.id)
+
+    if (!canUpdate) {
+      throw new Error("No tienes permisos para modificar esta orden de trabajo")
+    }
+
+    // Prepare data for update
+    const updatePrismaData: Prisma.WorkOrderUpdateInput = {
+      title: updateData.title,
+      description: updateData.description,
+      type: updateData.type,
+      priority: updateData.priority,
+      status: updateData.status,
+      scheduledDate: updateData.scheduledDate,
+      estimatedDuration: updateData.estimatedDuration,
+      estimatedCost: updateData.estimatedCost,
+      instructions: updateData.instructions,
+      safetyNotes: updateData.safetyNotes,
+      tools: updateData.tools,
+      materials: updateData.materials,
+      observations: updateData.observations,
+      completionNotes: updateData.completionNotes,
+      actualDuration: updateData.actualDuration,
+      actualCost: updateData.actualCost,
+      customFieldValues: (updateData.customFieldValues ?? undefined) as Prisma.InputJsonValue | undefined,
+      updatedAt: new Date()
+    }
+
+    // Update site if provided
+    if (updateData.siteId) {
+      updatePrismaData.site = { connect: { id: updateData.siteId } }
+    }
+
+    // Update asset if provided
+    if (updateData.assetId) {
+      updatePrismaData.asset = { connect: { id: updateData.assetId } }
+    } else if (updateData.assetId === null) {
+      updatePrismaData.asset = { disconnect: true }
+    }
+
+    // Handle status changes
+    if (updateData.status) {
+      if (updateData.status === "IN_PROGRESS" && !existingWorkOrder.startedAt) {
+        updatePrismaData.startedAt = new Date()
+      } else if (updateData.status === "COMPLETED" && !existingWorkOrder.completedAt) {
+        updatePrismaData.completedAt = new Date()
+      }
+    }
+
+    return await WorkOrderRepository.update(id, updatePrismaData)
+  }
+
+  /**
+   * Complete work order
+   */
+  static async completeWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    completionData: CompleteWorkOrderData
+  ): Promise<WorkOrderWithRelations | null> {
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Permission check - only assigned users can complete
+    const isAssigned = existingWorkOrder.assignments?.some(
+      assignment => assignment.userId === session.user.id
+    )
+    const isSupervisor = ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role)
+
+    if (!isAssigned && !isSupervisor) {
+      throw new Error("Solo los usuarios asignados pueden completar esta orden de trabajo")
+    }
+
+    // Prepare completion data
+    const updateData: UpdateWorkOrderData = {
+      status: "COMPLETED",
+      observations: completionData.observations,
+      completionNotes: completionData.completionNotes,
+      actualDuration: completionData.actualDuration,
+      actualCost: completionData.actualCost,
+      customFieldValues: completionData.customFieldValues
+    }
+
+    return await this.updateWorkOrder(session, id, updateData)
+  }
+
+  /**
+   * Assign users to work order
+   */
+  static async assignUsers(
+    session: AuthenticatedSession,
+    workOrderId: string,
+    assignmentData: WorkOrderAssignmentData
+  ) {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // Permission check - only supervisors can assign
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR']
+    if (!allowedRoles.includes(session.user.role)) {
+      throw new Error("No tienes permisos para asignar usuarios")
+    }
+
+    // Verify work order exists and belongs to user's company
+    const workOrder = await this.getWorkOrderById(session, workOrderId)
+    if (!workOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Create assignments
+    return await WorkOrderRepository.createAssignments(
+      workOrderId,
+      assignmentData.userIds,
+      session.user.id
+    )
+  }
+
+  /**
+   * Cancel work order
+   */
+  static async cancelWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    reason?: string
+  ): Promise<WorkOrderWithRelations | null> {
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Permission check - only creator or supervisors can cancel
+    const canCancel = 
+      existingWorkOrder.createdBy === session.user.id ||
+      ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role)
+
+    if (!canCancel) {
+      throw new Error("No tienes permisos para cancelar esta orden de trabajo")
+    }
+
+    // Update status to cancelled
+    const updateData: UpdateWorkOrderData = {
+      status: "CANCELLED",
+      completionNotes: reason || "Orden cancelada"
+    }
+
+    return await this.updateWorkOrder(session, id, updateData)
+  }
+
+  /**
+   * Delete work order (soft delete)
+   */
+  static async deleteWorkOrder(
+    session: AuthenticatedSession,
+    id: string
+  ): Promise<WorkOrderWithRelations | null> {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // Permission check - only admins can delete
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_EMPRESA']
+    if (!allowedRoles.includes(session.user.role)) {
+      throw new Error("No tienes permisos para eliminar órdenes de trabajo")
+    }
+
+    // Verify work order exists and belongs to user's company
+    const workOrder = await this.getWorkOrderById(session, id)
+    if (!workOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    return await WorkOrderRepository.softDelete(id)
+  }
+
+  /**
+   * Get work orders assigned to current user
+   */
+  static async getMyWorkOrders(
+    session: AuthenticatedSession,
+    filters?: Omit<WorkOrderFilters, 'assignedToMe'>,
+    pagination?: { page: number; limit: number }
+  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+    if (!session?.user?.id) {
+      throw new Error("Usuario no autenticado")
+    }
+
+    return await WorkOrderRepository.findByAssignedUser(
+      session.user.id,
+      filters,
+      pagination
+    )
+  }
+
+  /**
+   * Get work order statistics
+   */
+  static async getWorkOrderStats(
+    session: AuthenticatedSession,
+    filters?: WorkOrderFilters
+  ): Promise<WorkOrderStats> {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // For external users, filter by their site
+    const enhancedFilters = { ...filters }
+    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+      enhancedFilters.siteId = session.user.siteId
+    }
+
+    return await WorkOrderRepository.getStats(
+      session.user.companyId,
+      enhancedFilters
+    )
+  }
+
+  /**
+   * Get dashboard statistics
+   */
+  static async getDashboardStats(
+    session: AuthenticatedSession,
+    filters?: WorkOrderFilters
+  ) {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // For external users, filter by their site
+    const enhancedFilters = { ...filters }
+    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+      enhancedFilters.siteId = session.user.siteId
+    }
+
+    const [stats, recentActivity, performanceMetrics] = await Promise.all([
+      WorkOrderRepository.getDashboardStats(session.user.companyId, enhancedFilters),
+      WorkOrderRepository.getRecentActivity(session.user.companyId, 10),
+      WorkOrderRepository.getPerformanceMetrics(session.user.companyId, 7)
+    ])
+
+    return {
+      ...stats,
+      recentActivity,
+      performanceMetrics
+    }
+  }
+}

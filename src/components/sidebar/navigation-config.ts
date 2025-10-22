@@ -6,13 +6,10 @@
 import {
   Bot,
   Building2,
-  MapPin,
-  PieChart,
   Settings2,
   SquareTerminal,
   Users,
   Bell,
-  Package,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -48,8 +45,12 @@ export const BASE_NAV_ITEMS = [
     icon: Bot,
     items: [
       {
-        title: "Todas las Órdenes",
+        title: "Dashboard",
         url: "/work-orders",
+      },
+      {
+        title: "Lista de Órdenes",
+        url: "/work-orders/list",
       },
       {
         title: "Mis Órdenes",
@@ -57,22 +58,11 @@ export const BASE_NAV_ITEMS = [
       },
       {
         title: "Crear Orden",
-        url: "/work-orders/new",
-      },
-    ],
-  },
-  {
-    title: "Reportes",
-    url: "/reports",
-    icon: PieChart,
-    items: [
-      {
-        title: "Rendimiento",
-        url: "/reports/performance",
+        url: "/work-orders/new/select-template",
       },
       {
-        title: "Analíticas",
-        url: "/reports/analytics",
+        title: "Templates",
+        url: "/admin/work-order-templates",
       },
     ],
   },
@@ -103,16 +93,20 @@ export const ADMIN_NAV_ITEMS = [
         title: "Activos",
         url: "/admin/assets",
       },
+      {
+        title: "Templates OT",
+        url: "/admin/work-order-templates",
+      },
     ],
   },
   {
-    name: "Usuarios",
+    name: "Usuarios del Sistema",
     url: "/super-admin/users", // Super admin uses super-admin route
     icon: Users,
     role: "SUPER_ADMIN"
   },
   {
-    name: "Usuarios",
+    name: "Usuarios de la Empresa",
     url: "/admin/users", // Company admin uses admin route
     icon: Users,
     role: "ADMIN_EMPRESA"

@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, AssetService } from "@/server"
 import { updateAssetSchema } from "../../../schemas/asset-schemas"
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{
     id: string

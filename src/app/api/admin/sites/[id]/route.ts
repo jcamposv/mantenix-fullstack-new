@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, SiteService } from "@/server"
 import { updateSiteSchema } from "../../../schemas/site-schemas"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

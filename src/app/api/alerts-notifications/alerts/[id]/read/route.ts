@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
 import type { AuthenticatedSession } from "@/types/auth.types"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/notifications/alerts/[id]/read - Mark alert notification as read
 export async function POST(
   request: NextRequest,

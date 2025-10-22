@@ -3,9 +3,7 @@
  * React hooks and client-side utilities for authentication
  */
 
-import * as React from "react"
 import { createAuthClient } from "better-auth/react"
-import type { Session } from "./auth"
 
 export const authClient = createAuthClient({
   baseURL: typeof window !== 'undefined' 

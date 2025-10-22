@@ -132,6 +132,14 @@ model User {
   
   // Asset relations - Comentado, responsabilidad movida a WorkOrder
   // assetsResponsible Asset[] @relation("AssetResponsable")
+  
+  // Work Order Template relations
+  workOrderTemplatesCreated WorkOrderTemplate[] @relation("WorkOrderTemplateCreator")
+  
+  // Work Order relations
+  workOrdersCreated WorkOrder[] @relation("WorkOrderCreator")
+  workOrderAssignments WorkOrderAssignment[] @relation("WorkOrderAssignments")
+  workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
 
   @@map("user")
 }
@@ -210,6 +218,8 @@ model Company {
   securityEvents  SecurityEvent[]
   invitations     UserInvitation[]
   clientCompanies ClientCompany[]
+  workOrderTemplates WorkOrderTemplate[]
+  workOrders      WorkOrder[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -283,6 +293,9 @@ model Site {
   // Assets in this site
   assets          Asset[]
   
+  // Work orders in this site
+  workOrders      WorkOrder[]
+  
   @@index([clientCompanyId])
   @@index([isActive])
   @@map("sites")
@@ -321,8 +334,8 @@ model Asset {
   // responsibleId        String?     // Responsible user or assigned technician - Moved to WorkOrder
   // responsible          User?       @relation("AssetResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
   
-  // Work orders related to this asset (for future implementation)
-  // workOrders           WorkOrder[]
+  // Work orders related to this asset
+  workOrders           WorkOrder[]
   
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -513,4 +526,213 @@ model AlertNotification {
   @@index([status])
   @@index([type])
   @@map("alert_notifications")
+}
+
+// ============================================================================
+// WORK ORDER TEMPLATES SYSTEM
+// ============================================================================
+
+enum WorkOrderTemplateStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum WorkOrderType {
+  PREVENTIVO
+  CORRECTIVO
+  REPARACION
+}
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkOrderStatus {
+  DRAFT           // Borrador
+  ASSIGNED        // Asignada
+  IN_PROGRESS     // En progreso
+  COMPLETED       // Completada
+  CANCELLED       // Cancelada
+}
+
+enum CustomFieldType {
+  TEXT           // Input de texto simple
+  TEXTAREA       // Área de texto multilinea
+  NUMBER         // Input numérico
+  SELECT         // Select con opciones predefinidas
+  RADIO          // Radio buttons
+  CHECKBOX       // Checkbox individual
+  CHECKLIST      // Lista de checkboxes (instrucciones)
+  DATE           // Selector de fecha
+  TIME           // Selector de hora
+  DATETIME       // Selector de fecha y hora
+  IMAGE_BEFORE   // Campo para imágenes antes
+  IMAGE_AFTER    // Campo para imágenes después
+  VIDEO_BEFORE   // Campo para videos antes
+  VIDEO_AFTER    // Campo para videos después
+  FILE           // Campo para archivos generales
+}
+
+model WorkOrderTemplate {
+  id          String                   @id @default(cuid())
+  name        String                   // Nombre del template
+  description String?                  // Descripción del template
+  category    String?                  // Categoría del template (Preventivo, Correctivo, etc.)
+  status      WorkOrderTemplateStatus  @default(ACTIVE) // Estado del template
+  
+  // Campos personalizados dinámicos - Estructura JSON que define los campos
+  customFields        Json?           // Configuración de campos personalizados
+  // Estructura ejemplo:
+  // {
+  //   "fields": [
+  //     {
+  //       "id": "checklist_1",
+  //       "type": "CHECKLIST",
+  //       "label": "Pasos de mantenimiento",
+  //       "required": true,
+  //       "options": ["Revisar aceite", "Cambiar filtro", "Limpiar componentes"],
+  //       "order": 1
+  //     },
+  //     {
+  //       "id": "condition_select",
+  //       "type": "SELECT",
+  //       "label": "Condición del equipo",
+  //       "required": true,
+  //       "options": ["Excelente", "Bueno", "Regular", "Malo"],
+  //       "order": 2
+  //     },
+  //     {
+  //       "id": "images_before",
+  //       "type": "IMAGE_BEFORE",
+  //       "label": "Fotos antes del mantenimiento",
+  //       "required": true,
+  //       "order": 3
+  //     }
+  //   ]
+  // }
+  
+  // Control de acceso y propiedad
+  companyId           String          // Empresa propietaria del template
+  createdBy           String          // Usuario que creó el template
+  
+  // Timestamps
+  isActive            Boolean         @default(true)
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  // Relations
+  company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator             User            @relation("WorkOrderTemplateCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  
+  // Relations with work orders
+  workOrders          WorkOrder[]     @relation("WorkOrderFromTemplate")
+  
+  @@index([companyId])
+  @@index([status])
+  @@index([category])
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("work_order_templates")
+}
+
+// ============================================================================
+// WORK ORDERS SYSTEM
+// ============================================================================
+
+model WorkOrder {
+  id                  String              @id @default(cuid())
+  number              String              // Número único de la orden (ej: 0256)
+  title               String              // Título de la orden
+  description         String?             // Descripción de la orden
+  
+  // Clasificación
+  type                WorkOrderType       // PREVENTIVO, CORRECTIVO, REPARACION
+  priority            WorkOrderPriority   @default(MEDIUM) // Prioridad de la orden
+  status              WorkOrderStatus     @default(DRAFT) // Estado de la orden
+  
+  // Ubicación y activo
+  siteId              String              // Sede donde se ejecuta
+  assetId             String?             // Activo relacionado (opcional)
+  
+  // Template relacionado (opcional)
+  templateId          String?             // Template base usado
+  customFieldValues   Json?               // Valores de campos personalizados del template
+  
+  // Fechas importantes
+  scheduledDate       DateTime?           // Fecha programada
+  startedAt           DateTime?           // Fecha de inicio real
+  completedAt         DateTime?           // Fecha de finalización
+  
+  // Estimaciones y costos
+  estimatedDuration   Int?                // Duración estimada en minutos
+  estimatedCost       Float?              // Costo estimado
+  actualDuration      Int?                // Duración real en minutos
+  actualCost          Float?              // Costo real
+  
+  // Instrucciones y seguridad
+  instructions        String?             // Instrucciones específicas
+  safetyNotes         String?             // Notas de seguridad
+  tools               String[]            @default([]) // Herramientas necesarias
+  materials           String[]            @default([]) // Materiales necesarios
+  
+  // Observaciones y notas finales
+  observations        String?             // Observaciones durante la ejecución
+  completionNotes     String?             // Notas de finalización
+  
+  // Control de acceso y propiedad
+  companyId           String              // Empresa propietaria
+  createdBy           String              // Usuario que creó la orden
+  
+  // Timestamps
+  isActive            Boolean             @default(true)
+  deletedAt           DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relations
+  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site                Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  asset               Asset?              @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  template            WorkOrderTemplate?  @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
+  creator             User                @relation("WorkOrderCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  
+  // Assignments (many-to-many relationship for multiple users)
+  assignments         WorkOrderAssignment[]
+  
+  @@unique([companyId, number]) // Número único por empresa
+  @@index([companyId])
+  @@index([siteId])
+  @@index([assetId])
+  @@index([templateId])
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([scheduledDate])
+  @@index([createdBy])
+  @@index([isActive])
+  @@map("work_orders")
+}
+
+// Tabla intermedia para asignaciones de usuarios a órdenes de trabajo
+model WorkOrderAssignment {
+  id            String      @id @default(cuid())
+  workOrderId   String
+  userId        String
+  assignedAt    DateTime    @default(now())
+  assignedBy    String      // Usuario que hizo la asignación
+  
+  // Relations
+  workOrder     WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  user          User        @relation("WorkOrderAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  assigner      User        @relation("WorkOrderAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
+  
+  @@unique([workOrderId, userId]) // Un usuario solo puede estar asignado una vez por orden
+  @@index([workOrderId])
+  @@index([userId])
+  @@index([assignedBy])
+  @@map("work_order_assignments")
 }

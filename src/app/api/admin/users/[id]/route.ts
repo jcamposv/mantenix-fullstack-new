@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, UserService } from "@/server"
 import { updateUserSchema } from "../../../schemas/user-schemas"
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/users/[id] - Obtener usuario específico
 export async function GET(
   request: NextRequest,

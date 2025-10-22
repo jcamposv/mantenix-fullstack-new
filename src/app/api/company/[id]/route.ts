@@ -4,6 +4,8 @@ import { headers } from "next/headers"
 import { CompanyService } from "@/server/services/company.service"
 import type { AuthenticatedSession } from "@/types/auth.types"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }

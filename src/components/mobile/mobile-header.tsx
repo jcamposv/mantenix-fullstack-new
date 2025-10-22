@@ -34,7 +34,7 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
       await authClient.signOut()
       toast.success("Sesión cerrada exitosamente")
       router.push("/login")
-    } catch (error) {
+    } catch {
       toast.error("Error al cerrar sesión")
     }
   }
@@ -52,7 +52,6 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
 
   // Determine logo and company name from branding (like in dashboard)
   const displayLogo = companyBranding?.logo || user.company?.logo
-  const hasCustomBranding = !!(companyBranding?.logo)
   const companyName = companyBranding?.name || user.company?.name || "Mantenix"
 
   return (

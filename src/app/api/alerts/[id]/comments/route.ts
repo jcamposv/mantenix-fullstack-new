@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, CommentService } from "@/server"
 import { createCommentSchema } from "../../../schemas/comment-schemas"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/alerts/[id]/comments - Crear comentario en alerta
 export async function POST(
   request: NextRequest,

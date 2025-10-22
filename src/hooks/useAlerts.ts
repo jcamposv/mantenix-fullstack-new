@@ -155,7 +155,8 @@ export function useAlerts(): UseAlertsReturn {
         eventSourceRef.current.close()
       }
     }
-  }, [user?.id, fetchAlerts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   // Initial fetch
   useEffect(() => {

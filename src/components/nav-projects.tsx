@@ -44,15 +44,22 @@ export function NavProjects({
             className="group/collapsible"
           >
             <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.name}>
-                  <item.icon />
-                  <span>{item.name}</span>
-                  {item.items && (
+              {item.items ? (
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={item.name}>
+                    <item.icon />
+                    <span>{item.name}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                  )}
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+              ) : (
+                <SidebarMenuButton asChild tooltip={item.name}>
+                  <a href={item.url}>
+                    <item.icon />
+                    <span>{item.name}</span>
+                  </a>
                 </SidebarMenuButton>
-              </CollapsibleTrigger>
+              )}
               {item.items && (
                 <CollapsibleContent>
                   <SidebarMenuSub>

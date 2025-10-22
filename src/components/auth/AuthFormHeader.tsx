@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react"
+import Image from "next/image"
 
 interface AuthFormHeaderProps {
   displayLogo: string
@@ -22,15 +23,19 @@ export function AuthFormHeader({ displayLogo, displayCompanyName, hasCustomBrand
     <div className="flex justify-center gap-2 md:justify-start">
       <a href="#" className="flex items-center gap-2 font-medium mb-4 m-auto">
         {shouldUseDefaultLogo ? (
-          <img 
+          <Image 
             src="/images/mantenix-logo-black.svg" 
             alt="Mantenix logo"
-            className="h-12 object-contain dark:invert"
+            width={120}
+            height={48}
+            className="h-12 w-auto object-contain dark:invert"
           />
         ) : (
-          <img 
+          <Image 
             src={displayLogo} 
             alt={`${displayCompanyName} logo`}
+            width={136}
+            height={136}
             className="size-34 object-contain"
             onError={() => setImageError(true)}
           />

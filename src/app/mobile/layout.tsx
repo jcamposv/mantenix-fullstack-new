@@ -8,6 +8,8 @@ import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import type { CompanyBranding } from "@/types/branding"
 
+export const dynamic = 'force-dynamic'
+
 async function getCompanyBranding(): Promise<CompanyBranding | null> {
   try {
     const headersList = await headers()
@@ -71,8 +73,8 @@ export default async function FieldLayout({
     redirect('/dashboard')
   }
 
-  // Verificar que tenga sede asignada (excepto super admin y admin empresa)
-  if (!['SUPER_ADMIN', 'ADMIN_EMPRESA', 'CLIENTE_ADMIN_GENERAL'].includes(user.role)) {
+  const externalUserRoles = ['CLIENTE_OPERARIO', 'CLIENTE_ADMIN_SEDE']
+  if (externalUserRoles.includes(user.role)) {
     if (!user.siteId) {
       redirect('/dashboard?error=no-site-assigned')
     }

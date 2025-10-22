@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-client"
 import { loginSchema, type LoginInput } from "@/lib/validations"
+import { PermissionHelper } from "@/server/helpers/permission.helper"
 
 export function useLoginForm() {
   const router = useRouter()
@@ -45,7 +46,19 @@ export function useLoginForm() {
         }
       } else {
         try {
-          router.push("/")
+          // Check user role and redirect accordingly
+          const userRole = result?.data?.user?.role
+          
+          // Mobile-only roles should be redirected to /mobile
+            const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, 
+              PermissionHelper.ROLES.SUPERVISOR, 
+              PermissionHelper.ROLES.CLIENTE_OPERARIO]
+          
+          if (userRole && mobileOnlyRoles.includes(userRole as typeof mobileOnlyRoles[number])) {
+            router.push("/mobile")
+          } else {
+            router.push("/")
+          }
         } catch (redirectError) {
           console.error("Redirect error:", redirectError)
           router.push("/")

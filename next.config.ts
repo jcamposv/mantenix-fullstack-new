@@ -1,8 +1,19 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = { 
-  // Configure allowed image domains
+const nextConfig: NextConfig = {
+  // Specify the root directory for Turbopack to avoid ambiguity with multiple lockfiles
+  turbopack: {
+    root: __dirname,
+  },
+  // Configure allowed image domains and timeout
   images: {
+    // Increase timeout for large images from S3
+    dangerouslyAllowSVG: false,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    minimumCacheTTL: 60,
+    loader: 'default',
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: 'https',
@@ -37,6 +48,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 's3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.mantenix.ai',
         port: '',
         pathname: '/**',
       },

@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { assetSchema, type AssetFormData } from "@/schemas/asset"
 import { AssetBasicInfo } from "./asset/asset-basic-info"
 import { AssetTechnicalInfo } from "./asset/asset-technical-info"
-import type { Resolver } from "react-hook-form"
 
 interface Site {
   id: string

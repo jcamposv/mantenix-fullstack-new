@@ -123,6 +123,7 @@ export class AssetRepository {
   /**
    * Count active work orders for an asset (for future implementation)
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static async countActiveWorkOrders(assetId: string): Promise<number> {
     // return await prisma.workOrder.count({
     //   where: {

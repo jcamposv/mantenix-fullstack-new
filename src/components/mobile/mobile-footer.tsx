@@ -9,7 +9,7 @@ interface MobileFooterProps {
 export function MobileFooter({ children, className }: MobileFooterProps) {
   return (
     <div className={cn(
-      "fixed bottom-[10px] left-0 right-0 z-50",
+      "fixed bottom-[0px]  left-0 right-0 z-50",
       "bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80",
       "border-t border-border/50",
       "px-4 py-3",
@@ -29,7 +29,7 @@ interface MobileFooterContentProps {
 export function MobileFooterContent({ children, className }: MobileFooterContentProps) {
   return (
     <div className={cn(
-      "flex items-center gap-3",
+      "flex items-center gap-3 pb-2",
       "max-w-md mx-auto w-full",
       className
     )}>

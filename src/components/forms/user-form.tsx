@@ -13,6 +13,7 @@ import { useCompanies } from "@/components/hooks/use-companies"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { createUserSchema, type UserFormData } from "./user/user-form-schema"
 import { needsCompanyAssignment } from "./user/user-form-utils"
+import { PermissionHelper } from "@/server/helpers/permission.helper"
 
 interface UserFormProps {
   onSubmit: (data: UserFormData) => void
@@ -52,12 +53,16 @@ export function UserForm({
 
   const handleSubmit = (data: UserFormData) => {
     // Apply business rules based on current user role
-    if (currentUser?.role !== "SUPER_ADMIN") {
+    if (currentUser?.role !== PermissionHelper.ROLES.SUPER_ADMIN) {
       // Non-super-admin users should use their own company
       data.companyId = currentUser?.company?.id
       
       // Restrict role selection for non-super-admin users
-      const allowedRoles = ["TECNICO", "SUPERVISOR", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]
+      const allowedRoles = [PermissionHelper.ROLES.TECNICO, 
+        PermissionHelper.ROLES.SUPERVISOR, 
+        PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL, 
+        PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE, 
+        PermissionHelper.ROLES.CLIENTE_OPERARIO] as readonly string[]
       if (!allowedRoles.includes(data.role)) {
         data.role = "TECNICO"
       }
@@ -71,7 +76,7 @@ export function UserForm({
   }
 
   // Filter companies and roles based on current user permissions
-  const filteredCompanies = currentUser?.role === "SUPER_ADMIN" 
+  const filteredCompanies = currentUser?.role === PermissionHelper.ROLES.SUPER_ADMIN 
     ? companies 
     : companies.filter(c => c.id === currentUser?.company?.id)
 
@@ -118,7 +123,7 @@ export function UserForm({
             <UserRoleField 
               control={form.control} 
               selectedRole={selectedRole}
-              restrictedMode={currentUser?.role !== "SUPER_ADMIN"}
+              restrictedMode={currentUser?.role !== PermissionHelper.ROLES.SUPER_ADMIN}
             />
             
             <UserCompanyField 
@@ -126,7 +131,7 @@ export function UserForm({
               companies={filteredCompanies}
               loadingCompanies={loadingCompanies}
               needsCompany={needsCompany}
-              readOnly={currentUser?.role !== "SUPER_ADMIN"}
+              readOnly={currentUser?.role !== PermissionHelper.ROLES.SUPER_ADMIN}
             />
             
             <UserPreferencesFields control={form.control} />

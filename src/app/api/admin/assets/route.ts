@@ -3,6 +3,8 @@ import { z } from "zod"
 import { AuthService, AssetService } from "@/server"
 import { createAssetSchema, assetFiltersSchema } from "../../schemas/asset-schemas"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)

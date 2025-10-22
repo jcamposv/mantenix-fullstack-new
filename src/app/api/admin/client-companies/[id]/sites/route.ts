@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { AuthService, ClientCompanyService, SiteService } from "@/server"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

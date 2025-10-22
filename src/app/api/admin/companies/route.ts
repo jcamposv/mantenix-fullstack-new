@@ -5,6 +5,8 @@ import { CompanyService } from "@/server/services/company.service"
 import { companyFiltersSchema, createCompanySchema } from "@/app/api/schemas/company-schemas"
 import type { AuthenticatedSession } from "@/types/auth.types"
 
+export const dynamic = 'force-dynamic'
+
 export const GET = async (request: NextRequest) => {
   try {
     const session = await auth.api.getSession({
