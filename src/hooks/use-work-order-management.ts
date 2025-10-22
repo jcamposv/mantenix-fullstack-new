@@ -29,7 +29,7 @@ export function useWorkOrderManagement(workOrderId: string) {
       // Prepare initial form values
       const defaultCustomFieldValues: Record<string, unknown> = {}
       if (workOrderData.template?.customFields?.fields) {
-        workOrderData.template.customFields.fields.forEach(field => {
+        workOrderData.template.customFields.fields.forEach((field: { id: string; type: string }) => {
           defaultCustomFieldValues[field.id] = workOrderData.customFieldValues?.[field.id] || 
             (field.type === 'CHECKLIST' ? [] : (field.type === 'CHECKBOX' ? false : ''))
         })

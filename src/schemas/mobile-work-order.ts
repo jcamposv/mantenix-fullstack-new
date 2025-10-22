@@ -29,7 +29,7 @@ export const createMobileCompleteWorkOrderSchema = (customFields?: { fields: Cus
           customFieldsSchema[field.id] = z.string().min(1, `${field.label} es requerido`)
           break
         case 'NUMBER':
-          customFieldsSchema[field.id] = z.number({ required_error: `${field.label} es requerido` })
+          customFieldsSchema[field.id] = z.number({ message: `${field.label} es requerido` })
           break
         case 'SELECT':
         case 'RADIO':

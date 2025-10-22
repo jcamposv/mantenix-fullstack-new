@@ -690,4 +690,261 @@ export class WorkOrderRepository {
       dueThisWeek
     }
   }
+
+  /**
+   * Get dashboard statistics
+   */
+  static async getDashboardStats(companyId: string, filters?: WorkOrderFilters) {
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true
+    }
+
+    // Apply additional filters
+    if (filters) {
+      if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.assetId) whereClause.assetId = filters.assetId
+      if (filters.templateId) whereClause.templateId = filters.templateId
+    }
+
+    const [
+      total,
+      inProgress,
+      completed,
+      pending,
+      overdue,
+      activeUsersCount
+    ] = await Promise.all([
+      // Total active work orders
+      prisma.workOrder.count({ where: whereClause }),
+      
+      // In progress work orders
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          status: 'IN_PROGRESS'
+        }
+      }),
+      
+      // Completed work orders
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          status: 'COMPLETED'
+        }
+      }),
+      
+      // Pending work orders (DRAFT + ASSIGNED)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          status: {
+            in: ['DRAFT', 'ASSIGNED']
+          }
+        }
+      }),
+      
+      // Overdue work orders
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          scheduledDate: {
+            lt: new Date()
+          },
+          status: {
+            notIn: ['COMPLETED', 'CANCELLED']
+          }
+        }
+      }),
+      
+      // Active users (users with work order assignments)
+      prisma.workOrderAssignment.groupBy({
+        by: ['userId'],
+        where: {
+          workOrder: {
+            companyId,
+            isActive: true,
+            status: {
+              notIn: ['COMPLETED', 'CANCELLED']
+            }
+          }
+        }
+      })
+    ])
+
+    // Calculate completion rate
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+    return {
+      total,
+      inProgress,
+      completed,
+      pending,
+      overdue,
+      completionRate,
+      avgCompletionTime: 0, // TODO: Calculate from actual completion times
+      activeUsers: activeUsersCount.length
+    }
+  }
+
+  /**
+   * Get recent work order activity
+   */
+  static async getRecentActivity(companyId: string, limit: number = 10) {
+    const activities = await prisma.workOrder.findMany({
+      where: {
+        companyId,
+        isActive: true,
+        OR: [
+          { startedAt: { not: null } },
+          { completedAt: { not: null } },
+          { assignments: { some: {} } }
+        ]
+      },
+      include: {
+        assignments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: { assignedAt: 'desc' }
+        }
+      },
+      orderBy: [
+        { completedAt: 'desc' },
+        { startedAt: 'desc' },
+        { updatedAt: 'desc' }
+      ],
+      take: limit
+    })
+
+    // Transform to activity format
+    return activities.map(workOrder => {
+      let activityType: "completed" | "started" | "assigned" | "overdue" = "assigned"
+      let timestamp = workOrder.updatedAt
+      let userName = "Sistema"
+
+      // Get the assigned user (most recent assignment)
+      const assignedUser = workOrder.assignments && workOrder.assignments.length > 0 
+        ? workOrder.assignments[0].user.name 
+        : "Sistema"
+
+      if (workOrder.completedAt) {
+        activityType = "completed"
+        timestamp = new Date(workOrder.completedAt)
+        // For completed orders, use the assigned user (the one who completed it)
+        userName = assignedUser
+      } else if (workOrder.startedAt) {
+        activityType = "started" 
+        timestamp = new Date(workOrder.startedAt)
+        // For started orders, use the assigned user (the one who started it)
+        userName = assignedUser
+      } else if (workOrder.assignments && workOrder.assignments.length > 0) {
+        activityType = "assigned"
+        timestamp = new Date(workOrder.assignments[0].assignedAt)
+        userName = workOrder.assignments[0].user.name
+      }
+
+      // Check if overdue
+      if (workOrder.scheduledDate && 
+          new Date(workOrder.scheduledDate) < new Date() && 
+          workOrder.status !== 'COMPLETED' && 
+          workOrder.status !== 'CANCELLED') {
+        activityType = "overdue"
+        // For overdue, still show the assigned user
+        userName = assignedUser
+      }
+
+      return {
+        id: workOrder.id,
+        type: activityType,
+        workOrderNumber: workOrder.number,
+        workOrderTitle: workOrder.title,
+        userName,
+        timestamp
+      }
+    })
+  }
+
+  /**
+   * Get performance metrics for the last 7 days
+   */
+  static async getPerformanceMetrics(companyId: string, days: number = 7) {
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    // Get completion data for each day
+    const dailyCompletions = await prisma.workOrder.groupBy({
+      by: ['completedAt'],
+      where: {
+        companyId,
+        isActive: true,
+        completedAt: {
+          gte: startDate,
+          lte: endDate
+        },
+        status: 'COMPLETED'
+      },
+      _count: true
+    })
+
+    // Get total work orders for efficiency calculation
+    const totalWorkOrders = await prisma.workOrder.groupBy({
+      by: ['createdAt'],
+      where: {
+        companyId,
+        isActive: true,
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      _count: true
+    })
+
+    // Create daily performance data
+    const performanceData = []
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - (days - 1 - i))
+      
+      const dayStart = new Date(date)
+      dayStart.setHours(0, 0, 0, 0)
+      const dayEnd = new Date(date)
+      dayEnd.setHours(23, 59, 59, 999)
+
+      // Count completions for this day
+      const completed = dailyCompletions.filter(item => {
+        if (!item.completedAt) return false
+        const completedDate = new Date(item.completedAt)
+        return completedDate >= dayStart && completedDate <= dayEnd
+      }).reduce((sum, item) => sum + item._count, 0)
+
+      // Count total created for efficiency calculation
+      const created = totalWorkOrders.filter(item => {
+        if (!item.createdAt) return false
+        const createdDate = new Date(item.createdAt)
+        return createdDate >= dayStart && createdDate <= dayEnd
+      }).reduce((sum, item) => sum + item._count, 0)
+
+      // Calculate efficiency (completed vs created, min 0%, max 100%)
+      const efficiency = created > 0 ? Math.min(Math.round((completed / created) * 100), 100) : 0
+
+      performanceData.push({
+        date: dayNames[date.getDay()],
+        completed,
+        efficiency: efficiency || 0
+      })
+    }
+
+    return performanceData
+  }
 }

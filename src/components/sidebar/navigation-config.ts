@@ -40,14 +40,28 @@ export const BASE_NAV_ITEMS = [
       },
     ],
   },
+]
+
+export const ADMIN_NAV_ITEMS = [
   {
-    title: "Órdenes de Trabajo",
+    name: "Compañías",
+    url: "/super-admin/companies",
+    icon: Building2,
+    role: "SUPER_ADMIN" // Only super admins can see tenant companies
+  },
+  {
+    name: "Órdenes de Trabajo",
     url: "/work-orders",
     icon: Bot,
+    role: "ADMIN_EMPRESA", // Company admins and above can manage work orders
     items: [
       {
-        title: "Todas las Órdenes",
+        title: "Dashboard",
         url: "/work-orders",
+      },
+      {
+        title: "Lista de Órdenes",
+        url: "/work-orders/list",
       },
       {
         title: "Mis Órdenes",
@@ -62,30 +76,6 @@ export const BASE_NAV_ITEMS = [
         url: "/admin/work-order-templates",
       },
     ],
-  },
-  {
-    title: "Reportes",
-    url: "/reports",
-    icon: PieChart,
-    items: [
-      {
-        title: "Rendimiento",
-        url: "/reports/performance",
-      },
-      {
-        title: "Analíticas",
-        url: "/reports/analytics",
-      },
-    ],
-  },
-]
-
-export const ADMIN_NAV_ITEMS = [
-  {
-    name: "Compañías",
-    url: "/super-admin/companies",
-    icon: Building2,
-    role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
     name: "Clientes",

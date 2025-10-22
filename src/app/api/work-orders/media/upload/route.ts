@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user can upload work order media (technicians, supervisors, admins)
     const allowedRoles = ["TECNICO", "SUPERVISOR", "ADMIN_EMPRESA", "SUPER_ADMIN"]
-    if (!allowedRoles.includes(session.user.role)) {
+    if (!session.user.role || !allowedRoles.includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden - Insufficient permissions" }, { status: 403 })
     }
 

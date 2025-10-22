@@ -435,4 +435,34 @@ export class WorkOrderService {
       enhancedFilters
     )
   }
+
+  /**
+   * Get dashboard statistics
+   */
+  static async getDashboardStats(
+    session: AuthenticatedSession,
+    filters?: WorkOrderFilters
+  ) {
+    if (!session?.user?.companyId) {
+      throw new Error("Usuario no tiene una empresa asignada")
+    }
+
+    // For external users, filter by their site
+    const enhancedFilters = { ...filters }
+    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+      enhancedFilters.siteId = session.user.siteId
+    }
+
+    const [stats, recentActivity, performanceMetrics] = await Promise.all([
+      WorkOrderRepository.getDashboardStats(session.user.companyId, enhancedFilters),
+      WorkOrderRepository.getRecentActivity(session.user.companyId, 10),
+      WorkOrderRepository.getPerformanceMetrics(session.user.companyId, 7)
+    ])
+
+    return {
+      ...stats,
+      recentActivity,
+      performanceMetrics
+    }
+  }
 }
