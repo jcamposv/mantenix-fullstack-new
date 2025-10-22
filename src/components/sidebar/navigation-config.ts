@@ -39,20 +39,10 @@ export const BASE_NAV_ITEMS = [
       },
     ],
   },
-]
-
-export const ADMIN_NAV_ITEMS = [
   {
-    name: "Compañías",
-    url: "/super-admin/companies",
-    icon: Building2,
-    role: "SUPER_ADMIN" // Only super admins can see tenant companies
-  },
-  {
-    name: "Órdenes de Trabajo",
+    title: "Órdenes de Trabajo",
     url: "/work-orders",
     icon: Bot,
-    role: "ADMIN_EMPRESA", // Company admins and above can manage work orders
     items: [
       {
         title: "Dashboard",
@@ -75,6 +65,15 @@ export const ADMIN_NAV_ITEMS = [
         url: "/admin/work-order-templates",
       },
     ],
+  },
+]
+
+export const ADMIN_NAV_ITEMS = [
+  {
+    name: "Compañías",
+    url: "/super-admin/companies",
+    icon: Building2,
+    role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
     name: "Clientes",
