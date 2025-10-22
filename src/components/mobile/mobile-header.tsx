@@ -14,10 +14,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { Menu, AlertTriangle, LogOut, Building2 } from "lucide-react"
+import { Menu, AlertTriangle, LogOut, Building2, Monitor } from "lucide-react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
+import { usePlatformSwitch } from "@/hooks/usePlatformSwitch"
 import type { CompanyBranding } from "@/types/branding"
 
 interface MobileHeaderProps {
@@ -28,6 +29,7 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
   const { user } = useCurrentUser()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
+  const { isAdmin, switchToDesktop } = usePlatformSwitch()
 
   const handleSignOut = async () => {
     try {
@@ -140,6 +142,22 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
                   <AlertTriangle className="w-4 h-4 mr-3" />
                   Alertas
                 </Button>
+
+                {isAdmin && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setIsOpen(false)
+                        switchToDesktop()
+                      }}
+                    >
+                      <Monitor className="w-4 h-4 mr-3" />
+                      Cambiar a Escritorio
+                    </Button>
+                  </>
+                )}
 
                 <Separator className="my-4" />
 

@@ -36,7 +36,6 @@ export async function middleware(request: NextRequest) {
     // Role-based route protection
     const pathname = request.nextUrl.pathname
     const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, PermissionHelper.ROLES.SUPERVISOR, PermissionHelper.ROLES.CLIENTE_OPERARIO] as const
-    const dashboardOnlyRoles = [PermissionHelper.ROLES.SUPER_ADMIN, PermissionHelper.ROLES.ADMIN_EMPRESA, PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL, PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE] as const
 
     // Super admins can access any subdomain and any route
     if (user.role === 'SUPER_ADMIN') {
@@ -59,10 +58,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/mobile", request.url))
     }
 
-    // Check if dashboard-only user is trying to access mobile routes
-    if ((dashboardOnlyRoles as readonly string[]).includes(user.role) && pathname.startsWith('/mobile')) {
-      return NextResponse.redirect(new URL("/", request.url))
-    }
+    // Admin users can access both dashboard and mobile routes
+    // No restriction needed for admin users accessing mobile
 
     return NextResponse.next()
   } catch (error) {
@@ -81,6 +78,7 @@ export const config = {
     "/work-orders/:path*", 
     "/alerts/:path*", 
     "/users/:path*", 
-    "/mobile/:path*"
+    "/mobile/:path*",
+    "/platform-selection"
   ],
 }

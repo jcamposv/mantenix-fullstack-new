@@ -7,9 +7,11 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  Smartphone,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
+import { usePlatformSwitch } from "@/hooks/usePlatformSwitch"
 
 import { UserAvatar } from "@/components/common/user-avatar"
 import {
@@ -41,6 +43,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { signOut } = useAuth()
   const router = useRouter()
+  const { isAdmin, switchToMobile } = usePlatformSwitch()
 
   const handleSignOut = async () => {
     try {
@@ -120,6 +123,12 @@ export function NavUser({
                 <Bell />
                 Notificaciones
               </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={switchToMobile}>
+                  <Smartphone />
+                  Cambiar a Móvil
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>

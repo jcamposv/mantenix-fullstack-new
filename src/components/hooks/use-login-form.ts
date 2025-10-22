@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-client"
+import { useAuth, getSession } from "@/lib/auth-client"
 import { loginSchema, type LoginInput } from "@/lib/validations"
 import { PermissionHelper } from "@/server/helpers/permission.helper"
 
@@ -29,8 +29,9 @@ export function useLoginForm() {
       const result = await signIn({
         email: data.email,
         password: data.password,
-        callbackURL: "/",
       })
+
+      console.log("Login result:", result) // Debug log
 
       if (result?.error) {
         const errorMessage = result.error.message || ""
@@ -46,17 +47,32 @@ export function useLoginForm() {
         }
       } else {
         try {
-          // Check user role and redirect accordingly
-          const userRole = result?.data?.user?.role
+          // Get fresh session after successful login
+          const session = await getSession()
+          const userRole = (session?.data?.user as { role?: string })?.role
+          console.log("User role from session:", userRole) // Debug log
+          console.log("Full session data:", session?.data?.user) // Debug log
           
           // Mobile-only roles should be redirected to /mobile
-            const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, 
-              PermissionHelper.ROLES.SUPERVISOR, 
-              PermissionHelper.ROLES.CLIENTE_OPERARIO]
+          const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, 
+            PermissionHelper.ROLES.CLIENTE_OPERARIO]
+          
+          // Admin roles that can choose platform
+          const adminRoles = [PermissionHelper.ROLES.SUPER_ADMIN, 
+            PermissionHelper.ROLES.ADMIN_EMPRESA, 
+            PermissionHelper.ROLES.SUPERVISOR,
+            PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL,
+            PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE]
           
           if (userRole && mobileOnlyRoles.includes(userRole as typeof mobileOnlyRoles[number])) {
+            console.log("Redirecting mobile user to /mobile")
             router.push("/mobile")
+          } else if (userRole && adminRoles.includes(userRole as typeof adminRoles[number])) {
+            // Admin users get to choose between platforms
+            console.log("Redirecting admin user to /platform-selection")
+            router.push("/platform-selection")
           } else {
+            console.log("Redirecting user to /")
             router.push("/")
           }
         } catch (redirectError) {
