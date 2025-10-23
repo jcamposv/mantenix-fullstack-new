@@ -27,9 +27,15 @@ export class WorkOrderService {
       throw new Error("Usuario no tiene una empresa asignada")
     }
 
-    // For external users, filter by their site
+    // For external users, filter based on their role
     const enhancedFilters = { ...filters }
-    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+
+    // CLIENTE_ADMIN_GENERAL sees all work orders from their client company
+    if (session.user.role === 'CLIENTE_ADMIN_GENERAL' && session.user.clientCompanyId) {
+      enhancedFilters.clientCompanyId = session.user.clientCompanyId
+    }
+    // CLIENTE_ADMIN_SEDE and CLIENTE_OPERARIO see only work orders from their site
+    else if ((session.user.role === 'CLIENTE_ADMIN_SEDE' || session.user.role === 'CLIENTE_OPERARIO') && session.user.siteId) {
       enhancedFilters.siteId = session.user.siteId
     }
 
@@ -424,9 +430,15 @@ export class WorkOrderService {
       throw new Error("Usuario no tiene una empresa asignada")
     }
 
-    // For external users, filter by their site
+    // For external users, filter based on their role
     const enhancedFilters = { ...filters }
-    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+
+    // CLIENTE_ADMIN_GENERAL sees all work orders from their client company
+    if (session.user.role === 'CLIENTE_ADMIN_GENERAL' && session.user.clientCompanyId) {
+      enhancedFilters.clientCompanyId = session.user.clientCompanyId
+    }
+    // CLIENTE_ADMIN_SEDE and CLIENTE_OPERARIO see only work orders from their site
+    else if ((session.user.role === 'CLIENTE_ADMIN_SEDE' || session.user.role === 'CLIENTE_OPERARIO') && session.user.siteId) {
       enhancedFilters.siteId = session.user.siteId
     }
 
@@ -447,9 +459,15 @@ export class WorkOrderService {
       throw new Error("Usuario no tiene una empresa asignada")
     }
 
-    // For external users, filter by their site
+    // For external users, filter based on their role
     const enhancedFilters = { ...filters }
-    if (session.user.role.startsWith("CLIENTE") && session.user.siteId) {
+
+    // CLIENTE_ADMIN_GENERAL sees all work orders from their client company
+    if (session.user.role === 'CLIENTE_ADMIN_GENERAL' && session.user.clientCompanyId) {
+      enhancedFilters.clientCompanyId = session.user.clientCompanyId
+    }
+    // CLIENTE_ADMIN_SEDE and CLIENTE_OPERARIO see only work orders from their site
+    else if ((session.user.role === 'CLIENTE_ADMIN_SEDE' || session.user.role === 'CLIENTE_OPERARIO') && session.user.siteId) {
       enhancedFilters.siteId = session.user.siteId
     }
 

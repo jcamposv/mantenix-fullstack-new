@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { headers } from "next/headers"
-import type { AuthenticatedSession } from "@/types/auth.types"
+import { AuthService } from "@/server/services/auth.service"
 
 export const dynamic = 'force-dynamic'
 
@@ -12,16 +10,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verificar autenticación
-    const sessionResult = await auth.api.getSession({
-      headers: await headers()
-    })
+    // Verificar autenticación usando AuthService que trae todos los campos necesarios
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!sessionResult?.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
-    const session = sessionResult as AuthenticatedSession
+    const session = sessionResult
 
     const { id: alertId } = await params
 

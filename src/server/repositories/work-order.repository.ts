@@ -33,6 +33,11 @@ export class WorkOrderRepository {
     // Apply additional filters
     if (filters) {
       if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.clientCompanyId) {
+        whereClause.site = {
+          clientCompanyId: filters.clientCompanyId
+        }
+      }
       if (filters.assetId) whereClause.assetId = filters.assetId
       if (filters.templateId) whereClause.templateId = filters.templateId
       if (filters.type) whereClause.type = filters.type
@@ -592,6 +597,11 @@ export class WorkOrderRepository {
     // Apply additional filters
     if (filters) {
       if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.clientCompanyId) {
+        whereClause.site = {
+          clientCompanyId: filters.clientCompanyId
+        }
+      }
       if (filters.assetId) whereClause.assetId = filters.assetId
       if (filters.templateId) whereClause.templateId = filters.templateId
     }
@@ -703,6 +713,11 @@ export class WorkOrderRepository {
     // Apply additional filters
     if (filters) {
       if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.clientCompanyId) {
+        whereClause.site = {
+          clientCompanyId: filters.clientCompanyId
+        }
+      }
       if (filters.assetId) whereClause.assetId = filters.assetId
       if (filters.templateId) whereClause.templateId = filters.templateId
     }

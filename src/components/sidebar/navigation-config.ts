@@ -10,6 +10,8 @@ import {
   SquareTerminal,
   Users,
   Bell,
+  ClipboardList,
+  AlertCircle,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -63,6 +65,41 @@ export const BASE_NAV_ITEMS = [
       {
         title: "Templates",
         url: "/admin/work-order-templates",
+      },
+    ],
+  },
+]
+
+// Navigation for external client users (CLIENTE_ADMIN_GENERAL, CLIENTE_ADMIN_SEDE, CLIENTE_OPERARIO)
+export const CLIENT_NAV_ITEMS = [
+  {
+    title: "Órdenes de Trabajo",
+    url: "/client/work-orders",
+    icon: ClipboardList,
+    isActive: true,
+    items: [
+      {
+        title: "Dashboard",
+        url: "/client/work-orders",
+      },
+      {
+        title: "Lista de Órdenes",
+        url: "/client/work-orders/list",
+      },
+    ],
+  },
+  {
+    title: "Alertas",
+    url: "/client/alerts",
+    icon: AlertCircle,
+    items: [
+      {
+        title: "Mis Alertas",
+        url: "/client/alerts",
+      },
+      {
+        title: "Crear Alerta",
+        url: "/client/alerts/new",
       },
     ],
   },

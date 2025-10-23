@@ -104,7 +104,7 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <Icon className={`h-4 w-4 ${getActivityColor(activity.type)}`} />
-                      <p className="text-sm">
+                      <div className="text-sm">
                         <span className="font-medium">{activity.userName}</span>
                         {" "}
                         <span className="text-muted-foreground">
@@ -114,7 +114,7 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
                         <Badge variant="outline" className="text-xs">
                           {activity.workOrderNumber}
                         </Badge>
-                      </p>
+                      </div>
                     </div>
                     
                     <p className="text-xs text-muted-foreground">

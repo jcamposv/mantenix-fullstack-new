@@ -13,7 +13,6 @@ import {
   AlertTriangle, 
   TrendingUp,
   Activity,
-  Plus,
   List
 } from "lucide-react"
 
@@ -59,20 +58,16 @@ export default function Home() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard General</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground">
-              Vista general del estado de la empresa y operaciones
+              Vista general de las órdenes de trabajo
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={() => router.push("/work-orders/list")}>
               <List className="h-4 w-4 mr-2" />
               Ver Órdenes
-            </Button>
-            <Button onClick={() => router.push("/work-orders/new/select-template")}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Orden
             </Button>
           </div>
         </div>

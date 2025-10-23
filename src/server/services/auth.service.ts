@@ -1,8 +1,7 @@
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
 import { NextResponse } from "next/server"
 import { PermissionHelper } from "../helpers/permission.helper"
 import type { AuthenticatedSession } from "@/types/auth.types"
+import { getCurrentUserWithRole } from "@/lib/auth-utils"
 
 /**
  * Servicio de autenticación
@@ -10,15 +9,14 @@ import type { AuthenticatedSession } from "@/types/auth.types"
  */
 export class AuthService {
   static async getAuthenticatedSession(): Promise<AuthenticatedSession | NextResponse> {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
+    // Use getCurrentUserWithRole to get full user data including clientCompanyId and siteId
+    const user = await getCurrentUserWithRole()
 
-    if (!session?.user || !session.user.role) {
+    if (!user || !user.role) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    return { user: session.user as AuthenticatedSession['user'] }
+    return { user: user as AuthenticatedSession['user'] }
   }
 
   static canUserPerformAction(userRole: string, action: string): boolean {

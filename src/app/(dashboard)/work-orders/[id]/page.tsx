@@ -4,12 +4,16 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Edit, User, Building, Wrench, Clock, DollarSign, FileText, Shield } from "lucide-react"
+import { Edit, User } from "lucide-react"
 import { toast } from "sonner"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
+import { WorkOrderBasicInfo } from "@/components/work-orders/work-order-basic-info"
+import { WorkOrderScheduleInfo } from "@/components/work-orders/work-order-schedule-info"
+import { WorkOrderInstructions } from "@/components/work-orders/work-order-instructions"
+import { WorkOrderToolsMaterials } from "@/components/work-orders/work-order-tools-materials"
+import { WorkOrderTemplateInfo } from "@/components/work-orders/work-order-template-info"
 import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
@@ -103,93 +107,9 @@ export default function WorkOrderDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información Básica</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Descripción</label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {workOrder.description || 'Sin descripción'}
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Building className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Sede</p>
-                  <p className="text-sm text-muted-foreground">
-                    {workOrder.site?.name || 'N/A'}
-                  </p>
-                </div>
-              </div>
-              
-              {workOrder.asset && (
-                <div className="flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Activo</p>
-                    <p className="text-sm text-muted-foreground">
-                      {workOrder.asset.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Código: {workOrder.asset.code}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Scheduling and Estimates */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Programación y Estimaciones</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              {workOrder.scheduledDate && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Fecha Programada</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(workOrder.scheduledDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {workOrder.estimatedDuration && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Duración Estimada</p>
-                    <p className="text-sm text-muted-foreground">
-                      {workOrder.estimatedDuration} horas
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {workOrder.estimatedCost && (
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Costo Estimado</p>
-                    <p className="text-sm text-muted-foreground">
-                      ${workOrder.estimatedCost}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Componentes reutilizables */}
+        <WorkOrderBasicInfo workOrder={workOrder} />
+        <WorkOrderScheduleInfo workOrder={workOrder} />
 
         {/* Assignments */}
         {workOrder.assignments && workOrder.assignments.length > 0 && (
@@ -220,77 +140,8 @@ export default function WorkOrderDetailPage() {
           </Card>
         )}
 
-        {/* Instructions and Safety */}
-        {(workOrder.instructions || workOrder.safetyNotes) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Instrucciones y Seguridad</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {workOrder.instructions && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <label className="text-sm font-medium">Instrucciones de Trabajo</label>
-                  </div>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {workOrder.instructions}
-                  </p>
-                </div>
-              )}
-              
-              {workOrder.safetyNotes && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    <label className="text-sm font-medium">Notas de Seguridad</label>
-                  </div>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {workOrder.safetyNotes}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Tools and Materials */}
-        {((workOrder.tools && workOrder.tools.length > 0) || (workOrder.materials && workOrder.materials.length > 0)) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Herramientas y Materiales</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {workOrder.tools && workOrder.tools.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Herramientas Requeridas</h4>
-                    <div className="space-y-1">
-                      {workOrder.tools.map((tool, index) => (
-                        <div key={index} className="text-sm text-muted-foreground">
-                          • {tool}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {workOrder.materials && workOrder.materials.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Materiales Necesarios</h4>
-                    <div className="space-y-1">
-                      {workOrder.materials.map((material, index) => (
-                        <div key={index} className="text-sm text-muted-foreground">
-                          • {material}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <WorkOrderInstructions workOrder={workOrder} />
+        <WorkOrderToolsMaterials workOrder={workOrder} />
 
         {/* Custom Fields */}
         {Object.keys(customFieldValues).length > 0 && (
@@ -307,28 +158,7 @@ export default function WorkOrderDetailPage() {
           </Card>
         )}
 
-        {/* Template Information */}
-        {workOrder.template && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Template Utilizado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div>
-                  <label className="text-sm font-medium">Nombre del Template</label>
-                  <p className="text-sm text-muted-foreground">{workOrder.template.name}</p>
-                </div>
-                {workOrder.template.category && (
-                  <div>
-                    <label className="text-sm font-medium">Categoría</label>
-                    <Badge variant="outline" className="ml-2">{workOrder.template.category}</Badge>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <WorkOrderTemplateInfo workOrder={workOrder} />
 
         {/* Metadata */}
         <Card>

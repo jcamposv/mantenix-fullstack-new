@@ -8,6 +8,7 @@ export { ClientCompanyService } from './services/client-company.service'
 export { SiteService } from './services/site.service'
 export { CompanyService } from './services/company.service'
 export { AssetService } from './services/asset.service'
+export { ClientWorkOrderService } from './services/client-work-order.service'
 
 // Repositories
 export { AlertRepository } from './repositories/alert.repository'

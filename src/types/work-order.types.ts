@@ -181,6 +181,7 @@ export interface CompleteWorkOrderData {
 // Work order filters for listing
 export interface WorkOrderFilters {
   siteId?: string
+  clientCompanyId?: string
   assetId?: string
   templateId?: string
   type?: WorkOrderType

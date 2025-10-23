@@ -8,7 +8,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useUserRole } from "@/hooks/useUserRole"
 import type { CompanyBranding } from "@/types/branding"
 import type { ServerUser, UserPermissions } from "./sidebar-types"
-import { BASE_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER } from "./navigation-config"
+import { BASE_NAV_ITEMS, CLIENT_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER } from "./navigation-config"
 import { getInitials, getAvatarUrl } from "./sidebar-utils"
 
 interface UseSidebarDataProps {
@@ -49,24 +49,36 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions }:
     }
   }, [effectiveUser])
 
-  // Navigation items
-  const navItems = useMemo(() => BASE_NAV_ITEMS, [])
+  // Check if user is external client
+  const isExternalUser = useMemo(() => {
+    const role = effectiveUser?.role
+    return role === "CLIENTE_ADMIN_GENERAL" ||
+           role === "CLIENTE_ADMIN_SEDE" ||
+           role === "CLIENTE_OPERARIO"
+  }, [effectiveUser?.role])
 
-  // Admin items (for super admin and company admin)
+  // Navigation items - use CLIENT_NAV_ITEMS for external users
+  const navItems = useMemo(() => {
+    return isExternalUser ? CLIENT_NAV_ITEMS : BASE_NAV_ITEMS
+  }, [isExternalUser])
+
+  // Admin items (for super admin and company admin only, not for external users)
   const adminItems = useMemo(() => {
+    if (isExternalUser) return []
+
     if (isSuperAdmin) {
       // Super admins can see items marked as SUPER_ADMIN or BOTH
-      return ADMIN_NAV_ITEMS.filter(item => 
+      return ADMIN_NAV_ITEMS.filter(item =>
         item.role === "SUPER_ADMIN" || item.role === "BOTH"
       )
     } else if (isCompanyAdmin) {
       // Company admins can see items marked as ADMIN_EMPRESA or BOTH
-      return ADMIN_NAV_ITEMS.filter(item => 
+      return ADMIN_NAV_ITEMS.filter(item =>
         item.role === "ADMIN_EMPRESA" || item.role === "BOTH"
       )
     }
     return []
-  }, [isSuperAdmin, isCompanyAdmin])
+  }, [isSuperAdmin, isCompanyAdmin, isExternalUser])
 
   // Company info for TeamSwitcher
   const companyInfo = useMemo(() => ({
@@ -83,6 +95,7 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions }:
     companyInfo,
     isSuperAdmin,
     isCompanyAdmin,
+    isExternalUser,
     loading: effectiveLoading,
   }
 }
