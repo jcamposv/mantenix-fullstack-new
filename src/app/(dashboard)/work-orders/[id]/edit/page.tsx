@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { WorkOrderForm } from "@/components/work-orders/work-order-form"
 import { WorkOrderFormAdvanced } from "@/components/work-orders/work-order-form-advanced"
 import { updateWorkOrderSchema } from "@/schemas/work-order"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import type { CreateWorkOrderData, UpdateWorkOrderData, WorkOrderWithRelations } from "@/types/work-order.types"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
 
@@ -35,6 +36,7 @@ interface User {
 export default function EditWorkOrderPage() {
   const router = useRouter()
   const params = useParams()
+  const { user: currentUser } = useCurrentUser()
   const [workOrder, setWorkOrder] = useState<WorkOrderWithRelations | null>(null)
   const [sites, setSites] = useState<Site[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
@@ -205,6 +207,15 @@ export default function EditWorkOrderPage() {
             sites={sites}
             assets={assets}
             templates={templates}
+            isEditing={true}
+            canChangeTemplate={
+              workOrder.status !== "COMPLETED" &&
+              !!currentUser?.role &&
+              (currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN_EMPRESA" || currentUser.role === "SUPERVISOR")
+            }
+            initialData={{
+              templateId: workOrder.templateId || ""
+            }}
           />
 
           <WorkOrderFormAdvanced

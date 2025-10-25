@@ -2,7 +2,7 @@
 
 import { useForm, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,7 +11,8 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, LayoutTemplate } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CalendarIcon, LayoutTemplate, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { createWorkOrderSchema, workOrderTypeSchema, workOrderPrioritySchema } from "@/schemas/work-order"
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils"
 import { TemplateCustomFields } from "./template-custom-fields"
 import type { CreateWorkOrderData } from "@/types/work-order.types"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
+import { useState, useEffect } from "react"
 
 interface WorkOrderFormProps {
   form: UseFormReturn<CreateWorkOrderData>
@@ -27,6 +29,8 @@ interface WorkOrderFormProps {
   assets?: Array<{ id: string; name: string; code: string }>
   users?: Array<{ id: string; name: string; email: string }>
   templates?: WorkOrderTemplateWithRelations[]
+  isEditing?: boolean
+  canChangeTemplate?: boolean
 }
 
 export function WorkOrderForm({
@@ -34,7 +38,9 @@ export function WorkOrderForm({
   initialData,
   sites = [],
   assets = [],
-  templates = []
+  templates = [],
+  isEditing = false,
+  canChangeTemplate = false
 }: WorkOrderFormProps) {
   const internalForm = useForm<CreateWorkOrderData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,11 +69,100 @@ export function WorkOrderForm({
 
   // Find the selected template if templateId is provided
   const selectedTemplateFromId = templates.find(t => t.id === form.watch("templateId"))
+  const [initialTemplateId] = useState(initialData?.templateId)
+  const [showTemplateChangeWarning, setShowTemplateChangeWarning] = useState(false)
+
+  // Watch for template changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "templateId" && isEditing && initialTemplateId) {
+        const hasChanged = value.templateId !== initialTemplateId
+        setShowTemplateChangeWarning(hasChanged && !!value.templateId)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [form, initialTemplateId, isEditing])
 
   return (
     <div className="space-y-6">
-        {/* Template Info Display (if using template) */}
-        {selectedTemplateFromId && (
+        {/* Template Selector (for editing or creation) */}
+        {(isEditing && canChangeTemplate) || !isEditing ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutTemplate className="h-4 w-4" />
+                Template
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="templateId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Seleccionar Template {!isEditing && "(Opcional)"}</FormLabel>
+                    <Select
+                      value={field.value || "no-template"}
+                      onValueChange={(value) => {
+                        const templateId = value === "no-template" ? "" : value
+                        field.onChange(templateId)
+                      }}
+                      disabled={isEditing && !canChangeTemplate}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sin template" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="no-template">Sin template</SelectItem>
+                        {templates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            <div className="flex flex-col">
+                              <span>{template.name}</span>
+                              {template.category && (
+                                <span className="text-xs text-muted-foreground">
+                                  {template.category}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {isEditing && canChangeTemplate && (
+                      <FormDescription>
+                        Cambiar el template reemplazará los campos personalizados actuales
+                      </FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {showTemplateChangeWarning && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Al cambiar el template, se perderán los valores de los campos personalizados actuales.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {selectedTemplateFromId && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium">{selectedTemplateFromId.name}</h4>
+                    <Badge variant="outline">{selectedTemplateFromId.category || 'Sin categoría'}</Badge>
+                  </div>
+                  {selectedTemplateFromId.description && (
+                    <p className="text-sm text-muted-foreground">{selectedTemplateFromId.description}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : selectedTemplateFromId ? (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -87,7 +182,7 @@ export function WorkOrderForm({
               </div>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Basic Information */}
         <Card>
