@@ -3,16 +3,17 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { ImageIcon, VideoIcon, Play, ExternalLink, Loader2 } from "lucide-react"
+import { ImageIcon, VideoIcon, Play, ExternalLink, Loader2, StickyNote } from "lucide-react"
 import { useWorkOrderMediaSignedUrl } from "@/hooks/use-work-order-media-signed-url"
 
 interface MediaDisplayProps {
   url: string
   isVideo: boolean
   fieldLabel: string
+  note?: string
 }
 
-export function MediaDisplay({ url, isVideo, fieldLabel }: MediaDisplayProps) {
+export function MediaDisplay({ url, isVideo, fieldLabel, note }: MediaDisplayProps) {
   const { signedUrl, loading, error } = useWorkOrderMediaSignedUrl(url)
   const [isOpen, setIsOpen] = useState(false)
 
@@ -68,6 +69,13 @@ export function MediaDisplay({ url, isVideo, fieldLabel }: MediaDisplayProps) {
               <ExternalLink className="h-3 w-3 text-white ml-auto" />
             </div>
           </div>
+
+          {/* Note indicator badge */}
+          {note && (
+            <div className="absolute top-1 left-1 bg-blue-500 text-white rounded-full p-1">
+              <StickyNote className="h-3 w-3" />
+            </div>
+          )}
         </div>
       </DialogTrigger>
       
@@ -75,25 +83,36 @@ export function MediaDisplay({ url, isVideo, fieldLabel }: MediaDisplayProps) {
         <DialogHeader>
           <DialogTitle>{fieldLabel}</DialogTitle>
         </DialogHeader>
-        
-        <div className="flex items-center justify-center p-4">
-          {isVideo ? (
-            <video
-              src={signedUrl}
-              controls
-              className="max-w-full max-h-[70vh] rounded-lg"
-              style={{ maxHeight: '70vh' }}
-            />
-          ) : (
-            <div className="relative max-w-full max-h-[70vh]">
-              <Image
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-center p-4">
+            {isVideo ? (
+              <video
                 src={signedUrl}
-                alt={fieldLabel}
-                width={800}
-                height={600}
-                className="object-contain rounded-lg"
-                style={{ maxHeight: '70vh', width: 'auto', height: 'auto' }}
+                controls
+                className="max-w-full max-h-[60vh] rounded-lg"
+                style={{ maxHeight: '60vh' }}
               />
+            ) : (
+              <div className="relative max-w-full max-h-[60vh]">
+                <Image
+                  src={signedUrl}
+                  alt={fieldLabel}
+                  width={800}
+                  height={600}
+                  className="object-contain rounded-lg"
+                  style={{ maxHeight: '60vh', width: 'auto', height: 'auto' }}
+                />
+              </div>
+            )}
+          </div>
+
+          {note && (
+            <div className="px-4 pb-4">
+              <div className="bg-muted rounded-lg p-4 border">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Nota:</p>
+                <p className="text-sm">{note}</p>
+              </div>
             </div>
           )}
         </div>

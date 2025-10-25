@@ -1,6 +1,7 @@
 "use client"
 
 import { MediaDisplay } from "./media-display"
+import { normalizeMediaValue, type MediaItem } from "@/types/media.types"
 import type { CustomField } from "@/schemas/work-order-template"
 
 interface CustomFieldValueProps {
@@ -16,15 +17,16 @@ export function CustomFieldValue({ field, value }: CustomFieldValueProps) {
     case "IMAGE_AFTER":
     case "VIDEO_BEFORE":
     case "VIDEO_AFTER":
-      const urls = Array.isArray(value) ? value : [value]
+      const mediaItems = normalizeMediaValue(value)
       return (
         <div className="flex flex-wrap gap-2">
-          {urls.map((url, index) => (
-            <MediaDisplay 
-              key={index} 
-              url={url as string} 
+          {mediaItems.map((item, index) => (
+            <MediaDisplay
+              key={index}
+              url={item.url}
               isVideo={field.type.includes("VIDEO")}
-              fieldLabel={`${field.label} ${urls.length > 1 ? `(${index + 1})` : ''}`}
+              fieldLabel={`${field.label} ${mediaItems.length > 1 ? `(${index + 1})` : ''}`}
+              note={item.note}
             />
           ))}
         </div>

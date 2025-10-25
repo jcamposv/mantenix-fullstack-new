@@ -7,6 +7,7 @@ import { Camera, Video, Loader2 } from "lucide-react"
 import { MediaCaptureModal } from "./media-capture-modal"
 import { SignedMediaPreview } from "./signed-media-preview"
 import { compressImage, shouldCompressImage } from "@/lib/image-compression"
+import { normalizeMediaValue, type MediaItem } from "@/types/media.types"
 import type { CustomField } from "@/schemas/work-order-template"
 
 interface MediaFieldProps {
@@ -20,10 +21,11 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
   const [showModal, setShowModal] = useState(false)
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
-  
-  // Get existing URLs from form
-  const existingUrls = form.watch(`customFieldValues.${field.id}`) || []
-  
+
+  // Get existing media items from form and normalize them
+  const rawValue = form.watch(`customFieldValues.${field.id}`)
+  const mediaItems: MediaItem[] = normalizeMediaValue(rawValue)
+
   const isVideo = field.type.includes("VIDEO")
 
   const uploadFiles = async (files: File[]) => {
@@ -52,7 +54,7 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
 
   const handleFilesSelected = async (files: FileList | null) => {
     if (!files) return
-    
+
     const fileArray = Array.from(files)
     setShowModal(false)
     setUploading(true)
@@ -75,8 +77,12 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
 
       setMediaFiles(processedFiles)
       const urls = await uploadFiles(processedFiles)
-      const allUrls = [...existingUrls, ...urls]
-      form.setValue(`customFieldValues.${field.id}`, allUrls)
+
+      // Create new MediaItems from uploaded URLs
+      const newMediaItems: MediaItem[] = urls.map(url => ({ url }))
+      const allMediaItems = [...mediaItems, ...newMediaItems]
+
+      form.setValue(`customFieldValues.${field.id}`, allMediaItems)
       setMediaFiles([]) // Clear local files after upload
     } catch (error) {
       console.error('Error uploading files:', error)
@@ -87,18 +93,27 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
   }
 
   const handleRemoveFile = (index: number) => {
-    const totalUrls = existingUrls.length
-    
-    if (index < totalUrls) {
-      // Removing an uploaded URL
-      const newUrls = existingUrls.filter((_: string, i: number) => i !== index)
-      form.setValue(`customFieldValues.${field.id}`, newUrls.length > 0 ? newUrls : [])
+    const totalMediaItems = mediaItems.length
+
+    if (index < totalMediaItems) {
+      // Removing a media item
+      const newMediaItems = mediaItems.filter((_, i) => i !== index)
+      form.setValue(`customFieldValues.${field.id}`, newMediaItems.length > 0 ? newMediaItems : [])
     } else {
       // Removing a local file
-      const fileIndex = index - totalUrls
+      const fileIndex = index - totalMediaItems
       const newFiles = mediaFiles.filter((_, i) => i !== fileIndex)
       setMediaFiles(newFiles)
     }
+  }
+
+  const handleNoteChange = (index: number, note: string) => {
+    const newMediaItems = [...mediaItems]
+    newMediaItems[index] = {
+      ...newMediaItems[index],
+      note: note.trim() || undefined
+    }
+    form.setValue(`customFieldValues.${field.id}`, newMediaItems)
   }
 
   const getButtonLabel = () => {
@@ -129,12 +144,13 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
         </Button>
       )}
 
-      {(existingUrls.length > 0 || mediaFiles.length > 0) && (
-        <SignedMediaPreview 
+      {(mediaItems.length > 0 || mediaFiles.length > 0) && (
+        <SignedMediaPreview
           files={mediaFiles}
-          urls={existingUrls}
+          mediaItems={mediaItems}
           fieldType={field.type as "IMAGE_BEFORE" | "IMAGE_AFTER" | "VIDEO_BEFORE" | "VIDEO_AFTER"}
           onRemove={readOnly ? undefined : handleRemoveFile}
+          onNoteChange={readOnly ? undefined : handleNoteChange}
           readOnly={readOnly}
         />
       )}
