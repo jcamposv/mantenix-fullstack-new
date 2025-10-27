@@ -116,6 +116,7 @@ export interface WorkOrderAssignmentWithUser extends WorkOrderAssignment {
     name: string
     email: string
     role: Role
+    image: string | null
   }
   assigner: {
     id: string

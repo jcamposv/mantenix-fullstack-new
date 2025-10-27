@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId } = body
+    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image } = body
 
     // Validate required fields
     if (!email || !role || !name) {
@@ -174,6 +174,7 @@ export async function POST(request: NextRequest) {
         isExternalUser: isExternalUser || false,
         clientCompanyId: isExternalUser ? clientCompanyId : null,
         siteId: isExternalUser && siteId ? siteId : null,
+        image: image || null,
         token,
         expiresAt,
         createdBy: session.user.id

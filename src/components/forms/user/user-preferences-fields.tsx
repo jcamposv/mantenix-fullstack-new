@@ -29,7 +29,7 @@ export function UserPreferencesFields({ control }: UserPreferencesFieldsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Timezone</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select timezone" />
@@ -54,7 +54,7 @@ export function UserPreferencesFields({ control }: UserPreferencesFieldsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Language</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select language" />

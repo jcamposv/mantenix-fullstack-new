@@ -2,6 +2,7 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from "@/components/ui/input"
 import { Control } from "react-hook-form"
 import { AdminUserFormData } from "@/schemas/admin-user"
+import { ProfilePhotoUpload } from "@/components/forms/profile-photo-upload"
 
 interface AdminUserBasicInfoProps {
   control: Control<AdminUserFormData>
@@ -61,6 +62,25 @@ export function AdminUserBasicInfo({ control, mode, currentUserCompanyName }: Ad
           )}
         />
       )}
+
+      {/* Profile Photo */}
+      <FormField
+        control={control}
+        name="image"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <ProfilePhotoUpload
+                value={field.value}
+                onChange={field.onChange}
+                onRemove={() => field.onChange(null)}
+                userName={control._formValues.name || "Usuario"}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* Invitation Info */}
       {mode === "invite" && (

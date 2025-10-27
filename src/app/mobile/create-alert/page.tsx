@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,14 +22,28 @@ import { toast } from "sonner"
 import { z } from "zod"
 import { alertSchema, AlertFormData, alertTypes, alertPriorities } from "@/schemas/alert"
 import { useUserSites } from "@/hooks/useUserSites"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 
 export default function CreateAlertPage() {
+  const { user: currentUser, loading: userLoading } = useCurrentUser()
   const [images, setImages] = useState<string[]>([])
   const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { sites, loading: sitesLoading, error: sitesError, needsSiteSelection, currentUserSiteId } = useUserSites()
+
+  // Verificar que el usuario tiene permiso para crear alertas
+  useEffect(() => {
+    if (!userLoading && currentUser) {
+      const internalOperationalRoles = ['TECNICO', 'SUPERVISOR']
+      if (internalOperationalRoles.includes(currentUser.role || '')) {
+        toast.error('No tienes permiso para crear alertas')
+        router.push('/mobile/work-orders')
+        return
+      }
+    }
+  }, [currentUser, userLoading, router])
 
   // Crear schema dinámico basado en si necesita selección de sede
   const dynamicSchema = React.useMemo(() => {

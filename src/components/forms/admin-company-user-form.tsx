@@ -57,6 +57,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       siteId: undefined,
       timezone: "UTC",
       locale: "es",
+      image: null,
     },
   })
 

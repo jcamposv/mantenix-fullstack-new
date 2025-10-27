@@ -12,7 +12,8 @@ export const createUserSchema = z.object({
   siteId: z.string().optional(),
   phone: z.string().max(20, "Teléfono muy largo").optional(),
   address: z.string().max(200, "Dirección muy larga").optional(),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  image: z.string().nullable().optional()
 })
 
 // Schema para actualizar usuarios
@@ -25,7 +26,8 @@ export const updateUserSchema = z.object({
   siteId: z.string().optional(),
   phone: z.string().max(20).optional(),
   address: z.string().max(200).optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  image: z.string().nullable().optional()
 })
 
 // Schema para filtros de usuarios

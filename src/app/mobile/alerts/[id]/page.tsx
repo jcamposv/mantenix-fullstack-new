@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Building2, 
+import {
+  ArrowLeft,
+  MapPin,
+  Building2,
   AlertTriangle,
   MessageSquare,
   Send,
@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { alertPriorities, alertTypes } from "@/schemas/alert"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 
 interface Alert {
   id: string
@@ -98,6 +99,7 @@ const statusLabels = {
 }
 
 export default function AlertDetailPage() {
+  const { user: currentUser, loading: userLoading } = useCurrentUser()
   const [alert, setAlert] = useState<Alert | null>(null)
   const [loading, setLoading] = useState(true)
   const [commentText, setCommentText] = useState("")
@@ -106,8 +108,20 @@ export default function AlertDetailPage() {
   const params = useParams()
   const alertId = params.id as string
 
+  // Verificar que el usuario tiene permiso para ver alertas
   useEffect(() => {
-    if (alertId) {
+    if (!userLoading && currentUser) {
+      const internalOperationalRoles = ['TECNICO', 'SUPERVISOR']
+      if (internalOperationalRoles.includes(currentUser.role || '')) {
+        toast.error('No tienes permiso para ver alertas')
+        router.push('/mobile/work-orders')
+        return
+      }
+    }
+  }, [currentUser, userLoading, router])
+
+  useEffect(() => {
+    if (alertId && !userLoading) {
       fetchAlert()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

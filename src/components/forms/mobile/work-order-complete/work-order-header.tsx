@@ -8,11 +8,12 @@ import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
 import { AddAssetModal } from "@/components/forms/mobile/add-asset-modal"
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Building, 
-  User, 
+import { UserAvatar } from "@/components/common/user-avatar"
+import {
+  ArrowLeft,
+  Calendar,
+  Building,
+  User,
   Clock,
   FileText,
   Settings
@@ -140,11 +141,25 @@ export function WorkOrderHeader({
               <Separator />
               <div>
                 <h4 className="font-medium text-sm mb-2">Técnicos Asignados</h4>
-                <div className="space-y-1">
-                  {workOrder.assignments.map((assignment, index) => (
-                    <Badge key={index} variant="secondary" className="mr-1">
-                      {assignment.user?.name || 'Usuario'}
-                    </Badge>
+                <div className="space-y-2">
+                  {workOrder.assignments.map((assignment) => (
+                    <div key={assignment.id} className="flex items-center gap-2 p-2 bg-muted rounded">
+                      <UserAvatar
+                        name={assignment.user?.name || "Usuario"}
+                        image={assignment.user?.image}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {assignment.user?.name || 'Usuario'}
+                        </p>
+                        {assignment.user?.email && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {assignment.user.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

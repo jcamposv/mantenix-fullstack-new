@@ -33,6 +33,7 @@ export function SuperAdminUserForm({ onSubmit, onCancel, loading, mode = "create
       companyId: undefined,
       timezone: "UTC",
       locale: "en",
+      image: null,
     },
   })
 

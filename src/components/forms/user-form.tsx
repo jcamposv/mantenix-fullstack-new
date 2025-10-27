@@ -45,6 +45,7 @@ export function UserForm({
       companyId: initialData?.companyId || currentUser?.company?.id || undefined,
       timezone: initialData?.timezone || "UTC",
       locale: initialData?.locale || "en",
+      image: initialData?.image || null,
     },
   })
 

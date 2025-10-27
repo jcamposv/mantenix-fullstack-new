@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,6 +15,7 @@ import {
 import { AlertTriangle, Clock, MapPin, Plus, Search, Filter } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 
 interface Alert {
   id: string
@@ -63,6 +64,7 @@ const statusLabels = {
 }
 
 export default function FieldPage() {
+  const { user: currentUser, loading: userLoading } = useCurrentUser()
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -71,10 +73,23 @@ export default function FieldPage() {
   const [showFilters, setShowFilters] = useState(false)
   const router = useRouter()
 
+  // Verificar que el usuario tiene permiso para ver alertas
   useEffect(() => {
-    fetchAlerts()
+    if (!userLoading && currentUser) {
+      const internalOperationalRoles = ['TECNICO', 'SUPERVISOR']
+      if (internalOperationalRoles.includes(currentUser.role || '')) {
+        router.push('/mobile/work-orders')
+        return
+      }
+    }
+  }, [currentUser, userLoading, router])
+
+  useEffect(() => {
+    if (!userLoading && currentUser) {
+      fetchAlerts()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [userLoading, currentUser])
 
   const fetchAlerts = async () => {
     try {

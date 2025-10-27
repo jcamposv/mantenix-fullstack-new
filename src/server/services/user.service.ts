@@ -115,7 +115,8 @@ export class UserService {
     const createData: Prisma.UserCreateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role
+      role: userData.role,
+      image: userData.image
     }
 
     // Conectar relaciones opcionales
@@ -164,7 +165,8 @@ export class UserService {
     const updateData: Prisma.UserUpdateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role
+      role: userData.role,
+      image: userData.image
     }
 
     // Actualizar relaciones opcionales

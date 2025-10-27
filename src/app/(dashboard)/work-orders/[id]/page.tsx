@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Edit, User } from "lucide-react"
+import { Edit } from "lucide-react"
 import { toast } from "sonner"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
@@ -110,36 +110,6 @@ export default function WorkOrderDetailPage() {
         {/* Componentes reutilizables */}
         <WorkOrderBasicInfo workOrder={workOrder} />
         <WorkOrderScheduleInfo workOrder={workOrder} />
-
-        {/* Assignments */}
-        {workOrder.assignments && workOrder.assignments.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Usuarios Asignados ({workOrder.assignments.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {workOrder.assignments.map((assignment) => (
-                  <div key={assignment.id} className="flex items-center justify-between p-2 border rounded">
-                    <div>
-                      <p className="text-sm font-medium">{assignment.user.name}</p>
-                      <p className="text-xs text-muted-foreground">{assignment.user.email}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">
-                        Asignado: {new Date(assignment.assignedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <WorkOrderInstructions workOrder={workOrder} />
         <WorkOrderToolsMaterials workOrder={workOrder} />
 

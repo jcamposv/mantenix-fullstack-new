@@ -42,15 +42,15 @@ export async function GET(
   }
 }
 
-// PATCH /api/admin/users/[id] - Actualizar usuario
-export async function PATCH(
+// Helper function for update logic
+async function handleUpdateUser(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
     const sessionResult = await AuthService.getAuthenticatedSession()
-    
+
     if (sessionResult instanceof NextResponse) {
       return sessionResult
     }
@@ -59,7 +59,7 @@ export async function PATCH(
     const validatedData = updateUserSchema.parse(body)
 
     const updatedUser = await UserService.update(id, validatedData, sessionResult)
-    
+
     if (!updatedUser) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     }
@@ -95,6 +95,22 @@ export async function PATCH(
       { status: 500 }
     )
   }
+}
+
+// PATCH /api/admin/users/[id] - Actualizar usuario (parcial)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return handleUpdateUser(request, { params })
+}
+
+// PUT /api/admin/users/[id] - Actualizar usuario (completo)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return handleUpdateUser(request, { params })
 }
 
 // DELETE /api/admin/users/[id] - Eliminar usuario

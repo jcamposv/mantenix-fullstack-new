@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { ReactNode } from "react"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 
 interface MobileNavLinkProps {
   href: string
@@ -35,19 +36,31 @@ export function MobileNavLink({ href, icon, label, isActive }: MobileNavLinkProp
 }
 
 export function MobileNavigation() {
+  const { user: currentUser } = useCurrentUser()
+
+  // Roles que pueden ver alertas (admins y clientes externos)
+  const canViewAlerts = currentUser?.role && !['TECNICO', 'SUPERVISOR'].includes(currentUser.role)
+
+  // Ajustar el grid según la cantidad de items
+  const gridCols = canViewAlerts ? "grid-cols-4" : "grid-cols-3"
+
   return (
-    <div className="grid grid-cols-4 gap-2 w-full">
-      <MobileNavLink
-        href="/mobile"
-        icon={
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4l2 2 4-4" />
-          </svg>
-        }
-        label="Alertas"
-      />
-      
+    <div className={`grid ${gridCols} gap-2 w-full`}>
+      {canViewAlerts && (
+        <>
+          <MobileNavLink
+            href="/mobile"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4l2 2 4-4" />
+              </svg>
+            }
+            label="Alertas"
+          />
+        </>
+      )}
+
       <MobileNavLink
         href="/mobile/work-orders"
         icon={
@@ -58,15 +71,17 @@ export function MobileNavigation() {
         label="Órdenes"
       />
 
-      <MobileNavLink
-        href="/mobile/create-alert"
-        icon={
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        }
-        label="Crear"
-      />
+      {canViewAlerts && (
+        <MobileNavLink
+          href="/mobile/create-alert"
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          label="Crear"
+        />
+      )}
 
       <MobileNavLink
         href="/mobile/profile"

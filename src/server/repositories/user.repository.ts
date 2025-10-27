@@ -106,4 +106,15 @@ export class UserRepository {
       orderBy: { createdAt: 'desc' }
     })
   }
+
+  /**
+   * Actualiza la foto de perfil del usuario
+   */
+  static async updateProfilePhoto(userId: string, photoUrl: string): Promise<UserWithRelations> {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { image: photoUrl },
+      include: UserRepository.includeRelations
+    })
+  }
 }

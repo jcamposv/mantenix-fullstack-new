@@ -409,8 +409,9 @@ model UserInvitation {
   used            Boolean  @default(false)
   usedAt          DateTime?
   createdBy       String
+  image           String?  // Profile photo URL for the invited user
   createdAt       DateTime @default(now())
-  
+
   // Relations
   company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   creator       User          @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)

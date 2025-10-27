@@ -91,6 +91,7 @@ export async function POST(
         isExternalUser: invitation.isExternalUser,
         clientCompanyId: invitation.clientCompanyId,
         siteId: invitation.siteId,
+        image: invitation.image,
       },
     })
 
