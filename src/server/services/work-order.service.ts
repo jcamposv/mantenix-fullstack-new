@@ -1,7 +1,9 @@
 import { Prisma } from '@prisma/client'
 import { WorkOrderRepository } from '@/server/repositories/work-order.repository'
 import { WorkOrderTemplateRepository } from '@/server/repositories/work-order-template.repository'
-import type { 
+import { EmailSenderService } from './email-sender.service'
+import { prisma } from '@/lib/prisma'
+import type {
   CreateWorkOrderData,
   UpdateWorkOrderData,
   CompleteWorkOrderData,
@@ -157,7 +159,14 @@ export class WorkOrderService {
     }
 
     // Return the complete work order with assignments
-    return await WorkOrderRepository.findById(workOrder.id, session.user.companyId) as WorkOrderWithRelations
+    const completeWorkOrder = await WorkOrderRepository.findById(workOrder.id, session.user.companyId) as WorkOrderWithRelations
+
+    // Send email notifications (async, don't block response)
+    this.sendWorkOrderCreatedEmails(completeWorkOrder, session).catch(error => {
+      console.error('Error sending work order created emails:', error)
+    })
+
+    return completeWorkOrder
   }
 
   /**
@@ -307,7 +316,16 @@ export class WorkOrderService {
       customFieldValues: completionData.customFieldValues
     }
 
-    return await this.updateWorkOrder(session, id, updateData)
+    const updatedWorkOrder = await this.updateWorkOrder(session, id, updateData)
+
+    // Send email notifications (async, don't block response)
+    if (updatedWorkOrder) {
+      this.sendWorkOrderCompletedEmails(updatedWorkOrder, session).catch(error => {
+        console.error('Error sending work order completed emails:', error)
+      })
+    }
+
+    return updatedWorkOrder
   }
 
   /**
@@ -481,6 +499,193 @@ export class WorkOrderService {
       ...stats,
       recentActivity,
       performanceMetrics
+    }
+  }
+
+  /**
+   * Send email notifications when a work order is created
+   */
+  private static async sendWorkOrderCreatedEmails(
+    workOrder: WorkOrderWithRelations,
+    session: AuthenticatedSession
+  ): Promise<void> {
+    try {
+      if (!workOrder.companyId) return
+
+      // Get recipient emails
+      const recipientEmails: string[] = []
+
+      // 1. Get assigned users emails
+      if (workOrder.assignments && workOrder.assignments.length > 0) {
+        const assignedUsers = await prisma.user.findMany({
+          where: {
+            id: { in: workOrder.assignments.map(a => a.userId) }
+          },
+          select: { email: true }
+        })
+        recipientEmails.push(...assignedUsers.map(u => u.email))
+      }
+
+      // 2. Get tenant admins (ADMIN_EMPRESA)
+      const tenantAdmins = await prisma.user.findMany({
+        where: {
+          companyId: workOrder.companyId,
+          role: 'ADMIN_EMPRESA',
+          isLocked: false
+        },
+        select: { email: true }
+      })
+      recipientEmails.push(...tenantAdmins.map(u => u.email))
+
+      // Remove duplicates
+      const uniqueEmails = [...new Set(recipientEmails)]
+
+      if (uniqueEmails.length === 0) {
+        console.log('No recipients found for work order created email')
+        return
+      }
+
+      // Build work order URL
+      const company = await prisma.company.findUnique({
+        where: { id: workOrder.companyId },
+        select: { subdomain: true }
+      })
+
+      const domainBase = process.env.DOMAIN_BASE || "mantenix.ai"
+      const baseUrl = process.env.NODE_ENV === 'production'
+        ? `https://${company?.subdomain}.${domainBase}`
+        : `http://${company?.subdomain}.localhost:3000`
+      const workOrderUrl = `${baseUrl}/work-orders/${workOrder.id}`
+
+      // Format scheduled date
+      const scheduledDate = workOrder.scheduledDate
+        ? new Date(workOrder.scheduledDate).toLocaleString('es-ES', {
+            dateStyle: 'long',
+            timeStyle: 'short'
+          })
+        : 'No programada'
+
+      // Get creator name
+      const creator = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true }
+      })
+
+      // Send email
+      await EmailSenderService.sendWorkOrderCreatedEmail(
+        uniqueEmails,
+        workOrder.number,
+        workOrder.title,
+        workOrder.description || '',
+        workOrder.type,
+        workOrder.priority,
+        workOrder.status,
+        workOrder.site?.name || 'Sin sede',
+        scheduledDate,
+        creator?.name || 'Usuario',
+        workOrderUrl,
+        workOrder.companyId
+      )
+
+      console.log(`Work order created email sent to ${uniqueEmails.length} recipients`)
+    } catch (error) {
+      console.error('Error sending work order created emails:', error)
+      // Don't throw - email errors shouldn't fail work order creation
+    }
+  }
+
+  /**
+   * Send email notifications when a work order is completed
+   */
+  private static async sendWorkOrderCompletedEmails(
+    workOrder: WorkOrderWithRelations,
+    session: AuthenticatedSession
+  ): Promise<void> {
+    try {
+      if (!workOrder.companyId) return
+
+      // Get recipient emails
+      const recipientEmails: string[] = []
+
+      // 1. Get assigned users emails
+      if (workOrder.assignments && workOrder.assignments.length > 0) {
+        const assignedUsers = await prisma.user.findMany({
+          where: {
+            id: { in: workOrder.assignments.map(a => a.userId) }
+          },
+          select: { email: true }
+        })
+        recipientEmails.push(...assignedUsers.map(u => u.email))
+      }
+
+      // 2. Get tenant admins (ADMIN_EMPRESA)
+      const tenantAdmins = await prisma.user.findMany({
+        where: {
+          companyId: workOrder.companyId,
+          role: 'ADMIN_EMPRESA',
+          isLocked: false
+        },
+        select: { email: true }
+      })
+      recipientEmails.push(...tenantAdmins.map(u => u.email))
+
+      // Remove duplicates
+      const uniqueEmails = [...new Set(recipientEmails)]
+
+      if (uniqueEmails.length === 0) {
+        console.log('No recipients found for work order completed email')
+        return
+      }
+
+      // Build work order URL
+      const company = await prisma.company.findUnique({
+        where: { id: workOrder.companyId },
+        select: { subdomain: true }
+      })
+
+      const domainBase = process.env.DOMAIN_BASE || "mantenix.ai"
+      const baseUrl = process.env.NODE_ENV === 'production'
+        ? `https://${company?.subdomain}.${domainBase}`
+        : `http://${company?.subdomain}.localhost:3000`
+      const workOrderUrl = `${baseUrl}/work-orders/${workOrder.id}`
+
+      // Format completion date
+      const completedAt = workOrder.completedAt
+        ? new Date(workOrder.completedAt).toLocaleString('es-ES', {
+            dateStyle: 'long',
+            timeStyle: 'short'
+          })
+        : new Date().toLocaleString('es-ES', {
+            dateStyle: 'long',
+            timeStyle: 'short'
+          })
+
+      // Get user name
+      const completedBy = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true }
+      })
+
+      // Send email
+      await EmailSenderService.sendWorkOrderCompletedEmail(
+        uniqueEmails,
+        workOrder.number,
+        workOrder.title,
+        workOrder.description || '',
+        workOrder.type,
+        workOrder.priority,
+        workOrder.status,
+        workOrder.site?.name || 'Sin sede',
+        completedBy?.name || 'Usuario',
+        completedAt,
+        workOrderUrl,
+        workOrder.companyId
+      )
+
+      console.log(`Work order completed email sent to ${uniqueEmails.length} recipients`)
+    } catch (error) {
+      console.error('Error sending work order completed emails:', error)
+      // Don't throw - email errors shouldn't fail work order completion
     }
   }
 }

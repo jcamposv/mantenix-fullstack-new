@@ -177,6 +177,7 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "work_order_description",
     "work_order_type",
     "work_order_priority",
+    "work_order_status",
     "site_name",
     "scheduled_date",
     "created_by_name",
@@ -185,11 +186,13 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
   WORK_ORDER_COMPLETED: [
     "work_order_number",
     "work_order_title",
+    "work_order_description",
     "work_order_type",
+    "work_order_priority",
+    "work_order_status",
     "site_name",
-    "completed_by_name",
-    "completed_at",
-    "completion_notes",
+    "created_by_name",
+    "scheduled_date",
     "work_order_url"
   ],
   WORK_ORDER_CANCELLED: [

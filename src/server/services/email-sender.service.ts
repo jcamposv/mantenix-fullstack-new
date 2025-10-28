@@ -187,6 +187,7 @@ export class EmailSenderService {
     workOrderDescription: string,
     workOrderType: string,
     workOrderPriority: string,
+    workOrderStatus: string,
     siteName: string,
     scheduledDate: string,
     createdByName: string,
@@ -202,9 +203,46 @@ export class EmailSenderService {
         work_order_description: workOrderDescription,
         work_order_type: workOrderType,
         work_order_priority: workOrderPriority,
+        work_order_status: workOrderStatus,
         site_name: siteName,
         scheduled_date: scheduledDate,
         created_by_name: createdByName,
+        work_order_url: workOrderUrl
+      },
+      companyId
+    })
+  }
+
+  /**
+   * Envía un email de orden de trabajo completada
+   */
+  static async sendWorkOrderCompletedEmail(
+    to: string | string[],
+    workOrderNumber: string,
+    workOrderTitle: string,
+    workOrderDescription: string,
+    workOrderType: string,
+    workOrderPriority: string,
+    workOrderStatus: string,
+    siteName: string,
+    completedByName: string,
+    completedAt: string,
+    workOrderUrl: string,
+    companyId: string
+  ): Promise<EmailSendResponse> {
+    return await this.sendEmail({
+      to,
+      templateType: 'WORK_ORDER_COMPLETED',
+      variables: {
+        work_order_number: workOrderNumber,
+        work_order_title: workOrderTitle,
+        work_order_description: workOrderDescription,
+        work_order_type: workOrderType,
+        work_order_priority: workOrderPriority,
+        work_order_status: workOrderStatus,
+        site_name: siteName,
+        created_by_name: completedByName,
+        scheduled_date: completedAt,
         work_order_url: workOrderUrl
       },
       companyId

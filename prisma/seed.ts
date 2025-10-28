@@ -157,7 +157,7 @@ async function main() {
 
   // Define users to create
   const usersToCreate = [
-    { email: 'admin@mantenix.ai', password: 'SuperAdmin123!@#', name: 'Super Administrator', role: 'SUPER_ADMIN', companySubdomain: 'acme' },
+    { email: 'jairo@mantenix.com', password: 'SuperAdmin123!@#', name: 'Super Administrator', role: 'SUPER_ADMIN', companySubdomain: 'acme' },
     { email: 'admin@acme.com', password: 'AdminEmpresa123!@#', name: 'John Doe', role: 'ADMIN_EMPRESA', companySubdomain: 'acme' },
     { email: 'supervisor@acme.com', password: 'Supervisor123!@#', name: 'Jane Smith', role: 'SUPERVISOR', companySubdomain: 'acme' },
     { email: 'tech@acme.com', password: 'Tecnico123!@#', name: 'Mike Johnson', role: 'TECNICO', companySubdomain: 'acme' },
