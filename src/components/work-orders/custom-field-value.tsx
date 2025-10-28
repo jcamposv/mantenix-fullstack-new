@@ -1,7 +1,7 @@
 "use client"
 
 import { MediaDisplay } from "./media-display"
-import { normalizeMediaValue, type MediaItem } from "@/types/media.types"
+import { normalizeMediaValue } from "@/types/media.types"
 import type { CustomField } from "@/schemas/work-order-template"
 
 interface CustomFieldValueProps {

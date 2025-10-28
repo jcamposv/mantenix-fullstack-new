@@ -165,8 +165,12 @@ export class UserService {
     const updateData: Prisma.UserUpdateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role,
-      image: userData.image
+      role: userData.role
+    }
+
+    // Solo actualizar image si fue proporcionado explícitamente
+    if (userData.image !== undefined) {
+      updateData.image = userData.image
     }
 
     // Actualizar relaciones opcionales

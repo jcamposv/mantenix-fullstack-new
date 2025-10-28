@@ -220,6 +220,7 @@ model Company {
   clientCompanies ClientCompany[]
   workOrderTemplates WorkOrderTemplate[]
   workOrders      WorkOrder[]
+  emailConfiguration EmailConfiguration?
 
   @@index([subdomain])
   @@index([isActive])
@@ -252,7 +253,7 @@ model ClientCompany {
   // External users belonging to this client company
   externalUsers     User[]
   userInvitations   UserInvitation[]
-  
+
   // Sites belonging to this client company
   sites             Site[]
 
@@ -577,6 +578,17 @@ enum CustomFieldType {
   FILE           // Campo para archivos generales
 }
 
+enum EmailTemplateType {
+  WELCOME                // Email de bienvenida
+  USER_INVITATION        // Invitación de usuario
+  WORK_ORDER_CREATED     // Orden de trabajo creada
+  WORK_ORDER_COMPLETED   // Orden de trabajo completada
+  WORK_ORDER_CANCELLED   // Orden de trabajo cancelada
+  ALERT_CREATED          // Alerta creada
+  ALERT_ASSIGNED         // Alerta asignada
+  ALERT_RESOLVED         // Alerta resuelta
+}
+
 model WorkOrderTemplate {
   id          String                   @id @default(cuid())
   name        String                   // Nombre del template
@@ -736,4 +748,62 @@ model WorkOrderAssignment {
   @@index([userId])
   @@index([assignedBy])
   @@map("work_order_assignments")
+}
+
+// ============================================================================
+// EMAIL SYSTEM
+// ============================================================================
+
+// Configuración de MailerSend por tenant company
+model EmailConfiguration {
+  id                    String    @id @default(cuid())
+  companyId             String    @unique // Una configuración por tenant company
+
+  // MailerSend API credentials
+  apiToken              String    // MailerSend API Token
+  domainId              String?   // Domain ID en MailerSend
+  fromEmail             String    // Email desde el cual se envían los correos
+  fromName              String    // Nombre que aparece como remitente
+  replyToEmail          String?   // Email de respuesta (opcional)
+
+  // Settings
+  isActive              Boolean   @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  company               Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  emailTemplates        EmailTemplate[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("email_configurations")
+}
+
+// Templates de email personalizables
+model EmailTemplate {
+  id                    String              @id @default(cuid())
+  emailConfigurationId  String              // Configuración de email asociada
+  type                  EmailTemplateType   // Tipo de template
+
+  // Template info
+  name                  String              // Nombre descriptivo del template
+  subject               String              // Asunto del email
+  templateId            String?             // ID del template en MailerSend (opcional)
+
+  // Settings
+  isActive              Boolean             @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  emailConfiguration    EmailConfiguration  @relation(fields: [emailConfigurationId], references: [id], onDelete: Cascade)
+
+  @@unique([emailConfigurationId, type]) // Un template de cada tipo por configuración
+  @@index([emailConfigurationId])
+  @@index([type])
+  @@index([isActive])
+  @@map("email_templates")
 }

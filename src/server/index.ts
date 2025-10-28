@@ -10,6 +10,9 @@ export { SiteService } from './services/site.service'
 export { CompanyService } from './services/company.service'
 export { AssetService } from './services/asset.service'
 export { ClientWorkOrderService } from './services/client-work-order.service'
+export { EmailConfigurationService } from './services/email-configuration.service'
+export { EmailTemplateService } from './services/email-template.service'
+export { EmailSenderService } from './services/email-sender.service'
 
 // Repositories
 export { AlertRepository } from './repositories/alert.repository'
@@ -19,6 +22,8 @@ export { ClientCompanyRepository } from './repositories/client-company.repositor
 export { SiteRepository } from './repositories/site.repository'
 export { CompanyRepository } from './repositories/company.repository'
 export { AssetRepository } from './repositories/asset.repository'
+export { EmailConfigurationRepository } from './repositories/email-configuration.repository'
+export { EmailTemplateRepository } from './repositories/email-template.repository'
 
 // Helpers
 export { PermissionHelper } from './helpers/permission.helper'
@@ -32,6 +37,7 @@ export type { ClientCompanyWithRelations, ClientCompanyFilters, PaginatedClientC
 export type { SiteWithRelations, SiteFilters, PaginatedSitesResponse, CreateSiteData, UpdateSiteData } from '@/types/site.types'
 export type { CompanyWithRelations, CompanyBranding, CompanyBasicInfo, CompanyFilters, PaginatedCompaniesResponse, CreateCompanyData, UpdateCompanyData } from '@/types/company.types'
 export type { AssetWithRelations, AssetFilters, PaginatedAssetsResponse, CreateAssetData, UpdateAssetData } from '@/types/asset.types'
+export type { EmailConfigurationWithRelations, EmailTemplateWithRelations, EmailTemplateType, CreateEmailConfigurationData, UpdateEmailConfigurationData, CreateEmailTemplateData, UpdateEmailTemplateData, PaginatedEmailConfigurationsResponse, PaginatedEmailTemplatesResponse } from '@/types/email.types'
 
 // Re-export schemas
 export { createUserSchema, updateUserSchema, userFiltersSchema } from '@/app/api/schemas/user-schemas'
@@ -39,3 +45,4 @@ export { createClientCompanySchema, updateClientCompanySchema, clientCompanyFilt
 export { createSiteSchema, updateSiteSchema, siteFiltersSchema } from '@/app/api/schemas/site-schemas'
 export { createCompanySchema, updateCompanySchema, companyFiltersSchema, brandingQuerySchema } from '@/app/api/schemas/company-schemas'
 export { createAssetSchema, updateAssetSchema, assetFiltersSchema } from '@/app/api/schemas/asset-schemas'
+export { createEmailConfigurationSchema, updateEmailConfigurationSchema, emailConfigurationFiltersSchema, createEmailTemplateSchema, updateEmailTemplateSchema, emailTemplateFiltersSchema, emailTemplateTypeEnum } from '@/app/api/schemas/email-schemas'

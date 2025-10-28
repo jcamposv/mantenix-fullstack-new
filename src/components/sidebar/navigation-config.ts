@@ -12,6 +12,7 @@ import {
   Bell,
   ClipboardList,
   AlertCircle,
+  Mail,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -147,6 +148,12 @@ export const ADMIN_NAV_ITEMS = [
     url: "/admin/users", // Company admin uses admin route
     icon: Users,
     role: "ADMIN_EMPRESA"
+  },
+  {
+    name: "Configuración de Emails",
+    url: "/super-admin/email-configurations",
+    icon: Mail,
+    role: "SUPER_ADMIN" // Only super admins can manage email configurations
   },
   {
     name: "Configuración del Sistema",

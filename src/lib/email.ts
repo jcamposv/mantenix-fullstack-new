@@ -1,17 +1,8 @@
 /**
- * Email service using MailerSend for user invitations
+ * Email service using the template system
  */
 
-import { MailerSend, EmailParams, Sender, Recipient } from "mailersend"
-
-const mailerSend = new MailerSend({
-  apiKey: process.env.MAILERSEND_API_KEY!,
-})
-
-const sentFrom = new Sender(
-  process.env.EMAIL_FROM || "noreply@mantenix.ai",
-  process.env.EMAIL_FROM_NAME || "Mantenix Platform"
-)
+import { EmailSenderService } from "@/server/services/email-sender.service"
 
 interface InviteEmailData {
   recipientEmail: string
@@ -20,42 +11,33 @@ interface InviteEmailData {
   companyName: string
   role: string
   inviteLink: string
+  companyId: string
 }
 
 export async function sendInviteEmail(data: InviteEmailData) {
   try {
-    const recipients = [
-      new Recipient(data.recipientEmail, data.recipientName)
-    ]
+    const expirationDate = new Date(Date.now() + 48 * 60 * 60 * 1000).toLocaleString('es-ES', {
+      dateStyle: 'long',
+      timeStyle: 'short'
+    })
 
-    const personalization = [
-      {
-        email: data.recipientEmail,
-        data: {
-          name: data.recipientName,
-          account: {
-            name: data.inviterName
-          },
-          company_name: data.companyName,
-          link_register: data.inviteLink,
-          role: data.role
-        },
-      }
-    ]
+    const result = await EmailSenderService.sendInvitationEmail(
+      data.recipientEmail,
+      data.recipientName,
+      data.inviterName,
+      data.companyName,
+      data.inviteLink,
+      expirationDate,
+      data.companyId
+    )
 
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setReplyTo(sentFrom)
-      .setSubject(`Invitation to join ${data.companyName} on Mantenix`)
-      .setTemplateId(process.env.MAILERSEND_INVITE_TEMPLATE_ID!)
-      .setPersonalization(personalization)
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send invitation email')
+    }
 
-    const response = await mailerSend.email.send(emailParams)
-    
-    console.log('Invite email sent successfully:', response)
-    return { success: true, messageId: response }
-    
+    console.log('Invite email sent successfully:', result.messageId)
+    return { success: true, messageId: result.messageId }
+
   } catch (error) {
     console.error('Error sending invite email:', error)
     throw new Error('Failed to send invitation email')
@@ -66,7 +48,27 @@ export async function sendWelcomeEmail(data: {
   recipientEmail: string
   recipientName: string
   companyName: string
+  loginUrl: string
+  companyId: string
 }) {
-  // TODO: Implement welcome email after user completes registration
-  console.log('Welcome email would be sent to:', data.recipientEmail)
+  try {
+    const result = await EmailSenderService.sendWelcomeEmail(
+      data.recipientEmail,
+      data.recipientName,
+      data.companyName,
+      data.loginUrl,
+      data.companyId
+    )
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send welcome email')
+    }
+
+    console.log('Welcome email sent successfully:', result.messageId)
+    return { success: true, messageId: result.messageId }
+
+  } catch (error) {
+    console.error('Error sending welcome email:', error)
+    throw new Error('Failed to send welcome email')
+  }
 }

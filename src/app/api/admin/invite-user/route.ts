@@ -209,7 +209,8 @@ export async function POST(request: NextRequest) {
       inviterName: session.user.name || "Administrator",
       companyName: company?.name || "Mantenix",
       role: role,
-      inviteLink
+      inviteLink,
+      companyId: targetCompanyId
     })
 
     return NextResponse.json({
