@@ -8,12 +8,14 @@ const nextConfig: NextConfig = {
   // Configure allowed image domains and timeout
   images: {
     // Increase timeout for large images from S3
-    dangerouslyAllowSVG: false,
+    dangerouslyAllowSVG: true, // Allow SVG for logos
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     minimumCacheTTL: 60,
     loader: 'default',
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Allow unoptimized images in development for subdomain support
+    unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [
       {
         protocol: 'https',

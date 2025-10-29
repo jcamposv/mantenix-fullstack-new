@@ -7,7 +7,7 @@ export function useBrandingEffects(companyBranding?: CompanyBranding | null) {
 
   useEffect(() => {
     applyBranding()
-    
+
     // Apply CSS custom properties for dynamic theming if branding is available
     if (companyBranding?.primaryColor) {
       document.documentElement.style.setProperty('--company-primary', companyBranding.primaryColor)

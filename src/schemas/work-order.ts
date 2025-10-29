@@ -12,7 +12,8 @@ export const workOrderSchema = z.object({
   type: workOrderTypeSchema,
   priority: workOrderPrioritySchema.optional(),
   status: workOrderStatusSchema.optional(),
-  
+  prefixId: z.string().optional(),
+
   // Location and asset
   siteId: z.string().min(1, "La sede es requerida"),
   assetId: z.string().optional(),

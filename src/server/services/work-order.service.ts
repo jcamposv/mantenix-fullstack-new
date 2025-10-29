@@ -95,8 +95,11 @@ export class WorkOrderService {
       }
     }
 
-    // Generate work order number
-    const number = await WorkOrderRepository.generateNumber(session.user.companyId)
+    // Generate work order number (with prefix if provided)
+    const number = await WorkOrderRepository.generateNumber(
+      session.user.companyId,
+      workOrderData.prefixId
+    )
 
     // Validate template if provided
     let templateData = null
@@ -134,6 +137,11 @@ export class WorkOrderService {
       company: { connect: { id: session.user.companyId } },
       site: { connect: { id: workOrderData.siteId } },
       creator: { connect: { id: session.user.id } }
+    }
+
+    // Add prefix if provided
+    if (workOrderData.prefixId) {
+      createData.prefix = { connect: { id: workOrderData.prefixId } }
     }
 
     // Add asset if provided

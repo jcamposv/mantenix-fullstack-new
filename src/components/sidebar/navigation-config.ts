@@ -67,6 +67,10 @@ export const BASE_NAV_ITEMS = [
         title: "Templates",
         url: "/admin/work-order-templates",
       },
+      {
+        title: "Prefijos de Numeración",
+        url: "/admin/work-order-prefixes",
+      },
     ],
   },
 ]
