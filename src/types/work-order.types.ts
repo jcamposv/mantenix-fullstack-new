@@ -12,12 +12,13 @@ export type WorkOrderStatus = "DRAFT" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED"
 export interface WorkOrder {
   id: string
   number: string
+  prefixId: string | null
   title: string
   description: string | null
   type: WorkOrderType
   priority: WorkOrderPriority
   status: WorkOrderStatus
-  
+
   // Location and asset
   siteId: string
   assetId: string | null
@@ -88,6 +89,11 @@ export interface WorkOrderWithRelations extends WorkOrder {
     category: string | null
     customFields: JsonValue | null
   } | null
+  prefix?: {
+    id: string
+    code: string
+    name: string
+  } | null
   creator?: {
     id: string
     name: string
@@ -132,6 +138,7 @@ export interface CreateWorkOrderData {
   type: WorkOrderType
   priority?: WorkOrderPriority
   status?: WorkOrderStatus
+  prefixId?: string
   siteId: string
   assetId?: string
   templateId?: string

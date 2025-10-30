@@ -29,6 +29,7 @@ interface WorkOrderFormProps {
   assets?: Array<{ id: string; name: string; code: string }>
   users?: Array<{ id: string; name: string; email: string }>
   templates?: WorkOrderTemplateWithRelations[]
+  prefixes?: Array<{ id: string; code: string; name: string; description: string | null }>
   isEditing?: boolean
   canChangeTemplate?: boolean
 }
@@ -39,6 +40,7 @@ export function WorkOrderForm({
   sites = [],
   assets = [],
   templates = [],
+  prefixes = [],
   isEditing = false,
   canChangeTemplate = false
 }: WorkOrderFormProps) {
@@ -50,6 +52,7 @@ export function WorkOrderForm({
       description: initialData?.description || "",
       type: initialData?.type || "PREVENTIVO",
       priority: initialData?.priority || "MEDIUM",
+      prefixId: initialData?.prefixId || "",
       siteId: initialData?.siteId || "",
       assetId: initialData?.assetId || "",
       templateId: initialData?.templateId || "",
@@ -190,6 +193,43 @@ export function WorkOrderForm({
             <CardTitle>Información Básica</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Prefix Selector (Optional) */}
+            {prefixes.length > 0 && (
+              <FormField
+                control={form.control}
+                name="prefixId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prefijo de Numeración (Opcional)</FormLabel>
+                    <Select
+                      value={field.value || undefined}
+                      onValueChange={(value) => field.onChange(value || undefined)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sin prefijo (numeración estándar)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {prefixes.map((prefix) => (
+                          <SelectItem key={prefix.id} value={prefix.id}>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{prefix.code}</Badge>
+                              <span>{prefix.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Selecciona un prefijo para personalizar la numeración de esta orden (ej: NR0001, VH0001). Si no seleccionas ninguno, se usará el formato estándar (YYYY0001).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="title"

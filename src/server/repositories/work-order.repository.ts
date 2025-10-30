@@ -493,14 +493,58 @@ export class WorkOrderRepository {
 
   /**
    * Generate next work order number for company
+   * If prefixId is provided, generates format: {PREFIX}{####}
+   * Otherwise, generates legacy format: YYYY0001
    */
-  static async generateNumber(companyId: string): Promise<string> {
+  static async generateNumber(companyId: string, prefixId?: string | null): Promise<string> {
+    // If prefix is provided, use prefix-based numbering
+    if (prefixId) {
+      // Get the prefix details
+      const prefix = await prisma.workOrderPrefix.findUnique({
+        where: { id: prefixId },
+        select: { code: true }
+      })
+
+      if (!prefix) {
+        throw new Error("Prefix not found")
+      }
+
+      // Get the last work order number for this prefix
+      const lastWorkOrder = await prisma.workOrder.findFirst({
+        where: {
+          companyId,
+          prefixId,
+          number: {
+            startsWith: prefix.code
+          }
+        },
+        orderBy: {
+          number: 'desc'
+        },
+        select: {
+          number: true
+        }
+      })
+
+      let nextNumber = 1
+      if (lastWorkOrder) {
+        // Extract the numeric part from the last number (format: PREFIX0001)
+        const numericPart = lastWorkOrder.number.substring(prefix.code.length)
+        nextNumber = parseInt(numericPart) + 1
+      }
+
+      // Format: PREFIX + zero-padded 4-digit number
+      return `${prefix.code}${nextNumber.toString().padStart(4, '0')}`
+    }
+
+    // Legacy format without prefix: YYYY0001
     const currentYear = new Date().getFullYear()
-    
-    // Get the last work order number for this company in the current year
+
+    // Get the last work order number for this company in the current year (without prefix)
     const lastWorkOrder = await prisma.workOrder.findFirst({
       where: {
         companyId,
+        prefixId: null,
         number: {
           startsWith: currentYear.toString()
         }

@@ -282,4 +282,31 @@ export class EmailSenderService {
       companyId
     })
   }
+
+  /**
+   * Envía un email de reseteo de contraseña
+   */
+  static async sendPasswordResetEmail(
+    to: string,
+    userName: string,
+    adminName: string,
+    companyName: string,
+    resetLink: string,
+    expirationDate: string,
+    companyId: string
+  ): Promise<EmailSendResponse> {
+    return await this.sendEmail({
+      to,
+      templateType: 'PASSWORD_RESET',
+      variables: {
+        user_name: userName,
+        user_email: to,
+        admin_name: adminName,
+        company_name: companyName,
+        reset_link: resetLink,
+        expiration_date: expirationDate
+      },
+      companyId
+    })
+  }
 }

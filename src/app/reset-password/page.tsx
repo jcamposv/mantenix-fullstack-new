@@ -1,4 +1,4 @@
-import { LoginForm } from "@/components/login-form"
+import { ResetPasswordPageClient } from "./reset-password-page-client"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import type { CompanyBranding } from "@/types/branding"
@@ -11,13 +11,12 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
     const host = headersList.get('host') || ''
     const subdomain = host.split('.')[0]
 
-    
     // Only fetch if we have a subdomain (not just localhost or main domain)
     if (subdomain && subdomain !== 'localhost' && subdomain !== host) {
       const company = await prisma.company.findUnique({
-        where: { 
+        where: {
           subdomain: subdomain,
-          isActive: true 
+          isActive: true
         },
         select: {
           name: true,
@@ -31,7 +30,7 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
 
       return company
     }
-    
+
     return null
   } catch (error) {
     console.warn('Failed to fetch company branding:', error)
@@ -39,7 +38,8 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
   }
 }
 
-export default async function LoginPage() {
+export default async function ResetPasswordPage() {
   const companyBranding = await getCompanyBranding()
-  return <LoginForm companyBranding={companyBranding} />
+
+  return <ResetPasswordPageClient initialCompanyBranding={companyBranding} />
 }

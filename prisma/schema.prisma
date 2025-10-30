@@ -19,9 +19,9 @@ enum Role {
   ADMIN_EMPRESA
   SUPERVISOR
   TECNICO
-  CLIENTE_ADMIN_GENERAL    // Admin general que puede ver todas las sedes del cliente y generar alertas
-  CLIENTE_ADMIN_SEDE       // Admin de sede específica que puede ver progreso de órdenes de su sede
-  CLIENTE_OPERARIO         // Operario que puede reportar errores/incidencias
+  CLIENTE_ADMIN_GENERAL // Admin general que puede ver todas las sedes del cliente y generar alertas
+  CLIENTE_ADMIN_SEDE // Admin de sede específica que puede ver progreso de órdenes de su sede
+  CLIENTE_OPERARIO // Operario que puede reportar errores/incidencias
 }
 
 enum Tier {
@@ -50,35 +50,35 @@ enum SecurityEventType {
 }
 
 enum AlertPriority {
-  LOW       // Baja - No urgente, puede esperar
-  MEDIUM    // Media - Requiere atención pronto
-  HIGH      // Alta - Requiere atención inmediata
-  CRITICAL  // Crítica - Requiere acción inmediata
+  LOW // Baja - No urgente, puede esperar
+  MEDIUM // Media - Requiere atención pronto
+  HIGH // Alta - Requiere atención inmediata
+  CRITICAL // Crítica - Requiere acción inmediata
 }
 
 enum AlertType {
-  EQUIPMENT_FAILURE      // Falla de equipo/maquinaria
-  MAINTENANCE_REQUIRED   // Mantenimiento correctivo requerido
+  EQUIPMENT_FAILURE // Falla de equipo/maquinaria
+  MAINTENANCE_REQUIRED // Mantenimiento correctivo requerido
   PREVENTIVE_MAINTENANCE // Mantenimiento preventivo programado
-  SAFETY_ISSUE          // Problema de seguridad
-  SUPPLY_SHORTAGE       // Falta de suministros/materiales
-  ENVIRONMENTAL_ISSUE   // Problema ambiental (temperatura, humedad, etc.)
-  OPERATIONAL_ISSUE     // Problema operacional
-  OTHER                 // Otro tipo de problema
+  SAFETY_ISSUE // Problema de seguridad
+  SUPPLY_SHORTAGE // Falta de suministros/materiales
+  ENVIRONMENTAL_ISSUE // Problema ambiental (temperatura, humedad, etc.)
+  OPERATIONAL_ISSUE // Problema operacional
+  OTHER // Otro tipo de problema
 }
 
 enum AlertStatus {
-  OPEN        // Recién creada, sin asignar
-  ASSIGNED    // Asignada a un técnico
+  OPEN // Recién creada, sin asignar
+  ASSIGNED // Asignada a un técnico
   IN_PROGRESS // En proceso de resolución
-  RESOLVED    // Resuelta, esperando confirmación
-  CLOSED      // Cerrada y confirmada
+  RESOLVED // Resuelta, esperando confirmación
+  CLOSED // Cerrada y confirmada
 }
 
 enum AssetStatus {
-  OPERATIVO              // Activo en funcionamiento normal
-  EN_MANTENIMIENTO      // En proceso de mantenimiento
-  FUERA_DE_SERVICIO     // No disponible para uso
+  OPERATIVO // Activo en funcionamiento normal
+  EN_MANTENIMIENTO // En proceso de mantenimiento
+  FUERA_DE_SERVICIO // No disponible para uso
 }
 
 // ============================================================================
@@ -86,60 +86,67 @@ enum AssetStatus {
 // ============================================================================
 
 model User {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String   @unique
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   // Better Auth extension fields (following best practices)
   role            Role      @default(TECNICO)
   companyId       String?
   isExternalUser  Boolean   @default(false)
   clientCompanyId String?
-  siteId          String?   // Site assignment for users (optional for company users, required for external users)
+  siteId          String? // Site assignment for users (optional for company users, required for external users)
   avatar          String?
   timezone        String    @default("UTC")
   locale          String    @default("en")
-  preferences     String?   // JSON as string
+  preferences     String? // JSON as string
   isLocked        Boolean   @default(false)
   lockedUntil     DateTime?
   lastLoginAt     DateTime?
   lastLoginIp     String?
   mfaEnabled      Boolean   @default(false)
   isMfaVerified   Boolean   @default(false)
-  
+
   // Relations
-  accounts      Account[]
-  sessions      Session[]
-  company       Company?  @relation(fields: [companyId], references: [id])
-  clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id])
-  site          Site?     @relation(fields: [siteId], references: [id])
-  auditLogs     AuditLog[]
-  securityEvents SecurityEvent[]
-  invitationsCreated UserInvitation[] @relation("UserInvitationsCreated")
-  clientCompaniesCreated ClientCompany[] @relation("ClientCompanyCreator")
-  sitesCreated  Site[]    @relation("SiteCreator")
-  
+  accounts               Account[]
+  sessions               Session[]
+  company                Company?         @relation(fields: [companyId], references: [id])
+  clientCompany          ClientCompany?   @relation(fields: [clientCompanyId], references: [id])
+  site                   Site?            @relation(fields: [siteId], references: [id])
+  auditLogs              AuditLog[]
+  securityEvents         SecurityEvent[]
+  invitationsCreated     UserInvitation[] @relation("UserInvitationsCreated")
+  clientCompaniesCreated ClientCompany[]  @relation("ClientCompanyCreator")
+  sitesCreated           Site[]           @relation("SiteCreator")
+
   // Alert relations
-  alertComments AlertComment[] // Comentarios en alertas
-  alertsReported Alert[] @relation("AlertReporter")
-  alertsAssigned Alert[] @relation("AlertAssignee")
-  alertsResolved Alert[] @relation("AlertResolver")
+  alertComments      AlertComment[] // Comentarios en alertas
+  alertsReported     Alert[]             @relation("AlertReporter")
+  alertsAssigned     Alert[]             @relation("AlertAssignee")
+  alertsResolved     Alert[]             @relation("AlertResolver")
   alertNotifications AlertNotification[]
-  
+
   // Asset relations - Comentado, responsabilidad movida a WorkOrder
   // assetsResponsible Asset[] @relation("AssetResponsable")
-  
+
   // Work Order Template relations
   workOrderTemplatesCreated WorkOrderTemplate[] @relation("WorkOrderTemplateCreator")
-  
+
+  // Work Order Prefix relations
+  workOrderPrefixesCreated WorkOrderPrefix[] @relation("WorkOrderPrefixCreator")
+
   // Work Order relations
-  workOrdersCreated WorkOrder[] @relation("WorkOrderCreator")
-  workOrderAssignments WorkOrderAssignment[] @relation("WorkOrderAssignments")
+  workOrdersCreated           WorkOrder[]           @relation("WorkOrderCreator")
+  workOrderAssignments        WorkOrderAssignment[] @relation("WorkOrderAssignments")
   workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
+
+  // Password Reset relations
+  passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
+  passwordResetTokensCreated PasswordResetToken[] @relation("PasswordResetCreator")
 
   @@map("user")
 }
@@ -165,15 +172,15 @@ model Account {
 }
 
 model Session {
-  id            String   @id @default(cuid())
-  expiresAt     DateTime
-  token         String   @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  ipAddress     String?
-  userAgent     String?
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }
@@ -195,31 +202,32 @@ model Verification {
 // ============================================================================
 
 model Company {
-  id              String            @id @default(cuid())
+  id              String    @id @default(cuid())
   name            String
-  subdomain       String            @unique
+  subdomain       String    @unique
   logo            String?
   logoSmall       String?
-  primaryColor    String            @default("#3b82f6")
-  secondaryColor  String            @default("#64748b")
-  backgroundColor String            @default("#ffffff")
+  primaryColor    String    @default("#3b82f6")
+  secondaryColor  String    @default("#64748b")
+  backgroundColor String    @default("#ffffff")
   customFont      String?
-  mfaEnforced     Boolean           @default(false)
-  ipWhitelist     String[]          @default([])
-  tier            Tier              @default(STARTER)
-  isActive        Boolean           @default(true)
+  mfaEnforced     Boolean   @default(false)
+  ipWhitelist     String[]  @default([])
+  tier            Tier      @default(STARTER)
+  isActive        Boolean   @default(true)
   deletedAt       DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
   // Relations
-  users           User[]
-  auditLogs       AuditLog[]
-  securityEvents  SecurityEvent[]
-  invitations     UserInvitation[]
-  clientCompanies ClientCompany[]
+  users              User[]
+  auditLogs          AuditLog[]
+  securityEvents     SecurityEvent[]
+  invitations        UserInvitation[]
+  clientCompanies    ClientCompany[]
   workOrderTemplates WorkOrderTemplate[]
-  workOrders      WorkOrder[]
+  workOrderPrefixes  WorkOrderPrefix[]
+  workOrders         WorkOrder[]
   emailConfiguration EmailConfiguration?
 
   @@index([subdomain])
@@ -230,32 +238,32 @@ model Company {
 model ClientCompany {
   id          String    @id @default(cuid())
   name        String
-  companyId   String?   // Company ID or legal ID (cedula juridica)
-  logo        String?   // Logo image URL
+  companyId   String? // Company ID or legal ID (cedula juridica)
+  logo        String? // Logo image URL
   address     String?
   phone       String?
   email       String?
   contactName String?
-  latitude    Float?    // Location coordinates
-  longitude   Float?    // Location coordinates
+  latitude    Float? // Location coordinates
+  longitude   Float? // Location coordinates
   notes       String?
   isActive    Boolean   @default(true)
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+
   // Relations
-  tenantCompanyId   String    // The tenant company this client belongs to
-  tenantCompany     Company   @relation(fields: [tenantCompanyId], references: [id], onDelete: Cascade)
-  createdBy         String    // User who created this client company
-  createdByUser     User      @relation("ClientCompanyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  
+  tenantCompanyId String // The tenant company this client belongs to
+  tenantCompany   Company @relation(fields: [tenantCompanyId], references: [id], onDelete: Cascade)
+  createdBy       String // User who created this client company
+  createdByUser   User    @relation("ClientCompanyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
   // External users belonging to this client company
-  externalUsers     User[]
-  userInvitations   UserInvitation[]
+  externalUsers   User[]
+  userInvitations UserInvitation[]
 
   // Sites belonging to this client company
-  sites             Site[]
+  sites Site[]
 
   @@index([tenantCompanyId])
   @@index([isActive])
@@ -263,81 +271,81 @@ model ClientCompany {
 }
 
 model Site {
-  id              String    @id @default(cuid())
-  name            String
-  address         String?
-  phone           String?
-  email           String?
-  contactName     String?
-  latitude        Float?    // Location coordinates
-  longitude       Float?    // Location coordinates
-  timezone        String    @default("UTC")
-  notes           String?
-  isActive        Boolean   @default(true)
-  deletedAt       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id          String    @id @default(cuid())
+  name        String
+  address     String?
+  phone       String?
+  email       String?
+  contactName String?
+  latitude    Float? // Location coordinates
+  longitude   Float? // Location coordinates
+  timezone    String    @default("UTC")
+  notes       String?
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   // Relations
   clientCompanyId String
   clientCompany   ClientCompany @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
   createdBy       String
-  createdByUser   User      @relation("SiteCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  
+  createdByUser   User          @relation("SiteCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
   // Users assigned to this site
   siteUsers       User[]
   userInvitations UserInvitation[]
-  
+
   // Alerts for this site
-  alerts          Alert[]
-  
+  alerts Alert[]
+
   // Assets in this site
-  assets          Asset[]
-  
+  assets Asset[]
+
   // Work orders in this site
-  workOrders      WorkOrder[]
-  
+  workOrders WorkOrder[]
+
   @@index([clientCompanyId])
   @@index([isActive])
   @@map("sites")
 }
 
 model Asset {
-  id                     String      @id @default(cuid())
-  name                   String      // Asset descriptive name
-  code                   String      // Internal code or serial number
-  description            String?     // Asset details, usage, or technical information
-  location               String      // Location within the site
-  images                 String[]    @default([]) // Array of image URLs
-  registrationDate       DateTime    @default(now()) // Date when the asset was registered
-  status                 AssetStatus @default(OPERATIVO) // Current asset status
-  
+  id               String      @id @default(cuid())
+  name             String // Asset descriptive name
+  code             String // Internal code or serial number
+  description      String? // Asset details, usage, or technical information
+  location         String // Location within the site
+  images           String[]    @default([]) // Array of image URLs
+  registrationDate DateTime    @default(now()) // Date when the asset was registered
+  status           AssetStatus @default(OPERATIVO) // Current asset status
+
   // Optional technical fields
-  manufacturer           String?     // Asset brand or manufacturer
-  model                  String?     // Model or technical reference
-  serialNumber           String?     // Physical serial number
-  purchaseDate           DateTime?   // Acquisition date
-  estimatedLifespan      Int?        // Estimated lifespan in years
+  manufacturer      String? // Asset brand or manufacturer
+  model             String? // Model or technical reference
+  serialNumber      String? // Physical serial number
+  purchaseDate      DateTime? // Acquisition date
+  estimatedLifespan Int? // Estimated lifespan in years
   // lastRevision         DateTime?   // Last maintenance performed - Moved to WorkOrder
   // nextMaintenance      DateTime?   // Next suggested preventive maintenance date - Moved to WorkOrder
-  category               String?     // Asset type (vehicle, machinery, tool, etc.)
-  customFields           Json?       // Custom fields per company
-  
+  category          String? // Asset type (vehicle, machinery, tool, etc.)
+  customFields      Json? // Custom fields per company
+
   // Status control
-  isActive               Boolean     @default(true)
-  deletedAt              DateTime?
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
-  
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   // Relations
-  siteId                 String      // Relation to the site where it's located
-  site                   Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId String // Relation to the site where it's located
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
   // responsibleId        String?     // Responsible user or assigned technician - Moved to WorkOrder
   // responsible          User?       @relation("AssetResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
-  
+
   // Work orders related to this asset
-  workOrders           WorkOrder[]
-  
+  workOrders WorkOrder[]
+
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
   @@index([status])
@@ -349,21 +357,21 @@ model Asset {
 }
 
 model AuditLog {
-  id           String      @id @default(cuid())
-  companyId    String
-  userId       String?
-  action       String
-  resource     String
-  resourceId   String?
-  ipAddress    String
-  userAgent    String?
-  status       AuditStatus @default(SUCCESS)
-  details      String?
-  createdAt    DateTime    @default(now())
-  
+  id         String      @id @default(cuid())
+  companyId  String
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String
+  userAgent  String?
+  status     AuditStatus @default(SUCCESS)
+  details    String?
+  createdAt  DateTime    @default(now())
+
   // Relations
-  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([companyId, createdAt])
   @@index([userId, createdAt])
@@ -372,23 +380,23 @@ model AuditLog {
 }
 
 model SecurityEvent {
-  id           String            @id @default(cuid())
-  companyId    String
-  userId       String?
-  type         SecurityEventType
-  severity     String            @default("INFO")
-  description  String
-  ipAddress    String
-  userAgent    String?
-  metadata     String?           // JSON as string
-  resolved     Boolean           @default(false)
-  resolvedAt   DateTime?
-  resolvedBy   String?
-  createdAt    DateTime          @default(now())
-  
+  id          String            @id @default(cuid())
+  companyId   String
+  userId      String?
+  type        SecurityEventType
+  severity    String            @default("INFO")
+  description String
+  ipAddress   String
+  userAgent   String?
+  metadata    String? // JSON as string
+  resolved    Boolean           @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  createdAt   DateTime          @default(now())
+
   // Relations
-  company      Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user         User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([companyId, createdAt])
   @@index([userId, createdAt])
@@ -398,26 +406,26 @@ model SecurityEvent {
 }
 
 model UserInvitation {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   email           String
   role            Role
   companyId       String
-  isExternalUser  Boolean  @default(false)
+  isExternalUser  Boolean   @default(false)
   clientCompanyId String?
-  siteId          String?  // Site assignment for the invited user
-  token           String   @unique
+  siteId          String? // Site assignment for the invited user
+  token           String    @unique
   expiresAt       DateTime
-  used            Boolean  @default(false)
+  used            Boolean   @default(false)
   usedAt          DateTime?
   createdBy       String
-  image           String?  // Profile photo URL for the invited user
-  createdAt       DateTime @default(now())
+  image           String? // Profile photo URL for the invited user
+  createdAt       DateTime  @default(now())
 
   // Relations
-  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  creator       User          @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator       User           @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)
   clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
-  site          Site?         @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  site          Site?          @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([token])
@@ -433,54 +441,54 @@ model UserInvitation {
 // ============================================================================
 
 model Alert {
-  id          String      @id @default(cuid())
-  title       String      // Título corto de la alerta
-  description String      // Descripción detallada del problema
-  type        AlertType   // Tipo de alerta (falla de equipo, mantenimiento, etc.)
+  id          String        @id @default(cuid())
+  title       String // Título corto de la alerta
+  description String // Descripción detallada del problema
+  type        AlertType // Tipo de alerta (falla de equipo, mantenimiento, etc.)
   priority    AlertPriority // Prioridad de la alerta
-  status      AlertStatus @default(OPEN) // Estado actual de la alerta
-  
+  status      AlertStatus   @default(OPEN) // Estado actual de la alerta
+
   // Información de ubicación específica (opcional)
-  location    String?     // Ubicación específica dentro de la sede (ej: "Sala de máquinas A", "Oficina 201")
-  equipmentId String?     // ID del equipo afectado (si aplica)
-  
+  location    String? // Ubicación específica dentro de la sede (ej: "Sala de máquinas A", "Oficina 201")
+  equipmentId String? // ID del equipo afectado (si aplica)
+
   // Multimedia attachments
-  images      String[]    // Array de URLs de imágenes
-  documents   String[]    // Array de URLs de documentos
-  
+  images    String[] // Array de URLs de imágenes
+  documents String[] // Array de URLs de documentos
+
   // Metadata
   estimatedResolutionTime Int? // Tiempo estimado de resolución en minutos
   actualResolutionTime    Int? // Tiempo real de resolución en minutos
-  resolutionNotes        String? // Notas sobre cómo se resolvió
-  
+  resolutionNotes         String? // Notas sobre cómo se resolvió
+
   // Timestamps
-  reportedAt  DateTime    @default(now()) // Cuando se reportó la alerta
-  assignedAt  DateTime?   // Cuando se asignó a un técnico
-  resolvedAt  DateTime?   // Cuando se marcó como resuelta
-  closedAt    DateTime?   // Cuando se cerró la alerta
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
+  reportedAt DateTime  @default(now()) // Cuando se reportó la alerta
+  assignedAt DateTime? // Cuando se asignó a un técnico
+  resolvedAt DateTime? // Cuando se marcó como resuelta
+  closedAt   DateTime? // Cuando se cerró la alerta
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
   // Relations - Asociada a una sede específica
-  siteId      String
-  site        Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
   // Usuario que reportó la alerta
   reportedById String
-  reportedBy   User       @relation("AlertReporter", fields: [reportedById], references: [id], onDelete: Restrict)
-  
+  reportedBy   User   @relation("AlertReporter", fields: [reportedById], references: [id], onDelete: Restrict)
+
   // Usuario asignado para resolver la alerta (técnico)
   assignedToId String?
-  assignedTo   User?      @relation("AlertAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  
+  assignedTo   User?   @relation("AlertAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
   // Usuario que resolvió la alerta
   resolvedById String?
-  resolvedBy   User?      @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
-  
+  resolvedBy   User?   @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
   // Historial de comentarios/actualizaciones
-  comments     AlertComment[]
+  comments      AlertComment[]
   notifications AlertNotification[]
-  
+
   @@index([siteId, status])
   @@index([priority, status])
   @@index([reportedById])
@@ -491,38 +499,38 @@ model Alert {
 }
 
 model AlertComment {
-  id        String   @id @default(cuid())
-  content   String   // Contenido del comentario
-  isInternal Boolean @default(false) // Si es un comentario interno (solo para técnicos) o público
-  createdAt DateTime @default(now())
-  
+  id         String   @id @default(cuid())
+  content    String // Contenido del comentario
+  isInternal Boolean  @default(false) // Si es un comentario interno (solo para técnicos) o público
+  createdAt  DateTime @default(now())
+
   // Relations
-  alertId   String
-  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  
+  alertId  String
+  alert    Alert  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
   @@index([alertId])
   @@index([authorId])
   @@map("alert_comments")
 }
 
 model AlertNotification {
-  id        String   @id @default(cuid())
-  type      String   // Tipo de notificación: "email", "push", "in_app"
-  status    String   @default("pending") // "pending", "sent", "delivered", "failed"
-  sentAt    DateTime?
-  deliveredAt DateTime?
+  id           String    @id @default(cuid())
+  type         String // Tipo de notificación: "email", "push", "in_app"
+  status       String    @default("pending") // "pending", "sent", "delivered", "failed"
+  sentAt       DateTime?
+  deliveredAt  DateTime?
   errorMessage String?
-  metadata  String?  // JSON con datos adicionales (email template, push payload, etc.)
-  createdAt DateTime @default(now())
-  
+  metadata     String? // JSON con datos adicionales (email template, push payload, etc.)
+  createdAt    DateTime  @default(now())
+
   // Relations
-  alertId   String
-  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  userId    String   // Usuario que debe recibir la notificación
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  alertId String
+  alert   Alert  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  userId  String // Usuario que debe recibir la notificación
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([alertId])
   @@index([userId])
   @@index([status])
@@ -553,51 +561,52 @@ enum WorkOrderPriority {
 }
 
 enum WorkOrderStatus {
-  DRAFT           // Borrador
-  ASSIGNED        // Asignada
-  IN_PROGRESS     // En progreso
-  COMPLETED       // Completada
-  CANCELLED       // Cancelada
+  DRAFT // Borrador
+  ASSIGNED // Asignada
+  IN_PROGRESS // En progreso
+  COMPLETED // Completada
+  CANCELLED // Cancelada
 }
 
 enum CustomFieldType {
-  TEXT           // Input de texto simple
-  TEXTAREA       // Área de texto multilinea
-  NUMBER         // Input numérico
-  SELECT         // Select con opciones predefinidas
-  RADIO          // Radio buttons
-  CHECKBOX       // Checkbox individual
-  CHECKLIST      // Lista de checkboxes (instrucciones)
-  DATE           // Selector de fecha
-  TIME           // Selector de hora
-  DATETIME       // Selector de fecha y hora
-  IMAGE_BEFORE   // Campo para imágenes antes
-  IMAGE_AFTER    // Campo para imágenes después
-  VIDEO_BEFORE   // Campo para videos antes
-  VIDEO_AFTER    // Campo para videos después
-  FILE           // Campo para archivos generales
+  TEXT // Input de texto simple
+  TEXTAREA // Área de texto multilinea
+  NUMBER // Input numérico
+  SELECT // Select con opciones predefinidas
+  RADIO // Radio buttons
+  CHECKBOX // Checkbox individual
+  CHECKLIST // Lista de checkboxes (instrucciones)
+  DATE // Selector de fecha
+  TIME // Selector de hora
+  DATETIME // Selector de fecha y hora
+  IMAGE_BEFORE // Campo para imágenes antes
+  IMAGE_AFTER // Campo para imágenes después
+  VIDEO_BEFORE // Campo para videos antes
+  VIDEO_AFTER // Campo para videos después
+  FILE // Campo para archivos generales
 }
 
 enum EmailTemplateType {
-  WELCOME                // Email de bienvenida
-  USER_INVITATION        // Invitación de usuario
-  WORK_ORDER_CREATED     // Orden de trabajo creada
-  WORK_ORDER_COMPLETED   // Orden de trabajo completada
-  WORK_ORDER_CANCELLED   // Orden de trabajo cancelada
-  ALERT_CREATED          // Alerta creada
-  ALERT_ASSIGNED         // Alerta asignada
-  ALERT_RESOLVED         // Alerta resuelta
+  WELCOME // Email de bienvenida
+  USER_INVITATION // Invitación de usuario
+  PASSWORD_RESET // Reseteo de contraseña
+  WORK_ORDER_CREATED // Orden de trabajo creada
+  WORK_ORDER_COMPLETED // Orden de trabajo completada
+  WORK_ORDER_CANCELLED // Orden de trabajo cancelada
+  ALERT_CREATED // Alerta creada
+  ALERT_ASSIGNED // Alerta asignada
+  ALERT_RESOLVED // Alerta resuelta
 }
 
 model WorkOrderTemplate {
-  id          String                   @id @default(cuid())
-  name        String                   // Nombre del template
-  description String?                  // Descripción del template
-  category    String?                  // Categoría del template (Preventivo, Correctivo, etc.)
-  status      WorkOrderTemplateStatus  @default(ACTIVE) // Estado del template
-  
+  id          String                  @id @default(cuid())
+  name        String // Nombre del template
+  description String? // Descripción del template
+  category    String? // Categoría del template (Preventivo, Correctivo, etc.)
+  status      WorkOrderTemplateStatus @default(ACTIVE) // Estado del template
+
   // Campos personalizados dinámicos - Estructura JSON que define los campos
-  customFields        Json?           // Configuración de campos personalizados
+  customFields Json? // Configuración de campos personalizados
   // Estructura ejemplo:
   // {
   //   "fields": [
@@ -626,24 +635,24 @@ model WorkOrderTemplate {
   //     }
   //   ]
   // }
-  
+
   // Control de acceso y propiedad
-  companyId           String          // Empresa propietaria del template
-  createdBy           String          // Usuario que creó el template
-  
+  companyId String // Empresa propietaria del template
+  createdBy String // Usuario que creó el template
+
   // Timestamps
-  isActive            Boolean         @default(true)
-  deletedAt           DateTime?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   // Relations
-  company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  creator             User            @relation("WorkOrderTemplateCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator User    @relation("WorkOrderTemplateCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
   // Relations with work orders
-  workOrders          WorkOrder[]     @relation("WorkOrderFromTemplate")
-  
+  workOrders WorkOrder[] @relation("WorkOrderFromTemplate")
+
   @@index([companyId])
   @@index([status])
   @@index([category])
@@ -656,71 +665,103 @@ model WorkOrderTemplate {
 // WORK ORDERS SYSTEM
 // ============================================================================
 
-model WorkOrder {
-  id                  String              @id @default(cuid())
-  number              String              // Número único de la orden (ej: 0256)
-  title               String              // Título de la orden
-  description         String?             // Descripción de la orden
-  
-  // Clasificación
-  type                WorkOrderType       // PREVENTIVO, CORRECTIVO, REPARACION
-  priority            WorkOrderPriority   @default(MEDIUM) // Prioridad de la orden
-  status              WorkOrderStatus     @default(DRAFT) // Estado de la orden
-  
-  // Ubicación y activo
-  siteId              String              // Sede donde se ejecuta
-  assetId             String?             // Activo relacionado (opcional)
-  
-  // Template relacionado (opcional)
-  templateId          String?             // Template base usado
-  customFieldValues   Json?               // Valores de campos personalizados del template
-  
-  // Fechas importantes
-  scheduledDate       DateTime?           // Fecha programada
-  startedAt           DateTime?           // Fecha de inicio real
-  completedAt         DateTime?           // Fecha de finalización
-  
-  // Estimaciones y costos
-  estimatedDuration   Int?                // Duración estimada en minutos
-  estimatedCost       Float?              // Costo estimado
-  actualDuration      Int?                // Duración real en minutos
-  actualCost          Float?              // Costo real
-  
-  // Instrucciones y seguridad
-  instructions        String?             // Instrucciones específicas
-  safetyNotes         String?             // Notas de seguridad
-  tools               String[]            @default([]) // Herramientas necesarias
-  materials           String[]            @default([]) // Materiales necesarios
-  
-  // Observaciones y notas finales
-  observations        String?             // Observaciones durante la ejecución
-  completionNotes     String?             // Notas de finalización
-  
+// Prefijos configurables para números de órdenes de trabajo
+model WorkOrderPrefix {
+  id          String  @id @default(cuid())
+  code        String // Código del prefijo (ej: "NR", "VH", "PROY01")
+  name        String // Nombre descriptivo del prefijo
+  description String? // Descripción opcional del uso del prefijo
+
   // Control de acceso y propiedad
-  companyId           String              // Empresa propietaria
-  createdBy           String              // Usuario que creó la orden
-  
+  companyId String // Empresa propietaria
+  createdBy String // Usuario que creó el prefijo
+
   // Timestamps
-  isActive            Boolean             @default(true)
-  deletedAt           DateTime?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   // Relations
-  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  site                Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  asset               Asset?              @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  template            WorkOrderTemplate?  @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
-  creator             User                @relation("WorkOrderCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator    User        @relation("WorkOrderPrefixCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  workOrders WorkOrder[]
+
+  @@unique([companyId, code]) // Código único por empresa
+  @@index([companyId])
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("work_order_prefixes")
+}
+
+model WorkOrder {
+  id          String  @id @default(cuid())
+  number      String // Número único de la orden (ej: NR0001, VH0256)
+  prefixId    String? // Prefijo opcional para la numeración
+  title       String // Título de la orden
+  description String? // Descripción de la orden
+
+  // Clasificación
+  type     WorkOrderType // PREVENTIVO, CORRECTIVO, REPARACION
+  priority WorkOrderPriority @default(MEDIUM) // Prioridad de la orden
+  status   WorkOrderStatus   @default(DRAFT) // Estado de la orden
+
+  // Ubicación y activo
+  siteId  String // Sede donde se ejecuta
+  assetId String? // Activo relacionado (opcional)
+
+  // Template relacionado (opcional)
+  templateId        String? // Template base usado
+  customFieldValues Json? // Valores de campos personalizados del template
+
+  // Fechas importantes
+  scheduledDate DateTime? // Fecha programada
+  startedAt     DateTime? // Fecha de inicio real
+  completedAt   DateTime? // Fecha de finalización
+
+  // Estimaciones y costos
+  estimatedDuration Int? // Duración estimada en minutos
+  estimatedCost     Float? // Costo estimado
+  actualDuration    Int? // Duración real en minutos
+  actualCost        Float? // Costo real
+
+  // Instrucciones y seguridad
+  instructions String? // Instrucciones específicas
+  safetyNotes  String? // Notas de seguridad
+  tools        String[] @default([]) // Herramientas necesarias
+  materials    String[] @default([]) // Materiales necesarios
+
+  // Observaciones y notas finales
+  observations    String? // Observaciones durante la ejecución
+  completionNotes String? // Notas de finalización
+
+  // Control de acceso y propiedad
+  companyId String // Empresa propietaria
+  createdBy String // Usuario que creó la orden
+
+  // Timestamps
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site     Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  asset    Asset?             @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  template WorkOrderTemplate? @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
+  prefix   WorkOrderPrefix?   @relation(fields: [prefixId], references: [id], onDelete: SetNull)
+  creator  User               @relation("WorkOrderCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
   // Assignments (many-to-many relationship for multiple users)
-  assignments         WorkOrderAssignment[]
-  
+  assignments WorkOrderAssignment[]
+
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
   @@index([siteId])
   @@index([assetId])
   @@index([templateId])
+  @@index([prefixId])
   @@index([status])
   @@index([type])
   @@index([priority])
@@ -732,17 +773,17 @@ model WorkOrder {
 
 // Tabla intermedia para asignaciones de usuarios a órdenes de trabajo
 model WorkOrderAssignment {
-  id            String      @id @default(cuid())
-  workOrderId   String
-  userId        String
-  assignedAt    DateTime    @default(now())
-  assignedBy    String      // Usuario que hizo la asignación
-  
+  id          String   @id @default(cuid())
+  workOrderId String
+  userId      String
+  assignedAt  DateTime @default(now())
+  assignedBy  String // Usuario que hizo la asignación
+
   // Relations
-  workOrder     WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  user          User        @relation("WorkOrderAssignments", fields: [userId], references: [id], onDelete: Cascade)
-  assigner      User        @relation("WorkOrderAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
-  
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  user      User      @relation("WorkOrderAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  assigner  User      @relation("WorkOrderAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
+
   @@unique([workOrderId, userId]) // Un usuario solo puede estar asignado una vez por orden
   @@index([workOrderId])
   @@index([userId])
@@ -756,25 +797,25 @@ model WorkOrderAssignment {
 
 // Configuración de MailerSend por tenant company
 model EmailConfiguration {
-  id                    String    @id @default(cuid())
-  companyId             String    @unique // Una configuración por tenant company
+  id        String @id @default(cuid())
+  companyId String @unique // Una configuración por tenant company
 
   // MailerSend API credentials
-  apiToken              String    // MailerSend API Token
-  domainId              String?   // Domain ID en MailerSend
-  fromEmail             String    // Email desde el cual se envían los correos
-  fromName              String    // Nombre que aparece como remitente
-  replyToEmail          String?   // Email de respuesta (opcional)
+  apiToken     String // MailerSend API Token
+  domainId     String? // Domain ID en MailerSend
+  fromEmail    String // Email desde el cual se envían los correos
+  fromName     String // Nombre que aparece como remitente
+  replyToEmail String? // Email de respuesta (opcional)
 
   // Settings
-  isActive              Boolean   @default(true)
-  deletedAt             DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  company               Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  emailTemplates        EmailTemplate[]
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  emailTemplates EmailTemplate[]
 
   @@index([companyId])
   @@index([isActive])
@@ -783,27 +824,54 @@ model EmailConfiguration {
 
 // Templates de email personalizables
 model EmailTemplate {
-  id                    String              @id @default(cuid())
-  emailConfigurationId  String              // Configuración de email asociada
-  type                  EmailTemplateType   // Tipo de template
+  id                   String            @id @default(cuid())
+  emailConfigurationId String // Configuración de email asociada
+  type                 EmailTemplateType // Tipo de template
 
   // Template info
-  name                  String              // Nombre descriptivo del template
-  subject               String              // Asunto del email
-  templateId            String?             // ID del template en MailerSend (opcional)
+  name       String // Nombre descriptivo del template
+  subject    String // Asunto del email
+  templateId String? // ID del template en MailerSend (opcional)
 
   // Settings
-  isActive              Boolean             @default(true)
-  deletedAt             DateTime?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  emailConfiguration    EmailConfiguration  @relation(fields: [emailConfigurationId], references: [id], onDelete: Cascade)
+  emailConfiguration EmailConfiguration @relation(fields: [emailConfigurationId], references: [id], onDelete: Cascade)
 
   @@unique([emailConfigurationId, type]) // Un template de cada tipo por configuración
   @@index([emailConfigurationId])
   @@index([type])
   @@index([isActive])
   @@map("email_templates")
+}
+
+// ============================================================================
+// PASSWORD RESET TOKENS
+// ============================================================================
+
+// Tokens para reseteo de contraseña enviados por administradores
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String // Usuario que recibirá el reset
+  createdBy String // Admin que generó el reset
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User @relation("PasswordResetUser", fields: [userId], references: [id], onDelete: Cascade)
+  creator User @relation("PasswordResetCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([used])
+  @@map("password_reset_tokens")
 }

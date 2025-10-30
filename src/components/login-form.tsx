@@ -59,7 +59,7 @@ export function LoginForm({
                   <LoginFormHeader displayCompanyName={displayCompanyName} />
                   <ErrorAlert message={error} />
                   <EmailField />
-                  <PasswordField showForgotPassword />
+                  <PasswordField />
                   <RememberMeField />
                   <LoginSubmitButton 
                     isSubmitting={isSubmitting} 

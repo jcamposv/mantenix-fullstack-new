@@ -33,6 +33,13 @@ interface User {
   role: string
 }
 
+interface Prefix {
+  id: string
+  code: string
+  name: string
+  description: string | null
+}
+
 export function NewWorkOrderContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -42,6 +49,7 @@ export function NewWorkOrderContent() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [templates, setTemplates] = useState<WorkOrderTemplateWithRelations[]>([])
+  const [prefixes, setPrefixes] = useState<Prefix[]>([])
   const [activeTab, setActiveTab] = useState("basic")
 
   const form = useForm<CreateWorkOrderData>({
@@ -67,11 +75,12 @@ export function NewWorkOrderContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sitesRes, assetsRes, usersRes, templatesRes] = await Promise.all([
+        const [sitesRes, assetsRes, usersRes, templatesRes, prefixesRes] = await Promise.all([
           fetch('/api/admin/sites'),
           fetch('/api/admin/assets'),
           fetch('/api/admin/users'),
-          fetch('/api/work-order-templates')
+          fetch('/api/work-order-templates'),
+          fetch('/api/work-order-prefixes?isActive=true&limit=100')
         ])
 
         if (sitesRes.ok) {
@@ -92,6 +101,11 @@ export function NewWorkOrderContent() {
         if (templatesRes.ok) {
           const templatesData = await templatesRes.json()
           setTemplates(templatesData.templates || templatesData.items || [])
+        }
+
+        if (prefixesRes.ok) {
+          const prefixesData = await prefixesRes.json()
+          setPrefixes(prefixesData.prefixes || prefixesData.items || [])
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -218,6 +232,7 @@ export function NewWorkOrderContent() {
                 sites={sites}
                 assets={assets}
                 templates={templates}
+                prefixes={prefixes}
               />
 
               <WorkOrderFormAdvanced
@@ -261,6 +276,7 @@ export function NewWorkOrderContent() {
                   sites={sites}
                   assets={assets}
                   templates={templates}
+                  prefixes={prefixes}
                 />
 
                 <div className="flex justify-end">

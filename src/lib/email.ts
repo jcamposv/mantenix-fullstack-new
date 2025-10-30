@@ -72,3 +72,42 @@ export async function sendWelcomeEmail(data: {
     throw new Error('Failed to send welcome email')
   }
 }
+
+interface PasswordResetEmailData {
+  recipientEmail: string
+  recipientName: string
+  adminName: string
+  companyName: string
+  resetLink: string
+  companyId: string
+}
+
+export async function sendPasswordResetEmail(data: PasswordResetEmailData) {
+  try {
+    const expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('es-ES', {
+      dateStyle: 'long',
+      timeStyle: 'short'
+    })
+
+    const result = await EmailSenderService.sendPasswordResetEmail(
+      data.recipientEmail,
+      data.recipientName,
+      data.adminName,
+      data.companyName,
+      data.resetLink,
+      expirationDate,
+      data.companyId
+    )
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send password reset email')
+    }
+
+    console.log('Password reset email sent successfully:', result.messageId)
+    return { success: true, messageId: result.messageId }
+
+  } catch (error) {
+    console.error('Error sending password reset email:', error)
+    throw new Error('Failed to send password reset email')
+  }
+}

@@ -8,13 +8,14 @@ import Image from "next/image"
 
 interface CompanyBrandingImageProps {
   displayCompanyName: string
+  logo?: string
 }
 
 export function CompanyBrandingImage({ displayCompanyName }: CompanyBrandingImageProps) {
   return (
     <div className="bg-muted relative hidden lg:block">
       <Image
-        src="/images/baner-1.jpg"
+        src={"/images/baner-1.jpg"}
         alt={`${displayCompanyName} branding`}
         fill
         className="object-cover dark:brightness-[0.2] dark:grayscale"

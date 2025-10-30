@@ -8,6 +8,7 @@ export type EmailTemplateType =
   | "ALERT_CREATED"
   | "ALERT_ASSIGNED"
   | "ALERT_RESOLVED"
+  | "PASSWORD_RESET"
 
 // Base EmailConfiguration interface
 export interface EmailConfiguration {
@@ -234,5 +235,13 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "resolved_at",
     "resolution_notes",
     "alert_url"
+  ],
+  PASSWORD_RESET: [
+    "user_name",
+    "user_email",
+    "admin_name",
+    "company_name",
+    "reset_link",
+    "expiration_date"
   ]
 }
