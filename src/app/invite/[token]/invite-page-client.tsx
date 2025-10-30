@@ -7,6 +7,7 @@ import { Loader2, XCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { CompanyBranding } from "@/types/branding"
+import Image from "next/image"
 
 interface InvitationData {
   email: string
@@ -45,6 +46,7 @@ export function InvitePageClient({ initialCompanyBranding }: InvitePageClientPro
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const logo = initialCompanyBranding?.logo || "/images/mantenix-logo-black.svg"
 
   useEffect(() => {
     verifyInvitation()
@@ -121,19 +123,23 @@ export function InvitePageClient({ initialCompanyBranding }: InvitePageClientPro
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center  dark:bg-gray-900">
+        <Card className="w-full  shadow-none border-none">
           <CardHeader className="text-center">
+          <div className="mb-8 flex justify-center">
+          <Image src={logo} alt="Mantenix Logo" width={136} height={136}  className="h-16 w-auto"/>
+        </div>
             <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <CardTitle className="text-red-700 dark:text-red-400">Invalid Invitation</CardTitle>
+            <CardTitle className="text-red-700 dark:text-red-400">Invitación Inválida o Expirada</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
             <Button 
+              style={{ backgroundColor: initialCompanyBranding?.primaryColor, 
+                color: initialCompanyBranding?.secondaryColor }}
               onClick={() => router.push('/login')}
-              variant="outline"
             >
-              Go to Login
+              Ir a Login
             </Button>
           </CardContent>
         </Card>
