@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "create-admin": "tsx scripts/create-initial-user.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
