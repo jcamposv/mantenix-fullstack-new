@@ -38,7 +38,7 @@ CREATE TYPE "WorkOrderStatus" AS ENUM ('DRAFT', 'ASSIGNED', 'IN_PROGRESS', 'COMP
 CREATE TYPE "CustomFieldType" AS ENUM ('TEXT', 'TEXTAREA', 'NUMBER', 'SELECT', 'RADIO', 'CHECKBOX', 'CHECKLIST', 'DATE', 'TIME', 'DATETIME', 'IMAGE_BEFORE', 'IMAGE_AFTER', 'VIDEO_BEFORE', 'VIDEO_AFTER', 'FILE');
 
 -- CreateEnum
-CREATE TYPE "EmailTemplateType" AS ENUM ('WELCOME', 'USER_INVITATION', 'WORK_ORDER_CREATED', 'WORK_ORDER_COMPLETED', 'WORK_ORDER_CANCELLED', 'ALERT_CREATED', 'ALERT_ASSIGNED', 'ALERT_RESOLVED');
+CREATE TYPE "EmailTemplateType" AS ENUM ('WELCOME', 'USER_INVITATION', 'PASSWORD_RESET', 'WORK_ORDER_CREATED', 'WORK_ORDER_COMPLETED', 'WORK_ORDER_CANCELLED', 'ALERT_CREATED', 'ALERT_ASSIGNED', 'ALERT_RESOLVED');
 
 -- CreateTable
 CREATE TABLE "user" (
@@ -434,6 +434,21 @@ CREATE TABLE "email_templates" (
     CONSTRAINT "email_templates_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "password_reset_tokens" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "used" BOOLEAN NOT NULL DEFAULT false,
+    "usedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "password_reset_tokens_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
@@ -656,6 +671,21 @@ CREATE INDEX "email_templates_isActive_idx" ON "email_templates"("isActive");
 -- CreateIndex
 CREATE UNIQUE INDEX "email_templates_emailConfigurationId_type_key" ON "email_templates"("emailConfigurationId", "type");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
+
+-- CreateIndex
+CREATE INDEX "password_reset_tokens_userId_idx" ON "password_reset_tokens"("userId");
+
+-- CreateIndex
+CREATE INDEX "password_reset_tokens_token_idx" ON "password_reset_tokens"("token");
+
+-- CreateIndex
+CREATE INDEX "password_reset_tokens_expiresAt_idx" ON "password_reset_tokens"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "password_reset_tokens_used_idx" ON "password_reset_tokens"("used");
+
 -- AddForeignKey
 ALTER TABLE "user" ADD CONSTRAINT "user_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -779,3 +809,8 @@ ALTER TABLE "email_configurations" ADD CONSTRAINT "email_configurations_companyI
 -- AddForeignKey
 ALTER TABLE "email_templates" ADD CONSTRAINT "email_templates_emailConfigurationId_fkey" FOREIGN KEY ("emailConfigurationId") REFERENCES "email_configurations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
