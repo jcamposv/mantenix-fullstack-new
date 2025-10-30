@@ -41,7 +41,7 @@ export default function WorkOrderPrefixesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { data: prefixes, loading, refetch } = useTableData<WorkOrderPrefixWithRelations>({
+	const { data: prefixes, refetch } = useTableData<WorkOrderPrefixWithRelations>({
     endpoint: '/api/work-order-prefixes?isActive=true',
     transform: (data) => (data as PrefixesResponse).prefixes || (data as PrefixesResponse).items || []
   })

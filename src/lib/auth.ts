@@ -24,6 +24,32 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Can enable later for production
+
+    // Password reset configuration
+    sendResetPassword: async ({ user, url }) => {
+      // Import dynamically to avoid circular dependencies
+      const { sendPasswordResetEmail } = await import("./email")
+      const { prisma } = await import("./prisma")
+
+      // Get user's company info
+      const userData = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { company: true }
+      })
+
+      if (!userData) return
+
+      await sendPasswordResetEmail({
+        recipientEmail: user.email,
+        recipientName: user.name,
+        adminName: "Administrator",
+        companyName: userData.company?.name || "Mantenix",
+        resetLink: url,
+        companyId: userData.companyId || ""
+      })
+    },
+
+    resetPasswordTokenExpiresIn: 60 * 60 * 24, // 24 hours
   },
 
   // ============================================================================

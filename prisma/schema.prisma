@@ -144,6 +144,10 @@ model User {
   workOrderAssignments        WorkOrderAssignment[] @relation("WorkOrderAssignments")
   workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
 
+  // Password Reset relations
+  passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
+  passwordResetTokensCreated PasswordResetToken[] @relation("PasswordResetCreator")
+
   @@map("user")
 }
 
@@ -585,6 +589,7 @@ enum CustomFieldType {
 enum EmailTemplateType {
   WELCOME // Email de bienvenida
   USER_INVITATION // Invitación de usuario
+  PASSWORD_RESET // Reseteo de contraseña
   WORK_ORDER_CREATED // Orden de trabajo creada
   WORK_ORDER_COMPLETED // Orden de trabajo completada
   WORK_ORDER_CANCELLED // Orden de trabajo cancelada
@@ -842,4 +847,31 @@ model EmailTemplate {
   @@index([type])
   @@index([isActive])
   @@map("email_templates")
+}
+
+// ============================================================================
+// PASSWORD RESET TOKENS
+// ============================================================================
+
+// Tokens para reseteo de contraseña enviados por administradores
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String // Usuario que recibirá el reset
+  createdBy String // Admin que generó el reset
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User @relation("PasswordResetUser", fields: [userId], references: [id], onDelete: Cascade)
+  creator User @relation("PasswordResetCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([used])
+  @@map("password_reset_tokens")
 }
