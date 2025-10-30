@@ -78,6 +78,7 @@ export function ResetPasswordForm({
                 isSubmitting={isSubmitting}
                 error={error}
                 userEmail={user?.email}
+                companyBranding={companyBranding}
               />
             </form>
           </div>

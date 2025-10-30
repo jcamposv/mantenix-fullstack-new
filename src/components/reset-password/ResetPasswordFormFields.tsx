@@ -21,6 +21,9 @@ interface ResetPasswordFormFieldsProps {
   isSubmitting: boolean
   error?: string | null
   userEmail?: string
+  companyBranding?: {
+    primaryColor?: string
+  } | null
 }
 
 export function ResetPasswordFormFields({
@@ -29,6 +32,7 @@ export function ResetPasswordFormFields({
   isSubmitting,
   error,
   userEmail,
+  companyBranding,
 }: ResetPasswordFormFieldsProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -135,6 +139,10 @@ export function ResetPasswordFormFields({
           type="submit"
           disabled={isSubmitting}
           className="w-full"
+          style={{
+            backgroundColor: companyBranding?.primaryColor || undefined,
+            borderColor: companyBranding?.primaryColor || undefined,
+          }}
         >
           {isSubmitting ? (
             <>
