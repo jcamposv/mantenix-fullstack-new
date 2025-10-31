@@ -6,6 +6,7 @@ import { useSession } from "@/lib/auth-client"
 import { AssetForm } from "@/components/forms/asset-form"
 import { toast } from "sonner"
 import { AssetFormData } from "@/schemas/asset"
+import { FormSkeleton } from "@/components/skeletons"
 
 interface EditAssetPageProps {
   params: Promise<{
@@ -101,9 +102,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
   if (fetchLoading) {
     return (
       <div className="container mx-auto py-6">
-        <div className="text-center">
-          <p>Cargando activo...</p>
-        </div>
+        <FormSkeleton fields={8} showTitle={true} showFooter={true} />
       </div>
     )
   }

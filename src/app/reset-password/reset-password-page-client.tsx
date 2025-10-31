@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import type { CompanyBranding } from "@/types/branding"
 import type { ResetPasswordSchema } from "@/schemas/password-reset"
+import Image from "next/image"
 
 interface ResetPasswordPageClientProps {
   initialCompanyBranding: CompanyBranding | null
@@ -21,6 +22,8 @@ export function ResetPasswordPageClient({ initialCompanyBranding }: ResetPasswor
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const logo = initialCompanyBranding?.logo || "/images/mantenix-logo-black.svg"
 
   useEffect(() => {
     // Check if there's an error in the URL (from Better Auth)
@@ -69,13 +72,16 @@ export function ResetPasswordPageClient({ initialCompanyBranding }: ResetPasswor
   }
 
   // Show error if no token or invalid token in URL
-  if (!token || searchParams.get('error') === 'INVALID_TOKEN') {
+ if (!token || searchParams.get('error') === 'INVALID_TOKEN') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-none border-none">
           <CardHeader className="text-center">
+          <div className="mb-8 flex justify-center">
+            <Image src={logo} alt="Mantenix Logo" width={136} height={136}  className="h-16 w-auto"/>
+            </div>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <XCircle className="h-6 w-6 text-red-600" />
+              <XCircle className="h-6 w-6 text-red-500" />
             </div>
             <CardTitle className="text-2xl">Token Inválido</CardTitle>
             <CardDescription>
@@ -85,6 +91,8 @@ export function ResetPasswordPageClient({ initialCompanyBranding }: ResetPasswor
           <CardContent>
             <Button
               onClick={() => router.push('/login')}
+              style={{ backgroundColor: initialCompanyBranding?.primaryColor, 
+                color: initialCompanyBranding?.secondaryColor }}
               className="w-full"
             >
               Ir al Login

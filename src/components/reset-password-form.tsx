@@ -45,7 +45,7 @@ export function ResetPasswordForm({
   })
 
   const displayCompanyName = companyBranding?.name || "Mantenix"
-  const displayLogo = companyBranding?.logo || "/images/logo-1.jpg"
+  const displayLogo = companyBranding?.logo || "/images/mantenix-logo-black.svg"
   const hasCustomBranding = !!companyBranding?.logo
 
   if (success) {
@@ -78,6 +78,7 @@ export function ResetPasswordForm({
                 isSubmitting={isSubmitting}
                 error={error}
                 userEmail={user?.email}
+                companyBranding={companyBranding}
               />
             </form>
           </div>

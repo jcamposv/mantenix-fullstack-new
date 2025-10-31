@@ -17,6 +17,7 @@ import { WorkOrderTemplateInfo } from "@/components/work-orders/work-order-templ
 import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
+import { WorkOrderDetailSkeleton } from "@/components/skeletons"
 
 export default function WorkOrderDetailPage() {
   const router = useRouter()
@@ -52,12 +53,8 @@ export default function WorkOrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6 max-w-4xl">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/4" />
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-24 bg-muted rounded" />
-        </div>
+      <div className="container mx-auto max-w-4xl">
+        <WorkOrderDetailSkeleton />
       </div>
     )
   }
