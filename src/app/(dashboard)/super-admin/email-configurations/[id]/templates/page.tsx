@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { emailTemplateTypeLabels } from "@/schemas/email-template"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 interface EmailTemplate {
   id: string
@@ -40,6 +41,9 @@ export default function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [configuration, setConfiguration] = useState<EmailConfiguration | null>(null)
   const [loading, setLoading] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<EmailTemplate | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -75,24 +79,34 @@ export default function EmailTemplatesPage() {
     router.push(`/super-admin/email-configurations/${configId}/templates/${templateId}/edit`)
   }
 
-  const handleDelete = async (template: EmailTemplate) => {
-    if (confirm(`¿Está seguro que desea desactivar el template "${template.name}"?`)) {
-      try {
-        const response = await fetch(`/api/admin/email-templates/${template.id}`, {
-          method: 'DELETE'
-        })
+  const handleDelete = (template: EmailTemplate) => {
+    setTemplateToDelete(template)
+    setDeleteDialogOpen(true)
+  }
 
-        if (response.ok) {
-          toast.success('Template desactivado exitosamente')
-          fetchData()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar el template')
-        }
-      } catch (error) {
-        console.error('Error deleting email template:', error)
-        toast.error('Error al desactivar el template')
+  const confirmDelete = async () => {
+    if (!templateToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/admin/email-templates/${templateToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        toast.success('Template desactivado exitosamente')
+        setDeleteDialogOpen(false)
+        setTemplateToDelete(null)
+        fetchData()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar el template')
       }
+    } catch (error) {
+      console.error('Error deleting email template:', error)
+      toast.error('Error al desactivar el template')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -199,6 +213,18 @@ export default function EmailTemplatesPage() {
         loading={loading}
         onAdd={handleAddTemplate}
         addLabel="Nuevo Template"
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Template"
+        description={`¿Está seguro que desea desactivar el template "${templateToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )
