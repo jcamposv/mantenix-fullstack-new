@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
@@ -9,6 +10,7 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 
 const getStatusBadgeVariant = (status: string) => {
@@ -40,6 +42,10 @@ export default function WorkOrderTemplatesPage() {
     transform: (data) => (data as WorkOrderTemplatesResponse).templates || (data as WorkOrderTemplatesResponse).items || (data as WorkOrderTemplateWithRelations[]) || []
   })
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<WorkOrderTemplateWithRelations | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleAddTemplate = () => {
     router.push("/admin/work-order-templates/new")
   }
@@ -48,25 +54,35 @@ export default function WorkOrderTemplatesPage() {
     router.push(`/admin/work-order-templates/${templateId}/edit`)
   }
 
-  const handleDelete = async (template: WorkOrderTemplateWithRelations) => {
-    if (confirm(`¿Está seguro que desea desactivar el template "${template.name}"?`)) {
-      try {
-        const response = await fetch(`/api/work-order-templates/${template.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Template desactivado exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar el template')
-        }
-      } catch (error) {
-        console.error('Error deleting template:', error)
-        toast.error('Error al desactivar el template')
+  const handleDelete = (template: WorkOrderTemplateWithRelations) => {
+    setTemplateToDelete(template)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!templateToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/work-order-templates/${templateToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Template desactivado exitosamente')
+        setDeleteDialogOpen(false)
+        setTemplateToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar el template')
       }
+    } catch (error) {
+      console.error('Error deleting template:', error)
+      toast.error('Error al desactivar el template')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -167,6 +183,18 @@ export default function WorkOrderTemplatesPage() {
         onAdd={handleAddTemplate}
         addLabel="Crear Template"
         loading={loading}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Template"
+        description={`¿Está seguro que desea desactivar el template "${templateToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )

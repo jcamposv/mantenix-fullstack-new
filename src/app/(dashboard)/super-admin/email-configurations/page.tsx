@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
@@ -8,6 +9,7 @@ import { TableActions, createEditAction, createDeleteAction } from "@/components
 import { useTableData } from "@/components/hooks/use-table-data"
 import { toast } from "sonner"
 import { Mail, FileText } from "lucide-react"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 interface EmailConfiguration {
   id: string
@@ -38,28 +40,42 @@ export default function EmailConfigurationsPage() {
     transform: (data) => (data as EmailConfigurationsResponse).configurations || (data as EmailConfigurationsResponse).items || (data as EmailConfiguration[]) || []
   })
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [configToDelete, setConfigToDelete] = useState<EmailConfiguration | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleEdit = (configId: string) => {
     router.push(`/super-admin/email-configurations/${configId}/edit`)
   }
 
-  const handleDelete = async (config: EmailConfiguration) => {
-    if (confirm(`¿Está seguro que desea desactivar la configuración de email para "${config.company?.name}"?`)) {
-      try {
-        const response = await fetch(`/api/admin/email-configurations/${config.id}`, {
-          method: 'DELETE'
-        })
+  const handleDelete = (config: EmailConfiguration) => {
+    setConfigToDelete(config)
+    setDeleteDialogOpen(true)
+  }
 
-        if (response.ok) {
-          toast.success('Configuración desactivada exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar la configuración')
-        }
-      } catch (error) {
-        console.error('Error deleting email configuration:', error)
-        toast.error('Error al desactivar la configuración')
+  const confirmDelete = async () => {
+    if (!configToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/admin/email-configurations/${configToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        toast.success('Configuración desactivada exitosamente')
+        setDeleteDialogOpen(false)
+        setConfigToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar la configuración')
       }
+    } catch (error) {
+      console.error('Error deleting email configuration:', error)
+      toast.error('Error al desactivar la configuración')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -165,6 +181,18 @@ export default function EmailConfigurationsPage() {
         loading={loading}
         onAdd={handleAddConfiguration}
         addLabel="Nueva Configuración"
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Configuración de Email"
+        description={`¿Está seguro que desea desactivar la configuración de email para "${configToDelete?.company?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )
