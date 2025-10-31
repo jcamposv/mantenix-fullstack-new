@@ -83,7 +83,7 @@ export default function CompaniesPage() {
   const columns: ColumnDef<Company>[] = [
     {
       accessorKey: "name",
-      header: "Company Name",
+      header: "Nombre de Empresa",
       cell: ({ row }) => {
         const company = row.original
         return (
@@ -107,7 +107,7 @@ export default function CompaniesPage() {
     },
     {
       accessorKey: "tier",
-      header: "Tier",
+      header: "Plan",
       cell: ({ row }) => {
         const tier = row.getValue("tier") as string
         return (
@@ -119,14 +119,14 @@ export default function CompaniesPage() {
     },
     {
       accessorKey: "_count.users",
-      header: "Users",
+      header: "Usuarios",
       cell: ({ row }) => {
         return <div className="text-center">{row.original._count.users}</div>
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: "Creado",
       cell: ({ row }) => {
         return new Date(row.getValue("createdAt")).toLocaleDateString()
       },
@@ -152,11 +152,11 @@ export default function CompaniesPage() {
         columns={columns}
         data={companies}
         searchKey="name"
-        searchPlaceholder="Search companies..."
-        title="Companies"
-        description="Manage all companies in the system"
+        searchPlaceholder="Buscar empresas..."
+        title="Empresas"
+        description="Gestionar todas las empresas del sistema"
         onAdd={handleAddCompany}
-        addLabel="Add Company"
+        addLabel="Agregar Empresa"
         loading={loading}
       />
 

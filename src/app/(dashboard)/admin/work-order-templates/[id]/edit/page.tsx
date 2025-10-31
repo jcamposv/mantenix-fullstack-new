@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { WorkOrderTemplateForm } from "@/components/forms/mobile/work-order-complete/work-order-template-form"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
 import type { WorkOrderTemplateFormData } from "@/schemas/work-order-template"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
+import { FormSkeleton } from "@/components/skeletons"
 
 interface EditWorkOrderTemplatePageProps {
   params: Promise<{ id: string }>
@@ -91,15 +91,12 @@ export default function EditWorkOrderTemplatePage({ params }: EditWorkOrderTempl
 
   if (fetchingTemplate) {
     return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span>Cargando template...</span>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-96 bg-muted rounded animate-pulse" />
+        </div>
+        <FormSkeleton fields={4} showTitle={true} showFooter={true} />
       </div>
     )
   }

@@ -93,7 +93,7 @@ export default function SuperAdminUsersPage() {
   const columns: ColumnDef<User>[] = [
     {
       accessorKey: "name",
-      header: "User",
+      header: "Usuario",
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -109,7 +109,7 @@ export default function SuperAdminUsersPage() {
     },
     {
       accessorKey: "role",
-      header: "Role",
+      header: "Rol",
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -118,7 +118,7 @@ export default function SuperAdminUsersPage() {
             {user.isExternalUser && (
               <Badge variant="outline" className="text-xs">
                 <Users className="mr-1 h-3 w-3" />
-                External
+                Externo
               </Badge>
             )}
           </div>
@@ -127,14 +127,14 @@ export default function SuperAdminUsersPage() {
     },
     {
       accessorKey: "company.name",
-      header: "Company",
+      header: "Empresa",
       cell: ({ row }) => {
         const user = row.original
         const company = user.company
         const clientCompany = user.clientCompany
         
         if (!company) {
-          return <span className="text-muted-foreground">No company</span>
+          return <span className="text-muted-foreground">Sin empresa</span>
         }
         
         return (
@@ -149,7 +149,7 @@ export default function SuperAdminUsersPage() {
             {user.isExternalUser && clientCompany && (
               <div className="flex items-center space-x-1 text-xs text-orange-600">
                 <Users className="h-3 w-3" />
-                <span>Client: {clientCompany.name}</span>
+                <span>Cliente: {clientCompany.name}</span>
               </div>
             )}
           </div>
@@ -158,19 +158,19 @@ export default function SuperAdminUsersPage() {
     },
     {
       accessorKey: "emailVerified",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }) => {
         const verified = row.getValue("emailVerified") as boolean
         return (
           <Badge variant={verified ? "default" : "secondary"}>
-            {verified ? "Verified" : "Pending"}
+            {verified ? "Verificado" : "Pendiente"}
           </Badge>
         )
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: "Creado",
       cell: ({ row }) => {
         return new Date(row.getValue("createdAt")).toLocaleDateString()
       },
@@ -196,11 +196,11 @@ export default function SuperAdminUsersPage() {
         columns={columns}
         data={users}
         searchKey="name"
-        searchPlaceholder="Search users..."
-        title="Users Management (Super Admin)"
-        description="Manage all users across all companies and tenants"
+        searchPlaceholder="Buscar usuarios..."
+        title="Gestión de Usuarios (Super Admin)"
+        description="Gestionar todos los usuarios de todas las empresas e inquilinos"
         onAdd={handleAddUser}
-        addLabel="Invite User"
+        addLabel="Invitar Usuario"
         loading={loading}
       />
 

@@ -14,6 +14,7 @@ import { updateWorkOrderSchema } from "@/schemas/work-order"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import type { CreateWorkOrderData, UpdateWorkOrderData, WorkOrderWithRelations } from "@/types/work-order.types"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
+import { FormSkeleton } from "@/components/skeletons"
 
 interface Site {
   id: string
@@ -175,12 +176,7 @@ export default function EditWorkOrderPage() {
   if (loading) {
     return (
       <div className="container mx-auto py-6 max-w-4xl">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/4" />
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
-        </div>
+        <FormSkeleton fields={8} showTitle={true} showFooter={true} />
       </div>
     )
   }
