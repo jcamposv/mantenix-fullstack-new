@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { SiteForm } from "@/components/forms/site-form"
 import { toast } from "sonner"
 import type { SiteFormData } from "@/schemas/site"
+import { FormSkeleton } from "@/components/skeletons"
 
 export default function EditSitePage() {
   const [loading, setLoading] = useState(false)
@@ -84,12 +85,7 @@ export default function EditSitePage() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Cargando datos de la sede...</p>
-          </div>
-        </div>
+        <FormSkeleton fields={7} showTitle={true} showFooter={true} />
       </div>
     )
   }

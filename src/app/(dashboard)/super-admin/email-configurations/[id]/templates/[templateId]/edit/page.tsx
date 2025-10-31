@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { EmailTemplateForm } from "@/components/forms/email-template/email-template-form"
 import type { EmailTemplateSubmitData } from "@/schemas/email-template"
 import { toast } from "sonner"
+import { FormSkeleton } from "@/components/skeletons"
 
 export default function EditEmailTemplatePage() {
   const [loading, setLoading] = useState(false)
@@ -71,7 +72,7 @@ export default function EditEmailTemplatePage() {
   if (loadingData) {
     return (
       <div className="container mx-auto py-6">
-        <div className="text-center">Cargando...</div>
+        <FormSkeleton fields={4} showTitle={true} showFooter={true} />
       </div>
     )
   }

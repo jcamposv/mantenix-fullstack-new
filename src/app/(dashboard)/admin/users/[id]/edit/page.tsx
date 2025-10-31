@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { UserForm } from "@/components/forms/user-form"
 import { toast } from "sonner"
+import { FormSkeleton } from "@/components/skeletons"
 
 export default function EditUserPage() {
   const [loading, setLoading] = useState(false)
@@ -73,12 +74,7 @@ export default function EditUserPage() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Cargando datos del usuario...</p>
-          </div>
-        </div>
+        <FormSkeleton fields={5} showTitle={true} showFooter={true} />
       </div>
     )
   }

@@ -11,6 +11,7 @@ import { User, Settings, FileText, Plus, Search, LayoutTemplate, Clock } from "l
 import { useTableData } from "@/components/hooks/use-table-data"
 import { TemplatePreviewModal } from "@/components/work-orders/template-preview-modal"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
+import { CardListSkeleton } from "@/components/skeletons"
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
@@ -99,25 +100,7 @@ export default function SelectTemplatePage() {
 
         {/* Templates grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-muted rounded"></div>
-                    <div className="h-3 bg-muted rounded w-2/3"></div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <div className="h-8 bg-muted rounded w-full"></div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <CardListSkeleton count={6} showFooter={true} showHeader={true} />
         ) : (
           <div>
             {activeTemplates.length === 0 ? (
