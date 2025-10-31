@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { SignedImage } from "@/components/signed-image"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 interface Asset {
   id: string
@@ -78,6 +79,10 @@ export default function AssetsPage() {
     transform: (data) => (data as AssetsResponse).assets || (data as AssetsResponse).items || (data as Asset[]) || []
   })
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   useEffect(() => {
     const siteId = searchParams.get('siteId')
     setFilteredSite(siteId)
@@ -96,25 +101,35 @@ export default function AssetsPage() {
     router.push(`/admin/assets/${assetId}/edit`)
   }
 
-  const handleDelete = async (asset: Asset) => {
-    if (confirm(`¿Está seguro que desea desactivar "${asset.name}"?`)) {
-      try {
-        const response = await fetch(`/api/admin/assets/${asset.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Activo desactivado exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar el activo')
-        }
-      } catch (error) {
-        console.error('Error deleting asset:', error)
-        toast.error('Error al desactivar el activo')
+  const handleDelete = (asset: Asset) => {
+    setAssetToDelete(asset)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!assetToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/admin/assets/${assetToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Activo desactivado exitosamente')
+        setDeleteDialogOpen(false)
+        setAssetToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar el activo')
       }
+    } catch (error) {
+      console.error('Error deleting asset:', error)
+      toast.error('Error al desactivar el activo')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -287,6 +302,18 @@ export default function AssetsPage() {
         onAdd={handleAddAsset}
         addLabel="Agregar Activo"
         loading={loading}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Activo"
+        description={`¿Está seguro que desea desactivar "${assetToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )

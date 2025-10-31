@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { User, Building, Wrench, Clock } from "lucide-react"
@@ -12,6 +13,7 @@ import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
 import type { WorkOrderWithRelations, WorkOrdersResponse } from "@/types/work-order.types"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 export default function WorkOrdersListPage() {
   const router = useRouter()
@@ -19,6 +21,10 @@ export default function WorkOrdersListPage() {
     endpoint: '/api/work-orders',
     transform: (data) => (data as WorkOrdersResponse).workOrders || (data as WorkOrdersResponse).items || (data as WorkOrderWithRelations[]) || []
   })
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [workOrderToDelete, setWorkOrderToDelete] = useState<WorkOrderWithRelations | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Configuración inicial de visibilidad de columnas
   const initialColumnVisibility = {
@@ -38,25 +44,35 @@ export default function WorkOrdersListPage() {
     router.push(`/work-orders/${workOrderId}/edit`)
   }
 
-  const handleDelete = async (workOrder: WorkOrderWithRelations) => {
-    if (confirm(`¿Está seguro que desea eliminar la orden "${workOrder.number}"?`)) {
-      try {
-        const response = await fetch(`/api/work-orders/${workOrder.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Orden de trabajo eliminada exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al eliminar la orden de trabajo')
-        }
-      } catch (error) {
-        console.error('Error deleting work order:', error)
-        toast.error('Error al eliminar la orden de trabajo')
+  const handleDelete = (workOrder: WorkOrderWithRelations) => {
+    setWorkOrderToDelete(workOrder)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!workOrderToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/work-orders/${workOrderToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Orden de trabajo eliminada exitosamente')
+        setDeleteDialogOpen(false)
+        setWorkOrderToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al eliminar la orden de trabajo')
       }
+    } catch (error) {
+      console.error('Error deleting work order:', error)
+      toast.error('Error al eliminar la orden de trabajo')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -216,6 +232,18 @@ export default function WorkOrdersListPage() {
         addLabel="Crear Orden"
         loading={loading}
         initialColumnVisibility={initialColumnVisibility}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Eliminar Orden de Trabajo"
+        description={`¿Está seguro que desea eliminar la orden "${workOrderToDelete?.number}"?`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { Building2, Mail, Phone, MapPin } from "lucide-react"
@@ -8,6 +9,7 @@ import Image from "next/image"
 import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 interface ClientCompany {
   id: string
@@ -48,6 +50,10 @@ export default function ClientCompaniesPage() {
     transform: (data) => (data as ClientCompaniesResponse).clientCompanies || (data as ClientCompaniesResponse).companies || (data as ClientCompaniesResponse).items || (data as ClientCompany[]) || []
   })
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [companyToDelete, setCompanyToDelete] = useState<ClientCompany | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleAddClientCompany = () => {
     router.push("/admin/client-companies/new")
   }
@@ -60,25 +66,35 @@ export default function ClientCompaniesPage() {
     router.push(`/admin/sites?clientCompanyId=${companyId}`)
   }
 
-  const handleDelete = async (company: ClientCompany) => {
-    if (confirm(`¿Está seguro que desea desactivar "${company.name}"?`)) {
-      try {
-        const response = await fetch(`/api/admin/client-companies/${company.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Empresa cliente desactivada exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar la empresa cliente')
-        }
-      } catch (error) {
-        console.error('Error deleting client company:', error)
-        toast.error('Error al desactivar la empresa cliente')
+  const handleDelete = (company: ClientCompany) => {
+    setCompanyToDelete(company)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!companyToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/admin/client-companies/${companyToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Empresa cliente desactivada exitosamente')
+        setDeleteDialogOpen(false)
+        setCompanyToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar la empresa cliente')
       }
+    } catch (error) {
+      console.error('Error deleting client company:', error)
+      toast.error('Error al desactivar la empresa cliente')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -216,6 +232,18 @@ const columns: ColumnDef<ClientCompany>[] = [
         onAdd={handleAddClientCompany}
         addLabel="Agregar Empresa Cliente"
         loading={loading}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Empresa Cliente"
+        description={`¿Está seguro que desea desactivar "${companyToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )
