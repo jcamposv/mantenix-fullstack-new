@@ -13,6 +13,9 @@ export { ClientWorkOrderService } from './services/client-work-order.service'
 export { EmailConfigurationService } from './services/email-configuration.service'
 export { EmailTemplateService } from './services/email-template.service'
 export { EmailSenderService } from './services/email-sender.service'
+export { FeatureService } from './services/feature.service'
+export { AttendanceService } from './services/attendance.service'
+export { LocationService } from './services/location.service'
 
 // Repositories
 export { AlertRepository } from './repositories/alert.repository'
@@ -24,6 +27,9 @@ export { CompanyRepository } from './repositories/company.repository'
 export { AssetRepository } from './repositories/asset.repository'
 export { EmailConfigurationRepository } from './repositories/email-configuration.repository'
 export { EmailTemplateRepository } from './repositories/email-template.repository'
+export { FeatureRepository } from './repositories/feature.repository'
+export { AttendanceRepository } from './repositories/attendance.repository'
+export { LocationRepository } from './repositories/location.repository'
 
 // Helpers
 export { PermissionHelper } from './helpers/permission.helper'

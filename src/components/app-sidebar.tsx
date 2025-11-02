@@ -16,12 +16,13 @@ import { useSidebarData, type AppSidebarProps } from "@/components/sidebar"
 
 interface ExtendedAppSidebarProps extends AppSidebarProps, React.ComponentProps<typeof Sidebar> {}
 
-export function AppSidebar({ 
-  companyBranding, 
+export function AppSidebar({
+  companyBranding,
   availableCompanies,
   serverUser,
   userPermissions,
-  ...props 
+  companyFeatures,
+  ...props
 }: ExtendedAppSidebarProps) {
   const {
     currentUser,
@@ -31,10 +32,11 @@ export function AppSidebar({
     isSuperAdmin,
     isCompanyAdmin,
     loading,
-  } = useSidebarData({ 
-    companyBranding, 
-    serverUser, 
-    userPermissions 
+  } = useSidebarData({
+    companyBranding,
+    serverUser,
+    userPermissions,
+    companyFeatures
   })
 
   return (

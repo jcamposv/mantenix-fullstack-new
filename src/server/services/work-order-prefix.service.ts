@@ -23,7 +23,7 @@ export class WorkOrderPrefixService {
    * Validate if user can view prefixes
    * All authenticated users in the company can view prefixes
    */
-  private static validateViewPermission(role: Role): void {
+  private static validateViewPermission(_role: Role): void {
     // All roles can view prefixes
     // This is just a placeholder for consistency
     return

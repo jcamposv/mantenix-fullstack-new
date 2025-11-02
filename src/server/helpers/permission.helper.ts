@@ -59,7 +59,15 @@ export class PermissionHelper {
     CREATE_EMAIL_TEMPLATE: 'create_email_template',
     UPDATE_EMAIL_TEMPLATE: 'update_email_template',
     DELETE_EMAIL_TEMPLATE: 'delete_email_template',
-    VIEW_EMAIL_TEMPLATES: 'view_email_templates'
+    VIEW_EMAIL_TEMPLATES: 'view_email_templates',
+    MANAGE_FEATURES: 'manage_features',
+    VIEW_ATTENDANCE: 'view_attendance',
+    CREATE_ATTENDANCE: 'create_attendance',
+    UPDATE_ATTENDANCE: 'update_attendance',
+    DELETE_ATTENDANCE: 'delete_attendance',
+    VIEW_ALL_ATTENDANCE: 'view_all_attendance',
+    VIEW_COMPANY_ATTENDANCE: 'view_company_attendance',
+    MANAGE_LOCATIONS: 'manage_locations'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -100,7 +108,13 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_EMAIL_TEMPLATE,
       this.PERMISSIONS.UPDATE_EMAIL_TEMPLATE,
       this.PERMISSIONS.DELETE_EMAIL_TEMPLATE,
-      this.PERMISSIONS.VIEW_EMAIL_TEMPLATES
+      this.PERMISSIONS.VIEW_EMAIL_TEMPLATES,
+      this.PERMISSIONS.MANAGE_FEATURES,
+      this.PERMISSIONS.VIEW_ALL_ATTENDANCE,
+      this.PERMISSIONS.CREATE_ATTENDANCE,
+      this.PERMISSIONS.UPDATE_ATTENDANCE,
+      this.PERMISSIONS.DELETE_ATTENDANCE,
+      this.PERMISSIONS.MANAGE_LOCATIONS
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -135,7 +149,12 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_EMAIL_TEMPLATE,
       this.PERMISSIONS.UPDATE_EMAIL_TEMPLATE,
       this.PERMISSIONS.DELETE_EMAIL_TEMPLATE,
-      this.PERMISSIONS.VIEW_EMAIL_TEMPLATES
+      this.PERMISSIONS.VIEW_EMAIL_TEMPLATES,
+      this.PERMISSIONS.VIEW_COMPANY_ATTENDANCE,
+      this.PERMISSIONS.CREATE_ATTENDANCE,
+      this.PERMISSIONS.UPDATE_ATTENDANCE,
+      this.PERMISSIONS.DELETE_ATTENDANCE,
+      this.PERMISSIONS.MANAGE_LOCATIONS
     ],
     [this.ROLES.CLIENTE_ADMIN_GENERAL]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -171,7 +190,19 @@ export class PermissionHelper {
       this.PERMISSIONS.UPDATE_ALERT,
       this.PERMISSIONS.VIEW_ASSIGNED_ALERTS,
       this.PERMISSIONS.CREATE_COMMENT,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      this.PERMISSIONS.VIEW_ATTENDANCE,
+      this.PERMISSIONS.CREATE_ATTENDANCE
+    ],
+    [this.ROLES.SUPERVISOR]: [
+      this.PERMISSIONS.CREATE_ALERT,
+      this.PERMISSIONS.UPDATE_ALERT,
+      this.PERMISSIONS.VIEW_COMPANY_ALERTS,
+      this.PERMISSIONS.CREATE_COMMENT,
+      this.PERMISSIONS.VIEW_ASSETS,
+      this.PERMISSIONS.VIEW_COMPANY_ATTENDANCE,
+      this.PERMISSIONS.CREATE_ATTENDANCE,
+      this.PERMISSIONS.UPDATE_ATTENDANCE
     ]
   }
 
