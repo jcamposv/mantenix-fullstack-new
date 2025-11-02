@@ -81,6 +81,22 @@ enum AssetStatus {
   FUERA_DE_SERVICIO // No disponible para uso
 }
 
+enum FeatureModule {
+  HR_ATTENDANCE // Módulo de asistencia y marcaje
+  HR_VACATIONS // Módulo de vacaciones
+  HR_PERMISSIONS // Módulo de permisos
+  AI_ASSISTANT // Asistente de IA
+  ADVANCED_ANALYTICS // Análisis avanzados
+}
+
+enum AttendanceStatus {
+  ON_TIME // A tiempo
+  LATE // Tarde
+  ABSENT // Ausente
+  JUSTIFIED // Justificado
+  EARLY_DEPARTURE // Salida temprana
+}
+
 // ============================================================================
 // BETTER AUTH CORE TABLES (with extensions)
 // ============================================================================
@@ -147,6 +163,10 @@ model User {
   // Password Reset relations
   passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
   passwordResetTokensCreated PasswordResetToken[] @relation("PasswordResetCreator")
+
+  // Attendance relations
+  attendanceRecords          AttendanceRecord[]
+  companyFeaturesEnabled     CompanyFeature[]     @relation("FeatureEnabler")
 
   @@map("user")
 }
@@ -229,6 +249,9 @@ model Company {
   workOrderPrefixes  WorkOrderPrefix[]
   workOrders         WorkOrder[]
   emailConfiguration EmailConfiguration?
+  features           CompanyFeature[]
+  locations          CompanyLocation[]
+  attendanceRecords  AttendanceRecord[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -874,4 +897,109 @@ model PasswordResetToken {
   @@index([expiresAt])
   @@index([used])
   @@map("password_reset_tokens")
+}
+
+// ============================================================================
+// PREMIUM FEATURES SYSTEM
+// ============================================================================
+
+// Features habilitadas por empresa
+model CompanyFeature {
+  id        String        @id @default(cuid())
+  companyId String
+  module    FeatureModule // Módulo habilitado
+  isEnabled Boolean       @default(true)
+  enabledAt DateTime      @default(now())
+  enabledBy String? // Usuario que habilitó el feature
+  disabledAt DateTime?
+  disabledBy String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  enabledByUser User?   @relation("FeatureEnabler", fields: [enabledBy], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, module]) // Una empresa solo puede tener un registro por módulo
+  @@index([companyId])
+  @@index([module])
+  @@index([isEnabled])
+  @@map("company_features")
+}
+
+// Ubicaciones/oficinas de la empresa para geofencing
+model CompanyLocation {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String // Nombre de la ubicación (ej: "Oficina Central", "Bodega Norte")
+  address     String?
+  latitude    Float // Coordenada para geofencing
+  longitude   Float // Coordenada para geofencing
+  radiusMeters Int     @default(100) // Radio en metros para considerar que está "dentro"
+
+  // Horarios de trabajo
+  workStartTime        String   @default("08:00") // Hora de entrada esperada (formato HH:mm)
+  workEndTime          String   @default("17:00") // Hora de salida esperada (formato HH:mm)
+  lateToleranceMinutes Int      @default(15) // Tolerancia en minutos antes de marcar como tarde
+  timezone             String   @default("America/Costa_Rica") // Timezone de la ubicación
+  workDays             String[] @default(["MON", "TUE", "WED", "THU", "FRI"]) // Días laborales
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  attendanceRecords AttendanceRecord[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("company_locations")
+}
+
+// ============================================================================
+// HR / ATTENDANCE SYSTEM
+// ============================================================================
+
+model AttendanceRecord {
+  id         String           @id @default(cuid())
+  companyId  String
+  userId     String
+  locationId String? // Ubicación desde donde marcó (opcional)
+
+  // Geolocalización
+  latitude  Float
+  longitude Float
+
+  // Marcaje de entrada/salida
+  checkInAt  DateTime
+  checkOutAt DateTime?
+
+  // Estado y metadata
+  status           AttendanceStatus // ON_TIME, LATE, ABSENT, JUSTIFIED, etc.
+  notes            String? // Notas opcionales (ej: justificación)
+  isManualEntry    Boolean          @default(false) // Si fue creado manualmente por admin
+  manualEntryBy    String? // Usuario que creó la entrada manual
+  deviceInfo       String? // Información del dispositivo (user agent)
+  ipAddress        String?
+
+  // Tiempos calculados
+  workDurationMinutes Int? // Duración en minutos (checkOut - checkIn)
+  lateMinutes         Int? // Minutos de retraso si llegó tarde
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location CompanyLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([locationId])
+  @@index([checkInAt])
+  @@index([status])
+  @@index([companyId, userId, checkInAt]) // Para búsquedas de asistencia por usuario y fecha
+  @@map("attendance_records")
 }

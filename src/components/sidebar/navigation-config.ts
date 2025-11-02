@@ -13,6 +13,10 @@ import {
   ClipboardList,
   AlertCircle,
   Mail,
+  Sparkles,
+  Clock,
+  Calendar,
+  FileText,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -154,6 +158,12 @@ export const ADMIN_NAV_ITEMS = [
     role: "ADMIN_EMPRESA"
   },
   {
+    name: "Features Premium",
+    url: "/super-admin/features",
+    icon: Sparkles,
+    role: "SUPER_ADMIN" // Only super admins can manage premium features
+  },
+  {
     name: "Configuración de Emails",
     url: "/super-admin/email-configurations",
     icon: Mail,
@@ -171,5 +181,70 @@ export const FALLBACK_USER = {
   name: "Usuario",
   email: "user@example.com",
   avatar: "/avatars/default.jpg",
+}
+
+// Features habilitados dinámicamente
+export const getFeatureNavItems = (enabledFeatures: {
+  hasAttendance?: boolean
+  hasVacations?: boolean
+  hasPermissions?: boolean
+}) => {
+  const items = []
+
+  if (enabledFeatures.hasAttendance) {
+    items.push({
+      title: "Asistencia",
+      url: "/admin/attendance",
+      icon: Clock,
+      items: [
+        {
+          title: "Registros",
+          url: "/admin/attendance"
+        },
+        {
+          title: "Reportes",
+          url: "/admin/attendance/reports"
+        },
+        {
+          title: "Ubicaciones",
+          url: "/admin/locations"
+        }
+      ]
+    })
+  }
+
+  if (enabledFeatures.hasVacations) {
+    items.push({
+      title: "Vacaciones",
+      url: "/admin/vacations",
+      icon: Calendar,
+      items: [
+        {
+          title: "Solicitudes",
+          url: "/admin/vacations"
+        },
+        {
+          title: "Balance",
+          url: "/admin/vacations/balance"
+        }
+      ]
+    })
+  }
+
+  if (enabledFeatures.hasPermissions) {
+    items.push({
+      title: "Permisos",
+      url: "/admin/permissions",
+      icon: FileText,
+      items: [
+        {
+          title: "Solicitudes",
+          url: "/admin/permissions"
+        }
+      ]
+    })
+  }
+
+  return items
 }
 

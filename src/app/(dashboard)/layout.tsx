@@ -50,11 +50,12 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
 async function getServerSideData() {
   try {
     const user = await getCurrentUserWithRole()
-    
+
     if (!user) {
       return {
         user: null,
         availableCompanies: null,
+        companyFeatures: null,
         userPermissions: {
           isSuperAdmin: false,
           isCompanyAdmin: false
@@ -66,7 +67,7 @@ async function getServerSideData() {
       isSuperAdmin: user.role === 'SUPER_ADMIN',
       isCompanyAdmin: user.role === 'ADMIN_EMPRESA'
     }
-    
+
     // Only fetch companies for super admin users
     let availableCompanies = null
     if (userPermissions.isSuperAdmin) {
@@ -86,10 +87,27 @@ async function getServerSideData() {
         }
       })
     }
-    
+
+    // Fetch company features for the user's company
+    let companyFeatures = null
+    const companyId = user.companyId || user.company?.id
+    if (companyId) {
+      companyFeatures = await prisma.companyFeature.findMany({
+        where: {
+          companyId: companyId,
+          isEnabled: true
+        },
+        select: {
+          module: true,
+          isEnabled: true
+        }
+      })
+    }
+
     return {
       user,
       availableCompanies,
+      companyFeatures,
       userPermissions
     }
   } catch (error) {
@@ -97,6 +115,7 @@ async function getServerSideData() {
     return {
       user: null,
       availableCompanies: null,
+      companyFeatures: null,
       userPermissions: {
         isSuperAdmin: false,
         isCompanyAdmin: false
@@ -107,15 +126,16 @@ async function getServerSideData() {
 
 export default async function Page({ children }: { children: React.ReactNode }) {
   const companyBranding = await getCompanyBranding()
-  const { user, availableCompanies, userPermissions } = await getServerSideData()
-  
+  const { user, availableCompanies, companyFeatures, userPermissions } = await getServerSideData()
+
   return (
     <SidebarProvider>
-      <AppSidebar 
-        companyBranding={companyBranding} 
+      <AppSidebar
+        companyBranding={companyBranding}
         availableCompanies={availableCompanies}
         serverUser={user}
         userPermissions={userPermissions}
+        companyFeatures={companyFeatures}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
