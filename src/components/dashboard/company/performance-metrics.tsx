@@ -47,7 +47,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 export function PerformanceMetrics({ data, loading = false }: PerformanceMetricsProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="shadow-none">
         <CardHeader>
           <CardTitle>Métricas de Rendimiento</CardTitle>
         </CardHeader>
@@ -62,7 +62,7 @@ export function PerformanceMetrics({ data, loading = false }: PerformanceMetrics
   const hasData = data && data.length > 0 && data.some(item => item.completed > 0 || item.efficiency > 0)
 
   return (
-    <Card>
+    <Card className="shadow-none">
       <CardHeader>
         <CardTitle>Métricas de Rendimiento</CardTitle>
         <p className="text-sm text-muted-foreground">

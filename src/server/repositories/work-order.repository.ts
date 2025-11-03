@@ -56,6 +56,17 @@ export class WorkOrderRepository {
         }
       }
 
+      // Created at date range filters
+      if (filters.createdAtFrom || filters.createdAtTo) {
+        whereClause.createdAt = {}
+        if (filters.createdAtFrom) {
+          whereClause.createdAt.gte = filters.createdAtFrom
+        }
+        if (filters.createdAtTo) {
+          whereClause.createdAt.lte = filters.createdAtTo
+        }
+      }
+
       // Assignment filter
       if (filters.assignedToMe) {
         const userId = typeof filters.assignedToMe === 'string' ? filters.assignedToMe : undefined
@@ -768,6 +779,17 @@ export class WorkOrderRepository {
       }
       if (filters.assetId) whereClause.assetId = filters.assetId
       if (filters.templateId) whereClause.templateId = filters.templateId
+
+      // Created at date range filters
+      if (filters.createdAtFrom || filters.createdAtTo) {
+        whereClause.createdAt = {}
+        if (filters.createdAtFrom) {
+          whereClause.createdAt.gte = filters.createdAtFrom
+        }
+        if (filters.createdAtTo) {
+          whereClause.createdAt.lte = filters.createdAtTo
+        }
+      }
     }
 
     const [
@@ -776,11 +798,14 @@ export class WorkOrderRepository {
       completed,
       pending,
       overdue,
-      activeUsersCount
+      activeUsersCount,
+      completedWorkOrders,
+      plannedCount,
+      unplannedCount
     ] = await Promise.all([
       // Total active work orders
       prisma.workOrder.count({ where: whereClause }),
-      
+
       // In progress work orders
       prisma.workOrder.count({
         where: {
@@ -788,7 +813,7 @@ export class WorkOrderRepository {
           status: 'IN_PROGRESS'
         }
       }),
-      
+
       // Completed work orders
       prisma.workOrder.count({
         where: {
@@ -796,7 +821,7 @@ export class WorkOrderRepository {
           status: 'COMPLETED'
         }
       }),
-      
+
       // Pending work orders (DRAFT + ASSIGNED)
       prisma.workOrder.count({
         where: {
@@ -806,7 +831,7 @@ export class WorkOrderRepository {
           }
         }
       }),
-      
+
       // Overdue work orders
       prisma.workOrder.count({
         where: {
@@ -819,7 +844,7 @@ export class WorkOrderRepository {
           }
         }
       }),
-      
+
       // Active users (users with work order assignments)
       prisma.workOrderAssignment.groupBy({
         by: ['userId'],
@@ -832,11 +857,55 @@ export class WorkOrderRepository {
             }
           }
         }
+      }),
+
+      // Completed work orders with times for avgCompletionTime calculation
+      prisma.workOrder.findMany({
+        where: {
+          ...whereClause,
+          status: 'COMPLETED',
+          startedAt: { not: null },
+          completedAt: { not: null }
+        },
+        select: {
+          startedAt: true,
+          completedAt: true
+        }
+      }),
+
+      // Planned maintenance count (PREVENTIVO)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          type: 'PREVENTIVO'
+        }
+      }),
+
+      // Unplanned maintenance count (CORRECTIVO + REPARACION)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          type: {
+            in: ['CORRECTIVO', 'REPARACION']
+          }
+        }
       })
     ])
 
     // Calculate completion rate
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+    // Calculate average completion time in hours
+    let avgCompletionTime = 0
+    if (completedWorkOrders.length > 0) {
+      const totalCompletionTimeMs = completedWorkOrders.reduce((sum, wo) => {
+        const start = new Date(wo.startedAt!).getTime()
+        const end = new Date(wo.completedAt!).getTime()
+        return sum + (end - start)
+      }, 0)
+      // Convert to hours and round to 1 decimal
+      avgCompletionTime = Math.round((totalCompletionTimeMs / completedWorkOrders.length / (1000 * 60 * 60)) * 10) / 10
+    }
 
     return {
       total,
@@ -845,25 +914,42 @@ export class WorkOrderRepository {
       pending,
       overdue,
       completionRate,
-      avgCompletionTime: 0, // TODO: Calculate from actual completion times
-      activeUsers: activeUsersCount.length
+      avgCompletionTime,
+      activeUsers: activeUsersCount.length,
+      plannedVsUnplanned: {
+        planned: plannedCount,
+        unplanned: unplannedCount
+      }
     }
   }
 
   /**
    * Get recent work order activity
    */
-  static async getRecentActivity(companyId: string, limit: number = 10) {
+  static async getRecentActivity(companyId: string, limit: number = 10, filters?: WorkOrderFilters) {
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true,
+      OR: [
+        { startedAt: { not: null } },
+        { completedAt: { not: null } },
+        { assignments: { some: {} } }
+      ]
+    }
+
+    // Apply date filters
+    if (filters?.createdAtFrom || filters?.createdAtTo) {
+      whereClause.createdAt = {}
+      if (filters.createdAtFrom) {
+        whereClause.createdAt.gte = filters.createdAtFrom
+      }
+      if (filters.createdAtTo) {
+        whereClause.createdAt.lte = filters.createdAtTo
+      }
+    }
+
     const activities = await prisma.workOrder.findMany({
-      where: {
-        companyId,
-        isActive: true,
-        OR: [
-          { startedAt: { not: null } },
-          { completedAt: { not: null } },
-          { assignments: { some: {} } }
-        ]
-      },
+      where: whereClause,
       include: {
         assignments: {
           include: {
@@ -938,10 +1024,14 @@ export class WorkOrderRepository {
   /**
    * Get performance metrics for the last 7 days
    */
-  static async getPerformanceMetrics(companyId: string, days: number = 7) {
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+  static async getPerformanceMetrics(companyId: string, days: number = 7, filters?: WorkOrderFilters) {
+    // Use filters if provided, otherwise use default date range
+    const endDate = filters?.createdAtTo || new Date()
+    const startDate = filters?.createdAtFrom || (() => {
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      return date
+    })()
 
     // Get completion data for each day
     const dailyCompletions = await prisma.workOrder.groupBy({
@@ -1010,5 +1100,147 @@ export class WorkOrderRepository {
     }
 
     return performanceData
+  }
+
+  /**
+   * Get upcoming scheduled work orders
+   */
+  static async getUpcomingWorkOrders(companyId: string, limit: number = 10, filters?: WorkOrderFilters) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Build where clause
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true,
+      scheduledDate: {
+        gte: today
+      },
+      status: {
+        in: ['DRAFT', 'ASSIGNED', 'IN_PROGRESS']
+      }
+    }
+
+    // Apply additional filters
+    if (filters) {
+      if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.clientCompanyId) {
+        whereClause.site = {
+          clientCompanyId: filters.clientCompanyId
+        }
+      }
+    }
+
+    const upcomingWorkOrders = await prisma.workOrder.findMany({
+      where: whereClause,
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: {
+          select: {
+            assignments: true
+          }
+        }
+      },
+      orderBy: {
+        scheduledDate: 'asc'
+      },
+      take: limit
+    })
+
+    return upcomingWorkOrders
+  }
+
+  /**
+   * Get critical work orders (URGENT and HIGH priority) with client company filter
+   */
+  static async getCriticalOrders(whereClause: Prisma.WorkOrderWhereInput, limit: number = 10) {
+    const criticalOrders = await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        priority: {
+          in: ['URGENT', 'HIGH'],
+        },
+        status: {
+          in: ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'],
+        },
+        isActive: true,
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { scheduledDate: 'asc' },
+      ],
+      take: limit,
+    })
+
+    return criticalOrders
+  }
+
+  /**
+   * Get work orders for provider metrics calculation
+   */
+  static async getOrdersForProviderMetrics(whereClause: Prisma.WorkOrderWhereInput) {
+    return await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        status: {
+          in: ['COMPLETED', 'IN_PROGRESS'],
+        },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        scheduledDate: true,
+        createdAt: true,
+        updatedAt: true,
+        assignments: {
+          select: {
+            assignedAt: true,
+          },
+          orderBy: {
+            assignedAt: 'asc',
+          },
+          take: 1,
+        },
+      },
+    })
+  }
+
+  /**
+   * Get all work orders for site metrics calculation
+   */
+  static async getOrdersForSiteMetrics(whereClause: Prisma.WorkOrderWhereInput) {
+    return await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        scheduledDate: true,
+        createdAt: true,
+        updatedAt: true,
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
   }
 }

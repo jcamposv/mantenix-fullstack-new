@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { List, Plus } from "lucide-react"
-import { WorkOrdersDashboard } from "@/components/dashboard/work-orders-dashboard"
+import { WorkOrdersDashboard } from "@/components/dashboard/company/work-orders-dashboard"
 
 export default function WorkOrdersPage() {
   const router = useRouter()

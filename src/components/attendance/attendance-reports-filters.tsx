@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -8,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { User as UserIcon, Calendar } from "lucide-react"
 
-interface User {
+interface UserType {
   id: string
   name: string
   email: string
@@ -17,7 +18,7 @@ interface User {
 }
 
 interface AttendanceReportsFiltersProps {
-  users: User[]
+  users: UserType[]
   selectedUserId: string
   selectedMonth: number
   selectedYear: number
@@ -50,36 +51,39 @@ export const AttendanceReportsFilters = ({
   onMonthChange,
   onYearChange,
 }: AttendanceReportsFiltersProps) => {
+  const currentYear = new Date().getFullYear()
+  const years = [currentYear - 1, currentYear, currentYear + 1]
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Filtros</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Usuario</label>
+    <Card className="shadow-none">
+      <CardContent className="pt-6">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="flex items-center gap-2 min-w-[200px]">
+            <UserIcon className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedUserId} onValueChange={onUserChange}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="Seleccionar usuario" />
               </SelectTrigger>
               <SelectContent>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.name} - {user.role}
+                    <div className="flex flex-col">
+                      <span>{user.name}</span>
+                      <span className="text-xs text-muted-foreground">{user.role}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Mes</label>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <Select
               value={selectedMonth.toString()}
               onValueChange={(value) => onMonthChange(parseInt(value))}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -92,17 +96,16 @@ export const AttendanceReportsFilters = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Año</label>
+          <div className="flex items-center gap-2">
             <Select
               value={selectedYear.toString()}
               onValueChange={(value) => onYearChange(parseInt(value))}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-[100px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[2024, 2025, 2026].map((year) => (
+                {years.map((year) => (
                   <SelectItem key={year} value={year.toString()}>
                     {year}
                   </SelectItem>

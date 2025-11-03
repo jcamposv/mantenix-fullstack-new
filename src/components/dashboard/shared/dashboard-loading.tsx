@@ -29,7 +29,7 @@ export function DashboardLoading({ className }: DashboardLoadingProps) {
 
         {/* Charts Row Loading */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          <Card className="shadow-none">
             <CardHeader>
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-3 w-64" />
@@ -39,7 +39,7 @@ export function DashboardLoading({ className }: DashboardLoadingProps) {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-none">
             <CardHeader>
               <Skeleton className="h-5 w-36" />
               <Skeleton className="h-3 w-56" />
@@ -51,7 +51,7 @@ export function DashboardLoading({ className }: DashboardLoadingProps) {
         </div>
 
         {/* Recent Activity Loading */}
-        <Card>
+        <Card className="shadow-none">
           <CardHeader>
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-3 w-48" />

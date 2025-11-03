@@ -5,6 +5,7 @@ import type {
 } from '@/types/work-order.types'
 import type { AuthenticatedSession } from '@/types/auth.types'
 import { prisma } from '@/lib/prisma'
+import { WorkOrderRepository } from '@/server/repositories/work-order.repository'
 
 /**
  * Service for client users (external users) to manage work orders
@@ -184,9 +185,21 @@ export class ClientWorkOrderService {
    * Get work order statistics for client users
    */
   static async getWorkOrderStats(
-    session: AuthenticatedSession
+    session: AuthenticatedSession,
+    dateRange?: { from?: Date; to?: Date }
   ): Promise<WorkOrderStats> {
     const whereClause = this.buildClientWhereClause(session)
+
+    // Add date range filter if provided
+    if (dateRange?.from || dateRange?.to) {
+      whereClause.createdAt = {}
+      if (dateRange.from) {
+        whereClause.createdAt.gte = dateRange.from
+      }
+      if (dateRange.to) {
+        whereClause.createdAt.lte = dateRange.to
+      }
+    }
 
     const [
       total,
@@ -242,5 +255,226 @@ export class ClientWorkOrderService {
       dueToday: 0,
       dueThisWeek: 0,
     }
+  }
+
+  /**
+   * Get critical work orders (URGENT and HIGH priority) for client users
+   */
+  static async getCriticalOrders(
+    session: AuthenticatedSession,
+    dateRange?: { from?: Date; to?: Date }
+  ) {
+    const whereClause = this.buildClientWhereClause(session)
+    const now = new Date()
+
+    // Add date range filter if provided
+    if (dateRange?.from || dateRange?.to) {
+      whereClause.createdAt = {}
+      if (dateRange.from) {
+        whereClause.createdAt.gte = dateRange.from
+      }
+      if (dateRange.to) {
+        whereClause.createdAt.lte = dateRange.to
+      }
+    }
+
+    const criticalOrders = await WorkOrderRepository.getCriticalOrders(whereClause, 10)
+
+    // Calculate days overdue for each order
+    return criticalOrders.map(order => {
+      let daysOverdue: number | undefined
+      if (order.scheduledDate) {
+        const scheduled = new Date(order.scheduledDate)
+        if (scheduled < now) {
+          const diffTime = Math.abs(now.getTime() - scheduled.getTime())
+          daysOverdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        }
+      }
+
+      return {
+        id: order.id,
+        number: order.number,
+        title: order.title,
+        priority: order.priority,
+        status: order.status,
+        scheduledDate: order.scheduledDate,
+        site: order.site,
+        daysOverdue,
+      }
+    })
+  }
+
+  /**
+   * Get provider performance metrics for client users
+   */
+  static async getProviderMetrics(
+    session: AuthenticatedSession,
+    dateRange?: { from?: Date; to?: Date }
+  ) {
+    const whereClause = this.buildClientWhereClause(session)
+
+    // Add date range filter if provided
+    if (dateRange?.from || dateRange?.to) {
+      whereClause.createdAt = {}
+      if (dateRange.from) {
+        whereClause.createdAt.gte = dateRange.from
+      }
+      if (dateRange.to) {
+        whereClause.createdAt.lte = dateRange.to
+      }
+    }
+
+    const orders = await WorkOrderRepository.getOrdersForProviderMetrics(whereClause)
+
+    const total = orders.length
+    if (total === 0) {
+      return {
+        slaCompliance: 0,
+        avgResponseTime: 0,
+        avgResolutionTime: 0,
+        serviceRating: 0,
+      }
+    }
+
+    // Calculate SLA compliance (orders completed on time)
+    const completedOrders = orders.filter(o => o.status === 'COMPLETED')
+    const onTimeOrders = completedOrders.filter(order => {
+      if (!order.scheduledDate) return true
+      return new Date(order.updatedAt) <= new Date(order.scheduledDate)
+    })
+    const slaCompliance = completedOrders.length > 0
+      ? Math.round((onTimeOrders.length / completedOrders.length) * 100)
+      : 0
+
+    // Calculate average response time (time from creation to first assignment)
+    let totalResponseTime = 0
+    let responseCount = 0
+    orders.forEach(order => {
+      if (order.assignments.length > 0) {
+        const responseTime = new Date(order.assignments[0].assignedAt).getTime() - new Date(order.createdAt).getTime()
+        totalResponseTime += responseTime / (1000 * 60 * 60) // Convert to hours
+        responseCount++
+      }
+    })
+    const avgResponseTime = responseCount > 0 ? totalResponseTime / responseCount : 0
+
+    // Calculate average resolution time (time from creation to completion)
+    let totalResolutionTime = 0
+    let resolutionCount = 0
+    completedOrders.forEach(order => {
+      const resolutionTime = new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()
+      totalResolutionTime += resolutionTime / (1000 * 60 * 60) // Convert to hours
+      resolutionCount++
+    })
+    const avgResolutionTime = resolutionCount > 0 ? totalResolutionTime / resolutionCount : 0
+
+    // Calculate overall service rating
+    const serviceRating = Math.round(
+      (slaCompliance * 0.5) +
+      (Math.max(0, 100 - avgResponseTime * 10) * 0.25) +
+      (Math.max(0, 100 - avgResolutionTime * 2) * 0.25)
+    )
+
+    return {
+      slaCompliance,
+      avgResponseTime: Number(avgResponseTime.toFixed(1)),
+      avgResolutionTime: Number(avgResolutionTime.toFixed(1)),
+      serviceRating,
+    }
+  }
+
+  /**
+   * Get metrics grouped by site for client users
+   */
+  static async getSiteMetrics(
+    session: AuthenticatedSession,
+    dateRange?: { from?: Date; to?: Date }
+  ) {
+    const whereClause = this.buildClientWhereClause(session)
+    const now = new Date()
+
+    // Add date range filter if provided
+    if (dateRange?.from || dateRange?.to) {
+      whereClause.createdAt = {}
+      if (dateRange.from) {
+        whereClause.createdAt.gte = dateRange.from
+      }
+      if (dateRange.to) {
+        whereClause.createdAt.lte = dateRange.to
+      }
+    }
+
+    const orders = await WorkOrderRepository.getOrdersForSiteMetrics(whereClause)
+
+    // Group by site
+    const siteMap = new Map<string, {
+      siteId: string
+      siteName: string
+      total: number
+      completed: number
+      inProgress: number
+      overdue: number
+      resolutionTimes: number[]
+    }>()
+
+    orders.forEach(order => {
+      if (!order.site) return
+
+      const siteId = order.site.id
+      if (!siteMap.has(siteId)) {
+        siteMap.set(siteId, {
+          siteId,
+          siteName: order.site.name,
+          total: 0,
+          completed: 0,
+          inProgress: 0,
+          overdue: 0,
+          resolutionTimes: [],
+        })
+      }
+
+      const siteData = siteMap.get(siteId)!
+      siteData.total++
+
+      if (order.status === 'COMPLETED') {
+        siteData.completed++
+        const resolutionTime = new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()
+        siteData.resolutionTimes.push(resolutionTime / (1000 * 60 * 60)) // hours
+      } else if (order.status === 'IN_PROGRESS') {
+        siteData.inProgress++
+      }
+
+      // Check if overdue
+      if (
+        order.scheduledDate &&
+        new Date(order.scheduledDate) < now &&
+        order.status !== 'COMPLETED' &&
+        order.status !== 'CANCELLED'
+      ) {
+        siteData.overdue++
+      }
+    })
+
+    // Convert to array and calculate metrics
+    return Array.from(siteMap.values()).map(site => {
+      const completionRate = site.total > 0
+        ? Math.round((site.completed / site.total) * 100)
+        : 0
+
+      const avgResolutionTime = site.resolutionTimes.length > 0
+        ? site.resolutionTimes.reduce((a, b) => a + b, 0) / site.resolutionTimes.length
+        : undefined
+
+      return {
+        siteId: site.siteId,
+        siteName: site.siteName,
+        total: site.total,
+        completed: site.completed,
+        inProgress: site.inProgress,
+        overdue: site.overdue,
+        completionRate,
+        avgResolutionTime: avgResolutionTime ? Number(avgResolutionTime.toFixed(1)) : undefined,
+      }
+    }).sort((a, b) => b.total - a.total) // Sort by total orders descending
   }
 }

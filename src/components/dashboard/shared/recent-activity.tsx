@@ -57,7 +57,7 @@ const getActivityText = (activity: ActivityItem) => {
 export function RecentActivity({ activities, loading = false }: RecentActivityProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="shadow-none">
         <CardHeader>
           <CardTitle>Actividad Reciente</CardTitle>
         </CardHeader>
@@ -79,7 +79,7 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
   }
 
   return (
-    <Card>
+    <Card className="shadow-none">
       <CardHeader>
         <CardTitle>Actividad Reciente</CardTitle>
       </CardHeader>

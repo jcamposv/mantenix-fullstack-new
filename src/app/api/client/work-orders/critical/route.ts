@@ -5,8 +5,8 @@ import { ClientWorkOrderService } from '@/server/services/client-work-order.serv
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/client/work-orders/stats
- * Get work order statistics for client users
+ * GET /api/client/work-orders/critical
+ * Get critical work orders (URGENT/HIGH priority) for client users
  */
 export async function GET(request: NextRequest) {
   try {
@@ -35,12 +35,12 @@ export async function GET(request: NextRequest) {
       to: dateTo ? new Date(dateTo) : undefined,
     }
 
-    // Get statistics using client service
-    const stats = await ClientWorkOrderService.getWorkOrderStats(session, dateRange)
+    // Get critical orders using client service
+    const criticalOrders = await ClientWorkOrderService.getCriticalOrders(session, dateRange)
 
-    return NextResponse.json({ stats })
+    return NextResponse.json({ orders: criticalOrders })
   } catch (error) {
-    console.error('Error fetching client work order stats:', error)
+    console.error('Error fetching critical work orders:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error interno del servidor' },
       { status: 500 }
