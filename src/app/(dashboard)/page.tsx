@@ -122,7 +122,7 @@ export default function Home() {
 
         {/* No data in period message */}
         {!hasDataInPeriod && (
-          <Card className="border-dashed">
+          <Card className="border-dashed shadow-none">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
@@ -194,7 +194,7 @@ export default function Home() {
             />
 
             {/* Status Overview */}
-            <Card>
+            <Card className="shadow-none">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -210,63 +210,63 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900/50">
+                  <div className="flex items-center justify-between p-4 bg-success/5 rounded-lg border border-success/20">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-success/10">
+                        <CheckCircle2 className="h-5 w-5 text-success" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-green-800 dark:text-green-400">Completadas</p>
-                        <p className="text-xs text-green-600 dark:text-green-500">Finalizadas</p>
+                        <p className="text-sm font-medium text-success">Completadas</p>
+                        <p className="text-xs text-muted-foreground">Finalizadas</p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                    <div className="text-2xl font-bold text-success">
                       {stats?.completed || 0}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900/50">
+                  <div className="flex items-center justify-between p-4 bg-info/5 rounded-lg border border-info/20">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                        <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-info/10">
+                        <Activity className="h-5 w-5 text-info" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-400">En Progreso</p>
-                        <p className="text-xs text-blue-600 dark:text-blue-500">Ejecutándose</p>
+                        <p className="text-sm font-medium text-info">En Progreso</p>
+                        <p className="text-xs text-muted-foreground">Ejecutándose</p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                    <div className="text-2xl font-bold text-info">
                       {stats?.inProgress || 0}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-900/50">
+                  <div className="flex items-center justify-between p-4 bg-warning/5 rounded-lg border border-warning/20">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                        <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-warning/10">
+                        <Clock className="h-5 w-5 text-warning" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400">Pendientes</p>
-                        <p className="text-xs text-yellow-600 dark:text-yellow-500">Por iniciar</p>
+                        <p className="text-sm font-medium text-warning">Pendientes</p>
+                        <p className="text-xs text-muted-foreground">Por iniciar</p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
+                    <div className="text-2xl font-bold text-warning">
                       {stats?.pending || 0}
                     </div>
                   </div>
 
                   {(stats?.overdue ?? 0) > 0 && (
-                    <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/50">
+                    <div className="flex items-center justify-between p-4 bg-destructive/5 rounded-lg border border-destructive/20">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
-                          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-destructive/10">
+                          <AlertTriangle className="h-5 w-5 text-destructive" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-red-800 dark:text-red-400">Vencidas</p>
-                          <p className="text-xs text-red-600 dark:text-red-500">Atrasadas</p>
+                          <p className="text-sm font-medium text-destructive">Vencidas</p>
+                          <p className="text-xs text-muted-foreground">Atrasadas</p>
                         </div>
                       </div>
-                      <div className="text-2xl font-bold text-red-700 dark:text-red-300">
+                      <div className="text-2xl font-bold text-destructive">
                         {stats?.overdue || 0}
                       </div>
                     </div>

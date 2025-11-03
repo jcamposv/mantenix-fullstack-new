@@ -47,8 +47,8 @@ export function DashboardFilters({
   const hasActiveFilters = period !== "this_month" || customDateRange
 
   return (
-    <Card>
-      <CardContent className="pt-6">
+    <Card className="shadow-none">
+      <CardContent className="pt-0">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-1">
             <div className="flex items-center gap-2">

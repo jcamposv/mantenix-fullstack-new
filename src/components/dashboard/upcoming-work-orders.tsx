@@ -34,7 +34,7 @@ interface UpcomingWorkOrdersProps {
 export function UpcomingWorkOrders({ workOrders, loading = false }: UpcomingWorkOrdersProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="shadow-none">
         <CardHeader>
           <CardTitle>Próximas Órdenes Programadas</CardTitle>
         </CardHeader>
@@ -71,7 +71,7 @@ export function UpcomingWorkOrders({ workOrders, loading = false }: UpcomingWork
   }
 
   return (
-    <Card>
+    <Card className="shadow-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />

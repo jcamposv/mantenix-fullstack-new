@@ -16,6 +16,10 @@ interface WorkOrderDashboardStats {
   completionRate: number
   avgCompletionTime: number
   activeUsers: number
+  plannedVsUnplanned: {
+    planned: number
+    unplanned: number
+  }
   recentActivity: Array<{
     id: string
     type: "completed" | "started" | "assigned" | "overdue"

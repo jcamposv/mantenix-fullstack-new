@@ -798,11 +798,14 @@ export class WorkOrderRepository {
       completed,
       pending,
       overdue,
-      activeUsersCount
+      activeUsersCount,
+      completedWorkOrders,
+      plannedCount,
+      unplannedCount
     ] = await Promise.all([
       // Total active work orders
       prisma.workOrder.count({ where: whereClause }),
-      
+
       // In progress work orders
       prisma.workOrder.count({
         where: {
@@ -810,7 +813,7 @@ export class WorkOrderRepository {
           status: 'IN_PROGRESS'
         }
       }),
-      
+
       // Completed work orders
       prisma.workOrder.count({
         where: {
@@ -818,7 +821,7 @@ export class WorkOrderRepository {
           status: 'COMPLETED'
         }
       }),
-      
+
       // Pending work orders (DRAFT + ASSIGNED)
       prisma.workOrder.count({
         where: {
@@ -828,7 +831,7 @@ export class WorkOrderRepository {
           }
         }
       }),
-      
+
       // Overdue work orders
       prisma.workOrder.count({
         where: {
@@ -841,7 +844,7 @@ export class WorkOrderRepository {
           }
         }
       }),
-      
+
       // Active users (users with work order assignments)
       prisma.workOrderAssignment.groupBy({
         by: ['userId'],
@@ -854,11 +857,55 @@ export class WorkOrderRepository {
             }
           }
         }
+      }),
+
+      // Completed work orders with times for avgCompletionTime calculation
+      prisma.workOrder.findMany({
+        where: {
+          ...whereClause,
+          status: 'COMPLETED',
+          startedAt: { not: null },
+          completedAt: { not: null }
+        },
+        select: {
+          startedAt: true,
+          completedAt: true
+        }
+      }),
+
+      // Planned maintenance count (PREVENTIVO)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          type: 'PREVENTIVO'
+        }
+      }),
+
+      // Unplanned maintenance count (CORRECTIVO + REPARACION)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          type: {
+            in: ['CORRECTIVO', 'REPARACION']
+          }
+        }
       })
     ])
 
     // Calculate completion rate
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+    // Calculate average completion time in hours
+    let avgCompletionTime = 0
+    if (completedWorkOrders.length > 0) {
+      const totalCompletionTimeMs = completedWorkOrders.reduce((sum, wo) => {
+        const start = new Date(wo.startedAt!).getTime()
+        const end = new Date(wo.completedAt!).getTime()
+        return sum + (end - start)
+      }, 0)
+      // Convert to hours and round to 1 decimal
+      avgCompletionTime = Math.round((totalCompletionTimeMs / completedWorkOrders.length / (1000 * 60 * 60)) * 10) / 10
+    }
 
     return {
       total,
@@ -867,8 +914,12 @@ export class WorkOrderRepository {
       pending,
       overdue,
       completionRate,
-      avgCompletionTime: 0, // TODO: Calculate from actual completion times
-      activeUsers: activeUsersCount.length
+      avgCompletionTime,
+      activeUsers: activeUsersCount.length,
+      plannedVsUnplanned: {
+        planned: plannedCount,
+        unplanned: unplannedCount
+      }
     }
   }
 
