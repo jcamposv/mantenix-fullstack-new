@@ -2,49 +2,71 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
-import { 
-  Loader2, 
-  RefreshCw, 
-  Calendar, 
-  Building, 
-  User, 
+import {
+  Loader2,
+  RefreshCw,
+  Calendar,
+  Building,
   Clock,
   ArrowRight,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Filter,
+  AlertTriangle,
+  TrendingUp
 } from "lucide-react"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
+import { cn } from "@/lib/utils"
 
 export default function MobileWorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrderWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterPriority, setFilterPriority] = useState<string | null>(null)
   const router = useRouter()
 
-  // Filtrar órdenes activas (draft, assigned, in_progress)
-  const activeWorkOrders = workOrders.filter(wo => 
+  // Filtrar órdenes activas
+  const activeWorkOrders = workOrders.filter(wo =>
     ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status)
   )
 
-  // Filtrar historial (completed, cancelled)
-  const historyWorkOrders = workOrders.filter(wo => 
+  // Filtrar historial
+  const historyWorkOrders = workOrders.filter(wo =>
     ['COMPLETED', 'CANCELLED'].includes(wo.status)
   )
+
+  // Aplicar búsqueda y filtros
+  const filterWorkOrders = (orders: WorkOrderWithRelations[]) => {
+    return orders.filter(wo => {
+      const matchesSearch = searchQuery === "" ||
+        wo.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        wo.title.toLowerCase().includes(searchQuery.toLowerCase())
+
+      const matchesPriority = !filterPriority || wo.priority === filterPriority
+
+      return matchesSearch && matchesPriority
+    })
+  }
+
+  const filteredActive = filterWorkOrders(activeWorkOrders)
+  const filteredHistory = filterWorkOrders(historyWorkOrders)
 
   const fetchMyWorkOrders = async () => {
     try {
       setError(null)
       const response = await fetch('/api/work-orders/my')
-      
+
       if (!response.ok) {
         throw new Error('Error al cargar las órdenes de trabajo')
       }
@@ -72,79 +94,143 @@ export default function MobileWorkOrdersPage() {
     fetchMyWorkOrders()
   }
 
-  // Componente para card de orden de trabajo optimizado para mobile
+  // Calcular días restantes
+  const getDaysRemaining = (scheduledDate: Date | string) => {
+    const today = new Date()
+    const scheduled = new Date(scheduledDate)
+    const diffTime = scheduled.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
+
+  // Obtener color de urgencia según prioridad y tiempo
+  const getUrgencyColor = (priority: string, scheduledDate?: Date | string) => {
+    if (scheduledDate) {
+      const daysRemaining = getDaysRemaining(scheduledDate)
+      if (daysRemaining < 0) return 'border-l-red-500' // Vencido
+      if (daysRemaining === 0) return 'border-l-orange-500' // Hoy
+      if (daysRemaining === 1) return 'border-l-yellow-500' // Mañana
+    }
+
+    switch (priority) {
+      case 'URGENT': return 'border-l-red-500'
+      case 'HIGH': return 'border-l-orange-500'
+      case 'MEDIUM': return 'border-l-blue-500'
+      default: return 'border-l-gray-300'
+    }
+  }
+
+  // Componente de card mejorado
   const MobileWorkOrderCard = ({ workOrder }: { workOrder: WorkOrderWithRelations }) => {
     const isActive = ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'].includes(workOrder.status)
-    
+    const urgencyColor = getUrgencyColor(workOrder.priority, workOrder.scheduledDate)
+    const daysRemaining = workOrder.scheduledDate ? getDaysRemaining(workOrder.scheduledDate) : null
+
     return (
-      <Card 
-        className="cursor-pointer transition-all hover:shadow-md active:scale-[0.98]"
+      <Card
+        className={cn(
+          "cursor-pointer transition-all hover:shadow-md active:scale-[0.98] border-l-4",
+          urgencyColor
+        )}
         onClick={() => handleViewWorkOrder(workOrder.id)}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">
+        <CardContent className="p-4">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base font-semibold text-foreground">
                   {workOrder.number}
                 </span>
                 {isActive && (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse flex-shrink-0" />
                 )}
               </div>
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-tight">
+              <p className="text-sm text-foreground line-clamp-2 leading-snug font-medium">
                 {workOrder.title}
               </p>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0 ml-2" />
           </div>
-          
-          <div className="flex items-center gap-2 mt-2">
+
+          {/* Badges compactos */}
+          <div className="flex items-center gap-1.5 mb-3 flex-wrap">
             <WorkOrderStatusBadge status={workOrder.status} />
             <WorkOrderPriorityBadge priority={workOrder.priority} />
             <WorkOrderTypeBadge type={workOrder.type} />
           </div>
-        </CardHeader>
-        
-        <CardContent className="pt-0">
-          <div className="space-y-2 text-xs text-muted-foreground">
-            {workOrder.site && (
-              <div className="flex items-center gap-1">
-                <Building className="h-3 w-3" />
-                <span className="truncate">{workOrder.site.name}</span>
-              </div>
-            )}
-            
-            <div className="flex items-center justify-between">
-              {workOrder.scheduledDate ? (
+
+          {/* Info Row */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-3">
+              {workOrder.site && (
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{new Date(workOrder.scheduledDate).toLocaleDateString()}</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>{new Date(workOrder.createdAt).toLocaleDateString()}</span>
+                  <Building className="h-3.5 w-3.5" />
+                  <span className="truncate max-w-[120px]">{workOrder.site.name}</span>
                 </div>
               )}
-              
-              <div className="flex items-center gap-1">
-                <User className="h-3 w-3" />
-                <span>{workOrder._count?.assignments || 0}</span>
-              </div>
             </div>
+
+            {/* Tiempo restante/fecha */}
+            {daysRemaining !== null && isActive && (
+              <div className={cn(
+                "flex items-center gap-1 font-medium px-2 py-0.5 rounded-full",
+                daysRemaining < 0 ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400" :
+                daysRemaining === 0 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" :
+                daysRemaining === 1 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400" :
+                "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              )}>
+                <Clock className="h-3 w-3" />
+                <span>
+                  {daysRemaining < 0 ? `${Math.abs(daysRemaining)}d vencido` :
+                   daysRemaining === 0 ? 'Hoy' :
+                   daysRemaining === 1 ? 'Mañana' :
+                   `${daysRemaining}d`}
+                </span>
+              </div>
+            )}
+
+            {!isActive && workOrder.completedAt && (
+              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>{new Date(workOrder.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
     )
   }
 
+  // Skeleton loader profesional
+  const SkeletonCard = () => (
+    <Card className="border-l-4 border-l-gray-200 animate-pulse">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-24" />
+            <div className="h-4 bg-gray-200 rounded w-full" />
+          </div>
+        </div>
+        <div className="flex gap-2 mb-3">
+          <div className="h-5 bg-gray-200 rounded-full w-20" />
+          <div className="h-5 bg-gray-200 rounded-full w-16" />
+        </div>
+        <div className="h-3 bg-gray-200 rounded w-32" />
+      </CardContent>
+    </Card>
+  )
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Cargando órdenes de trabajo...</p>
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h1 className="text-lg font-semibold">Mis Órdenes</h1>
+        </div>
+        <div className="flex-1 p-4 space-y-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </div>
     )
@@ -164,37 +250,97 @@ export default function MobileWorkOrdersPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header con refresh */}
-      <div className="flex items-center justify-between p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 border-b">
-        <h1 className="text-lg font-semibold">Mis Órdenes</h1>
-        <Button 
-          onClick={handleRefresh} 
-          variant="ghost" 
-          size="sm"
-          disabled={refreshing}
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-        </Button>
+    <div className="h-full flex flex-col bg-background">
+      {/* Header mejorado */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className="text-xl font-bold">Mis Órdenes</h1>
+            <p className="text-xs text-muted-foreground">
+              {filteredActive.length} activa{filteredActive.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <Button
+            onClick={handleRefresh}
+            variant="ghost"
+            size="sm"
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+          </Button>
+        </div>
+
+        {/* Búsqueda */}
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por número o título..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
+
+        {/* Filtros rápidos */}
+        <div className="px-4 pb-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <Button
+              variant={filterPriority === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterPriority(null)}
+              className="flex-shrink-0 h-8 text-xs"
+            >
+              Todas
+            </Button>
+            <Button
+              variant={filterPriority === 'URGENT' ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterPriority('URGENT')}
+              className="flex-shrink-0 h-8 text-xs"
+            >
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Urgentes
+            </Button>
+            <Button
+              variant={filterPriority === 'HIGH' ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterPriority('HIGH')}
+              className="flex-shrink-0 h-8 text-xs"
+            >
+              <TrendingUp className="h-3 w-3 mr-1" />
+              Alta
+            </Button>
+            <Button
+              variant={filterPriority === 'MEDIUM' ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterPriority('MEDIUM')}
+              className="flex-shrink-0 h-8 text-xs"
+            >
+              Media
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="active" className="flex-1 flex flex-col">
-        <div className="px-4 pt-4">
-          <TabsList className="grid w-full grid-cols-2">
+        <div className="px-4 pt-3 border-b">
+          <TabsList className="grid w-full grid-cols-2 h-9">
             <TabsTrigger value="active" className="text-xs">
               Activas
-              {activeWorkOrders.length > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {activeWorkOrders.length}
+              {filteredActive.length > 0 && (
+                <Badge variant="secondary" className="ml-2 text-xs h-5 min-w-[20px] px-1.5">
+                  {filteredActive.length}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="history" className="text-xs">
               Historial
-              {historyWorkOrders.length > 0 && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {historyWorkOrders.length}
+              {filteredHistory.length > 0 && (
+                <Badge variant="outline" className="ml-2 text-xs h-5 min-w-[20px] px-1.5">
+                  {filteredHistory.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -202,44 +348,63 @@ export default function MobileWorkOrdersPage() {
         </div>
 
         {/* Contenido de tabs */}
-        <TabsContent value="active" className="flex-1 mt-4">
-          <ScrollArea className="h-full px-4">
-            {activeWorkOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-sm font-medium">Sin órdenes activas</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  No tienes órdenes de trabajo pendientes
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 pb-4">
-                {activeWorkOrders.map((workOrder) => (
-                  <MobileWorkOrderCard key={workOrder.id} workOrder={workOrder} />
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+        <TabsContent value="active" className="flex-1 mt-0 overflow-y-auto">
+          {filteredActive.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              {searchQuery || filterPriority ? (
+                <>
+                  <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-sm font-medium">Sin resultados</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No hay órdenes que coincidan con tu búsqueda
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchQuery("")
+                      setFilterPriority(null)
+                    }}
+                  >
+                    Limpiar filtros
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-sm font-medium">Sin órdenes activas</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No tienes órdenes de trabajo pendientes
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 space-y-3 pb-safe">
+              {filteredActive.map((workOrder) => (
+                <MobileWorkOrderCard key={workOrder.id} workOrder={workOrder} />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="history" className="flex-1 mt-4">
-          <ScrollArea className="h-full px-4">
-            {historyWorkOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-sm font-medium">Sin historial</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  No tienes órdenes completadas aún
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 pb-4">
-                {historyWorkOrders.map((workOrder) => (
-                  <MobileWorkOrderCard key={workOrder.id} workOrder={workOrder} />
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+        <TabsContent value="history" className="flex-1 mt-0 overflow-y-auto">
+          {filteredHistory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-sm font-medium">Sin historial</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                {searchQuery || filterPriority ? 'No hay órdenes que coincidan con tu búsqueda' : 'No tienes órdenes completadas aún'}
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 space-y-3 pb-safe">
+              {filteredHistory.map((workOrder) => (
+                <MobileWorkOrderCard key={workOrder.id} workOrder={workOrder} />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

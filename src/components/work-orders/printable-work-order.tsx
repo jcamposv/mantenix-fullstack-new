@@ -6,6 +6,7 @@ import { WorkOrderStatusBadge } from "./work-order-status-badge"
 import { WorkOrderPriorityBadge } from "./work-order-priority-badge"
 import { WorkOrderTypeBadge } from "./work-order-type-badge"
 import { CustomFieldValue } from "./custom-field-value"
+import { UserAvatar } from "@/components/common/user-avatar"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig, CustomField } from "@/types/work-order-template.types"
 import Image from "next/image"
@@ -133,14 +134,19 @@ export const PrintableWorkOrder = forwardRef<HTMLDivElement, PrintableWorkOrderP
               <h4 className="text-sm font-bold uppercase text-muted-foreground mb-3 border-b pb-1 flex items-center gap-2">
                 <Users className="h-3 w-3" /> Técnicos Asignados
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm">
                 {workOrder.assignments.map((assignment) => (
                   <div key={assignment.id} className="flex items-center gap-2">
-                    <span>•</span>
-                    <div>
+                    <UserAvatar
+                      name={assignment.user?.name || "Usuario"}
+                      image={assignment.user?.image}
+                      size="sm"
+                      className="print:w-8 print:h-8 print:text-xs"
+                    />
+                    <div className="min-w-0">
                       <p className="font-medium">{assignment.user?.name || "Usuario"}</p>
                       {assignment.user?.email && (
-                        <p className="text-xs text-muted-foreground">{assignment.user.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{assignment.user.email}</p>
                       )}
                     </div>
                   </div>
