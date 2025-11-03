@@ -9,6 +9,7 @@ import { WorkOrderStats } from "@/components/dashboard/client/work-order-stats"
 import { ProviderPerformance } from "@/components/dashboard/client/provider-performance"
 import { CriticalOrders } from "@/components/dashboard/client/critical-orders"
 import { SiteMetrics } from "@/components/dashboard/client/site-metrics"
+import { AIInsightsCard } from "@/components/dashboard/client/ai-insights-card"
 import { DashboardFilters, DatePeriod } from "@/components/dashboard/shared/dashboard-filters"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -183,10 +184,10 @@ export default function ClientWorkOrdersPage() {
   ]
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               Órdenes de Trabajo
@@ -196,24 +197,30 @@ export default function ClientWorkOrdersPage() {
             </p>
           </div>
 
-          <Button variant="outline" onClick={() => router.push("/client/work-orders/list")}>
-            <List className="h-4 w-4 mr-2" />
-            Ver Todas las Órdenes
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Date Filter */}
+            <DashboardFilters
+              period={period}
+              customDateRange={customDateRange}
+              onPeriodChange={setPeriod}
+              onCustomDateRangeChange={setCustomDateRange}
+            />
+
+            <Button variant="outline" onClick={() => router.push("/client/work-orders/list")}>
+              <List className="h-4 w-4 mr-2" />
+              Ver Todas las Órdenes
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="space-y-6">
-        {/* Date Filters */}
-        <DashboardFilters
-          period={period}
-          customDateRange={customDateRange}
-          onPeriodChange={setPeriod}
-          onCustomDateRangeChange={setCustomDateRange}
-        />
 
         {/* KPI Stats */}
         <WorkOrderStats stats={stats} loading={loading} />
+
+        {/* AI Insights */}
+        <AIInsightsCard dateRange={effectiveDateRange} />
 
         {/* Provider Performance Metrics */}
         <ProviderPerformance

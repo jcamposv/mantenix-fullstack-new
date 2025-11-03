@@ -1,13 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Loader2, Building2, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, Building2, CheckCircle2, XCircle, Sparkles, Settings } from "lucide-react"
 import { AVAILABLE_FEATURES } from "@/types/attendance.types"
 import type { FeatureModule } from "@prisma/client"
+import { CompanySelector } from "@/components/admin/company-selector"
 
 interface Company {
   id: string
@@ -30,7 +33,9 @@ interface CompanyWithFeatures extends Company {
 }
 
 export default function SuperAdminFeaturesPage() {
+  const router = useRouter()
   const [companies, setCompanies] = useState<CompanyWithFeatures[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
 
@@ -60,6 +65,11 @@ export default function SuperAdminFeaturesPage() {
         )
 
         setCompanies(companiesWithFeatures)
+
+        // Auto-select first company
+        if (companiesWithFeatures.length > 0 && !selectedCompanyId) {
+          setSelectedCompanyId(companiesWithFeatures[0].id)
+        }
       } else {
         toast.error("Error al cargar empresas")
       }
@@ -73,6 +83,7 @@ export default function SuperAdminFeaturesPage() {
 
   useEffect(() => {
     fetchCompanies()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleToggleFeature = async (
@@ -148,6 +159,12 @@ export default function SuperAdminFeaturesPage() {
     return feature?.isEnabled ?? false
   }
 
+  const selectedCompany = companies.find(c => c.id === selectedCompanyId)
+
+  const hasAIFeature = selectedCompany?.features.some(
+    f => f.module === 'AI_ASSISTANT' && f.isEnabled
+  ) ?? false
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -159,93 +176,116 @@ export default function SuperAdminFeaturesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Gestión de Features Premium</h1>
-        <p className="text-muted-foreground mt-2">
-          Habilita o deshabilita módulos premium para cada empresa
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Gestión de Features Premium</h1>
+          <p className="text-muted-foreground mt-2">
+            Habilita o deshabilita módulos premium por empresa
+          </p>
+        </div>
       </div>
 
-      {/* Legend */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Módulos Disponibles</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {Object.values(AVAILABLE_FEATURES).map((feature) => (
-              <div key={feature.module} className="flex items-start gap-3 p-3 border rounded-lg">
-                <Badge variant="outline" className="mt-0.5">
-                  {feature.category}
-                </Badge>
-                <div>
-                  <p className="font-medium text-sm">{feature.name}</p>
-                  <p className="text-xs text-muted-foreground">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Company Selector */}
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
+          <CompanySelector
+            companies={companies}
+            selectedCompanyId={selectedCompanyId}
+            onCompanyChange={setSelectedCompanyId}
+          />
+        </div>
 
-      {/* Companies */}
-      <div className="space-y-4">
-        {companies.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              No hay empresas registradas
-            </CardContent>
-          </Card>
+        {/* AI Config Button */}
+        {selectedCompany && hasAIFeature && (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/super-admin/ai-configuration?companyId=${selectedCompanyId}`)}
+            className="mt-8"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Configurar AI
+          </Button>
         )}
+      </div>
 
-        {companies.map((company) => (
-          <Card key={company.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <CardTitle className="text-xl">{company.name}</CardTitle>
-                    <CardDescription>
-                      {company.subdomain}.localhost • Plan: {company.tier}
-                    </CardDescription>
-                  </div>
+      {/* Company Features */}
+      {!selectedCompany && companies.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            No hay empresas registradas
+          </CardContent>
+        </Card>
+      ) : !selectedCompany ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Selecciona una empresa para gestionar sus features
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <Building2 className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <CardTitle className="text-xl">{selectedCompany.name}</CardTitle>
+                  <CardDescription>
+                    {selectedCompany.subdomain}.localhost • Plan: {selectedCompany.tier}
+                  </CardDescription>
                 </div>
-                <Badge variant={company.isActive ? "default" : "secondary"}>
-                  {company.isActive ? "Activa" : "Inactiva"}
-                </Badge>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.values(AVAILABLE_FEATURES).map((feature) => {
-                  const isEnabled = isFeatureEnabled(company, feature.module as FeatureModule)
-                  const toggleKey = `${company.id}-${feature.module}`
-                  const isTogglingThis = toggling === toggleKey
+              <Badge variant={selectedCompany.isActive ? "default" : "secondary"}>
+                {selectedCompany.isActive ? "Activa" : "Inactiva"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Object.values(AVAILABLE_FEATURES).map((feature) => {
+                const isEnabled = isFeatureEnabled(selectedCompany, feature.module as FeatureModule)
+                const toggleKey = `${selectedCompany.id}-${feature.module}`
+                const isTogglingThis = toggling === toggleKey
+                const isAIFeature = feature.module === 'AI_ASSISTANT'
 
-                  return (
-                    <div
-                      key={feature.module}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3 flex-1">
-                        {isEnabled ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        )}
-                        <div>
+                return (
+                  <div
+                    key={feature.module}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3 flex-1">
+                      {isEnabled ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{feature.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {feature.description}
-                          </p>
+                          <Badge variant="outline" className="text-xs">
+                            {feature.category}
+                          </Badge>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {feature.description}
+                        </p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* AI Config Button */}
+                      {isAIFeature && isEnabled && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/super-admin/ai-configuration?companyId=${selectedCompanyId}`)}
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Switch
                         checked={isEnabled}
                         onCheckedChange={() =>
                           handleToggleFeature(
-                            company.id,
+                            selectedCompany.id,
                             feature.module as FeatureModule,
                             isEnabled
                           )
@@ -253,13 +293,13 @@ export default function SuperAdminFeaturesPage() {
                         disabled={isTogglingThis}
                       />
                     </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

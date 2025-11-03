@@ -52,7 +52,7 @@ export function WorkOrderTemplateForm({
   const submitLabel = mode === "create" ? "Crear Template" : "Guardar Cambios"
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-0 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>

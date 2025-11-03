@@ -74,7 +74,7 @@ export default function SelectTemplatePage() {
   const activeTemplates = filteredTemplates.filter(template => template.status === "ACTIVE")
 
   return (
-    <div className="container mx-auto py-6 max-w-7xl">
+    <div className="container mx-auto py-0 max-w-7xl">
       <div className="mb-6">      
         <div className="flex items-center justify-between">
           <div>

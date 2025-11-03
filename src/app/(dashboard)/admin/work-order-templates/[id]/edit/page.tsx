@@ -91,7 +91,7 @@ export default function EditWorkOrderTemplatePage({ params }: EditWorkOrderTempl
 
   if (fetchingTemplate) {
     return (
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-0 space-y-6">
         <div className="space-y-2">
           <div className="h-8 w-64 bg-muted rounded animate-pulse" />
           <div className="h-4 w-96 bg-muted rounded animate-pulse" />
@@ -103,7 +103,7 @@ export default function EditWorkOrderTemplatePage({ params }: EditWorkOrderTempl
 
   if (!template) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <span>Template no encontrado</span>

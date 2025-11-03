@@ -268,7 +268,7 @@ export default function MyAlertsPage() {
   const assignedColumns = getColumns(false)
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <div className="space-y-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Mis Alertas</h2>

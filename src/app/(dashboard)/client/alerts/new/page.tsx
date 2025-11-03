@@ -43,7 +43,7 @@ export default function NewClientAlertPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 max-w-4xl">
+    <div className="container mx-auto py-0 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Crear Nueva Alerta</h1>
         <p className="text-muted-foreground">

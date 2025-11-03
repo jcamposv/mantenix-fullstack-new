@@ -158,7 +158,7 @@ export default function ClientAlertDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6 max-w-6xl">
+      <div className="container mx-auto py-0 max-w-6xl">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-1/3" />
           <div className="h-32 bg-muted rounded" />
@@ -172,7 +172,7 @@ export default function ClientAlertDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 max-w-6xl">
+    <div className="container mx-auto py-0 max-w-6xl">
       <div className="mb-6">
         <div className="flex items-start gap-3">
           <div className="text-3xl">{getTypeIcon(alert.type)}</div>

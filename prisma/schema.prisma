@@ -165,8 +165,11 @@ model User {
   passwordResetTokensCreated PasswordResetToken[] @relation("PasswordResetCreator")
 
   // Attendance relations
-  attendanceRecords          AttendanceRecord[]
-  companyFeaturesEnabled     CompanyFeature[]     @relation("FeatureEnabler")
+  attendanceRecords      AttendanceRecord[]
+  companyFeaturesEnabled CompanyFeature[]   @relation("FeatureEnabler")
+
+  // AI relations
+  aiUsageLogs AIUsageLog[]
 
   @@map("user")
 }
@@ -252,6 +255,8 @@ model Company {
   features           CompanyFeature[]
   locations          CompanyLocation[]
   attendanceRecords  AttendanceRecord[]
+  aiConfig           CompanyAIConfig?
+  aiUsageLogs        AIUsageLog[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -879,15 +884,15 @@ model EmailTemplate {
 
 // Tokens para reseteo de contraseña enviados por administradores
 model PasswordResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String    @id @default(cuid())
+  token     String    @unique
   userId    String // Usuario que recibirá el reset
   createdBy String // Admin que generó el reset
   expiresAt DateTime
-  used      Boolean  @default(false)
+  used      Boolean   @default(false)
   usedAt    DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
   user    User @relation("PasswordResetUser", fields: [userId], references: [id], onDelete: Cascade)
@@ -906,16 +911,16 @@ model PasswordResetToken {
 
 // Features habilitadas por empresa
 model CompanyFeature {
-  id        String        @id @default(cuid())
-  companyId String
-  module    FeatureModule // Módulo habilitado
-  isEnabled Boolean       @default(true)
-  enabledAt DateTime      @default(now())
-  enabledBy String? // Usuario que habilitó el feature
+  id         String        @id @default(cuid())
+  companyId  String
+  module     FeatureModule // Módulo habilitado
+  isEnabled  Boolean       @default(true)
+  enabledAt  DateTime      @default(now())
+  enabledBy  String? // Usuario que habilitó el feature
   disabledAt DateTime?
   disabledBy String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   // Relations
   company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -930,12 +935,12 @@ model CompanyFeature {
 
 // Ubicaciones/oficinas de la empresa para geofencing
 model CompanyLocation {
-  id          String   @id @default(cuid())
-  companyId   String
-  name        String // Nombre de la ubicación (ej: "Oficina Central", "Bodega Norte")
-  address     String?
-  latitude    Float // Coordenada para geofencing
-  longitude   Float // Coordenada para geofencing
+  id           String  @id @default(cuid())
+  companyId    String
+  name         String // Nombre de la ubicación (ej: "Oficina Central", "Bodega Norte")
+  address      String?
+  latitude     Float // Coordenada para geofencing
+  longitude    Float // Coordenada para geofencing
   radiusMeters Int     @default(100) // Radio en metros para considerar que está "dentro"
 
   // Horarios de trabajo
@@ -945,12 +950,12 @@ model CompanyLocation {
   timezone             String   @default("America/Costa_Rica") // Timezone de la ubicación
   workDays             String[] @default(["MON", "TUE", "WED", "THU", "FRI"]) // Días laborales
 
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   attendanceRecords AttendanceRecord[]
 
   @@index([companyId])
@@ -963,7 +968,7 @@ model CompanyLocation {
 // ============================================================================
 
 model AttendanceRecord {
-  id         String           @id @default(cuid())
+  id         String  @id @default(cuid())
   companyId  String
   userId     String
   locationId String? // Ubicación desde donde marcó (opcional)
@@ -977,12 +982,12 @@ model AttendanceRecord {
   checkOutAt DateTime?
 
   // Estado y metadata
-  status           AttendanceStatus // ON_TIME, LATE, ABSENT, JUSTIFIED, etc.
-  notes            String? // Notas opcionales (ej: justificación)
-  isManualEntry    Boolean          @default(false) // Si fue creado manualmente por admin
-  manualEntryBy    String? // Usuario que creó la entrada manual
-  deviceInfo       String? // Información del dispositivo (user agent)
-  ipAddress        String?
+  status        AttendanceStatus // ON_TIME, LATE, ABSENT, JUSTIFIED, etc.
+  notes         String? // Notas opcionales (ej: justificación)
+  isManualEntry Boolean          @default(false) // Si fue creado manualmente por admin
+  manualEntryBy String? // Usuario que creó la entrada manual
+  deviceInfo    String? // Información del dispositivo (user agent)
+  ipAddress     String?
 
   // Tiempos calculados
   workDurationMinutes Int? // Duración en minutos (checkOut - checkIn)
@@ -1003,4 +1008,78 @@ model AttendanceRecord {
   @@index([status])
   @@index([companyId, userId, checkInAt]) // Para búsquedas de asistencia por usuario y fecha
   @@map("attendance_records")
+}
+
+// ============================================================================
+// AI / ARTIFICIAL INTELLIGENCE SYSTEM
+// ============================================================================
+
+enum AIOperationType {
+  INSIGHTS_GENERATION // Generación de insights para dashboard
+  REPORT_GENERATION // Generación de reportes
+  ANOMALY_DETECTION // Detección de anomalías
+  PREDICTIVE_ANALYSIS // Análisis predictivo
+  RECOMMENDATION // Recomendaciones
+}
+
+// Configuración de IA por empresa
+model CompanyAIConfig {
+  id        String @id @default(cuid())
+  companyId String @unique
+
+  // Límites mensuales
+  monthlyTokenLimit     Int @default(100000) // Límite de tokens por mes
+  alertThresholdPercent Int @default(80) // % para alertar (80% = alerta al llegar a 80%)
+
+  // Estado actual del mes
+  currentMonthTokens Int      @default(0) // Tokens usados en el mes actual
+  lastResetAt        DateTime @default(now()) // Última vez que se reinició el contador
+
+  // Configuración de features
+  insightsEnabled   Boolean @default(true) // Habilitar insights en dashboard
+  reportsEnabled    Boolean @default(true) // Habilitar generación de reportes
+  predictiveEnabled Boolean @default(false) // Habilitar análisis predictivo
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("company_ai_configs")
+}
+
+// Log de uso de IA (para tracking y billing)
+model AIUsageLog {
+  id        String  @id @default(cuid())
+  companyId String
+  userId    String? // Usuario que generó la solicitud (opcional)
+
+  // Detalles de la operación
+  operation        AIOperationType
+  model            String // Modelo usado (gpt-4, gpt-3.5-turbo, etc.)
+  promptTokens     Int // Tokens del prompt
+  completionTokens Int // Tokens de la respuesta
+  totalTokens      Int // Total de tokens
+  cost             Float? // Costo estimado en USD
+
+  // Metadata
+  success      Boolean @default(true)
+  errorMessage String?
+  duration     Int? // Duración en ms
+  metadata     Json? // Datos adicionales (fecha range, filtros, etc.)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([operation])
+  @@index([createdAt])
+  @@index([companyId, createdAt]) // Para queries de uso mensual
+  @@map("ai_usage_logs")
 }

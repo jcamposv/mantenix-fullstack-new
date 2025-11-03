@@ -113,7 +113,7 @@ export default function AttendanceReportsPage() {
 
   if (loadingUsers) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <AttendanceReportsLoading />
       </div>
     )
@@ -171,7 +171,7 @@ export default function AttendanceReportsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <div className="space-y-6">
         {/* Header */}
         <div>
