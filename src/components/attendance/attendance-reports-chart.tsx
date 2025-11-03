@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, TooltipProps } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { CheckCircle2, Clock, XCircle } from "lucide-react"
 
 interface DayRecord {
@@ -19,8 +19,21 @@ interface AttendanceReportsChartProps {
   year: number
 }
 
+interface TooltipPayload {
+  color: string
+  name: string
+  value: number
+  dataKey: string
+}
+
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string | number
+}
+
 // Custom tooltip component for better UX
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null
 
   const onTime = payload.find(p => p.dataKey === 'A_Tiempo')?.value || 0
