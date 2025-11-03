@@ -123,7 +123,7 @@ export default function MobileWorkOrdersPage() {
   // Componente de card mejorado
   const MobileWorkOrderCard = ({ workOrder }: { workOrder: WorkOrderWithRelations }) => {
     const isActive = ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'].includes(workOrder.status)
-    const urgencyColor = getUrgencyColor(workOrder.priority, workOrder.scheduledDate)
+    const urgencyColor = getUrgencyColor(workOrder.priority, workOrder.scheduledDate ?? undefined)
     const daysRemaining = workOrder.scheduledDate ? getDaysRemaining(workOrder.scheduledDate) : null
 
     return (

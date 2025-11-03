@@ -218,7 +218,7 @@ export function WorkOrderHeader({
                     <UserAvatar
                       name={assignment.user?.name || "Usuario"}
                       image={assignment.user?.image}
-                      size="xs"
+                      size="sm"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
