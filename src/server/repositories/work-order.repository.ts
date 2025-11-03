@@ -1154,4 +1154,93 @@ export class WorkOrderRepository {
 
     return upcomingWorkOrders
   }
+
+  /**
+   * Get critical work orders (URGENT and HIGH priority) with client company filter
+   */
+  static async getCriticalOrders(whereClause: Prisma.WorkOrderWhereInput, limit: number = 10) {
+    const criticalOrders = await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        priority: {
+          in: ['URGENT', 'HIGH'],
+        },
+        status: {
+          in: ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'],
+        },
+        isActive: true,
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { scheduledDate: 'asc' },
+      ],
+      take: limit,
+    })
+
+    return criticalOrders
+  }
+
+  /**
+   * Get work orders for provider metrics calculation
+   */
+  static async getOrdersForProviderMetrics(whereClause: Prisma.WorkOrderWhereInput) {
+    return await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        status: {
+          in: ['COMPLETED', 'IN_PROGRESS'],
+        },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        scheduledDate: true,
+        createdAt: true,
+        updatedAt: true,
+        assignments: {
+          select: {
+            assignedAt: true,
+          },
+          orderBy: {
+            assignedAt: 'asc',
+          },
+          take: 1,
+        },
+      },
+    })
+  }
+
+  /**
+   * Get all work orders for site metrics calculation
+   */
+  static async getOrdersForSiteMetrics(whereClause: Prisma.WorkOrderWhereInput) {
+    return await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        scheduledDate: true,
+        createdAt: true,
+        updatedAt: true,
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
+  }
 }

@@ -1,7 +1,7 @@
 import { DateRange } from "react-day-picker"
 import type { Locale } from "date-fns"
 import { es } from "date-fns/locale"
-import { DatePeriod } from "@/components/dashboard/dashboard-filters"
+import { DatePeriod } from "@/components/dashboard/shared/dashboard-filters"
 
 export function getDateRangeFromPeriod(period: DatePeriod): DateRange | undefined {
   const today = new Date()

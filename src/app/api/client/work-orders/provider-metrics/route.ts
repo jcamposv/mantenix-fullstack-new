@@ -5,8 +5,8 @@ import { ClientWorkOrderService } from '@/server/services/client-work-order.serv
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/client/work-orders/stats
- * Get work order statistics for client users
+ * GET /api/client/work-orders/provider-metrics
+ * Get provider performance metrics for client users
  */
 export async function GET(request: NextRequest) {
   try {
@@ -35,12 +35,12 @@ export async function GET(request: NextRequest) {
       to: dateTo ? new Date(dateTo) : undefined,
     }
 
-    // Get statistics using client service
-    const stats = await ClientWorkOrderService.getWorkOrderStats(session, dateRange)
+    // Get provider metrics using client service
+    const metrics = await ClientWorkOrderService.getProviderMetrics(session, dateRange)
 
-    return NextResponse.json({ stats })
+    return NextResponse.json({ metrics })
   } catch (error) {
-    console.error('Error fetching client work order stats:', error)
+    console.error('Error fetching provider metrics:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error interno del servidor' },
       { status: 500 }
