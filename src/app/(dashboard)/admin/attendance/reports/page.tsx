@@ -126,6 +126,10 @@ export default function AttendanceReportsPage() {
     if (!report) return []
 
     const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate()
+    const today = new Date()
+    const isCurrentMonth = selectedMonth === (today.getMonth() + 1) && selectedYear === today.getFullYear()
+    const maxDay = isCurrentMonth ? today.getDate() : daysInMonth
+
     const dayRecords: Array<{
       day: number
       date: string
@@ -143,22 +147,24 @@ export default function AttendanceReportsPage() {
       recordsByDay.set(day, record)
     })
 
-    // Create DayRecord for each day of the month
-    for (let day = 1; day <= daysInMonth; day++) {
+    // Create DayRecord only for days that have passed (not future days)
+    for (let day = 1; day <= maxDay; day++) {
       const record = recordsByDay.get(day)
       const date = new Date(selectedYear, selectedMonth - 1, day)
-      // Convert AttendanceStatus to DayRecord status (handle JUSTIFIED as ON_TIME)
-      const status = record?.status
-        ? (record.status === "JUSTIFIED" ? "ON_TIME" : (record.status as "ON_TIME" | "LATE" | "ABSENT"))
-        : null
-      dayRecords.push({
-        day,
-        date: date.toISOString(),
-        status,
-        checkInAt: record?.checkInAt ? new Date(record.checkInAt).toISOString() : undefined,
-        checkOutAt: record?.checkOutAt ? new Date(record.checkOutAt).toISOString() : undefined,
-        lateMinutes: record?.lateMinutes || undefined,
-      })
+
+      // Only include if it's a record or if we want to show days without records
+      if (record) {
+        // Convert AttendanceStatus to DayRecord status (handle JUSTIFIED as ON_TIME)
+        const status = record.status === "JUSTIFIED" ? "ON_TIME" : (record.status as "ON_TIME" | "LATE" | "ABSENT")
+        dayRecords.push({
+          day,
+          date: date.toISOString(),
+          status,
+          checkInAt: new Date(record.checkInAt).toISOString(),
+          checkOutAt: record.checkOutAt ? new Date(record.checkOutAt).toISOString() : undefined,
+          lateMinutes: record.lateMinutes || undefined,
+        })
+      }
     }
 
     return dayRecords
@@ -192,12 +198,15 @@ export default function AttendanceReportsPage() {
           <>
             <AttendanceReportsStats
               stats={{
+                month: report.month,
+                year: report.year,
                 totalDays: report.totalDays,
                 daysPresent: report.daysPresent,
                 daysOnTime: report.daysOnTime,
                 daysLate: report.daysLate,
                 daysAbsent: report.daysAbsent,
-                averageMinutesLate: report.averageLateMinutes,
+                totalWorkHours: report.totalWorkHours,
+                averageLateMinutes: report.averageLateMinutes,
               }}
             />
 

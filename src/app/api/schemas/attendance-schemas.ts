@@ -5,16 +5,16 @@ import * as z from "zod"
 // ============================================================================
 
 export const checkInSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
   deviceInfo: z.string().optional(),
   notes: z.string().optional()
 })
 
 export const checkOutSchema = z.object({
   attendanceId: z.string().min(1, "ID de asistencia requerido"),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
   notes: z.string().optional()
 })
 
@@ -48,17 +48,17 @@ export const createLocationSchema = z.object({
   companyId: z.string().min(1, "ID de empresa requerido"),
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   address: z.string().optional(),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  radiusMeters: z.number().min(10).max(5000).optional().default(100)
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  radiusMeters: z.coerce.number().min(10).max(5000).optional().default(100)
 })
 
 export const updateLocationSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
   address: z.string().optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  radiusMeters: z.number().min(10).max(5000).optional(),
+  latitude: z.coerce.number().min(-90).max(90).optional(),
+  longitude: z.coerce.number().min(-180).max(180).optional(),
+  radiusMeters: z.coerce.number().min(10).max(5000).optional(),
   isActive: z.boolean().optional()
 })
 

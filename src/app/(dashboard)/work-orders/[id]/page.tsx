@@ -1,167 +1,73 @@
-"use client"
+import { notFound } from "next/navigation"
+import { headers } from "next/headers"
+import { prisma } from "@/lib/prisma"
+import { AuthService } from "@/server/services/auth.service"
+import { WorkOrderService } from "@/server/services/work-order.service"
+import { WorkOrderDetailClient } from "@/components/work-orders/work-order-detail-client"
+import type { CompanyBranding } from "@/types/branding"
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Edit } from "lucide-react"
-import { toast } from "sonner"
-import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
-import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
-import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
-import { WorkOrderBasicInfo } from "@/components/work-orders/work-order-basic-info"
-import { WorkOrderScheduleInfo } from "@/components/work-orders/work-order-schedule-info"
-import { WorkOrderInstructions } from "@/components/work-orders/work-order-instructions"
-import { WorkOrderToolsMaterials } from "@/components/work-orders/work-order-tools-materials"
-import { WorkOrderTemplateInfo } from "@/components/work-orders/work-order-template-info"
-import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
-import type { WorkOrderWithRelations } from "@/types/work-order.types"
-import type { CustomFieldsConfig } from "@/schemas/work-order-template"
-import { WorkOrderDetailSkeleton } from "@/components/skeletons"
+export const dynamic = 'force-dynamic'
 
-export default function WorkOrderDetailPage() {
-  const router = useRouter()
-  const params = useParams()
-  const [workOrder, setWorkOrder] = useState<WorkOrderWithRelations | null>(null)
-  const [loading, setLoading] = useState(true)
+async function getCompanyBranding(): Promise<CompanyBranding | null> {
+  try {
+    const headersList = await headers()
+    const host = headersList.get('host') || ''
+    const subdomain = host.split('.')[0]
 
-  useEffect(() => {
-    const fetchWorkOrder = async () => {
-      try {
-        const response = await fetch(`/api/work-orders/${params.id}`)
-        
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Error al cargar la orden de trabajo')
+    // Only fetch if we have a subdomain (not just localhost or main domain)
+    if (subdomain && subdomain !== 'localhost' && subdomain !== host) {
+      const company = await prisma.company.findUnique({
+        where: {
+          subdomain: subdomain,
+          isActive: true
+        },
+        select: {
+          name: true,
+          logo: true,
+          logoSmall: true,
+          primaryColor: true,
+          secondaryColor: true,
+          backgroundColor: true,
         }
+      })
 
-        const data = await response.json()
-        setWorkOrder(data.workOrder)
-      } catch (error) {
-        console.error('Error fetching work order:', error)
-        toast.error(error instanceof Error ? error.message : 'Error al cargar la orden de trabajo')
-        router.push('/work-orders')
-      } finally {
-        setLoading(false)
-      }
+      return company
     }
 
-    if (params.id) {
-      fetchWorkOrder()
-    }
-  }, [params.id, router])
-
-  if (loading) {
-    return (
-      <div className="container mx-auto max-w-4xl">
-        <WorkOrderDetailSkeleton />
-      </div>
-    )
-  }
-
-  if (!workOrder) {
+    return null
+  } catch (error) {
+    console.warn('Failed to fetch company branding:', error)
     return null
   }
+}
 
-  const customFieldValues = workOrder.customFieldValues as Record<string, unknown> || {}
+interface PageProps {
+  params: Promise<{ id: string }>
+}
 
-  return (
-    <div className="py-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{workOrder.number}</h1>
-            <p className="text-muted-foreground">{workOrder.title}</p>
-          </div>
-          <Button onClick={() => router.push(`/work-orders/${workOrder.id}/edit`)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Editar
-          </Button>
-        </div>
-      </div>
+export default async function WorkOrderDetailPage({ params }: PageProps) {
+  const { id } = await params
 
-      <div className="space-y-6">
-        {/* Status and Priority */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Estado y Prioridad</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Estado</p>
-                <WorkOrderStatusBadge status={workOrder.status} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Prioridad</p>
-                <WorkOrderPriorityBadge priority={workOrder.priority} showIcon />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Tipo</p>
-                <WorkOrderTypeBadge type={workOrder.type} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  // Get authenticated session
+  const sessionResult = await AuthService.getAuthenticatedSession()
+  if (!sessionResult || sessionResult instanceof Response) {
+    notFound()
+  }
 
-        {/* Componentes reutilizables */}
-        <WorkOrderBasicInfo workOrder={workOrder} />
-        <WorkOrderScheduleInfo workOrder={workOrder} />
-        <WorkOrderInstructions workOrder={workOrder} />
-        <WorkOrderToolsMaterials workOrder={workOrder} />
+  // Fetch work order and company branding in parallel
+  const [workOrder, companyBranding] = await Promise.all([
+    WorkOrderService.getWorkOrderById(sessionResult, id),
+    getCompanyBranding()
+  ])
 
-        {/* Custom Fields */}
-        {Object.keys(customFieldValues).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Campos Personalizados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WorkOrderCustomFieldsDisplay
-                customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
-                customFieldValues={customFieldValues}
-              />
-            </CardContent>
-          </Card>
-        )}
+  if (!workOrder) {
+    notFound()
+  }
 
-        <WorkOrderTemplateInfo workOrder={workOrder} />
+  const companyInfo = companyBranding ? {
+    name: companyBranding.name,
+    logo: companyBranding.logo ?? null
+  } : undefined
 
-        {/* Metadata */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información del Sistema</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="font-medium">Creado por</label>
-                <p className="text-muted-foreground">{workOrder.creator?.name || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="font-medium">Fecha de creación</label>
-                <p className="text-muted-foreground">
-                  {new Date(workOrder.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <label className="font-medium">Última actualización</label>
-                <p className="text-muted-foreground">
-                  {new Date(workOrder.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-              {workOrder.completedAt && (
-                <div>
-                  <label className="font-medium">Completado</label>
-                  <p className="text-muted-foreground">
-                    {new Date(workOrder.completedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+  return <WorkOrderDetailClient workOrder={workOrder} companyInfo={companyInfo} />
 }

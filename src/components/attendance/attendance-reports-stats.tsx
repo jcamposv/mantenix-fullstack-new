@@ -1,78 +1,114 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, CheckCircle2, Clock, AlertCircle } from "lucide-react"
-
-interface MonthlyReportStats {
-  totalDays: number
-  daysPresent: number
-  daysOnTime: number
-  daysLate: number
-  daysAbsent: number
-  averageMinutesLate: number
-}
+import { User, CheckCircle2, Clock, Briefcase } from "lucide-react"
 
 interface AttendanceReportsStatsProps {
-  stats: MonthlyReportStats
+  stats: {
+    month: number
+    year: number
+    totalDays: number
+    daysPresent: number
+    daysOnTime: number
+    daysLate: number
+    daysAbsent: number
+    totalWorkHours: number
+    averageLateMinutes: number
+  }
 }
 
 export const AttendanceReportsStats = ({ stats }: AttendanceReportsStatsProps) => {
+  // Valores seguros (manejar undefined/null)
+  const safeDaysPresent = stats.daysPresent ?? 0
+  const safeDaysOnTime = stats.daysOnTime ?? 0
+  const safeDaysLate = stats.daysLate ?? 0
+  const safeTotalWorkHours = stats.totalWorkHours ?? 0
+  const safeAverageLateMinutes = stats.averageLateMinutes ?? 0
+
+  // Calcular puntualidad (porcentaje de días a tiempo sobre días presentes)
+  const punctualityRate = safeDaysPresent > 0
+    ? Math.round((safeDaysOnTime / safeDaysPresent) * 100)
+    : 0
+
+  // Calcular tasa de asistencia (días presentes sobre días del mes hasta hoy)
+  const today = new Date()
+  const isCurrentMonth = stats.month === (today.getMonth() + 1) && stats.year === today.getFullYear()
+  const daysUntilToday = isCurrentMonth ? today.getDate() : stats.totalDays
+  const attendanceRate = daysUntilToday > 0
+    ? Math.round((safeDaysPresent / daysUntilToday) * 100)
+    : 0
+
+  // Formatear horas trabajadas
+  const totalHours = Math.floor(safeTotalWorkHours)
+  const avgHoursPerDay = safeDaysPresent > 0
+    ? (safeTotalWorkHours / safeDaysPresent).toFixed(1)
+    : "0"
+
+  // Formatear retraso promedio
+  const avgLateTime = safeAverageLateMinutes > 0
+    ? safeAverageLateMinutes >= 60
+      ? `${Math.floor(safeAverageLateMinutes / 60)}h ${Math.round(safeAverageLateMinutes % 60)}m`
+      : `${Math.round(safeAverageLateMinutes)} min`
+    : "0 min"
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Tasa de Asistencia */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Días Presente</CardTitle>
+          <CardTitle className="text-sm font-medium">Tasa de Asistencia</CardTitle>
           <User className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.daysPresent}</div>
+          <div className="text-2xl font-bold">{attendanceRate}%</div>
           <p className="text-xs text-muted-foreground">
-            de {stats.totalDays} días laborales
+            {safeDaysPresent} de {isCurrentMonth ? `${daysUntilToday} días` : `${stats.totalDays} días`}
           </p>
         </CardContent>
       </Card>
 
+      {/* Puntualidad */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">A Tiempo</CardTitle>
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <CardTitle className="text-sm font-medium">Puntualidad</CardTitle>
+          <CheckCircle2 className={`h-4 w-4 ${punctualityRate >= 90 ? 'text-green-600' : punctualityRate >= 70 ? 'text-yellow-600' : 'text-red-600'}`} />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">{stats.daysOnTime}</div>
+          <div className={`text-2xl font-bold ${punctualityRate >= 90 ? 'text-green-600' : punctualityRate >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+            {punctualityRate}%
+          </div>
           <p className="text-xs text-muted-foreground">
-            {stats.daysPresent > 0
-              ? Math.round((stats.daysOnTime / stats.daysPresent) * 100)
-              : 0}% de asistencias
+            {safeDaysOnTime} días a tiempo de {safeDaysPresent}
           </p>
         </CardContent>
       </Card>
 
+      {/* Horas Trabajadas */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Tarde</CardTitle>
-          <Clock className="h-4 w-4 text-yellow-600" />
+          <CardTitle className="text-sm font-medium">Horas Trabajadas</CardTitle>
+          <Briefcase className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">{stats.daysLate}</div>
+          <div className="text-2xl font-bold">{totalHours}h</div>
           <p className="text-xs text-muted-foreground">
-            {stats.averageMinutesLate > 0
-              ? `~${Math.round(stats.averageMinutesLate)} min promedio`
-              : "Sin retrasos"}
+            Promedio: {avgHoursPerDay}h/día
           </p>
         </CardContent>
       </Card>
 
+      {/* Retrasos */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Ausente</CardTitle>
-          <AlertCircle className="h-4 w-4 text-red-600" />
+          <CardTitle className="text-sm font-medium">Retrasos</CardTitle>
+          <Clock className={`h-4 w-4 ${safeDaysLate === 0 ? 'text-green-600' : 'text-yellow-600'}`} />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">{stats.daysAbsent}</div>
+          <div className={`text-2xl font-bold ${safeDaysLate === 0 ? 'text-green-600' : 'text-yellow-600'}`}>
+            {safeDaysLate}
+          </div>
           <p className="text-xs text-muted-foreground">
-            {stats.totalDays > 0
-              ? Math.round((stats.daysAbsent / stats.totalDays) * 100)
-              : 0}% del mes
+            Promedio: {avgLateTime}
           </p>
         </CardContent>
       </Card>

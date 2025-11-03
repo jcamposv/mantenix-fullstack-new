@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Upload, Check } from "lucide-react"
 import { MediaField } from "@/components/forms/mobile/media-field"
+import { TableFieldRenderer } from "@/components/work-orders/table-field-renderer"
 import type { CustomField } from "@/schemas/work-order-template"
 
 interface WorkOrderCustomFieldsProps {
@@ -228,6 +229,19 @@ export function WorkOrderCustomFields({
               </div>
             )}
           </div>
+        )
+
+      case "TABLE":
+        if (!field.tableConfig) {
+          return <div className="text-sm text-muted-foreground">Tabla no configurada</div>
+        }
+        return (
+          <TableFieldRenderer
+            config={field.tableConfig}
+            value={value || []}
+            onChange={(tableValue) => handleValueChange(field.id, tableValue)}
+            disabled={readOnly}
+          />
         )
 
       default:
