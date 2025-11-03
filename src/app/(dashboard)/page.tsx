@@ -23,6 +23,7 @@ import {
   Calendar,
   BarChart3
 } from "lucide-react"
+import type { WorkOrderPriority } from "@/types/work-order.types"
 
 export default function Home() {
   const { data: stats, error, isLoading: loading, mutate } = useWorkOrdersDashboard()
@@ -236,7 +237,12 @@ export default function Home() {
           <div className="space-y-6">
             {/* Upcoming Work Orders */}
             <UpcomingWorkOrders
-              workOrders={stats?.upcomingWorkOrders || []}
+              workOrders={(stats?.upcomingWorkOrders || []).map(wo => ({
+                ...wo,
+                priority: (["LOW", "MEDIUM", "HIGH", "URGENT"] as readonly WorkOrderPriority[]).includes(wo.priority as WorkOrderPriority)
+                  ? (wo.priority as WorkOrderPriority)
+                  : ("MEDIUM" as WorkOrderPriority)
+              }))}
               loading={loading}
             />
 

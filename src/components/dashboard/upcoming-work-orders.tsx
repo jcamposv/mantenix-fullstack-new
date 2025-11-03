@@ -9,13 +9,14 @@ import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import type { WorkOrderPriority } from "@/types/work-order.types"
 
 interface UpcomingWorkOrder {
   id: string
   number: string
   title: string
   scheduledDate: Date
-  priority: string
+  priority: WorkOrderPriority
   status: string
   site?: {
     name: string
