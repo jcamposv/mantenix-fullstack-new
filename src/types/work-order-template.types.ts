@@ -20,7 +20,31 @@ export type CustomFieldType =
   | "VIDEO_BEFORE"   // Campo para videos antes
   | "VIDEO_AFTER"    // Campo para videos después
   | "FILE"           // Campo para archivos generales
+  | "TABLE"          // Campo para tablas dinámicas
 
+// Table column configuration
+export interface TableColumn {
+  id: string
+  label: string
+  type: "text" | "number" | "select" | "checkbox"
+  readonly?: boolean
+  width?: string
+  options?: string[]
+  required?: boolean
+}
+
+// Table row type
+export type TableRow = Record<string, unknown>
+
+// Table configuration
+export interface TableConfig {
+  columns: TableColumn[]
+  rows?: TableRow[]
+  allowAddRows?: boolean
+  allowDeleteRows?: boolean
+  minRows?: number
+  maxRows?: number
+}
 
 // Custom field configuration for dynamic forms
 export interface CustomField {
@@ -28,7 +52,7 @@ export interface CustomField {
   type: CustomFieldType         // Tipo de campo
   label: string                 // Etiqueta del campo
   description?: string          // Descripción o ayuda del campo
-  required: boolean             // Si el campo es obligatorio
+  required?: boolean            // Si el campo es obligatorio
   order: number                 // Orden de aparición en el formulario
   options?: string[]            // Opciones para SELECT, RADIO, CHECKLIST
   validation?: {
@@ -40,6 +64,7 @@ export interface CustomField {
   defaultValue?: unknown        // Valor por defecto
   placeholder?: string          // Placeholder para inputs
   multiple?: boolean            // Para campos que aceptan múltiples valores (FILES, IMAGES)
+  tableConfig?: TableConfig     // Configuración de tabla para campos tipo TABLE
 }
 
 // Custom fields configuration structure

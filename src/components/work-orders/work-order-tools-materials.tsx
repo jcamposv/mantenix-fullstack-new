@@ -15,18 +15,19 @@ export function WorkOrderToolsMaterials({ workOrder }: WorkOrderToolsMaterialsPr
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Herramientas y Materiales</CardTitle>
+      <CardHeader className="pb-4 border-b">
+        <CardTitle className="text-lg font-semibold">Herramientas y Materiales</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {hasTools && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Herramientas Requeridas</h4>
-              <div className="space-y-1">
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Herramientas Requeridas</h4>
+              <div className="space-y-1.5">
                 {workOrder.tools!.map((tool, index) => (
-                  <div key={index} className="text-sm text-muted-foreground">
-                    • {tool}
+                  <div key={index} className="flex items-start gap-2 text-sm">
+                    <span className="text-muted-foreground mt-1">•</span>
+                    <span>{tool}</span>
                   </div>
                 ))}
               </div>
@@ -34,12 +35,13 @@ export function WorkOrderToolsMaterials({ workOrder }: WorkOrderToolsMaterialsPr
           )}
 
           {hasMaterials && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Materiales Necesarios</h4>
-              <div className="space-y-1">
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Materiales Necesarios</h4>
+              <div className="space-y-1.5">
                 {workOrder.materials!.map((material, index) => (
-                  <div key={index} className="text-sm text-muted-foreground">
-                    • {material}
+                  <div key={index} className="flex items-start gap-2 text-sm">
+                    <span className="text-muted-foreground mt-1">•</span>
+                    <span>{material}</span>
                   </div>
                 ))}
               </div>

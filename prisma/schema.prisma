@@ -607,6 +607,7 @@ enum CustomFieldType {
   VIDEO_BEFORE // Campo para videos antes
   VIDEO_AFTER // Campo para videos después
   FILE // Campo para archivos generales
+  TABLE // Tabla con filas y columnas configurables
 }
 
 enum EmailTemplateType {
