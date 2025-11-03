@@ -1,5 +1,6 @@
 import { getCurrentUserWithRole } from "@/lib/auth-utils"
 import { Toaster } from "@/components/ui/sonner"
+import { PWABrandingUpdater } from "@/components/pwa-branding-updater"
 import { redirect } from "next/navigation"
 import { MobileFooter, MobileFooterContent } from "@/components/mobile/mobile-footer"
 import { MobileNavigation } from "@/components/mobile/mobile-nav-server"
@@ -97,6 +98,7 @@ export default async function FieldLayout({
         </MobileFooterContent>
       </MobileFooter>
 
+      <PWABrandingUpdater />
       <Toaster />
     </div>
   )

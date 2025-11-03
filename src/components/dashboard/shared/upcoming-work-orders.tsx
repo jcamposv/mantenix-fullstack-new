@@ -1,12 +1,9 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
+import { Badge } from "@/components/ui/badge" 
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { Calendar, Clock, MapPin } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
-import { es } from "date-fns/locale"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import type { WorkOrderPriority } from "@/types/work-order.types"

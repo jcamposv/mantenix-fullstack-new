@@ -116,6 +116,7 @@ export function useAuth() {
  * TODO: Load company data based on companyId
  */
 type Branding = {
+  name?: string
   logo?: string
   primaryColor?: string
   secondaryColor?: string

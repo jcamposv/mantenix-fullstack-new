@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { User, CheckCircle2, Clock, Briefcase, XCircle, TrendingUp } from "lucide-react"
+import { User, CheckCircle2, Clock, Briefcase, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface AttendanceReportsStatsProps {

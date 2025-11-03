@@ -8,7 +8,6 @@ import {
   CheckCircle,
   AlertTriangle,
   TrendingUp,
-  Users,
   ArrowUp,
   ArrowDown,
   Minus
