@@ -499,8 +499,8 @@ export class WorkOrderService {
 
     const [stats, recentActivity, performanceMetrics, upcomingWorkOrders] = await Promise.all([
       WorkOrderRepository.getDashboardStats(session.user.companyId, enhancedFilters),
-      WorkOrderRepository.getRecentActivity(session.user.companyId, 10),
-      WorkOrderRepository.getPerformanceMetrics(session.user.companyId, 7),
+      WorkOrderRepository.getRecentActivity(session.user.companyId, 10, enhancedFilters),
+      WorkOrderRepository.getPerformanceMetrics(session.user.companyId, 7, enhancedFilters),
       WorkOrderRepository.getUpcomingWorkOrders(session.user.companyId, 10, enhancedFilters)
     ])
 

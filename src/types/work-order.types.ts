@@ -199,6 +199,8 @@ export interface WorkOrderFilters {
   createdByMe?: boolean
   scheduledDateFrom?: Date
   scheduledDateTo?: Date
+  createdAtFrom?: Date
+  createdAtTo?: Date
   search?: string
   isActive?: boolean
 }

@@ -1,17 +1,21 @@
 "use client"
 
+import { useState, useMemo } from "react"
 import { useWorkOrdersDashboard } from "@/hooks/use-work-orders-dashboard"
 import { DashboardError } from "@/components/dashboard/dashboard-error"
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading"
 import { DashboardEmpty } from "@/components/dashboard/dashboard-empty"
+import { DashboardFilters, DatePeriod } from "@/components/dashboard/dashboard-filters"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { PerformanceMetrics } from "@/components/dashboard/performance-metrics"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
 import { UpcomingWorkOrders } from "@/components/dashboard/upcoming-work-orders"
+import { getDateRangeFromPeriod } from "@/lib/date-utils"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { DateRange } from "react-day-picker"
 import {
   Users,
   AlertTriangle,
@@ -26,8 +30,22 @@ import {
 import type { WorkOrderPriority } from "@/types/work-order.types"
 
 export default function Home() {
-  const { data: stats, error, isLoading: loading, mutate } = useWorkOrdersDashboard()
   const router = useRouter()
+  const [period, setPeriod] = useState<DatePeriod>("this_month")
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>()
+
+  // Calculate the effective date range based on period selection
+  const effectiveDateRange = useMemo(() => {
+    if (period === "custom") {
+      return customDateRange
+    }
+    return getDateRangeFromPeriod(period)
+  }, [period, customDateRange])
+
+  // Fetch dashboard data with filters
+  const { data: stats, error, isLoading: loading, mutate } = useWorkOrdersDashboard({
+    dateRange: effectiveDateRange
+  })
 
   // Show loading state
   if (loading) {
@@ -50,8 +68,11 @@ export default function Home() {
     )
   }
 
-  // Show empty state if no data
-  if (stats && stats.total === 0) {
+  // Check if we have any data at all (not filtered, just no work orders ever created)
+  const hasNoDataAtAll = stats && stats.total === 0 && period === "this_month" && !customDateRange
+
+  // Show empty state only if there's truly no data in the system
+  if (hasNoDataAtAll) {
     return (
       <div className="container mx-auto py-6">
         <DashboardEmpty
@@ -60,6 +81,8 @@ export default function Home() {
       </div>
     )
   }
+
+  const hasDataInPeriod = stats && stats.total > 0
 
   // Calculate trend (this would come from comparing with previous period in real implementation)
   const activeUsersTrend: "up" | "down" | "neutral" = "neutral"
@@ -89,44 +112,79 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Filters */}
+        <DashboardFilters
+          period={period}
+          customDateRange={customDateRange}
+          onPeriodChange={setPeriod}
+          onCustomDateRangeChange={setCustomDateRange}
+        />
+
+        {/* No data in period message */}
+        {!hasDataInPeriod && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No hay datos en el período seleccionado
+              </h3>
+              <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+                No se encontraron órdenes de trabajo en el rango de fechas seleccionado.
+                Intenta cambiar el período o crear una nueva orden de trabajo.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setPeriod("this_month")}>
+                  Ver Este Mes
+                </Button>
+                <Button onClick={() => router.push("/work-orders/new/select-template")}>
+                  <Activity className="h-4 w-4 mr-2" />
+                  Nueva Orden
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Stats Row - Using KPICard */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <KPICard
-            title="Usuarios Activos"
-            value={stats?.activeUsers || 0}
-            description="Técnicos trabajando hoy"
-            icon={Users}
-            trend={activeUsersTrend}
-          />
+        {hasDataInPeriod && (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <KPICard
+                title="Usuarios Activos"
+                value={stats?.activeUsers || 0}
+                description="Técnicos trabajando hoy"
+                icon={Users}
+                trend={activeUsersTrend}
+              />
 
-          <KPICard
-            title="Órdenes Totales"
-            value={stats?.total || 0}
-            description="En el sistema"
-            icon={Activity}
-            trend="neutral"
-          />
+              <KPICard
+                title="Órdenes Totales"
+                value={stats?.total || 0}
+                description="En el sistema"
+                icon={Activity}
+                trend="neutral"
+              />
 
-          <KPICard
-            title="Órdenes Vencidas"
-            value={stats?.overdue || 0}
-            description="Requieren atención"
-            icon={AlertTriangle}
-            trend={stats?.overdue && stats.overdue > 0 ? "down" : "neutral"}
-            className={stats?.overdue && stats.overdue > 0 ? "border-destructive" : ""}
-          />
+              <KPICard
+                title="Órdenes Vencidas"
+                value={stats?.overdue || 0}
+                description="Requieren atención"
+                icon={AlertTriangle}
+                trend={stats?.overdue && stats.overdue > 0 ? "down" : "neutral"}
+                className={stats?.overdue && stats.overdue > 0 ? "border-destructive" : ""}
+              />
 
-          <KPICard
-            title="Eficiencia"
-            value={`${stats?.completionRate || 0}%`}
-            description="Tasa de completación"
-            icon={TrendingUp}
-            trend={efficiencyTrend}
-          />
-        </div>
+              <KPICard
+                title="Eficiencia"
+                value={`${stats?.completionRate || 0}%`}
+                description="Tasa de completación"
+                icon={TrendingUp}
+                trend={efficiencyTrend}
+              />
+            </div>
 
-        {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
+            {/* Main Content Grid */}
+            <div className="grid gap-6 lg:grid-cols-3">
           {/* Left Column - 2/3 width */}
           <div className="lg:col-span-2 space-y-6">
             {/* Performance Metrics Chart */}
@@ -246,13 +304,15 @@ export default function Home() {
               loading={loading}
             />
 
-            {/* Recent Activity */}
-            <RecentActivity
-              activities={stats?.recentActivity || []}
-              loading={loading}
-            />
+              {/* Recent Activity */}
+              <RecentActivity
+                activities={stats?.recentActivity || []}
+                loading={loading}
+              />
+            </div>
           </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   )

@@ -56,6 +56,17 @@ export class WorkOrderRepository {
         }
       }
 
+      // Created at date range filters
+      if (filters.createdAtFrom || filters.createdAtTo) {
+        whereClause.createdAt = {}
+        if (filters.createdAtFrom) {
+          whereClause.createdAt.gte = filters.createdAtFrom
+        }
+        if (filters.createdAtTo) {
+          whereClause.createdAt.lte = filters.createdAtTo
+        }
+      }
+
       // Assignment filter
       if (filters.assignedToMe) {
         const userId = typeof filters.assignedToMe === 'string' ? filters.assignedToMe : undefined
@@ -768,6 +779,17 @@ export class WorkOrderRepository {
       }
       if (filters.assetId) whereClause.assetId = filters.assetId
       if (filters.templateId) whereClause.templateId = filters.templateId
+
+      // Created at date range filters
+      if (filters.createdAtFrom || filters.createdAtTo) {
+        whereClause.createdAt = {}
+        if (filters.createdAtFrom) {
+          whereClause.createdAt.gte = filters.createdAtFrom
+        }
+        if (filters.createdAtTo) {
+          whereClause.createdAt.lte = filters.createdAtTo
+        }
+      }
     }
 
     const [
@@ -853,17 +875,30 @@ export class WorkOrderRepository {
   /**
    * Get recent work order activity
    */
-  static async getRecentActivity(companyId: string, limit: number = 10) {
+  static async getRecentActivity(companyId: string, limit: number = 10, filters?: WorkOrderFilters) {
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true,
+      OR: [
+        { startedAt: { not: null } },
+        { completedAt: { not: null } },
+        { assignments: { some: {} } }
+      ]
+    }
+
+    // Apply date filters
+    if (filters?.createdAtFrom || filters?.createdAtTo) {
+      whereClause.createdAt = {}
+      if (filters.createdAtFrom) {
+        whereClause.createdAt.gte = filters.createdAtFrom
+      }
+      if (filters.createdAtTo) {
+        whereClause.createdAt.lte = filters.createdAtTo
+      }
+    }
+
     const activities = await prisma.workOrder.findMany({
-      where: {
-        companyId,
-        isActive: true,
-        OR: [
-          { startedAt: { not: null } },
-          { completedAt: { not: null } },
-          { assignments: { some: {} } }
-        ]
-      },
+      where: whereClause,
       include: {
         assignments: {
           include: {
@@ -938,10 +973,14 @@ export class WorkOrderRepository {
   /**
    * Get performance metrics for the last 7 days
    */
-  static async getPerformanceMetrics(companyId: string, days: number = 7) {
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+  static async getPerformanceMetrics(companyId: string, days: number = 7, filters?: WorkOrderFilters) {
+    // Use filters if provided, otherwise use default date range
+    const endDate = filters?.createdAtTo || new Date()
+    const startDate = filters?.createdAtFrom || (() => {
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      return date
+    })()
 
     // Get completion data for each day
     const dailyCompletions = await prisma.workOrder.groupBy({

@@ -1,6 +1,11 @@
 "use client"
 
 import useSWR from "swr"
+import { DateRange } from "react-day-picker"
+
+interface DashboardFilters {
+  dateRange?: DateRange
+}
 
 interface WorkOrderDashboardStats {
   total: number
@@ -43,7 +48,7 @@ interface WorkOrderDashboardStats {
 
 const fetcher = async (url: string): Promise<WorkOrderDashboardStats> => {
   const response = await fetch(url)
-  
+
   if (!response.ok) {
     throw new Error('Error al cargar estadísticas del dashboard')
   }
@@ -51,8 +56,24 @@ const fetcher = async (url: string): Promise<WorkOrderDashboardStats> => {
   return response.json()
 }
 
-export function useWorkOrdersDashboard() {
-  return useSWR('/api/work-orders/dashboard', fetcher, {
+export function useWorkOrdersDashboard(filters?: DashboardFilters) {
+  // Build query params from filters
+  const buildUrl = () => {
+    const params = new URLSearchParams()
+
+    if (filters?.dateRange?.from) {
+      params.append('dateFrom', filters.dateRange.from.toISOString())
+    }
+
+    if (filters?.dateRange?.to) {
+      params.append('dateTo', filters.dateRange.to.toISOString())
+    }
+
+    const queryString = params.toString()
+    return `/api/work-orders/dashboard${queryString ? `?${queryString}` : ''}`
+  }
+
+  return useSWR(buildUrl(), fetcher, {
     refreshInterval: 30 * 20000, // 20 seconds
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
