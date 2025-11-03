@@ -7,6 +7,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Toaster } from "@/components/ui/sonner"
+import { PWABrandingUpdater } from "@/components/pwa-branding-updater"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { getCurrentUserWithRole } from "@/lib/auth-utils"
@@ -156,6 +157,7 @@ export default async function Page({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </SidebarInset>
+      <PWABrandingUpdater />
       <Toaster />
     </SidebarProvider>
   )

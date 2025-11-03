@@ -11,9 +11,7 @@ import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
 import {
-  Loader2,
   RefreshCw,
-  Calendar,
   Building,
   Clock,
   ArrowRight,
