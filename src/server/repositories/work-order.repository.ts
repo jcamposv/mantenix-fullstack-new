@@ -1011,4 +1011,57 @@ export class WorkOrderRepository {
 
     return performanceData
   }
+
+  /**
+   * Get upcoming scheduled work orders
+   */
+  static async getUpcomingWorkOrders(companyId: string, limit: number = 10, filters?: WorkOrderFilters) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Build where clause
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true,
+      scheduledDate: {
+        gte: today
+      },
+      status: {
+        in: ['DRAFT', 'ASSIGNED', 'IN_PROGRESS']
+      }
+    }
+
+    // Apply additional filters
+    if (filters) {
+      if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.clientCompanyId) {
+        whereClause.site = {
+          clientCompanyId: filters.clientCompanyId
+        }
+      }
+    }
+
+    const upcomingWorkOrders = await prisma.workOrder.findMany({
+      where: whereClause,
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: {
+          select: {
+            assignments: true
+          }
+        }
+      },
+      orderBy: {
+        scheduledDate: 'asc'
+      },
+      take: limit
+    })
+
+    return upcomingWorkOrders
+  }
 }

@@ -24,6 +24,21 @@ interface WorkOrderDashboardStats {
     completed: number
     efficiency: number
   }>
+  upcomingWorkOrders: Array<{
+    id: string
+    number: string
+    title: string
+    scheduledDate: Date
+    priority: string
+    status: string
+    site?: {
+      id: string
+      name: string
+    }
+    _count?: {
+      assignments: number
+    }
+  }>
 }
 
 const fetcher = async (url: string): Promise<WorkOrderDashboardStats> => {
