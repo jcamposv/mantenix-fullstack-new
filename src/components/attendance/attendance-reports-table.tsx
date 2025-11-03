@@ -9,42 +9,31 @@ interface AttendanceReportsTableProps {
   records: AttendanceRecordBasic[]
 }
 
-const getStatusBadgeVariant = (status: string | null) => {
+const getStatusConfig = (status: string | null) => {
   switch (status) {
     case "ON_TIME":
-      return "default"
+      return { label: "A Tiempo", className: "bg-success/10 text-success border-success/20" }
     case "LATE":
-      return "secondary"
+      return { label: "Tarde", className: "bg-warning/10 text-warning border-warning/20" }
     case "ABSENT":
-      return "destructive"
+      return { label: "Ausente", className: "bg-destructive/10 text-destructive border-destructive/20" }
+    case "JUSTIFIED":
+      return { label: "Justificado", className: "bg-info/10 text-info border-info/20" }
     default:
-      return "outline"
-  }
-}
-
-const getStatusLabel = (status: string | null) => {
-  switch (status) {
-    case "ON_TIME":
-      return "A Tiempo"
-    case "LATE":
-      return "Tarde"
-    case "ABSENT":
-      return "Ausente"
-    default:
-      return "Sin registro"
+      return { label: "Sin registro", className: "" }
   }
 }
 
 export const AttendanceReportsTable = ({ records }: AttendanceReportsTableProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Detalle de Registros</CardTitle>
+    <Card className="shadow-none">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-base">Detalle de Registros</CardTitle>
         <CardDescription>
           Registros diarios del mes seleccionado
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <div className="space-y-3">
           {records.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -52,52 +41,61 @@ export const AttendanceReportsTable = ({ records }: AttendanceReportsTableProps)
               <p>No hay registros de asistencia para este mes</p>
             </div>
           ) : (
-            records.map((record) => (
-              <div
-                key={record.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">
-                      {new Date(record.checkInAt).toLocaleDateString('es-ES', {
-                        weekday: 'long',
-                        day: 'numeric',
-                        month: 'long'
-                      })}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Entrada: {new Date(record.checkInAt).toLocaleTimeString('es-ES', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                      {record.checkOutAt && (
-                        <> • Salida: {new Date(record.checkOutAt).toLocaleTimeString('es-ES', {
+            records.map((record) => {
+              const statusConfig = getStatusConfig(record.status)
+              return (
+                <div
+                  key={record.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/5 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-medium text-sm">
+                        {new Date(record.checkInAt).toLocaleDateString('es-ES', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short'
+                        })}
+                      </p>
+                      <Badge variant="outline" className={statusConfig.className}>
+                        {statusConfig.label}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>
+                        {new Date(record.checkInAt).toLocaleTimeString('es-ES', {
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}</>
+                        })}
+                      </span>
+                      {record.checkOutAt && (
+                        <>
+                          <span>→</span>
+                          <span>
+                            {new Date(record.checkOutAt).toLocaleTimeString('es-ES', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </>
                       )}
-                    </p>
-                    {record.lateMinutes && record.lateMinutes > 0 && (
-                      <p className="text-xs text-yellow-600">
-                        {(() => {
-                          const hours = Math.floor(record.lateMinutes / 60)
-                          const minutes = record.lateMinutes % 60
-                          if (hours > 0) {
-                            return `${hours}h ${minutes}m de retraso`
-                          }
-                          return `${minutes} minuto${minutes > 1 ? 's' : ''} de retraso`
-                        })()}
-                      </p>
-                    )}
+                      {record.lateMinutes && record.lateMinutes > 0 && (
+                        <span className="text-warning font-medium">
+                          {(() => {
+                            const hours = Math.floor(record.lateMinutes / 60)
+                            const minutes = record.lateMinutes % 60
+                            if (hours > 0) {
+                              return `+${hours}h ${minutes}m`
+                            }
+                            return `+${minutes}m`
+                          })()}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <Badge variant={getStatusBadgeVariant(record.status)}>
-                  {getStatusLabel(record.status)}
-                </Badge>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </CardContent>

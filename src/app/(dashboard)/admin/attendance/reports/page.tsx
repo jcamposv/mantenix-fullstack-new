@@ -175,9 +175,9 @@ export default function AttendanceReportsPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">Reportes de Asistencia</h1>
-          <p className="text-muted-foreground mt-2">
-            Visualiza estadísticas y reportes mensuales de asistencia
+          <h1 className="text-3xl font-bold tracking-tight">Reportes de Asistencia</h1>
+          <p className="text-muted-foreground mt-1">
+            Análisis detallado de puntualidad y asistencia del personal
           </p>
         </div>
 
@@ -219,7 +219,7 @@ export default function AttendanceReportsPage() {
             <AttendanceReportsTable records={report.records} />
           </>
         ) : (
-          <Card>
+          <Card className="shadow-none">
             <CardContent className="py-12 text-center text-muted-foreground">
               <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">
