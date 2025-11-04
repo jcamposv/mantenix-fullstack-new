@@ -87,6 +87,8 @@ enum FeatureModule {
   HR_PERMISSIONS // Módulo de permisos
   AI_ASSISTANT // Asistente de IA
   ADVANCED_ANALYTICS // Análisis avanzados
+  EXTERNAL_CLIENT_MANAGEMENT // Gestión de clientes externos (ClientCompany, Sites)
+  INTERNAL_CORPORATE_GROUP // Grupo corporativo con inventario compartido
 }
 
 enum AttendanceStatus {

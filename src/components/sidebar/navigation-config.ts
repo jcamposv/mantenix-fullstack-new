@@ -17,6 +17,7 @@ import {
   Clock,
   Calendar,
   FileText,
+  Package,
 } from "lucide-react"
 
 export const BASE_NAV_ITEMS = [
@@ -188,9 +189,12 @@ export const getFeatureNavItems = (enabledFeatures: {
   hasAttendance?: boolean
   hasVacations?: boolean
   hasPermissions?: boolean
+  hasExternalClientMgmt?: boolean
+  hasInternalCorporateGroup?: boolean
 }) => {
   const items = []
 
+  // HR Features
   if (enabledFeatures.hasAttendance) {
     items.push({
       title: "Asistencia",
@@ -240,6 +244,44 @@ export const getFeatureNavItems = (enabledFeatures: {
         {
           title: "Solicitudes",
           url: "/admin/permissions"
+        }
+      ]
+    })
+  }
+
+  // Inventory (available in both business models)
+  if (enabledFeatures.hasExternalClientMgmt || enabledFeatures.hasInternalCorporateGroup) {
+    items.push({
+      title: "Inventario",
+      url: "/admin/inventory",
+      icon: Package,
+      items: [
+        {
+          title: "Productos",
+          url: "/admin/inventory/items"
+        },
+        {
+          title: "Solicitudes",
+          url: "/admin/inventory/requests"
+        },
+        {
+          title: "Movimientos",
+          url: "/admin/inventory/movements"
+        }
+      ]
+    })
+  }
+
+  // Corporate Group (only for INTERNAL_CORPORATE_GROUP)
+  if (enabledFeatures.hasInternalCorporateGroup) {
+    items.push({
+      title: "Grupo Corporativo",
+      url: "/admin/company-groups",
+      icon: Building2,
+      items: [
+        {
+          title: "Empresas del Grupo",
+          url: "/admin/company-groups"
         }
       ]
     })

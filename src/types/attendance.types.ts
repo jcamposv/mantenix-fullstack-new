@@ -216,7 +216,7 @@ export interface FeatureModuleInfo {
   module: string
   name: string
   description: string
-  category: "HR" | "AI" | "ANALYTICS" | "OTHER"
+  category: "HR" | "AI" | "ANALYTICS" | "BUSINESS_MODEL" | "OTHER"
 }
 
 export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
@@ -249,5 +249,17 @@ export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
     name: "Análisis Avanzados",
     description: "Reportes y estadísticas avanzadas",
     category: "ANALYTICS"
+  },
+  EXTERNAL_CLIENT_MANAGEMENT: {
+    module: "EXTERNAL_CLIENT_MANAGEMENT",
+    name: "Gestión de Clientes Externos",
+    description: "Permite gestionar clientes externos, sus sedes, y asignar assets y órdenes de trabajo por sitio",
+    category: "BUSINESS_MODEL"
+  },
+  INTERNAL_CORPORATE_GROUP: {
+    module: "INTERNAL_CORPORATE_GROUP",
+    name: "Grupo Corporativo",
+    description: "Habilita grupo empresarial con inventario compartido y transferencias inter-company",
+    category: "BUSINESS_MODEL"
   }
 }
