@@ -235,7 +235,7 @@ export default function AttendanceListPage() {
   ]
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
+    <div className="container mx-auto py-0 space-y-4">
       <AttendanceListFilters
         users={users}
         locations={locations}

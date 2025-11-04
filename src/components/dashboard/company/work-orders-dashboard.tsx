@@ -17,15 +17,34 @@ import { DateRange } from "react-day-picker"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Activity } from "lucide-react"
+import { AIInsightsCard } from "@/components/dashboard/shared/ai-insights-card"
 
 interface WorkOrdersDashboardProps {
   className?: string
+  period?: DatePeriod
+  customDateRange?: DateRange
+  onPeriodChange?: (period: DatePeriod) => void
+  onCustomDateRangeChange?: (range: DateRange | undefined) => void
+  hideFilters?: boolean
 }
 
-export function WorkOrdersDashboard({ className }: WorkOrdersDashboardProps) {
+export function WorkOrdersDashboard({
+  className,
+  period: externalPeriod,
+  customDateRange: externalCustomDateRange,
+  onPeriodChange: externalOnPeriodChange,
+  onCustomDateRangeChange: externalOnCustomDateRangeChange,
+  hideFilters = false
+}: WorkOrdersDashboardProps) {
   const router = useRouter()
-  const [period, setPeriod] = useState<DatePeriod>("this_month")
-  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>()
+  const [internalPeriod, setInternalPeriod] = useState<DatePeriod>("this_month")
+  const [internalCustomDateRange, setInternalCustomDateRange] = useState<DateRange | undefined>()
+
+  // Use external state if provided, otherwise use internal state
+  const period = externalPeriod ?? internalPeriod
+  const customDateRange = externalCustomDateRange ?? internalCustomDateRange
+  const setPeriod = externalOnPeriodChange ?? setInternalPeriod
+  const setCustomDateRange = externalOnCustomDateRangeChange ?? setInternalCustomDateRange
 
   // Calculate the effective date range based on period selection
   const effectiveDateRange = useMemo(() => {
@@ -100,12 +119,14 @@ export function WorkOrdersDashboard({ className }: WorkOrdersDashboardProps) {
     <div className={className}>
       <div className="space-y-6">
         {/* Filters */}
-        <DashboardFilters
-          period={period}
-          customDateRange={customDateRange}
-          onPeriodChange={setPeriod}
-          onCustomDateRangeChange={setCustomDateRange}
-        />
+        {!hideFilters && (
+          <DashboardFilters
+            period={period}
+            customDateRange={customDateRange}
+            onPeriodChange={setPeriod}
+            onCustomDateRangeChange={setCustomDateRange}
+          />
+        )}
 
         {/* No data in period message */}
         {!hasDataInPeriod && (
@@ -136,7 +157,7 @@ export function WorkOrdersDashboard({ className }: WorkOrdersDashboardProps) {
         {hasDataInPeriod && (
           <>
         {/* KPIs Overview */}
-        <WorkOrdersOverview 
+        <WorkOrdersOverview
           stats={stats || {
             total: 0,
             inProgress: 0,
@@ -146,9 +167,12 @@ export function WorkOrdersDashboard({ className }: WorkOrdersDashboardProps) {
             completionRate: 0,
             avgCompletionTime: 0,
             activeUsers: 0
-          }} 
+          }}
           loading={false}
         />
+
+        {/* AI Insights */}
+        <AIInsightsCard dateRange={effectiveDateRange} />
 
         {/* Charts Row */}
         <div className="grid gap-6 md:grid-cols-2">

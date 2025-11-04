@@ -113,7 +113,7 @@ export default function AttendanceReportsPage() {
 
   if (loadingUsers) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <AttendanceReportsLoading />
       </div>
     )
@@ -171,11 +171,11 @@ export default function AttendanceReportsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reportes de Asistencia</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Reportes de Asistencia</h1>
           <p className="text-muted-foreground mt-1">
             Análisis detallado de puntualidad y asistencia del personal
           </p>

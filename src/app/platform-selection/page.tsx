@@ -37,7 +37,7 @@ export default function PlatformSelectionPage() {
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">
             Selecciona tu Plataforma
           </h1>
           <p className="text-muted-foreground">

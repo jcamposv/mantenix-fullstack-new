@@ -50,7 +50,7 @@ export default function Home() {
   // Show loading state
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <DashboardLoading />
       </div>
     )
@@ -59,7 +59,7 @@ export default function Home() {
   // Show error state if data fetch failed
   if (error) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <DashboardError
           error={error}
           onRetry={() => mutate()}
@@ -74,7 +74,7 @@ export default function Home() {
   // Show empty state only if there's truly no data in the system
   if (hasNoDataAtAll) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <DashboardEmpty
           onCreateWorkOrder={() => router.push("/work-orders/new/select-template")}
         />
@@ -89,18 +89,26 @@ export default function Home() {
   const efficiencyTrend: "up" | "down" | "neutral" = stats?.completionRate && stats.completionRate >= 80 ? "up" : stats?.completionRate && stats.completionRate < 50 ? "down" : "neutral"
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground">
               Vista general de las órdenes de trabajo y métricas de rendimiento
             </p>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Filters */}
+            <DashboardFilters
+              period={period}
+              customDateRange={customDateRange}
+              onPeriodChange={setPeriod}
+              onCustomDateRangeChange={setCustomDateRange}
+            />
+
             <Button variant="outline" onClick={() => router.push("/work-orders/list")}>
               <List className="h-4 w-4 mr-2" />
               Ver Todas las Órdenes
@@ -111,14 +119,6 @@ export default function Home() {
             </Button>
           </div>
         </div>
-
-        {/* Filters */}
-        <DashboardFilters
-          period={period}
-          customDateRange={customDateRange}
-          onPeriodChange={setPeriod}
-          onCustomDateRangeChange={setCustomDateRange}
-        />
 
         {/* No data in period message */}
         {!hasDataInPeriod && (

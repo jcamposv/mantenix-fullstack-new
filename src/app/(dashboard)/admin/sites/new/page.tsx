@@ -42,7 +42,7 @@ export default function NewSitePage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <SiteForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

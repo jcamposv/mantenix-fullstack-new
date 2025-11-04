@@ -147,7 +147,7 @@ export default function CompaniesPage() {
   ]
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <DataTable
         columns={columns}
         data={companies}

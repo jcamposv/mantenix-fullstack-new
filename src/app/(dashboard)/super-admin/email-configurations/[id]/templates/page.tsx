@@ -198,7 +198,7 @@ export default function EmailTemplatesPage() {
 
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Templates de Email</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Templates de Email</h1>
           {configuration && (
             <p className="text-muted-foreground">
               Configuración para {configuration.company.name} ({configuration.company.subdomain})

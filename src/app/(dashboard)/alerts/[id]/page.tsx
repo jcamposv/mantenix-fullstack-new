@@ -29,7 +29,7 @@ export default function AlertDetailPage({ params }: AlertDetailPageProps) {
 
   if (!alertId || loading) {
     return (
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-0 px-4">
         <div className="space-y-6">
           <div className="h-8 bg-gray-200 rounded animate-pulse" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -49,7 +49,7 @@ export default function AlertDetailPage({ params }: AlertDetailPageProps) {
 
   if (!alert) {
     return (
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-0 px-4">
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold text-gray-900">Alerta no encontrada</h1>
           <p className="text-gray-600 mt-2">La alerta que buscas no existe o ha sido eliminada.</p>
@@ -59,7 +59,7 @@ export default function AlertDetailPage({ params }: AlertDetailPageProps) {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="container mx-auto py-0 px-4">
       <div className="space-y-6">
         <AlertHeader alert={alert} />
         

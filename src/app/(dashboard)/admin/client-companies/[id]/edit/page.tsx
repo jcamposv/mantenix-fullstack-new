@@ -73,7 +73,7 @@ export default function EditClientCompanyPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <FormSkeleton fields={6} showTitle={true} showFooter={true} />
       </div>
     )
@@ -81,7 +81,7 @@ export default function EditClientCompanyPage() {
 
   if (!initialData) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <div className="text-center">
           <p className="text-muted-foreground">No se pudieron cargar los datos de la empresa cliente.</p>
         </div>
@@ -90,7 +90,7 @@ export default function EditClientCompanyPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <ClientCompanyForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

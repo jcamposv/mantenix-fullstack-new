@@ -92,7 +92,7 @@ export function MaintenanceMetrics({
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold">{mttr.toFixed(1)}</p>
+                <p className="text-2xl font-bold">{mttr.toFixed(1)}</p>
                 <p className="text-xs opacity-70">horas</p>
               </div>
               {mttrStatus === "excellent" && (
@@ -126,7 +126,7 @@ export function MaintenanceMetrics({
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold">{slaCompliance}%</p>
+                <p className="text-2xl font-bold">{slaCompliance}%</p>
                 <p className="text-xs opacity-70">del total</p>
               </div>
               {slaStatus === "excellent" && (
@@ -157,7 +157,7 @@ export function MaintenanceMetrics({
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold">{plannedPercentage}%</p>
+                <p className="text-2xl font-bold">{plannedPercentage}%</p>
                 <p className="text-xs opacity-70">planificado</p>
               </div>
               {plannedPercentage >= 80 && (

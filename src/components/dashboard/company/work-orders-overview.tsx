@@ -57,7 +57,7 @@ export function WorkOrdersOverview({ stats, loading = false }: WorkOrdersOvervie
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Órdenes</p>
-                  <p className="text-3xl font-bold mt-1">{stats.total}</p>
+                  <p className="text-2xl font-bold mt-1">{stats.total}</p>
                 </div>
               </div>
             </div>

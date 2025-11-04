@@ -226,7 +226,7 @@ export default function SitesPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       {filteredClientCompany && (
         <div className="mb-4">
           <Button 

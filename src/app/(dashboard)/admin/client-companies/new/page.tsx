@@ -44,7 +44,7 @@ export default function NewClientCompanyPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <ClientCompanyForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
