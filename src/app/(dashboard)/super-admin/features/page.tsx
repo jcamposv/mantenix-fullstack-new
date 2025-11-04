@@ -178,7 +178,7 @@ export default function SuperAdminFeaturesPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Features Premium</h1>
+          <h1 className="text-2xl font-bold">Gestión de Features Premium</h1>
           <p className="text-muted-foreground mt-2">
             Habilita o deshabilita módulos premium por empresa
           </p>

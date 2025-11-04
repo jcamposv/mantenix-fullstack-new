@@ -175,7 +175,7 @@ export default function ClientAlertDetailPage() {
     <div className="container mx-auto py-0 max-w-6xl">
       <div className="mb-6">
         <div className="flex items-start gap-3">
-          <div className="text-3xl">{getTypeIcon(alert.type)}</div>
+          <div className="text-2xl">{getTypeIcon(alert.type)}</div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{alert.title}</h1>
             <p className="text-muted-foreground mt-1">{getTypeLabel(alert.type)}</p>

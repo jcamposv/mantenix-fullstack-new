@@ -271,7 +271,7 @@ export default function MyAlertsPage() {
     <div className="container mx-auto py-0">
       <div className="space-y-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Mis Alertas</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Mis Alertas</h2>
           <p className="text-muted-foreground">
             Alertas reportadas por ti y asignadas a ti
           </p>

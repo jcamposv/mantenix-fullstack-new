@@ -179,7 +179,7 @@ export default function ClientAlertsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Alertas</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Alertas</h1>
             <p className="text-muted-foreground">
               Gestiona las alertas de tu organización
             </p>

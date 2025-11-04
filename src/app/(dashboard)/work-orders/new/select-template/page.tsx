@@ -78,7 +78,7 @@ export default function SelectTemplatePage() {
       <div className="mb-6">      
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Seleccionar Template</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Seleccionar Template</h1>
             <p className="text-muted-foreground mt-2">
               Elige un template para acelerar la creación de tu orden de trabajo
             </p>

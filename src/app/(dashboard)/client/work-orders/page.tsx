@@ -9,7 +9,7 @@ import { WorkOrderStats } from "@/components/dashboard/client/work-order-stats"
 import { ProviderPerformance } from "@/components/dashboard/client/provider-performance"
 import { CriticalOrders } from "@/components/dashboard/client/critical-orders"
 import { SiteMetrics } from "@/components/dashboard/client/site-metrics"
-import { AIInsightsCard } from "@/components/dashboard/client/ai-insights-card"
+import { AIInsightsCard } from "@/components/dashboard/shared/ai-insights-card"
 import { DashboardFilters, DatePeriod } from "@/components/dashboard/shared/dashboard-filters"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -189,7 +189,7 @@ export default function ClientWorkOrdersPage() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight">
               Órdenes de Trabajo
             </h1>
             <p className="text-muted-foreground">

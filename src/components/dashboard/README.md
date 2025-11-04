@@ -99,7 +99,7 @@ Componentes reutilizables por todos los roles.
 - No usar colores hardcoded (green-500, blue-600, etc.)
 
 ### Tipografía:
-- Títulos: `text-3xl font-bold tracking-tight`
+- Títulos: `text-2xl font-bold tracking-tight`
 - Subtítulos: `text-sm text-muted-foreground`
 - KPIs: `text-2xl font-bold`
 

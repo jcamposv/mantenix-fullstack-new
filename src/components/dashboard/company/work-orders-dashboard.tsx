@@ -17,6 +17,7 @@ import { DateRange } from "react-day-picker"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Activity } from "lucide-react"
+import { AIInsightsCard } from "@/components/dashboard/shared/ai-insights-card"
 
 interface WorkOrdersDashboardProps {
   className?: string
@@ -156,7 +157,7 @@ export function WorkOrdersDashboard({
         {hasDataInPeriod && (
           <>
         {/* KPIs Overview */}
-        <WorkOrdersOverview 
+        <WorkOrdersOverview
           stats={stats || {
             total: 0,
             inProgress: 0,
@@ -166,9 +167,12 @@ export function WorkOrdersDashboard({
             completionRate: 0,
             avgCompletionTime: 0,
             activeUsers: 0
-          }} 
+          }}
           loading={false}
         />
+
+        {/* AI Insights */}
+        <AIInsightsCard dateRange={effectiveDateRange} />
 
         {/* Charts Row */}
         <div className="grid gap-6 md:grid-cols-2">

@@ -168,7 +168,7 @@ export default function WorkOrderPrefixesPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Prefijos de Órdenes de Trabajo</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Prefijos de Órdenes de Trabajo</h2>
             <p className="text-muted-foreground">
               Los prefijos permiten personalizar la numeración de órdenes de trabajo por proyecto, oficina o criterio específico.
             </p>

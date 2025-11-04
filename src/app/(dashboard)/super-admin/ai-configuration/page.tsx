@@ -185,7 +185,7 @@ export default function AIConfigurationPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
           <Sparkles className="w-8 h-8 text-primary" />
           Configuración de AI
         </h1>
