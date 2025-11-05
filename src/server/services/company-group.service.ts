@@ -165,6 +165,13 @@ export class CompanyGroupService {
       ...(typeof data.isActive === 'boolean' && { isActive: data.isActive })
     }
 
+    // Update company associations if companyIds is provided
+    if (data.companyIds !== undefined) {
+      updateData.companies = {
+        set: data.companyIds.map(id => ({ id }))
+      }
+    }
+
     return await CompanyGroupRepository.update(id, updateData)
   }
 

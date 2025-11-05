@@ -81,7 +81,7 @@ export function CompanyGroupForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader>
             <CardTitle>Información del Grupo</CardTitle>
             <CardDescription>
@@ -144,7 +144,7 @@ export function CompanyGroupForm({
 
         {/* Multi-select de empresas - Solo para SUPER_ADMIN */}
         {isSuperAdmin && (
-          <Card>
+          <Card className="w-full shadow-none">
             <CardHeader>
               <CardTitle>Empresas del Grupo</CardTitle>
               <CardDescription>
@@ -217,7 +217,7 @@ export function CompanyGroupForm({
           </Card>
         )}
 
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader>
             <CardTitle>Configuración de Inventario</CardTitle>
             <CardDescription>

@@ -21,7 +21,8 @@ export const updateCompanyGroupSchema = z.object({
   logo: z.string().optional(),
   shareInventory: z.boolean().optional(),
   autoApproveTransfers: z.boolean().optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  companyIds: z.array(z.string()).optional()
 })
 
 /**

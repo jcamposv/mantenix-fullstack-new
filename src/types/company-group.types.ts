@@ -75,6 +75,7 @@ export interface UpdateCompanyGroupData {
   shareInventory?: boolean
   autoApproveTransfers?: boolean
   isActive?: boolean
+  companyIds?: string[]
 }
 
 /**

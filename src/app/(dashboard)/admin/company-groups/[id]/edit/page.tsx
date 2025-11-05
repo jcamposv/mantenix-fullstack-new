@@ -27,12 +27,17 @@ export default function EditCompanyGroupPage() {
       if (!response.ok) throw new Error('Error al cargar el grupo')
 
       const data = await response.json()
+
+      // Extract company IDs from the companies array
+      const companyIds = data.companies?.map((company: { id: string }) => company.id) || []
+
       setInitialData({
         name: data.name,
         description: data.description,
         logo: data.logo,
         shareInventory: data.shareInventory,
         autoApproveTransfers: data.autoApproveTransfers,
+        companyIds: companyIds,
       })
     } catch (error) {
       console.error('Error fetching group:', error)
@@ -90,7 +95,7 @@ export default function EditCompanyGroupPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Editar Grupo Corporativo</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Editar Grupo Corporativo</h2>
           <p className="text-muted-foreground">
             Modifica la información del grupo
           </p>
