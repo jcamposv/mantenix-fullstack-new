@@ -21,11 +21,11 @@ export class AssetService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los activos
-    } else if (session.user.role === "ADMIN_EMPRESA") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa solo puede ver activos de sedes de empresas cliente de su empresa
+      // Admin empresa/grupo solo puede ver activos de sedes de empresas cliente de su empresa
       whereClause.site = {
         clientCompany: {
           tenantCompanyId: session.user.companyId
@@ -234,7 +234,7 @@ export class AssetService {
     }
 
     // Verificar permisos de acceso por rol
-    if (session.user.role === "ADMIN_EMPRESA") {
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId || existingAsset.site?.clientCompany?.tenantCompanyId !== session.user.companyId) {
         throw new Error("No tienes acceso a este activo")
       }
@@ -261,12 +261,12 @@ export class AssetService {
    * Validates that the site exists and the user has access
    */
   private static async validateSite(siteId: string, session: AuthenticatedSession): Promise<void> {
-    // For company admin, verify that the site belongs to a client company of their company
-    if (session.user.role === "ADMIN_EMPRESA") {
+    // For company/group admin, verify that the site belongs to a client company of their company
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      
+
       const site = await prisma.site.findFirst({
         where: {
           id: siteId,

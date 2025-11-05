@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { assetSchema, type AssetFormData } from "@/schemas/asset"
 import { AssetBasicInfo } from "./asset/asset-basic-info"
 import { AssetTechnicalInfo } from "./asset/asset-technical-info"
+import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 
 interface Site {
   id: string
@@ -33,6 +34,7 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
   const [sites, setSites] = useState<Site[]>([])
   const [loadingSites, setLoadingSites] = useState(true)
   const [currentClientCompanyId, setCurrentClientCompanyId] = useState(clientCompanyId)
+  const { hasExternalClientMgmt } = useCompanyFeatures()
 
   const form = useForm<AssetFormData>({
     resolver: zodResolver(assetSchema),
@@ -119,10 +121,11 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
                 <CardTitle>Información Básica</CardTitle>
               </CardHeader>
               <CardContent>
-                <AssetBasicInfo 
-                  form={form} 
+                <AssetBasicInfo
+                  form={form}
                   sites={sites}
                   loadingSites={loadingSites}
+                  hasExternalClientMgmt={hasExternalClientMgmt}
                 />
               </CardContent>
             </Card>

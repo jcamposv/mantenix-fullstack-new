@@ -26,7 +26,17 @@ export async function middleware(request: NextRequest) {
     // Get user with company info
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { company: true }
+      include: {
+        company: {
+          include: {
+            companyGroup: {
+              include: {
+                companies: true
+              }
+            }
+          }
+        }
+      }
     })
 
     if (!user) {
@@ -42,14 +52,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Group admins can access any subdomain within their corporate group
+    if (user.role === 'ADMIN_GRUPO' && user.company?.companyGroup) {
+      const groupSubdomains = user.company.companyGroup.companies.map(c => c.subdomain)
+      if (groupSubdomains.includes(subdomain)) {
+        return NextResponse.next()
+      }
+    }
+
     // Regular users must access their company's subdomain
     if (user.company?.subdomain !== subdomain) {
       // Redirect to correct company subdomain
       const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
-      const correctUrl = process.env.NODE_ENV === 'production' 
+      const correctUrl = process.env.NODE_ENV === 'production'
         ? `https://${user.company?.subdomain}.${domainBase}${request.nextUrl.pathname}`
         : `http://${user.company?.subdomain}.localhost:3000${request.nextUrl.pathname}`
-      
+
       return NextResponse.redirect(new URL(correctUrl))
     }
 

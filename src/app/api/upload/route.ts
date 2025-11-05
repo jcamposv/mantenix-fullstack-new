@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is super admin (for company logos)
-    if (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN_EMPRESA") {
+    if (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN_EMPRESA" && session.user.role !== "ADMIN_GRUPO") {
       return NextResponse.json({ error: "Forbidden - Super Admin access required" }, { status: 403 })
     }
 

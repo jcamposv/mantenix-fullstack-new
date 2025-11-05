@@ -10,7 +10,18 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { companyGroupSchema, type CompanyGroupFormData } from "@/schemas/inventory"
-import { Loader2 } from "lucide-react"
+import { LogoUpload } from "@/components/forms/logo-upload"
+import { Loader2, Building2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useUserRole } from "@/hooks/useUserRole"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+
+interface Company {
+  id: string
+  name: string
+  subdomain: string
+}
 
 interface CompanyGroupFormProps {
   initialData?: Partial<CompanyGroupFormData>
@@ -25,16 +36,43 @@ export function CompanyGroupForm({
   isLoading = false,
   mode = "create"
 }: CompanyGroupFormProps) {
+  const { isSuperAdmin } = useUserRole()
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(false)
+
   const form = useForm<CompanyGroupFormData>({
     resolver: zodResolver(companyGroupSchema) as Resolver<CompanyGroupFormData>,
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",
+      logo: initialData?.logo || "",
       shareInventory: initialData?.shareInventory ?? true,
       autoApproveTransfers: initialData?.autoApproveTransfers ?? false,
       companyIds: initialData?.companyIds || [],
     },
   })
+
+  // Load companies for SUPER_ADMIN
+  useEffect(() => {
+    if (isSuperAdmin) {
+      loadCompanies()
+    }
+  }, [isSuperAdmin])
+
+  const loadCompanies = async () => {
+    setLoadingCompanies(true)
+    try {
+      const response = await fetch('/api/admin/companies?limit=1000')
+      if (response.ok) {
+        const data = await response.json()
+        setCompanies(data.companies || [])
+      }
+    } catch (error) {
+      console.error('Error loading companies:', error)
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
 
   const handleSubmit = async (data: CompanyGroupFormData) => {
     await onSubmit(data)
@@ -82,8 +120,102 @@ export function CompanyGroupForm({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="logo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <LogoUpload
+                      value={field.value}
+                      onChange={field.onChange}
+                      onRemove={() => field.onChange("")}
+                      label="Logo del Grupo Corporativo (Opcional)"
+                      folder="company-groups/logos"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
+
+        {/* Multi-select de empresas - Solo para SUPER_ADMIN */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Empresas del Grupo</CardTitle>
+              <CardDescription>
+                Selecciona las empresas que formarán parte de este grupo corporativo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="companyIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresas *</FormLabel>
+                    <FormDescription>
+                      Selecciona una o más empresas para asociar al grupo
+                    </FormDescription>
+                    {loadingCompanies ? (
+                      <div className="flex items-center justify-center p-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-4">
+                        {companies.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No hay empresas disponibles
+                          </p>
+                        ) : (
+                          companies.map((company) => (
+                            <div key={company.id} className="flex items-center space-x-3 p-2 hover:bg-accent rounded-md">
+                              <Checkbox
+                                checked={field.value?.includes(company.id)}
+                                onCheckedChange={(checked) => {
+                                  const currentValues = field.value || []
+                                  if (checked) {
+                                    field.onChange([...currentValues, company.id])
+                                  } else {
+                                    field.onChange(currentValues.filter(id => id !== company.id))
+                                  }
+                                }}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium">{company.name}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{company.subdomain}</p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {field.value && field.value.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {field.value.map(companyId => {
+                          const company = companies.find(c => c.id === companyId)
+                          return company ? (
+                            <Badge key={companyId} variant="secondary">
+                              {company.name}
+                            </Badge>
+                          ) : null
+                        })}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

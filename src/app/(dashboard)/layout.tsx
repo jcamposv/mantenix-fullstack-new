@@ -59,6 +59,7 @@ async function getServerSideData() {
         companyFeatures: null,
         userPermissions: {
           isSuperAdmin: false,
+          isGroupAdmin: false,
           isCompanyAdmin: false
         }
       }
@@ -66,6 +67,7 @@ async function getServerSideData() {
 
     const userPermissions = {
       isSuperAdmin: user.role === 'SUPER_ADMIN',
+      isGroupAdmin: user.role === 'ADMIN_GRUPO',
       isCompanyAdmin: user.role === 'ADMIN_EMPRESA'
     }
 
@@ -119,6 +121,7 @@ async function getServerSideData() {
       companyFeatures: null,
       userPermissions: {
         isSuperAdmin: false,
+        isGroupAdmin: false,
         isCompanyAdmin: false
       }
     }

@@ -102,6 +102,7 @@ export type RejectRequestFormData = z.infer<typeof rejectRequestSchema>
 export const companyGroupSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   description: z.string().optional(),
+  logo: z.string().optional(),
   shareInventory: z.boolean().default(true),
   autoApproveTransfers: z.boolean().default(false),
   companyIds: z.array(z.string()).optional(),

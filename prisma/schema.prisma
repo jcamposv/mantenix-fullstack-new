@@ -482,7 +482,7 @@ model UserInvitation {
   id              String    @id @default(cuid())
   email           String
   role            Role
-  companyId       String
+  companyId       String?   // Optional for SUPER_ADMIN and ADMIN_GRUPO
   isExternalUser  Boolean   @default(false)
   clientCompanyId String?
   siteId          String? // Site assignment for the invited user
@@ -495,7 +495,7 @@ model UserInvitation {
   createdAt       DateTime  @default(now())
 
   // Relations
-  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company       Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   creator       User           @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)
   clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
   site          Site?          @relation(fields: [siteId], references: [id], onDelete: SetNull)
@@ -1140,6 +1140,7 @@ model CompanyGroup {
   id          String  @id @default(cuid())
   name        String // "Grupo Industrial XYZ"
   description String?
+  logo        String? // Logo URL del grupo corporativo
 
   // Settings
   shareInventory       Boolean @default(true) // Compartir inventario entre empresas

@@ -59,6 +59,7 @@ export interface CompanyGroupBasicInfo {
 export interface CreateCompanyGroupData {
   name: string
   description?: string
+  logo?: string
   shareInventory?: boolean
   autoApproveTransfers?: boolean
   companyIds?: string[] // Companies to add to the group
@@ -70,6 +71,7 @@ export interface CreateCompanyGroupData {
 export interface UpdateCompanyGroupData {
   name?: string
   description?: string
+  logo?: string
   shareInventory?: boolean
   autoApproveTransfers?: boolean
   isActive?: boolean

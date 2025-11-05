@@ -10,20 +10,20 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isSuperAdmin, loading, isCompanyAdmin } = useUserRole()
+  const { isSuperAdmin, loading, isCompanyAdmin, isGroupAdmin } = useUserRole()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !isSuperAdmin && !isCompanyAdmin) {
+    if (!loading && !isSuperAdmin && !isCompanyAdmin && !isGroupAdmin) {
       router.replace("/")
     }
-  }, [isSuperAdmin, loading, router, isCompanyAdmin])
+  }, [isSuperAdmin, loading, router, isCompanyAdmin, isGroupAdmin])
 
   if (loading) {
     return <PageSkeleton />
   }
 
-  if (!isSuperAdmin && !isCompanyAdmin) {
+  if (!isSuperAdmin && !isCompanyAdmin && !isGroupAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

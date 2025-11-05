@@ -9,14 +9,14 @@ interface UserMetricsSectionProps {
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Administrador",
-  ADMIN: "Administrador",
   ADMIN_GRUPO: "Admin de Grupo",
+  ADMIN_EMPRESA: "Admin de Empresa",
   JEFE_MANTENIMIENTO: "Jefe de Mantenimiento",
+  SUPERVISOR: "Supervisor",
   TECNICO: "Técnico",
-  COORDINADOR: "Coordinador",
-  CLIENTE_ADMIN: "Cliente Admin",
-  CLIENTE_USUARIO: "Cliente Usuario",
-  VIEWER: "Visor"
+  CLIENTE_ADMIN_GENERAL: "Cliente Admin General",
+  CLIENTE_ADMIN_SEDE: "Cliente Admin Sede",
+  CLIENTE_OPERARIO: "Cliente Operario"
 }
 
 export function UserMetricsSection({ metrics }: UserMetricsSectionProps) {

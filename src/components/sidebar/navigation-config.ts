@@ -123,10 +123,22 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
-    name: "Clientes",
-    url: "/admin/client-companies", 
+    name: "Grupos Corporativos",
+    url: "/admin/company-groups",
     icon: Building2,
-    role: "ADMIN_EMPRESA", // Only company admins can see client companies
+    role: "SUPER_ADMIN" // Super admins can manage company groups
+  },
+  {
+    name: "Grupos Corporativos",
+    url: "/admin/company-groups",
+    icon: Building2,
+    role: "ADMIN_GRUPO" // Group admins can manage company groups
+  },
+  {
+    name: "Clientes",
+    url: "/admin/client-companies",
+    icon: Building2,
+    role: "ADMIN_EMPRESA", // Only shown if EXTERNAL_CLIENT_MANAGEMENT is enabled
     items: [
       {
         title: "Clientes",
@@ -136,21 +148,31 @@ export const ADMIN_NAV_ITEMS = [
         title: "Sedes",
         url: "/admin/sites",
       },
-      {
-        title: "Activos",
-        url: "/admin/assets",
-      },
-      {
-        title: "Templates OT",
-        url: "/admin/work-order-templates",
-      },
     ],
+  },
+  {
+    name: "Activos",
+    url: "/admin/assets",
+    icon: Building2,
+    role: "ADMIN_GRUPO", // Always shown for group admins
+  },
+  {
+    name: "Activos",
+    url: "/admin/assets",
+    icon: Building2,
+    role: "ADMIN_EMPRESA", // Always shown for company admins
   },
   {
     name: "Usuarios del Sistema",
     url: "/super-admin/users", // Super admin uses super-admin route
     icon: Users,
     role: "SUPER_ADMIN"
+  },
+  {
+    name: "Usuarios del Grupo",
+    url: "/admin/users", // Group admin uses admin route
+    icon: Users,
+    role: "ADMIN_GRUPO" // Group admins can manage users in group companies
   },
   {
     name: "Usuarios de la Empresa",
@@ -249,7 +271,7 @@ export const getFeatureNavItems = (enabledFeatures: {
     })
   }
 
-  // Inventory (available in both business models)
+  // Inventory (available if either feature is enabled)
   if (enabledFeatures.hasExternalClientMgmt || enabledFeatures.hasInternalCorporateGroup) {
     items.push({
       title: "Inventario",
@@ -267,21 +289,6 @@ export const getFeatureNavItems = (enabledFeatures: {
         {
           title: "Movimientos",
           url: "/admin/inventory/movements"
-        }
-      ]
-    })
-  }
-
-  // Corporate Group (only for INTERNAL_CORPORATE_GROUP)
-  if (enabledFeatures.hasInternalCorporateGroup) {
-    items.push({
-      title: "Grupo Corporativo",
-      url: "/admin/company-groups",
-      icon: Building2,
-      items: [
-        {
-          title: "Empresas del Grupo",
-          url: "/admin/company-groups"
         }
       ]
     })

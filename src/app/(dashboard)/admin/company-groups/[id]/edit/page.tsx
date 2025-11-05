@@ -30,6 +30,7 @@ export default function EditCompanyGroupPage() {
       setInitialData({
         name: data.name,
         description: data.description,
+        logo: data.logo,
         shareInventory: data.shareInventory,
         autoApproveTransfers: data.autoApproveTransfers,
       })

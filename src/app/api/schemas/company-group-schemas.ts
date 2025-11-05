@@ -6,6 +6,7 @@ import { z } from "zod"
 export const createCompanyGroupSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   description: z.string().optional(),
+  logo: z.string().optional(),
   shareInventory: z.boolean().optional().default(true),
   autoApproveTransfers: z.boolean().optional().default(false),
   companyIds: z.array(z.string()).optional()
@@ -17,6 +18,7 @@ export const createCompanyGroupSchema = z.object({
 export const updateCompanyGroupSchema = z.object({
   name: z.string().min(1, "El nombre es requerido").optional(),
   description: z.string().optional(),
+  logo: z.string().optional(),
   shareInventory: z.boolean().optional(),
   autoApproveTransfers: z.boolean().optional(),
   isActive: z.boolean().optional()

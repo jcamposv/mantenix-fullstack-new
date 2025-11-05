@@ -33,6 +33,7 @@ export interface ServerUser {
 
 export interface UserPermissions {
   isSuperAdmin: boolean
+  isGroupAdmin: boolean
   isCompanyAdmin: boolean
 }
 

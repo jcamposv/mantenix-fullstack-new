@@ -21,11 +21,11 @@ export class ClientCompanyService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las empresas cliente
-    } else if (session.user.role === "ADMIN_EMPRESA") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa solo puede ver empresas cliente de su empresa
+      // Admin empresa/grupo solo puede ver empresas cliente de su empresa
       whereClause.tenantCompanyId = session.user.companyId
     } else {
       throw new Error("Rol no autorizado para gestionar empresas cliente")
@@ -178,7 +178,7 @@ export class ClientCompanyService {
     }
 
     // Verificar permisos de acceso por rol
-    if (session.user.role === "ADMIN_EMPRESA") {
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId || existingClientCompany.tenantCompanyId !== session.user.companyId) {
         throw new Error("No tienes acceso a esta empresa cliente")
       }
@@ -203,8 +203,8 @@ export class ClientCompanyService {
   private static async validateTenantCompany(clientCompanyData: CreateClientCompanyInput, session: AuthenticatedSession): Promise<void> {
     let targetTenantCompanyId = clientCompanyData.tenantCompanyId
 
-    // Para admin empresa, forzar su propia empresa
-    if (session.user.role === "ADMIN_EMPRESA") {
+    // Para admin empresa/grupo, forzar su propia empresa
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }

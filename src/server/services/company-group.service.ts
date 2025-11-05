@@ -44,7 +44,26 @@ export class CompanyGroupService {
   ): Promise<PaginatedCompanyGroupsResponse> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
 
-    const whereClause = this.buildWhereClause(filters)
+    let whereClause = this.buildWhereClause(filters)
+
+    // SUPER_ADMIN sees all groups, ADMIN_GRUPO only sees their groups
+    if (session.user.role === "ADMIN_GRUPO") {
+      if (!session.user.companyId) {
+        throw new Error("Usuario sin empresa asociada")
+      }
+
+      // Filter to only show groups that include the user's company
+      whereClause = {
+        ...whereClause,
+        companies: {
+          some: {
+            id: session.user.companyId
+          }
+        }
+      }
+    }
+    // SUPER_ADMIN sees all groups (no filter needed)
+
     const { companyGroups, total } = await CompanyGroupRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
@@ -63,7 +82,15 @@ export class CompanyGroupService {
     id: string
   ): Promise<CompanyGroupWithRelations | null> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
-    return await CompanyGroupRepository.findById(id)
+
+    const group = await CompanyGroupRepository.findById(id)
+
+    // ADMIN_GRUPO can only view their own group
+    if (session.user.role === "ADMIN_GRUPO" && group) {
+      await this.validateGroupAccess(session, group)
+    }
+
+    return group
   }
 
   static async getByIdWithDetails(
@@ -71,7 +98,15 @@ export class CompanyGroupService {
     id: string
   ): Promise<CompanyGroupWithDetails | null> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
-    return await CompanyGroupRepository.findByIdWithDetails(id)
+
+    const group = await CompanyGroupRepository.findByIdWithDetails(id)
+
+    // ADMIN_GRUPO can only view their own group
+    if (session.user.role === "ADMIN_GRUPO" && group) {
+      await this.validateGroupAccess(session, group)
+    }
+
+    return group
   }
 
   static async create(
@@ -80,14 +115,20 @@ export class CompanyGroupService {
   ): Promise<CompanyGroupWithRelations> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.CREATE_COMPANY_GROUP)
 
+    // Only SUPER_ADMIN can create new company groups
+    if (session.user.role !== "SUPER_ADMIN") {
+      throw new Error("Solo el super administrador puede crear grupos corporativos")
+    }
+
     const createData: Prisma.CompanyGroupCreateInput = {
       name: data.name,
       description: data.description,
+      logo: data.logo,
       shareInventory: data.shareInventory ?? true,
       autoApproveTransfers: data.autoApproveTransfers ?? false
     }
 
-    // If companyIds are provided, connect them
+    // Connect selected companies if provided
     if (data.companyIds && data.companyIds.length > 0) {
       createData.companies = {
         connect: data.companyIds.map(id => ({ id }))
@@ -104,9 +145,21 @@ export class CompanyGroupService {
   ): Promise<CompanyGroupWithRelations> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.UPDATE_COMPANY_GROUP)
 
+    // Verify the group exists
+    const existingGroup = await CompanyGroupRepository.findById(id)
+    if (!existingGroup) {
+      throw new Error("Grupo corporativo no encontrado")
+    }
+
+    // ADMIN_GRUPO can only update their own group
+    if (session.user.role === "ADMIN_GRUPO") {
+      await this.validateGroupAccess(session, existingGroup)
+    }
+
     const updateData: Prisma.CompanyGroupUpdateInput = {
       ...(data.name && { name: data.name }),
       ...(data.description !== undefined && { description: data.description }),
+      ...(data.logo !== undefined && { logo: data.logo }),
       ...(typeof data.shareInventory === 'boolean' && { shareInventory: data.shareInventory }),
       ...(typeof data.autoApproveTransfers === 'boolean' && { autoApproveTransfers: data.autoApproveTransfers }),
       ...(typeof data.isActive === 'boolean' && { isActive: data.isActive })
@@ -123,7 +176,16 @@ export class CompanyGroupService {
 
     // Check if there are companies in the group
     const group = await CompanyGroupRepository.findByIdWithDetails(id)
-    if (group && group.companies.length > 0) {
+    if (!group) {
+      throw new Error("Grupo corporativo no encontrado")
+    }
+
+    // ADMIN_GRUPO can only delete their own group
+    if (session.user.role === "ADMIN_GRUPO") {
+      await this.validateGroupAccess(session, group)
+    }
+
+    if (group.companies.length > 0) {
       throw new Error("No se puede eliminar un grupo que tiene empresas asignadas")
     }
 
@@ -141,6 +203,17 @@ export class CompanyGroupService {
       throw new Error("Debe proporcionar al menos una empresa")
     }
 
+    // Verify the group exists
+    const group = await CompanyGroupRepository.findById(groupId)
+    if (!group) {
+      throw new Error("Grupo corporativo no encontrado")
+    }
+
+    // ADMIN_GRUPO can only add companies to their own group
+    if (session.user.role === "ADMIN_GRUPO") {
+      await this.validateGroupAccess(session, group)
+    }
+
     return await CompanyGroupRepository.addCompanies(groupId, data.companyIds)
   }
 
@@ -153,6 +226,17 @@ export class CompanyGroupService {
 
     if (!data.companyIds || data.companyIds.length === 0) {
       throw new Error("Debe proporcionar al menos una empresa")
+    }
+
+    // Verify the group exists
+    const group = await CompanyGroupRepository.findById(groupId)
+    if (!group) {
+      throw new Error("Grupo corporativo no encontrado")
+    }
+
+    // ADMIN_GRUPO can only remove companies from their own group
+    if (session.user.role === "ADMIN_GRUPO") {
+      await this.validateGroupAccess(session, group)
     }
 
     return await CompanyGroupRepository.removeCompanies(groupId, data.companyIds)
@@ -172,5 +256,39 @@ export class CompanyGroupService {
   static async getActiveGroups(session: AuthenticatedSession) {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
     return await CompanyGroupRepository.findAll({ isActive: true })
+  }
+
+  /**
+   * Validates that ADMIN_GRUPO has access to the specified group
+   * ADMIN_GRUPO can only access groups that include their company
+   */
+  private static async validateGroupAccess(
+    session: AuthenticatedSession,
+    group: CompanyGroupWithRelations | CompanyGroupWithDetails
+  ): Promise<void> {
+    if (!session.user.companyId) {
+      throw new Error("Usuario sin empresa asociada")
+    }
+
+    // Get group with companies to check if user's company is in the group
+    const groupWithCompanies = 'companies' in group && Array.isArray(group.companies)
+      ? group
+      : await CompanyGroupRepository.findByIdWithDetails(group.id)
+
+    if (!groupWithCompanies) {
+      throw new Error("Grupo corporativo no encontrado")
+    }
+
+    if (!groupWithCompanies.companies || !Array.isArray(groupWithCompanies.companies)) {
+      throw new Error("No se pudieron cargar las empresas del grupo")
+    }
+
+    const userCompanyInGroup = groupWithCompanies.companies.some(
+      company => company.id === session.user.companyId
+    )
+
+    if (!userCompanyInGroup) {
+      throw new Error("No tienes acceso a este grupo corporativo")
+    }
   }
 }

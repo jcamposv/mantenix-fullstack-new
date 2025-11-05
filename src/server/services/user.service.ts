@@ -20,14 +20,14 @@ export class UserService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los usuarios
-    } else if (session.user.role === "ADMIN_EMPRESA") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa puede ver usuarios de su empresa y clientes
+      // Admin empresa/grupo puede ver usuarios de su empresa y clientes
       whereClause.OR = [
         { companyId: session.user.companyId },
-        { 
+        {
           clientCompany: {
             tenantCompanyId: session.user.companyId
           }
@@ -233,8 +233,8 @@ export class UserService {
       return
     }
 
-    // Los admin empresa solo pueden crear usuarios en su empresa o empresas cliente
-    if (session.user.role === "ADMIN_EMPRESA") {
+    // Los admin empresa/grupo solo pueden crear usuarios en su empresa o empresas cliente
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (userData.companyId && userData.companyId !== session.user.companyId) {
         throw new Error("No puedes asignar usuarios a otras empresas")
       }

@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface CompanyGroup {
   id: string
@@ -31,6 +32,7 @@ interface CompanyGroupsResponse {
 
 export default function CompanyGroupsPage() {
   const router = useRouter()
+  const { isSuperAdmin } = useUserRole()
   const { data: groups, loading, refetch } = useTableData<CompanyGroup>({
     endpoint: '/api/admin/company-groups',
     transform: (data) => (data as CompanyGroupsResponse).companyGroups || []
@@ -147,9 +149,10 @@ export default function CompanyGroupsPage() {
         )
       },
     },
-    {
+    // Only show actions column for SUPER_ADMIN
+    ...(isSuperAdmin ? [{
       id: "actions",
-      cell: ({ row }) => {
+      cell: ({ row }: { row: { original: CompanyGroup } }) => {
         const group = row.original
         return (
           <TableActions
@@ -160,7 +163,7 @@ export default function CompanyGroupsPage() {
           />
         )
       },
-    },
+    }] : []),
   ]
 
   return (
@@ -172,10 +175,12 @@ export default function CompanyGroupsPage() {
             Gestiona grupos de empresas hermanas
           </p>
         </div>
-        <Button onClick={handleAddGroup}>
-          <Plus className="mr-2 h-4 w-4" />
-          Agregar Grupo
-        </Button>
+        {isSuperAdmin && (
+          <Button onClick={handleAddGroup}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Grupo
+          </Button>
+        )}
       </div>
 
       <DataTable
