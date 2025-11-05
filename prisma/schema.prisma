@@ -16,7 +16,9 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
+  ADMIN_GRUPO // Admin de grupo corporativo (ve todas las empresas del grupo)
   ADMIN_EMPRESA
+  JEFE_MANTENIMIENTO // Jefe de mantenimiento (aprueba solicitudes de inventario)
   SUPERVISOR
   TECNICO
   CLIENTE_ADMIN_GENERAL // Admin general que puede ver todas las sedes del cliente y generar alertas
@@ -91,6 +93,39 @@ enum FeatureModule {
   INTERNAL_CORPORATE_GROUP // Grupo corporativo con inventario compartido
 }
 
+enum LocationType {
+  SITE // Sede/Site de cliente
+  WAREHOUSE // Bodega central de la empresa
+  VEHICLE // Vehículo/camión
+}
+
+enum InventoryRequestStatus {
+  PENDING // Pendiente de aprobación
+  APPROVED // Aprobado por jefe
+  REJECTED // Rechazado
+  IN_TRANSIT // En tránsito (si es transferencia)
+  DELIVERED // Entregado
+  CANCELLED // Cancelado
+}
+
+enum RequestUrgency {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum MovementType {
+  IN // Entrada (compra, devolución)
+  OUT // Salida (uso, venta)
+  TRANSFER // Transferencia entre ubicaciones/empresas
+  ADJUSTMENT // Ajuste de inventario
+  WORK_ORDER // Consumo en orden de trabajo
+  RETURN // Devolución
+  DAMAGE // Daño/pérdida
+  COUNT_ADJUSTMENT // Ajuste por conteo físico
+}
+
 enum AttendanceStatus {
   ON_TIME // A tiempo
   LATE // Tarde
@@ -115,6 +150,7 @@ model User {
   // Better Auth extension fields (following best practices)
   role            Role      @default(TECNICO)
   companyId       String?
+  companyGroupId  String? // For ADMIN_GRUPO users
   isExternalUser  Boolean   @default(false)
   clientCompanyId String?
   siteId          String? // Site assignment for users (optional for company users, required for external users)
@@ -133,6 +169,7 @@ model User {
   accounts               Account[]
   sessions               Session[]
   company                Company?         @relation(fields: [companyId], references: [id])
+  companyGroup           CompanyGroup?    @relation(fields: [companyGroupId], references: [id])
   clientCompany          ClientCompany?   @relation(fields: [clientCompanyId], references: [id])
   site                   Site?            @relation(fields: [siteId], references: [id])
   auditLogs              AuditLog[]
@@ -236,6 +273,10 @@ model Company {
   secondaryColor  String    @default("#64748b")
   backgroundColor String    @default("#ffffff")
   customFont      String?
+
+  // Company Group (for INTERNAL_CORPORATE_GROUP feature)
+  companyGroupId String?
+
   mfaEnforced     Boolean   @default(false)
   ipWhitelist     String[]  @default([])
   tier            Tier      @default(STARTER)
@@ -245,6 +286,7 @@ model Company {
   updatedAt       DateTime  @updatedAt
 
   // Relations
+  companyGroup       CompanyGroup?        @relation(fields: [companyGroupId], references: [id])
   users              User[]
   auditLogs          AuditLog[]
   securityEvents     SecurityEvent[]
@@ -259,6 +301,7 @@ model Company {
   attendanceRecords  AttendanceRecord[]
   aiConfig           CompanyAIConfig?
   aiUsageLogs        AIUsageLog[]
+  inventoryItems     InventoryItem[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -787,6 +830,9 @@ model WorkOrder {
   // Assignments (many-to-many relationship for multiple users)
   assignments WorkOrderAssignment[]
 
+  // Inventory requests
+  inventoryRequests WorkOrderInventoryRequest[]
+
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
   @@index([siteId])
@@ -1084,4 +1130,211 @@ model AIUsageLog {
   @@index([createdAt])
   @@index([companyId, createdAt]) // Para queries de uso mensual
   @@map("ai_usage_logs")
+}
+
+// ============================================================================
+// COMPANY GROUP & INVENTORY MODELS
+// ============================================================================
+
+model CompanyGroup {
+  id          String  @id @default(cuid())
+  name        String // "Grupo Industrial XYZ"
+  description String?
+
+  // Settings
+  shareInventory       Boolean @default(true) // Compartir inventario entre empresas
+  autoApproveTransfers Boolean @default(false) // Aprobar transferencias automáticamente
+
+  // Relations
+  companies Company[]
+  users     User[] // ADMIN_GRUPO users
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("company_groups")
+}
+
+model InventoryItem {
+  id          String  @id @default(cuid())
+  code        String // SKU único
+  name        String
+  description String?
+  category    String?
+  subcategory String?
+
+  // Specifications
+  manufacturer String?
+  model        String?
+  partNumber   String?
+
+  // Units
+  unit         String @default("unidad") // "unidad", "litro", "kg", "metro"
+  minStock     Int    @default(0) // Stock mínimo
+  maxStock     Int? // Stock máximo
+  reorderPoint Int    @default(0) // Punto de reorden
+
+  // Costs
+  unitCost          Float?
+  lastPurchasePrice Float?
+  averageCost       Float?
+
+  // Media
+  images String[] @default([])
+
+  // Company ownership
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Relations
+  stockLocations    InventoryStock[]
+  movements         InventoryMovement[]
+  workOrderRequests WorkOrderInventoryRequest[]
+
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([category])
+  @@map("inventory_items")
+}
+
+model InventoryStock {
+  id String @id @default(cuid())
+
+  // Item
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  // Location
+  locationId   String
+  locationType LocationType
+  locationName String // Para búsqueda
+
+  // Quantities
+  quantity          Int @default(0)
+  reservedQuantity  Int @default(0) // Reservado en OTs pendientes
+  availableQuantity Int @default(0) // quantity - reservedQuantity (calculado)
+
+  // Ubicación específica dentro del lugar
+  aisle String? // Pasillo
+  rack  String? // Estante
+  bin   String? // Contenedor
+
+  lastCountDate DateTime?
+  lastCountBy   String?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([inventoryItemId, locationId, locationType])
+  @@index([inventoryItemId])
+  @@index([locationId, locationType])
+  @@map("inventory_stock")
+}
+
+model WorkOrderInventoryRequest {
+  id String @id @default(cuid())
+
+  // Work Order
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  // Item requested
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  // Quantities
+  quantityRequested Int
+  quantityApproved  Int?
+  quantityDelivered Int  @default(0)
+
+  // Source (de dónde se solicita)
+  sourceCompanyId    String?
+  sourceLocationId   String?
+  sourceLocationType LocationType?
+
+  // Destination (a dónde va)
+  destinationLocationId   String?
+  destinationLocationType LocationType?
+
+  // Status
+  status InventoryRequestStatus @default(PENDING)
+
+  // Workflow
+  requestedBy String
+  requestedAt DateTime @default(now())
+
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  reviewNotes String?
+
+  deliveredBy String?
+  deliveredAt DateTime?
+
+  // Notes
+  notes   String?
+  urgency RequestUrgency @default(NORMAL)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workOrderId])
+  @@index([inventoryItemId])
+  @@index([status])
+  @@map("work_order_inventory_requests")
+}
+
+model InventoryMovement {
+  id String @id @default(cuid())
+
+  // Type
+  type MovementType
+
+  // Item
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  // Origin
+  fromLocationId   String?
+  fromLocationType LocationType?
+  fromCompanyId    String?
+
+  // Destination
+  toLocationId   String?
+  toLocationType LocationType?
+  toCompanyId    String?
+
+  // Quantity
+  quantity  Int
+  unitCost  Float?
+  totalCost Float?
+
+  // References
+  workOrderId     String?
+  requestId       String?
+  purchaseOrderId String?
+
+  // Details
+  reason         String?
+  notes          String?
+  documentNumber String? // Factura, guía, etc.
+
+  // Audit
+  createdBy  String
+  approvedBy String?
+
+  createdAt DateTime @default(now())
+
+  @@index([inventoryItemId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([fromCompanyId])
+  @@index([toCompanyId])
+  @@map("inventory_movements")
 }
