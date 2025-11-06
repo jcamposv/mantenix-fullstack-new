@@ -99,7 +99,7 @@ export default function CompaniesPage() {
             )}
             <div>
               <div className="font-medium">{company.name}</div>
-              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.ai</div>
+              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.com</div>
             </div>
           </div>
         )

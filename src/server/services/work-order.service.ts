@@ -561,7 +561,7 @@ export class WorkOrderService {
         select: { subdomain: true }
       })
 
-      const domainBase = process.env.DOMAIN_BASE || "mantenix.ai"
+      const domainBase = process.env.DOMAIN_BASE || "mantenix.com"
       const baseUrl = process.env.NODE_ENV === 'production'
         ? `https://${company?.subdomain}.${domainBase}`
         : `http://${company?.subdomain}.localhost:3000`
@@ -653,7 +653,7 @@ export class WorkOrderService {
         select: { subdomain: true }
       })
 
-      const domainBase = process.env.DOMAIN_BASE || "mantenix.ai"
+      const domainBase = process.env.DOMAIN_BASE || "mantenix.com"
       const baseUrl = process.env.NODE_ENV === 'production'
         ? `https://${company?.subdomain}.${domainBase}`
         : `http://${company?.subdomain}.localhost:3000`

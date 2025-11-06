@@ -24,6 +24,7 @@ export default function SuperAdminInviteUserPage() {
           email: data.email,
           role: data.role,
           companyId: data.companyId,
+          image: data.image,
           // Note: password is not needed for invitations
         }),
       })

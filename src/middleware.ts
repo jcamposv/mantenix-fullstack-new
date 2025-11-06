@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
     // Regular users must access their company's subdomain
     if (user.company?.subdomain !== subdomain) {
       // Redirect to correct company subdomain
-      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
+      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.com"
       const correctUrl = process.env.NODE_ENV === 'production'
         ? `https://${user.company?.subdomain}.${domainBase}${request.nextUrl.pathname}`
         : `http://${user.company?.subdomain}.localhost:3000${request.nextUrl.pathname}`

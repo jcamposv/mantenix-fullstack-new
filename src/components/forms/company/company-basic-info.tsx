@@ -41,7 +41,7 @@ export function CompanyBasicInfo({ control }: CompanyBasicInfoProps) {
               <Input placeholder="acme" {...field} />
             </FormControl>
             <FormDescription>
-              Se creará acme.mantenix.ai
+              Se creará acme.mantenix.com
             </FormDescription>
             <FormMessage />
           </FormItem>

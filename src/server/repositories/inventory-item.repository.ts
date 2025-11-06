@@ -56,13 +56,6 @@ export class InventoryItemRepository {
         name: true
       }
     },
-    creator: {
-      select: {
-        id: true,
-        name: true,
-        email: true
-      }
-    },
     stockLocations: {
       select: {
         id: true,

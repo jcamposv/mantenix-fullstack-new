@@ -137,6 +137,10 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
+      companyGroupId: {
+        type: "string",
+        required: false,
+      },
       avatar: {
         type: "string",
         required: false,
@@ -198,7 +202,7 @@ export const auth = betterAuth({
   
   // Trust proxy in production (for proper IP detection)
   trustedOrigins: process.env.NODE_ENV === "production" 
-    ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`] 
+    ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.com"}`] 
     : [
         "http://localhost:3000", 
         "http://*.localhost:3000",  // Allow any subdomain in development
@@ -216,7 +220,7 @@ export const auth = betterAuth({
   // CORS configuration
   cors: {
     origin: process.env.NODE_ENV === "production"
-      ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`]
+      ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.com"}`]
       : [
           "http://localhost:3000",
           "http://*.localhost:3000",  // Allow any subdomain in development
@@ -236,10 +240,8 @@ export const auth = betterAuth({
   // Advanced configuration for cross-subdomain cookies
   advanced: {
     crossSubDomainCookies: {
-      enabled: true,
-      domain: process.env.NODE_ENV === "production"
-        ? process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
-        : ".localhost"
+      enabled: process.env.NODE_ENV === "production",
+      domain: process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.com"
     }
   }
 })

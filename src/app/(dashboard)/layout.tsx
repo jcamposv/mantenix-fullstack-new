@@ -101,7 +101,7 @@ async function getServerSideData() {
           where: { id: user.companyId },
           select: { companyGroupId: true }
         })
-        groupId = userCompany?.companyGroupId
+        groupId = userCompany?.companyGroupId ?? null
       }
 
       if (groupId) {

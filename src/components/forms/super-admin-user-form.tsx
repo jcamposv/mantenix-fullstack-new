@@ -14,26 +14,27 @@ import { createUserSchema, type UserFormData } from "./user/user-form-schema"
 import { needsCompanyAssignment } from "./user/user-form-utils"
 
 interface SuperAdminUserFormProps {
+  initialData?: Partial<UserFormData>
   onSubmit: (data: UserFormData) => void
   onCancel: () => void
   loading?: boolean
-  mode?: "create" | "invite"
+  mode?: "create" | "invite" | "edit"
 }
 
-export function SuperAdminUserForm({ onSubmit, onCancel, loading, mode = "create" }: SuperAdminUserFormProps) {
+export function SuperAdminUserForm({ initialData, onSubmit, onCancel, loading, mode = "create" }: SuperAdminUserFormProps) {
   const { companies, loading: loadingCompanies } = useCompanies()
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(createUserSchema(mode)),
     defaultValues: {
-      name: "",
-      email: "",
-      password: mode === "invite" ? undefined : "",
-      role: "TECNICO",
-      companyId: undefined,
-      timezone: "UTC",
-      locale: "en",
-      image: null,
+      name: initialData?.name || "",
+      email: initialData?.email || "",
+      password: mode === "invite" || mode === "edit" ? undefined : "",
+      role: initialData?.role || "TECNICO",
+      companyId: initialData?.companyId || undefined,
+      timezone: initialData?.timezone || "UTC",
+      locale: initialData?.locale || "en",
+      image: initialData?.image || null,
     },
   })
 
@@ -51,7 +52,7 @@ export function SuperAdminUserForm({ onSubmit, onCancel, loading, mode = "create
     <Card className="w-full shadow-none border-none mx-auto">
       <CardHeader>
         <CardTitle>
-          {mode === "invite" ? "Invite New User (Super Admin)" : "Create New User (Super Admin)"}
+          {mode === "invite" ? "Invite New User (Super Admin)" : mode === "edit" ? "Edit User (Super Admin)" : "Create New User (Super Admin)"}
         </CardTitle>
       </CardHeader>
       <CardContent>
