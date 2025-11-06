@@ -6,6 +6,7 @@
 import { useMemo } from "react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useUserRole } from "@/hooks/useUserRole"
+import { parseCompanyFeatures } from "@/lib/features"
 import type { CompanyBranding } from "@/types/branding"
 import type { ServerUser, UserPermissions, CompanyFeature } from "./sidebar-types"
 import { BASE_NAV_ITEMS, CLIENT_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER, getFeatureNavItems } from "./navigation-config"
@@ -20,26 +21,37 @@ interface UseSidebarDataProps {
 
 export function useSidebarData({ companyBranding, serverUser, userPermissions, companyFeatures }: UseSidebarDataProps) {
   const { user, loading } = useCurrentUser()
-  const { isSuperAdmin: clientIsSuperAdmin, isCompanyAdmin: clientIsCompanyAdmin } = useUserRole()
+  const { isSuperAdmin: clientIsSuperAdmin, isGroupAdmin: clientIsGroupAdmin, isCompanyAdmin: clientIsCompanyAdmin } = useUserRole()
 
   // Use server-side data when available, fallback to client-side
   const isSuperAdmin = userPermissions?.isSuperAdmin ?? clientIsSuperAdmin
+  const isGroupAdmin = userPermissions?.isGroupAdmin ?? clientIsGroupAdmin
   const isCompanyAdmin = userPermissions?.isCompanyAdmin ?? clientIsCompanyAdmin
   const effectiveUser = serverUser ?? user
   const effectiveLoading = serverUser ? false : loading
 
-  // Convert company features array to boolean flags
-  const hasAttendance = companyFeatures?.some(f => f.module === 'HR_ATTENDANCE' && f.isEnabled) ?? false
-  const hasVacations = companyFeatures?.some(f => f.module === 'HR_VACATIONS' && f.isEnabled) ?? false
-  const hasPermissions = companyFeatures?.some(f => f.module === 'HR_PERMISSIONS' && f.isEnabled) ?? false
+  // Parse company features using centralized helper
+  const featureFlags = parseCompanyFeatures(companyFeatures)
+  const {
+    hasAttendance,
+    hasVacations,
+    hasPermissions,
+    hasExternalClientMgmt,
+    hasInternalCorporateGroup
+  } = featureFlags
 
   // Debug logs
   if (process.env.NODE_ENV === 'development') {
     console.log('Sidebar Data:', {
       isSuperAdmin,
+      isGroupAdmin,
       isCompanyAdmin,
-      userRole: user?.role,
-      hasUser: !!user,
+      userRole: effectiveUser?.role,
+      hasUser: !!effectiveUser,
+      serverUser: !!serverUser,
+      userPermissions,
+      hasExternalClientMgmt,
+      hasInternalCorporateGroup,
     })
   }
 
@@ -68,18 +80,16 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
     // Don't show feature items for external users
     if (isExternalUser) return []
 
-    console.log("[useSidebarData] Feature flags:", { hasAttendance, hasVacations, hasPermissions })
-
     const items = getFeatureNavItems({
       hasAttendance,
       hasVacations,
-      hasPermissions
+      hasPermissions,
+      hasExternalClientMgmt,
+      hasInternalCorporateGroup
     })
 
-    console.log("[useSidebarData] Generated feature nav items:", items)
-
     return items
-  }, [isExternalUser, hasAttendance, hasVacations, hasPermissions])
+  }, [isExternalUser, hasAttendance, hasVacations, hasPermissions, hasExternalClientMgmt, hasInternalCorporateGroup])
 
   // Navigation items - use CLIENT_NAV_ITEMS for external users
   const navItems = useMemo(() => {
@@ -88,23 +98,54 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
     return [...baseItems, ...featureNavItems]
   }, [isExternalUser, featureNavItems])
 
-  // Admin items (for super admin and company admin only, not for external users)
+  // Admin items (for super admin, group admin and company admin only, not for external users)
   const adminItems = useMemo(() => {
     if (isExternalUser) return []
 
+    let items: typeof ADMIN_NAV_ITEMS = []
+
     if (isSuperAdmin) {
-      // Super admins can see items marked as SUPER_ADMIN or BOTH
-      return ADMIN_NAV_ITEMS.filter(item =>
-        item.role === "SUPER_ADMIN" || item.role === "BOTH"
+      // Super admins can see items marked as SUPER_ADMIN
+      items = ADMIN_NAV_ITEMS.filter(item =>
+        item.role === "SUPER_ADMIN"
       )
+    } else if (isGroupAdmin) {
+      // Group admins can see items marked as ADMIN_GRUPO
+      items = ADMIN_NAV_ITEMS.filter(item =>
+        item.role === "ADMIN_GRUPO"
+      )
+
+      // Filter "Clientes" menu if EXTERNAL_CLIENT_MANAGEMENT is not enabled
+      if (!hasExternalClientMgmt) {
+        items = items.filter(item => item.name !== "Clientes")
+      }
     } else if (isCompanyAdmin) {
-      // Company admins can see items marked as ADMIN_EMPRESA or BOTH
-      return ADMIN_NAV_ITEMS.filter(item =>
-        item.role === "ADMIN_EMPRESA" || item.role === "BOTH"
+      // Company admins can see items marked as ADMIN_EMPRESA
+      items = ADMIN_NAV_ITEMS.filter(item =>
+        item.role === "ADMIN_EMPRESA"
       )
+
+      // Filter "Clientes" menu if EXTERNAL_CLIENT_MANAGEMENT is not enabled
+      if (!hasExternalClientMgmt) {
+        items = items.filter(item => item.name !== "Clientes")
+      }
     }
-    return []
-  }, [isSuperAdmin, isCompanyAdmin, isExternalUser])
+
+    // Debug admin items
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Admin Items:', {
+        isSuperAdmin,
+        isGroupAdmin,
+        isCompanyAdmin,
+        isExternalUser,
+        hasExternalClientMgmt,
+        itemsCount: items.length,
+        items: items.map(i => ({ name: i.name, role: i.role }))
+      })
+    }
+
+    return items
+  }, [isSuperAdmin, isGroupAdmin, isCompanyAdmin, isExternalUser, hasExternalClientMgmt])
 
   // Company info for TeamSwitcher
   const companyInfo = useMemo(() => ({
@@ -120,6 +161,7 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
     adminItems,
     companyInfo,
     isSuperAdmin,
+    isGroupAdmin,
     isCompanyAdmin,
     isExternalUser,
     loading: effectiveLoading,

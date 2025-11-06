@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { UserRepository } from "../repositories/user.repository"
+import { CompanyRepository } from "../repositories/company.repository"
 import { AuthService } from "./auth.service"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { UserFilters, PaginatedUsersResponse, UserWithRelations } from "@/types/user.types"
@@ -20,14 +21,14 @@ export class UserService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los usuarios
-    } else if (session.user.role === "ADMIN_EMPRESA") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa puede ver usuarios de su empresa y clientes
+      // Admin empresa/grupo puede ver usuarios de su empresa y clientes
       whereClause.OR = [
         { companyId: session.user.companyId },
-        { 
+        {
           clientCompany: {
             tenantCompanyId: session.user.companyId
           }
@@ -111,6 +112,12 @@ export class UserService {
     // Validar relaciones según el rol del usuario que crea
     await this.validateUserRelations(userData, session)
 
+    // Obtener companyGroupId si el usuario tiene una companyId
+    let companyGroupId: string | null = null
+    if (userData.companyId) {
+      companyGroupId = await CompanyRepository.getCompanyGroupId(userData.companyId)
+    }
+
     // Preparar datos para crear
     const createData: Prisma.UserCreateInput = {
       name: userData.name,
@@ -122,6 +129,11 @@ export class UserService {
     // Conectar relaciones opcionales
     if (userData.companyId) {
       createData.company = { connect: { id: userData.companyId } }
+
+      // Conectar companyGroup si existe
+      if (companyGroupId) {
+        createData.companyGroup = { connect: { id: companyGroupId } }
+      }
     }
     if (userData.clientCompanyId) {
       createData.clientCompany = { connect: { id: userData.clientCompanyId } }
@@ -161,6 +173,16 @@ export class UserService {
       await this.validateUserRelations(userData, session)
     }
 
+    // Obtener companyGroupId si se está actualizando companyId
+    let companyGroupId: string | null | undefined = undefined
+    if (userData.companyId !== undefined) {
+      if (userData.companyId) {
+        companyGroupId = await CompanyRepository.getCompanyGroupId(userData.companyId)
+      } else {
+        companyGroupId = null
+      }
+    }
+
     // Preparar datos para actualizar
     const updateData: Prisma.UserUpdateInput = {
       name: userData.name,
@@ -176,6 +198,15 @@ export class UserService {
     // Actualizar relaciones opcionales
     if (userData.companyId !== undefined) {
       updateData.company = userData.companyId ? { connect: { id: userData.companyId } } : { disconnect: true }
+
+      // Actualizar companyGroupId cuando cambia la companyId
+      if (companyGroupId !== undefined) {
+        if (companyGroupId) {
+          updateData.companyGroup = { connect: { id: companyGroupId } }
+        } else {
+          updateData.companyGroup = { disconnect: true }
+        }
+      }
     }
     if (userData.clientCompanyId !== undefined) {
       updateData.clientCompany = userData.clientCompanyId ? { connect: { id: userData.clientCompanyId } } : { disconnect: true }
@@ -233,8 +264,8 @@ export class UserService {
       return
     }
 
-    // Los admin empresa solo pueden crear usuarios en su empresa o empresas cliente
-    if (session.user.role === "ADMIN_EMPRESA") {
+    // Los admin empresa/grupo solo pueden crear usuarios en su empresa o empresas cliente
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (userData.companyId && userData.companyId !== session.user.companyId) {
         throw new Error("No puedes asignar usuarios a otras empresas")
       }

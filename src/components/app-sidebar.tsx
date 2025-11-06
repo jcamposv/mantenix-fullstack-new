@@ -30,6 +30,7 @@ export function AppSidebar({
     adminItems,
     companyInfo,
     isSuperAdmin,
+    isGroupAdmin,
     isCompanyAdmin,
     loading,
   } = useSidebarData({
@@ -42,16 +43,17 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher 
+        <TeamSwitcher
           company={companyInfo}
-          availableCompanies={isSuperAdmin ? availableCompanies : null}
+          availableCompanies={(isSuperAdmin || isGroupAdmin) ? availableCompanies : null}
           isSuperAdmin={isSuperAdmin}
+          isGroupAdmin={isGroupAdmin}
         />
       </SidebarHeader>
-      
+
       <SidebarContent>
         <NavMain items={navItems} />
-        {(isSuperAdmin || isCompanyAdmin) && <NavProjects projects={adminItems} />}
+        {(isSuperAdmin || isGroupAdmin || isCompanyAdmin) && <NavProjects projects={adminItems} />}
       </SidebarContent>
       
       <SidebarFooter>

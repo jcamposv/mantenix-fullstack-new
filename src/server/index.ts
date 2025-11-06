@@ -16,6 +16,8 @@ export { EmailSenderService } from './services/email-sender.service'
 export { FeatureService } from './services/feature.service'
 export { AttendanceService } from './services/attendance.service'
 export { LocationService } from './services/location.service'
+export { InventoryService } from './services/inventory.service'
+export { InventoryRequestService } from './services/inventory-request.service'
 
 // Repositories
 export { AlertRepository } from './repositories/alert.repository'

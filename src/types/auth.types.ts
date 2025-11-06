@@ -3,6 +3,7 @@ export interface AuthenticatedSession {
     id: string
     role: string
     companyId?: string
+    companyGroupId?: string
     clientCompanyId?: string
     siteId?: string
   }
@@ -14,6 +15,7 @@ export interface User {
   email: string
   role: string
   companyId?: string
+  companyGroupId?: string
   clientCompanyId?: string
   siteId?: string
 }

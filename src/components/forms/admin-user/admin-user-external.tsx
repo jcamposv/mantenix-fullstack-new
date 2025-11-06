@@ -31,6 +31,7 @@ interface AdminUserExternalProps {
   sites: Site[]
   loadingClientCompanies: boolean
   loadingSites: boolean
+  hasExternalClientMgmt?: boolean
 }
 
 export function AdminUserExternal({
@@ -41,8 +42,14 @@ export function AdminUserExternal({
   clientCompanies,
   sites,
   loadingClientCompanies,
-  loadingSites
+  loadingSites,
+  hasExternalClientMgmt = false
 }: AdminUserExternalProps) {
+  // Don't render anything if external client management is not enabled
+  if (!hasExternalClientMgmt) {
+    return null
+  }
+
   // Check if selected role requires site assignment
   const roleRequiresSite = EXTERNAL_ROLES.find(role => role.value === selectedRole)?.requiresSite || false
   return (

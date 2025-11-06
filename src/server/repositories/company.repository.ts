@@ -121,4 +121,12 @@ export class CompanyRepository {
       }
     })
   }
+
+  static async getCompanyGroupId(companyId: string): Promise<string | null> {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { companyGroupId: true }
+    })
+    return company?.companyGroupId || null
+  }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useWorkOrdersDashboard } from "@/hooks/use-work-orders-dashboard"
 import { DashboardError } from "@/components/dashboard/shared/dashboard-error"
 import { DashboardLoading } from "@/components/dashboard/shared/dashboard-loading"
@@ -28,11 +28,20 @@ import {
   BarChart3
 } from "lucide-react"
 import type { WorkOrderPriority } from "@/types/work-order.types"
+import { useAuth } from "@/lib/auth-client"
 
 export default function Home() {
   const router = useRouter()
+  const { isSuperAdmin, isLoading: authLoading } = useAuth()
   const [period, setPeriod] = useState<DatePeriod>("this_month")
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>()
+
+  // Redirect SUPER_ADMIN to their dashboard
+  useEffect(() => {
+    if (!authLoading && isSuperAdmin()) {
+      router.push('/super-admin/dashboard')
+    }
+  }, [authLoading, isSuperAdmin, router])
 
   // Calculate the effective date range based on period selection
   const effectiveDateRange = useMemo(() => {
@@ -46,6 +55,15 @@ export default function Home() {
   const { data: stats, error, isLoading: loading, mutate } = useWorkOrdersDashboard({
     dateRange: effectiveDateRange
   })
+
+  // Show loading state while redirecting SUPER_ADMIN
+  if (authLoading || (!authLoading && isSuperAdmin())) {
+    return (
+      <div className="container mx-auto py-0">
+        <DashboardLoading />
+      </div>
+    )
+  }
 
   // Show loading state
   if (loading) {

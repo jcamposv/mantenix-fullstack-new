@@ -6,7 +6,17 @@ export const createUserSchema = (mode: "create" | "invite" | "edit") => z.object
   password: mode === "create"
     ? z.string().min(8, "Password must be at least 8 characters")
     : z.string().optional(),
-  role: z.enum(["SUPER_ADMIN", "ADMIN_EMPRESA", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN", "CLIENTE_OPERATIVO"]),
+  role: z.enum([
+    "SUPER_ADMIN",
+    "ADMIN_GRUPO",
+    "ADMIN_EMPRESA",
+    "JEFE_MANTENIMIENTO",
+    "SUPERVISOR",
+    "TECNICO",
+    "CLIENTE_ADMIN_GENERAL",
+    "CLIENTE_ADMIN_SEDE",
+    "CLIENTE_OPERARIO"
+  ]),
   companyId: z.string().optional(),
   timezone: z.string(),
   locale: z.string(),

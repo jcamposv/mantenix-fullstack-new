@@ -14,8 +14,8 @@ export const workOrderSchema = z.object({
   status: workOrderStatusSchema.optional(),
   prefixId: z.string().optional(),
 
-  // Location and asset
-  siteId: z.string().min(1, "La sede es requerida"),
+  // Location and asset (optional if EXTERNAL_CLIENT_MANAGEMENT feature is disabled)
+  siteId: z.string().optional(),
   assetId: z.string().optional(),
   
   // Template integration

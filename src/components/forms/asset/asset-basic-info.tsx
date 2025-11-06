@@ -17,9 +17,10 @@ interface AssetBasicInfoProps {
   form: UseFormReturn<AssetFormData>
   sites: Site[]
   loadingSites: boolean
+  hasExternalClientMgmt?: boolean
 }
 
-export function AssetBasicInfo({ form, sites, loadingSites }: AssetBasicInfoProps) {
+export function AssetBasicInfo({ form, sites, loadingSites, hasExternalClientMgmt = false }: AssetBasicInfoProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -70,47 +71,49 @@ export function AssetBasicInfo({ form, sites, loadingSites }: AssetBasicInfoProp
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="siteId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Sede</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una sede" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {loadingSites ? (
-                    <SelectItem value="loading" disabled>
-                      Cargando sedes...
-                    </SelectItem>
-                  ) : sites.length === 0 ? (
-                    <SelectItem value="no-sites" disabled>
-                      No hay sedes disponibles
-                    </SelectItem>
-                  ) : (
-                    sites.map((site) => (
-                      <SelectItem key={site.id} value={site.id}>
-                        <div>
-                          <div className="font-medium">{site.name}</div>
-                          {site.clientCompany && (
-                            <div className="text-sm text-muted-foreground">
-                              {site.clientCompany.name}
-                            </div>
-                          )}
-                        </div>
+        {hasExternalClientMgmt && (
+          <FormField
+            control={form.control}
+            name="siteId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sede</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una sede" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {loadingSites ? (
+                      <SelectItem value="loading" disabled>
+                        Cargando sedes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    ) : sites.length === 0 ? (
+                      <SelectItem value="no-sites" disabled>
+                        No hay sedes disponibles
+                      </SelectItem>
+                    ) : (
+                      sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          <div>
+                            <div className="font-medium">{site.name}</div>
+                            {site.clientCompany && (
+                              <div className="text-sm text-muted-foreground">
+                                {site.clientCompany.name}
+                              </div>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
