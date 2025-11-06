@@ -83,7 +83,7 @@ export class WorkOrderService {
     }
 
     // Permission check - only certain roles can create work orders
-    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR']
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR']
     if (!allowedRoles.includes(session.user.role)) {
       throw new Error("No tienes permisos para crear órdenes de trabajo")
     }
@@ -135,8 +135,12 @@ export class WorkOrderService {
       materials: workOrderData.materials || [],
       customFieldValues: (workOrderData.customFieldValues ?? undefined) as Prisma.InputJsonValue | undefined,
       company: { connect: { id: session.user.companyId } },
-      site: { connect: { id: workOrderData.siteId } },
       creator: { connect: { id: session.user.id } }
+    }
+
+    // Add site if provided (required only when EXTERNAL_CLIENT_MANAGEMENT is enabled)
+    if (workOrderData.siteId) {
+      createData.site = { connect: { id: workOrderData.siteId } }
     }
 
     // Add prefix if provided
@@ -235,9 +239,9 @@ export class WorkOrderService {
     }
 
     // Permission check - only creator, supervisors, and assigned users can update
-    const canUpdate = 
+    const canUpdate =
       existingWorkOrder.createdBy === session.user.id ||
-      ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role) ||
+      ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role) ||
       existingWorkOrder.assignments?.some(assignment => assignment.userId === session.user.id)
 
     if (!canUpdate) {
@@ -269,6 +273,8 @@ export class WorkOrderService {
     // Update site if provided
     if (updateData.siteId) {
       updatePrismaData.site = { connect: { id: updateData.siteId } }
+    } else if (updateData.siteId === null) {
+      updatePrismaData.site = { disconnect: true }
     }
 
     // Update asset if provided
@@ -308,7 +314,7 @@ export class WorkOrderService {
     const isAssigned = existingWorkOrder.assignments?.some(
       assignment => assignment.userId === session.user.id
     )
-    const isSupervisor = ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role)
+    const isSupervisor = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role)
 
     if (!isAssigned && !isSupervisor) {
       throw new Error("Solo los usuarios asignados pueden completar esta orden de trabajo")
@@ -349,7 +355,7 @@ export class WorkOrderService {
     }
 
     // Permission check - only supervisors can assign
-    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR']
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR']
     if (!allowedRoles.includes(session.user.role)) {
       throw new Error("No tienes permisos para asignar usuarios")
     }
@@ -383,9 +389,9 @@ export class WorkOrderService {
     }
 
     // Permission check - only creator or supervisors can cancel
-    const canCancel = 
+    const canCancel =
       existingWorkOrder.createdBy === session.user.id ||
-      ['SUPER_ADMIN', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role)
+      ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR'].includes(session.user.role)
 
     if (!canCancel) {
       throw new Error("No tienes permisos para cancelar esta orden de trabajo")
@@ -412,7 +418,7 @@ export class WorkOrderService {
     }
 
     // Permission check - only admins can delete
-    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_EMPRESA']
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA']
     if (!allowedRoles.includes(session.user.role)) {
       throw new Error("No tienes permisos para eliminar órdenes de trabajo")
     }
@@ -536,11 +542,11 @@ export class WorkOrderService {
         recipientEmails.push(...assignedUsers.map(u => u.email))
       }
 
-      // 2. Get tenant admins (ADMIN_EMPRESA)
+      // 2. Get tenant admins (ADMIN_EMPRESA and ADMIN_GRUPO)
       const tenantAdmins = await prisma.user.findMany({
         where: {
           companyId: workOrder.companyId,
-          role: 'ADMIN_EMPRESA',
+          role: { in: ['ADMIN_EMPRESA', 'ADMIN_GRUPO'] },
           isLocked: false
         },
         select: { email: true }
@@ -628,11 +634,11 @@ export class WorkOrderService {
         recipientEmails.push(...assignedUsers.map(u => u.email))
       }
 
-      // 2. Get tenant admins (ADMIN_EMPRESA)
+      // 2. Get tenant admins (ADMIN_EMPRESA and ADMIN_GRUPO)
       const tenantAdmins = await prisma.user.findMany({
         where: {
           companyId: workOrder.companyId,
-          role: 'ADMIN_EMPRESA',
+          role: { in: ['ADMIN_EMPRESA', 'ADMIN_GRUPO'] },
           isLocked: false
         },
         select: { email: true }

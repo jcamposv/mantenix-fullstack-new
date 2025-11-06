@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user has permission to upload inventory images
     const allowedRoles = ["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "JEFE_MANTENIMIENTO"]
-    if (!allowedRoles.includes(session.user.role)) {
+    if (!session.user.role || !allowedRoles.includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden - Insufficient permissions" }, { status: 403 })
     }
 

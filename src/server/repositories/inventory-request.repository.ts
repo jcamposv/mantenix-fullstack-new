@@ -266,7 +266,7 @@ export class InventoryRequestRepository {
     return await InventoryRequestRepository.update(id, {
       status: 'APPROVED',
       quantityApproved,
-      reviewedBy,
+      reviewer: { connect: { id: reviewedBy } },
       reviewedAt: new Date(),
       reviewNotes
     })
@@ -282,7 +282,7 @@ export class InventoryRequestRepository {
   ): Promise<WorkOrderInventoryRequestWithRelations> {
     return await InventoryRequestRepository.update(id, {
       status: 'REJECTED',
-      reviewedBy,
+      reviewer: { connect: { id: reviewedBy } },
       reviewedAt: new Date(),
       reviewNotes
     })
@@ -308,7 +308,7 @@ export class InventoryRequestRepository {
     return await InventoryRequestRepository.update(id, {
       status: 'DELIVERED',
       quantityDelivered,
-      deliveredBy,
+      deliverer: { connect: { id: deliveredBy } },
       deliveredAt: new Date()
     })
   }

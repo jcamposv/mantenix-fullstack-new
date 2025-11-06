@@ -792,8 +792,8 @@ model WorkOrder {
   priority WorkOrderPriority @default(MEDIUM) // Prioridad de la orden
   status   WorkOrderStatus   @default(DRAFT) // Estado de la orden
 
-  // Ubicación y activo
-  siteId  String // Sede donde se ejecuta
+  // Ubicación y activo (opcional cuando EXTERNAL_CLIENT_MANAGEMENT está deshabilitado)
+  siteId  String? // Sede donde se ejecuta (opcional)
   assetId String? // Activo relacionado (opcional)
 
   // Template relacionado (opcional)
@@ -833,7 +833,7 @@ model WorkOrder {
 
   // Relations
   company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  site     Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  site     Site?              @relation(fields: [siteId], references: [id], onDelete: Restrict)
   asset    Asset?             @relation(fields: [assetId], references: [id], onDelete: SetNull)
   template WorkOrderTemplate? @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
   prefix   WorkOrderPrefix?   @relation(fields: [prefixId], references: [id], onDelete: SetNull)

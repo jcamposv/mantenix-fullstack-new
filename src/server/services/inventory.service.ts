@@ -78,27 +78,23 @@ export class InventoryService {
   ): Promise<PaginatedInventoryItemsResponse> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
 
-    // Determine company scope based on permissions
+    // Determine company scope based on company group membership
     let whereClause: Prisma.InventoryItemWhereInput
 
     if (PermissionHelper.hasPermission(session.user.role, PermissionHelper.PERMISSIONS.VIEW_ALL_INVENTORY)) {
-      // Super admin can see all
+      // Super admin can see all inventory from all companies
       whereClause = this.buildItemWhereClause(filters, undefined)
-    } else if (PermissionHelper.hasPermission(session.user.role, PermissionHelper.PERMISSIONS.VIEW_GROUP_INVENTORY)) {
-      // Admin grupo can see all in their group
+    } else if (session.user.companyGroupId) {
+      // If user belongs to a company group, they can see all items from companies in the group
+      // This allows technicians, supervisors, and managers to request items from other companies
+      // Authorization is controlled at the approval level, not visibility level
       whereClause = this.buildItemWhereClause(filters, undefined)
 
-      // Filter by companies in the same group
-      if (session.user.companyGroupId) {
-        whereClause.company = {
-          companyGroupId: session.user.companyGroupId
-        }
-      } else {
-        // If no group, show only their company
-        whereClause.companyId = session.user.companyId
+      whereClause.company = {
+        companyGroupId: session.user.companyGroupId
       }
     } else {
-      // Others see only their company
+      // Users not in a group can only see their own company's inventory
       whereClause = this.buildItemWhereClause(filters, session.user.companyId)
     }
 
@@ -297,7 +293,7 @@ export class InventoryService {
       quantity: data.newQuantity,
       reason: data.reason,
       notes: data.notes,
-      createdBy: session.user.id
+      creator: { connect: { id: session.user.id } }
     }
 
     await InventoryMovementRepository.create(movementData)
@@ -357,15 +353,15 @@ export class InventoryService {
       },
       fromLocationId: data.fromLocationId,
       fromLocationType: data.fromLocationType,
-      fromCompanyId: data.fromCompanyId,
+      ...(data.fromCompanyId && { fromCompany: { connect: { id: data.fromCompanyId } } }),
       toLocationId: data.toLocationId,
       toLocationType: data.toLocationType,
-      toCompanyId: data.toCompanyId,
+      ...(data.toCompanyId && { toCompany: { connect: { id: data.toCompanyId } } }),
       quantity: data.quantity,
       reason: data.reason,
       notes: data.notes,
       documentNumber: data.documentNumber,
-      createdBy: session.user.id
+      creator: { connect: { id: session.user.id } }
     }
 
     await InventoryMovementRepository.create(movementData)
@@ -463,14 +459,14 @@ export class InventoryService {
         connect: { id: data.inventoryItemId }
       },
       quantityRequested: data.quantityRequested,
-      sourceCompanyId: data.sourceCompanyId,
+      ...(data.sourceCompanyId && { sourceCompany: { connect: { id: data.sourceCompanyId } } }),
       sourceLocationId: data.sourceLocationId,
       sourceLocationType: data.sourceLocationType,
       destinationLocationId: data.destinationLocationId,
       destinationLocationType: data.destinationLocationType,
       notes: data.notes,
       urgency: data.urgency || 'NORMAL',
-      requestedBy: session.user.id
+      requester: { connect: { id: session.user.id } }
     }
 
     return await InventoryRequestRepository.create(createData)
