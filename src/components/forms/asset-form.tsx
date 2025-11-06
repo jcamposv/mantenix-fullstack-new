@@ -116,7 +116,7 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="space-y-6">
-            <Card>
+            <Card className="w-full shadow-none">
               <CardHeader>
                 <CardTitle>Información Básica</CardTitle>
               </CardHeader>

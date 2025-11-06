@@ -10,6 +10,8 @@ import { Loader2 } from "lucide-react"
 import { BasicInfoFields } from "./basic-info-fields"
 import { TechnicalDetailsFields } from "./technical-details-fields"
 import { StockCostsFields } from "./stock-costs-fields"
+import { InventoryImageUpload } from "@/components/inventory/inventory-image-upload"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface InventoryItemFormProps {
   initialData?: Partial<InventoryItemFormData>
@@ -50,12 +52,32 @@ export function InventoryItemForm({
     await onSubmit(data)
   }
 
+  const companyId = form.watch("companyId")
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <BasicInfoFields form={form} />
         <TechnicalDetailsFields form={form} />
         <StockCostsFields form={form} />
+
+        {/* Images Section */}
+        <Card className="w-full shadow-none">
+          <CardHeader>
+            <CardTitle>Imágenes del Producto</CardTitle>
+            <CardDescription>
+              Sube imágenes del producto para facilitar su identificación
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <InventoryImageUpload
+              images={form.watch("images") || []}
+              companyId={companyId}
+              onImagesChange={(images) => form.setValue("images", images)}
+              maxImages={5}
+            />
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end gap-4">
           <Button

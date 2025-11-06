@@ -79,19 +79,29 @@ export class InventoryService {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
 
     // Determine company scope based on permissions
-    let companyId: string | undefined
+    let whereClause: Prisma.InventoryItemWhereInput
+
     if (PermissionHelper.hasPermission(session.user.role, PermissionHelper.PERMISSIONS.VIEW_ALL_INVENTORY)) {
       // Super admin can see all
-      companyId = undefined
+      whereClause = this.buildItemWhereClause(filters, undefined)
     } else if (PermissionHelper.hasPermission(session.user.role, PermissionHelper.PERMISSIONS.VIEW_GROUP_INVENTORY)) {
       // Admin grupo can see all in their group
-      companyId = undefined // TODO: Filter by group companies
+      whereClause = this.buildItemWhereClause(filters, undefined)
+
+      // Filter by companies in the same group
+      if (session.user.companyGroupId) {
+        whereClause.company = {
+          companyGroupId: session.user.companyGroupId
+        }
+      } else {
+        // If no group, show only their company
+        whereClause.companyId = session.user.companyId
+      }
     } else {
       // Others see only their company
-      companyId = session.user.companyId
+      whereClause = this.buildItemWhereClause(filters, session.user.companyId)
     }
 
-    const whereClause = this.buildItemWhereClause(filters, companyId)
     const { items, total } = await InventoryItemRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)

@@ -68,7 +68,7 @@ export function WorkOrderTemplateForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           {/* Información Básica */}
-          <Card>
+          <Card className="w-full shadow-none">
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
             </CardHeader>

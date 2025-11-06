@@ -12,7 +12,7 @@ interface TechnicalDetailsFieldsProps {
 
 export function TechnicalDetailsFields({ form }: TechnicalDetailsFieldsProps) {
   return (
-    <Card>
+    <Card className="w-full shadow-none">
       <CardHeader>
         <CardTitle>Detalles Técnicos</CardTitle>
         <CardDescription>Información técnica y del fabricante</CardDescription>

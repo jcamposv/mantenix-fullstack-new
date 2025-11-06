@@ -17,7 +17,7 @@ export function BasicInfoFields({ form }: BasicInfoFieldsProps) {
   const { companies, loading: companiesLoading } = useCompanies()
 
   return (
-    <Card>
+    <Card className="w-full shadow-none">
       <CardHeader>
         <CardTitle>Información Básica</CardTitle>
         <CardDescription>Datos principales del ítem de inventario</CardDescription>

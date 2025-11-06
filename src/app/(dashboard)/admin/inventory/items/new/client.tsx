@@ -53,7 +53,7 @@ export function NewInventoryItemClient({ currentCompanyId }: NewInventoryItemCli
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Nuevo Ítem de Inventario</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Nuevo Ítem de Inventario</h2>
           <p className="text-muted-foreground">
             Crea un nuevo ítem en el catálogo de inventario
           </p>

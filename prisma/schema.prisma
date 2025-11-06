@@ -210,6 +210,15 @@ model User {
   // AI relations
   aiUsageLogs AIUsageLog[]
 
+  // Inventory request relations
+  inventoryRequestsRequested WorkOrderInventoryRequest[] @relation("InventoryRequestRequester")
+  inventoryRequestsReviewed  WorkOrderInventoryRequest[] @relation("InventoryRequestReviewer")
+  inventoryRequestsDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestDeliverer")
+
+  // Inventory movement relations
+  inventoryMovementsCreated InventoryMovement[] @relation("InventoryMovementCreator")
+  inventoryMovementsApproved InventoryMovement[] @relation("InventoryMovementApprover")
+
   @@map("user")
 }
 
@@ -302,6 +311,9 @@ model Company {
   aiConfig           CompanyAIConfig?
   aiUsageLogs        AIUsageLog[]
   inventoryItems     InventoryItem[]
+  inventoryRequestsAsSource WorkOrderInventoryRequest[] @relation("InventoryRequestSourceCompany")
+  inventoryMovementsFrom InventoryMovement[] @relation("InventoryMovementFromCompany")
+  inventoryMovementsTo InventoryMovement[] @relation("InventoryMovementToCompany")
 
   @@index([subdomain])
   @@index([isActive])
@@ -833,6 +845,9 @@ model WorkOrder {
   // Inventory requests
   inventoryRequests WorkOrderInventoryRequest[]
 
+  // Inventory movements
+  inventoryMovements InventoryMovement[]
+
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
   @@index([siteId])
@@ -1256,7 +1271,8 @@ model WorkOrderInventoryRequest {
   quantityDelivered Int  @default(0)
 
   // Source (de dónde se solicita)
-  sourceCompanyId    String?
+  sourceCompanyId String?
+  sourceCompany   Company? @relation("InventoryRequestSourceCompany", fields: [sourceCompanyId], references: [id])
   sourceLocationId   String?
   sourceLocationType LocationType?
 
@@ -1269,18 +1285,24 @@ model WorkOrderInventoryRequest {
 
   // Workflow
   requestedBy String
+  requester   User     @relation("InventoryRequestRequester", fields: [requestedBy], references: [id])
   requestedAt DateTime @default(now())
 
   reviewedBy  String?
+  reviewer    User?    @relation("InventoryRequestReviewer", fields: [reviewedBy], references: [id])
   reviewedAt  DateTime?
   reviewNotes String?
 
   deliveredBy String?
+  deliverer   User?    @relation("InventoryRequestDeliverer", fields: [deliveredBy], references: [id])
   deliveredAt DateTime?
 
   // Notes
   notes   String?
   urgency RequestUrgency @default(NORMAL)
+
+  // Inventory movements related to this request
+  inventoryMovements InventoryMovement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1288,6 +1310,10 @@ model WorkOrderInventoryRequest {
   @@index([workOrderId])
   @@index([inventoryItemId])
   @@index([status])
+  @@index([sourceCompanyId])
+  @@index([requestedBy])
+  @@index([reviewedBy])
+  @@index([deliveredBy])
   @@map("work_order_inventory_requests")
 }
 
@@ -1305,11 +1331,13 @@ model InventoryMovement {
   fromLocationId   String?
   fromLocationType LocationType?
   fromCompanyId    String?
+  fromCompany      Company? @relation("InventoryMovementFromCompany", fields: [fromCompanyId], references: [id])
 
   // Destination
   toLocationId   String?
   toLocationType LocationType?
   toCompanyId    String?
+  toCompany      Company? @relation("InventoryMovementToCompany", fields: [toCompanyId], references: [id])
 
   // Quantity
   quantity  Int
@@ -1318,7 +1346,9 @@ model InventoryMovement {
 
   // References
   workOrderId     String?
+  workOrder       WorkOrder? @relation(fields: [workOrderId], references: [id])
   requestId       String?
+  request         WorkOrderInventoryRequest? @relation(fields: [requestId], references: [id])
   purchaseOrderId String?
 
   // Details
@@ -1327,8 +1357,10 @@ model InventoryMovement {
   documentNumber String? // Factura, guía, etc.
 
   // Audit
-  createdBy  String
+  createdBy String
+  creator   User   @relation("InventoryMovementCreator", fields: [createdBy], references: [id])
   approvedBy String?
+  approver   User?  @relation("InventoryMovementApprover", fields: [approvedBy], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -1337,5 +1369,9 @@ model InventoryMovement {
   @@index([createdAt])
   @@index([fromCompanyId])
   @@index([toCompanyId])
+  @@index([workOrderId])
+  @@index([requestId])
+  @@index([createdBy])
+  @@index([approvedBy])
   @@map("inventory_movements")
 }

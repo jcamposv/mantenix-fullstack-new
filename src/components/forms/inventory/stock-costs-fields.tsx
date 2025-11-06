@@ -13,7 +13,7 @@ interface StockCostsFieldsProps {
 
 export function StockCostsFields({ form }: StockCostsFieldsProps) {
   return (
-    <Card>
+    <Card className="w-full shadow-none">
       <CardHeader>
         <CardTitle>Stock y Costos</CardTitle>
         <CardDescription>Configuración de niveles de stock y costos</CardDescription>

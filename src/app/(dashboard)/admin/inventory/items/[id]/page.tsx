@@ -190,7 +190,7 @@ export default function InventoryItemDetailPage() {
         </Card>
 
         {/* Technical Details */}
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader>
             <CardTitle>Detalles Técnicos</CardTitle>
           </CardHeader>
