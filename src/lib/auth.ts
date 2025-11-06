@@ -215,10 +215,10 @@ export const auth = betterAuth({
     
   // CORS configuration
   cors: {
-    origin: process.env.NODE_ENV === "production" 
+    origin: process.env.NODE_ENV === "production"
       ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`]
       : [
-          "http://localhost:3000", 
+          "http://localhost:3000",
           "http://*.localhost:3000",  // Allow any subdomain in development
           "http://192.168.68.120:3000", // Allow mobile testing
           "http://192.168.1.*:3000",    // Allow common network ranges
@@ -232,6 +232,16 @@ export const auth = betterAuth({
         ],
     credentials: true,
   },
+
+  // Advanced configuration for cross-subdomain cookies
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: process.env.NODE_ENV === "production"
+        ? process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
+        : ".localhost"
+    }
+  }
 })
 
 // ============================================================================

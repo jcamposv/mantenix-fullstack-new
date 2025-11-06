@@ -37,10 +37,12 @@ export function TeamSwitcher({
   company,
   availableCompanies,
   isSuperAdmin = false,
+  isGroupAdmin = false,
 }: {
   company: Company
   availableCompanies?: AvailableCompany[] | null
   isSuperAdmin?: boolean
+  isGroupAdmin?: boolean
 }) {
   const { isMobile } = useSidebar()
 
@@ -53,17 +55,17 @@ export function TeamSwitcher({
     if (companyData.subdomain) {
       // Build the URL for the company's dashboard
       const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
-      const targetUrl = process.env.NODE_ENV === 'production' 
+      const targetUrl = process.env.NODE_ENV === 'production'
         ? `https://${companyData.subdomain}.${domainBase}/dashboard`
         : `http://${companyData.subdomain}.localhost:3000/dashboard`
-      
+
       // Navigate to the company's dashboard
       window.location.href = targetUrl
     }
   }
 
-  // If super admin with companies available, show dropdown
-  if (isSuperAdmin && availableCompanies && availableCompanies.length > 0) {
+  // If super admin or group admin with companies available, show dropdown
+  if ((isSuperAdmin || isGroupAdmin) && availableCompanies && availableCompanies.length > 0) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>

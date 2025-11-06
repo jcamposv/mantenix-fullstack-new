@@ -45,8 +45,9 @@ export function AppSidebar({
       <SidebarHeader>
         <TeamSwitcher
           company={companyInfo}
-          availableCompanies={isSuperAdmin ? availableCompanies : null}
+          availableCompanies={(isSuperAdmin || isGroupAdmin) ? availableCompanies : null}
           isSuperAdmin={isSuperAdmin}
+          isGroupAdmin={isGroupAdmin}
         />
       </SidebarHeader>
 

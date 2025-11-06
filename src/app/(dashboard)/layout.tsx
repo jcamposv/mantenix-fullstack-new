@@ -71,9 +71,10 @@ async function getServerSideData() {
       isCompanyAdmin: user.role === 'ADMIN_EMPRESA'
     }
 
-    // Only fetch companies for super admin users
+    // Fetch companies based on user role
     let availableCompanies = null
     if (userPermissions.isSuperAdmin) {
+      // SUPER_ADMIN can see all companies
       availableCompanies = await prisma.company.findMany({
         where: {
           isActive: true
@@ -89,6 +90,38 @@ async function getServerSideData() {
           name: 'asc'
         }
       })
+    } else if (userPermissions.isGroupAdmin) {
+      // ADMIN_GRUPO can see companies in their group
+      // First, try to get companyGroupId from user, or from their company
+      let groupId = user.companyGroupId
+
+      if (!groupId && user.companyId) {
+        // If user doesn't have companyGroupId directly, get it from their company
+        const userCompany = await prisma.company.findUnique({
+          where: { id: user.companyId },
+          select: { companyGroupId: true }
+        })
+        groupId = userCompany?.companyGroupId
+      }
+
+      if (groupId) {
+        availableCompanies = await prisma.company.findMany({
+          where: {
+            companyGroupId: groupId,
+            isActive: true
+          },
+          select: {
+            id: true,
+            name: true,
+            subdomain: true,
+            logo: true,
+            isActive: true,
+          },
+          orderBy: {
+            name: 'asc'
+          }
+        })
+      }
     }
 
     // Fetch company features for the user's company
