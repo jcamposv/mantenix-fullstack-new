@@ -282,7 +282,8 @@ export class InventoryStockRepository {
     locationId: string,
     locationType: LocationType,
     newQuantity: number,
-    countedBy: string
+    countedBy: string,
+    locationName?: string
   ): Promise<InventoryStockWithLocation> {
     // Get current reserved quantity to recalculate available
     const currentStock = await prisma.inventoryStock.findUnique({
@@ -298,7 +299,8 @@ export class InventoryStockRepository {
     const reservedQuantity = currentStock?.reservedQuantity || 0
     const availableQuantity = Math.max(0, newQuantity - reservedQuantity)
 
-    const item = await prisma.inventoryStock.update({
+    // Use upsert to create if doesn't exist, update if exists
+    const item = await prisma.inventoryStock.upsert({
       where: {
         inventoryItemId_locationId_locationType: {
           inventoryItemId,
@@ -306,7 +308,20 @@ export class InventoryStockRepository {
           locationType
         }
       },
-      data: {
+      create: {
+        inventoryItem: {
+          connect: { id: inventoryItemId }
+        },
+        locationId,
+        locationType,
+        locationName: locationName || locationId, // Use locationId as fallback
+        quantity: newQuantity,
+        availableQuantity,
+        reservedQuantity: 0,
+        lastCountDate: new Date(),
+        lastCountBy: countedBy
+      },
+      update: {
         quantity: newQuantity,
         availableQuantity,
         lastCountDate: new Date(),
@@ -314,7 +329,7 @@ export class InventoryStockRepository {
       },
       include: InventoryStockRepository.includeRelations
     })
-    
+
     return InventoryStockRepository.convertToInventoryStockWithLocation(item)
   }
 }

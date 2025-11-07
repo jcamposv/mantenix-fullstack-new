@@ -8,10 +8,17 @@ export const createInventoryItemSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   description: z.string().optional(),
   category: z.string().optional(),
+  subcategory: z.string().optional(),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
+  partNumber: z.string().optional(),
   unit: z.string().min(1, "La unidad es requerida"),
-  unitCost: z.number().min(0, "El costo unitario debe ser mayor o igual a 0"),
-  minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0"),
+  unitCost: z.number().min(0, "El costo unitario debe ser mayor o igual a 0").optional().default(0),
+  minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").default(0),
   maxStock: z.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
+  reorderPoint: z.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").optional().default(0),
+  lastPurchasePrice: z.number().min(0, "El precio de última compra debe ser mayor o igual a 0").optional(),
+  images: z.array(z.string()).optional(),
   companyId: z.string().min(1, "El ID de la empresa es requerido")
 })
 
@@ -23,10 +30,17 @@ export const updateInventoryItemSchema = z.object({
   name: z.string().min(1, "El nombre es requerido").optional(),
   description: z.string().optional(),
   category: z.string().optional(),
+  subcategory: z.string().optional(),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
+  partNumber: z.string().optional(),
   unit: z.string().min(1, "La unidad es requerida").optional(),
   unitCost: z.number().min(0, "El costo unitario debe ser mayor o igual a 0").optional(),
   minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").optional(),
   maxStock: z.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
+  reorderPoint: z.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").optional(),
+  lastPurchasePrice: z.number().min(0, "El precio de última compra debe ser mayor o igual a 0").optional(),
+  images: z.array(z.string()).optional(),
   isActive: z.boolean().optional()
 })
 
@@ -76,14 +90,19 @@ export const transferInventoryStockSchema = z.object({
 
 /**
  * Schema para crear una solicitud de inventario
+ * Technician specifies source location when creating request
  */
 export const createInventoryRequestSchema = z.object({
   workOrderId: z.string().min(1, "El ID de la orden de trabajo es requerido"),
   inventoryItemId: z.string().min(1, "El ID del ítem es requerido"),
   requestedQuantity: z.number().int().min(1, "La cantidad debe ser mayor a 0"),
-  urgency: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"], {
+  sourceLocationId: z.string().min(1, "La ubicación origen es requerida"),
+  sourceLocationType: z.enum(["WAREHOUSE", "VEHICLE", "SITE"], {
+    message: "Tipo de ubicación inválido"
+  }),
+  urgency: z.enum(["LOW", "NORMAL", "HIGH", "CRITICAL"], {
     message: "Nivel de urgencia inválido"
-  }).optional().default("MEDIUM"),
+  }).optional().default("NORMAL"),
   notes: z.string().optional()
 })
 
@@ -92,7 +111,7 @@ export const createInventoryRequestSchema = z.object({
  */
 export const updateInventoryRequestSchema = z.object({
   requestedQuantity: z.number().int().min(1, "La cantidad debe ser mayor a 0").optional(),
-  urgency: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"], {
+  urgency: z.enum(["LOW", "NORMAL", "HIGH", "CRITICAL"], {
     message: "Nivel de urgencia inválido"
   }).optional(),
   notes: z.string().optional()
@@ -100,13 +119,10 @@ export const updateInventoryRequestSchema = z.object({
 
 /**
  * Schema para aprobar una solicitud de inventario
+ * Location selection is now automatic - backend chooses best source
  */
 export const approveInventoryRequestSchema = z.object({
   approvedQuantity: z.number().int().min(1, "La cantidad aprobada debe ser mayor a 0"),
-  fromLocationId: z.string().min(1, "El ID de la ubicación es requerido"),
-  fromLocationType: z.enum(["WAREHOUSE", "VEHICLE", "SITE"], {
-    message: "Tipo de ubicación inválido"
-  }),
   notes: z.string().optional()
 })
 
@@ -131,7 +147,7 @@ export const inventoryRequestFiltersSchema = z.object({
   workOrderId: z.string().optional(),
   inventoryItemId: z.string().optional(),
   status: z.enum(["PENDING", "APPROVED", "REJECTED", "DELIVERED"]).optional(),
-  urgency: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
+  urgency: z.enum(["LOW", "NORMAL", "HIGH", "CRITICAL"]).optional(),
   page: z.string().transform(val => parseInt(val) || 1).optional(),
   limit: z.string().transform(val => parseInt(val) || 20).optional()
 })

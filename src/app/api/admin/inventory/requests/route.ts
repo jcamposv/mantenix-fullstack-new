@@ -57,6 +57,8 @@ export const POST = async (request: NextRequest) => {
       workOrderId: validatedData.workOrderId,
       inventoryItemId: validatedData.inventoryItemId,
       quantityRequested: validatedData.requestedQuantity,
+      sourceLocationId: validatedData.sourceLocationId,
+      sourceLocationType: validatedData.sourceLocationType,
       urgency: validatedData.urgency as RequestUrgency | undefined,
       notes: validatedData.notes
     }

@@ -19,6 +19,7 @@ enum Role {
   ADMIN_GRUPO // Admin de grupo corporativo (ve todas las empresas del grupo)
   ADMIN_EMPRESA
   JEFE_MANTENIMIENTO // Jefe de mantenimiento (aprueba solicitudes de inventario)
+  ENCARGADO_BODEGA // Encargado de bodega (entrega repuestos)
   SUPERVISOR
   TECNICO
   CLIENTE_ADMIN_GENERAL // Admin general que puede ver todas las sedes del cliente y generar alertas

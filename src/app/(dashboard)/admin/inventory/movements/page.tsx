@@ -1,12 +1,15 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { ArrowDownCircle, ArrowUpCircle, ArrowRightLeft, Settings } from "lucide-react"
+import { ArrowDownCircle, ArrowUpCircle, ArrowRightLeft, Settings, Plus } from "lucide-react"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { MOVEMENT_TYPE_OPTIONS } from "@/schemas/inventory"
+import { CreateInventoryEntryDialog } from "@/components/inventory/create-inventory-entry-dialog"
 
 interface InventoryMovement {
   id: string
@@ -40,10 +43,15 @@ interface InventoryMovementsResponse {
 
 export default function InventoryMovementsPage() {
   const router = useRouter()
-  const { data: movements, loading } = useTableData<InventoryMovement>({
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const { data: movements, loading, refetch } = useTableData<InventoryMovement>({
     endpoint: '/api/admin/inventory/movements',
     transform: (data) => (data as InventoryMovementsResponse).movements || []
   })
+
+  const handleSuccess = () => {
+    refetch()
+  }
 
   const getMovementTypeIcon = (type: string) => {
     switch (type) {
@@ -202,11 +210,15 @@ export default function InventoryMovementsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Movimientos de Inventario</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Movimientos de Inventario</h2>
           <p className="text-muted-foreground">
             Historial de todos los movimientos de inventario
           </p>
         </div>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Agregar Entrada
+        </Button>
       </div>
 
       <DataTable
@@ -215,6 +227,12 @@ export default function InventoryMovementsPage() {
         loading={loading}
         searchKey="inventoryItem.name"
         searchPlaceholder="Buscar por ítem..."
+      />
+
+      <CreateInventoryEntryDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSuccess={handleSuccess}
       />
     </div>
   )

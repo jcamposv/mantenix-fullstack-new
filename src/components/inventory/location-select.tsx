@@ -58,8 +58,8 @@ export function LocationSelect({
 
       switch (type) {
         case "WAREHOUSE":
-          // TODO: Implement warehouse API
-          endpoint = "/api/admin/warehouses"
+          // Use companies from the corporate group as warehouses/bodegas
+          endpoint = "/api/admin/companies"
           break
         case "VEHICLE":
           // TODO: Implement vehicle API
@@ -74,7 +74,7 @@ export function LocationSelect({
       if (response.ok) {
         const data = await response.json()
         // Handle different response structures
-        const items = data.sites || data.warehouses || data.vehicles || data || []
+        const items = data.sites || data.companies || data.vehicles || data || []
         setLocations(items)
       } else {
         setLocations([])

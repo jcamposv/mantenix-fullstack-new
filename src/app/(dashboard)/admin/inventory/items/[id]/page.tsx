@@ -93,7 +93,7 @@ export default function InventoryItemDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-3xl font-bold tracking-tight">{item.name}</h2>
+              <h2 className="text-2xl font-bold tracking-tight">{item.name}</h2>
               <Badge variant={item.isActive ? "default" : "secondary"}>
                 {item.isActive ? "Activo" : "Inactivo"}
               </Badge>
@@ -112,7 +112,7 @@ export default function InventoryItemDetailPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Stock Total</CardTitle>
           </CardHeader>
@@ -122,7 +122,7 @@ export default function InventoryItemDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Disponible</CardTitle>
           </CardHeader>
@@ -132,7 +132,7 @@ export default function InventoryItemDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Reservado</CardTitle>
           </CardHeader>
@@ -159,7 +159,7 @@ export default function InventoryItemDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Basic Info */}
-        <Card>
+        <Card className="w-full shadow-none">
           <CardHeader>
             <CardTitle>Información General</CardTitle>
           </CardHeader>

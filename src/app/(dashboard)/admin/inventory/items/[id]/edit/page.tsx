@@ -101,7 +101,7 @@ export default function EditInventoryItemPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Editar Ítem de Inventario</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Editar Ítem de Inventario</h2>
           <p className="text-muted-foreground">
             Modifica la información del ítem
           </p>

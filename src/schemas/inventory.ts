@@ -16,7 +16,7 @@ export const inventoryItemSchema = z.object({
   minStock: z.coerce.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").default(0),
   maxStock: z.coerce.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
   reorderPoint: z.coerce.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").default(0),
-  unitCost: z.coerce.number().min(0, "El costo unitario debe ser mayor o igual a 0").optional(),
+  unitCost: z.coerce.number().min(0, "El costo unitario debe ser mayor o igual a 0").optional().default(0),
   lastPurchasePrice: z.coerce.number().min(0, "El último precio de compra debe ser mayor o igual a 0").optional(),
   images: z.array(z.string()).optional(),
   companyId: z.string().min(1, "La empresa es requerida"),
@@ -75,13 +75,10 @@ export type InventoryRequestFormData = z.infer<typeof inventoryRequestSchema>
 
 /**
  * Schema para aprobar solicitud de inventario
+ * Location selection is now automatic - backend chooses best source
  */
 export const approveRequestSchema = z.object({
   approvedQuantity: z.coerce.number().int().min(1, "La cantidad aprobada debe ser mayor a 0"),
-  fromLocationId: z.string().min(1, "La ubicación es requerida"),
-  fromLocationType: z.enum(["WAREHOUSE", "VEHICLE", "SITE"], {
-    message: "Tipo de ubicación inválido"
-  }),
   notes: z.string().optional(),
 })
 
@@ -124,7 +121,7 @@ export const LOCATION_TYPE_OPTIONS = [
  */
 export const REQUEST_URGENCY_OPTIONS = [
   { value: "LOW", label: "Baja", color: "bg-blue-500" },
-  { value: "MEDIUM", label: "Media", color: "bg-yellow-500" },
+  { value: "NORMAL", label: "Normal", color: "bg-yellow-500" },
   { value: "HIGH", label: "Alta", color: "bg-orange-500" },
   { value: "CRITICAL", label: "Crítica", color: "bg-red-500" },
 ] as const
