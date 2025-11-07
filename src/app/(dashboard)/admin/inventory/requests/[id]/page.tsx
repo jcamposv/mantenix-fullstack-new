@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, CheckCircle, XCircle, Package, User, Calendar, Loader2 } from "lucide-react"
+import { ArrowLeft, CheckCircle, XCircle, Package, User, Calendar, Loader2, ArrowRight, Warehouse, Building2, Truck } from "lucide-react"
 import { toast } from "sonner"
 import { REQUEST_STATUS_OPTIONS, REQUEST_URGENCY_OPTIONS, type ApproveRequestFormData, type RejectRequestFormData } from "@/schemas/inventory"
 import { ApproveRequestDialog } from "@/components/inventory/approve-request-dialog"
@@ -18,6 +18,12 @@ interface RequestDetail {
   quantityRequested: number
   quantityApproved: number | null
   quantityDelivered: number
+  sourceLocationId: string | null
+  sourceLocationType: "WAREHOUSE" | "VEHICLE" | "SITE" | null
+  sourceLocationName?: string
+  destinationLocationId?: string | null
+  destinationLocationType?: "WAREHOUSE" | "VEHICLE" | "SITE" | null
+  destinationLocationName?: string
   status: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED"
   urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
   requestedAt: string
@@ -188,6 +194,71 @@ export default function InventoryRequestDetailPage() {
         </div>
       </div>
 
+      {/* Transfer Route */}
+      {(request.sourceLocationName || request.destinationLocationName) && (
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg">Ruta de Transferencia</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4">
+              {/* Source */}
+              <div className="flex-1">
+                {request.sourceLocationName ? (
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                    {request.sourceLocationType === 'WAREHOUSE' && <Warehouse className="h-5 w-5 text-blue-600 mt-0.5" />}
+                    {request.sourceLocationType === 'SITE' && <Building2 className="h-5 w-5 text-blue-600 mt-0.5" />}
+                    {request.sourceLocationType === 'VEHICLE' && <Truck className="h-5 w-5 text-blue-600 mt-0.5" />}
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-blue-600 uppercase">Origen</div>
+                      <div className="font-semibold text-blue-900 mt-1">{request.sourceLocationName}</div>
+                      <div className="text-xs text-blue-700 mt-0.5">
+                        {request.sourceLocationType === 'WAREHOUSE' && 'Bodega'}
+                        {request.sourceLocationType === 'SITE' && 'Sede'}
+                        {request.sourceLocationType === 'VEHICLE' && 'Vehículo'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                    <div className="text-xs font-medium text-gray-600 uppercase">Origen</div>
+                    <div className="text-sm text-gray-700 mt-1">Por determinar</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Arrow */}
+              <ArrowRight className="h-6 w-6 text-gray-400 flex-shrink-0" />
+
+              {/* Destination */}
+              <div className="flex-1">
+                {request.destinationLocationName ? (
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
+                    {request.destinationLocationType === 'WAREHOUSE' && <Warehouse className="h-5 w-5 text-green-600 mt-0.5" />}
+                    {request.destinationLocationType === 'SITE' && <Building2 className="h-5 w-5 text-green-600 mt-0.5" />}
+                    {request.destinationLocationType === 'VEHICLE' && <Truck className="h-5 w-5 text-green-600 mt-0.5" />}
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-green-600 uppercase">Destino</div>
+                      <div className="font-semibold text-green-900 mt-1">{request.destinationLocationName}</div>
+                      <div className="text-xs text-green-700 mt-0.5">
+                        {request.destinationLocationType === 'WAREHOUSE' && 'Bodega'}
+                        {request.destinationLocationType === 'SITE' && 'Sede'}
+                        {request.destinationLocationType === 'VEHICLE' && 'Vehículo'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                    <div className="text-xs font-medium text-gray-600 uppercase">Destino</div>
+                    <div className="text-sm text-gray-700 mt-1">Por determinar</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* Item Info */}
         <Card>
@@ -287,6 +358,10 @@ export default function InventoryRequestDetailPage() {
         onOpenChange={setApproveDialogOpen}
         onSubmit={handleApprove}
         defaultQuantity={request.quantityRequested}
+        sourceLocationName={request.sourceLocationName}
+        sourceLocationType={request.sourceLocationType || undefined}
+        destinationLocationName={request.destinationLocationName}
+        destinationLocationType={request.destinationLocationType || undefined}
         isLoading={isSubmitting}
       />
 

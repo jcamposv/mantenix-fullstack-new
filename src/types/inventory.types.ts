@@ -408,9 +408,9 @@ export interface CreateInventoryRequestData {
   workOrderId: string
   inventoryItemId: string
   quantityRequested: number
+  sourceLocationId: string // Required - technician specifies source
+  sourceLocationType: LocationType // Required - technician specifies source
   sourceCompanyId?: string // For inter-company transfers
-  sourceLocationId?: string
-  sourceLocationType?: LocationType
   destinationLocationId?: string
   destinationLocationType?: LocationType
   notes?: string
@@ -437,6 +437,8 @@ export interface ReviewInventoryRequestData {
   status: "APPROVED" | "REJECTED"
   quantityApproved?: number
   reviewNotes?: string
+  sourceLocationId?: string
+  sourceLocationType?: LocationType
 }
 
 /**

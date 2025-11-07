@@ -1,4 +1,4 @@
-import { Prisma, InventoryRequestStatus, RequestUrgency } from "@prisma/client"
+import { Prisma, InventoryRequestStatus, RequestUrgency, LocationType } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { WorkOrderInventoryRequestWithRelations } from "@/types/inventory.types"
 
@@ -38,7 +38,9 @@ export class InventoryRequestRepository {
         id: true,
         number: true,
         title: true,
-        status: true
+        status: true,
+        siteId: true,
+        companyId: true
       }
     },
     inventoryItem: {
@@ -61,7 +63,8 @@ export class InventoryRequestRepository {
         id: true,
         name: true,
         email: true,
-        role: true
+        role: true,
+        companyId: true
       }
     },
     reviewer: {
@@ -261,14 +264,18 @@ export class InventoryRequestRepository {
     id: string,
     reviewedBy: string,
     quantityApproved: number,
-    reviewNotes?: string
+    reviewNotes?: string,
+    sourceLocationId?: string,
+    sourceLocationType?: LocationType
   ): Promise<WorkOrderInventoryRequestWithRelations> {
     return await InventoryRequestRepository.update(id, {
       status: 'APPROVED',
       quantityApproved,
       reviewer: { connect: { id: reviewedBy } },
       reviewedAt: new Date(),
-      reviewNotes
+      reviewNotes,
+      ...(sourceLocationId && { sourceLocationId }),
+      ...(sourceLocationType && { sourceLocationType: sourceLocationType as LocationType })
     })
   }
 

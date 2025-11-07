@@ -8,6 +8,7 @@ import { WorkOrderHeader } from "@/components/forms/mobile/work-order-complete/w
 import { WorkOrderActions } from "@/components/forms/mobile/work-order-complete/work-order-actions"
 import { WorkOrderCompleteForm } from "@/components/forms/mobile/work-order-complete/work-order-complete-form"
 import { WorkOrderReadonlyView } from "@/components/forms/mobile/work-order-complete/work-order-readonly-view"
+import { WorkOrderInventoryRequestsMobile } from "@/components/forms/mobile/work-order-inventory-requests"
 import { useWorkOrderManagement } from "@/hooks/use-work-order-management"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 
@@ -75,6 +76,9 @@ export default function MobileWorkOrderDetailPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Inventory Requests */}
+      <WorkOrderInventoryRequestsMobile workOrderId={workOrderId} />
 
       {/* Custom Fields Form */}
       {showForm && workOrder.template?.customFields && (

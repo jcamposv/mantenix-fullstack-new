@@ -1,4 +1,5 @@
 import { Prisma, LocationType } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { InventoryItemRepository } from "@/server/repositories/inventory-item.repository"
 import { InventoryStockRepository } from "@/server/repositories/inventory-stock.repository"
 import { InventoryRequestRepository } from "@/server/repositories/inventory-request.repository"
@@ -117,6 +118,40 @@ export class InventoryService {
   ): Promise<InventoryItemWithRelations | null> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
     return await InventoryItemRepository.findById(id)
+  }
+
+  /**
+   * Get all locations where an item has available stock
+   * Used for smart location selection when creating inventory requests
+   */
+  static async getAvailableStockLocations(
+    session: AuthenticatedSession,
+    inventoryItemId: string
+  ): Promise<Array<{
+    locationId: string
+    locationType: LocationType
+    locationName: string
+    quantity: number
+    availableQuantity: number
+    reservedQuantity: number
+  }>> {
+    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+
+    // Get all stock locations for this item
+    const stockLocations = await InventoryStockRepository.findByItem(inventoryItemId)
+
+    // Filter only locations with available stock > 0 and sort by most stock first
+    return stockLocations
+      .filter(stock => stock.availableQuantity > 0)
+      .map(stock => ({
+        locationId: stock.locationId,
+        locationType: stock.locationType,
+        locationName: stock.locationName,
+        quantity: stock.quantity,
+        availableQuantity: stock.availableQuantity,
+        reservedQuantity: stock.reservedQuantity
+      }))
+      .sort((a, b) => b.availableQuantity - a.availableQuantity)
   }
 
   static async createItem(
@@ -274,12 +309,41 @@ export class InventoryService {
   ) {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.ADJUST_INVENTORY_STOCK)
 
+    // Get location name based on type
+    let locationName = data.locationId
+    try {
+      switch (data.locationType) {
+        case 'WAREHOUSE':
+          const company = await prisma.company.findUnique({
+            where: { id: data.locationId },
+            select: { name: true }
+          })
+          locationName = company?.name || data.locationId
+          break
+        case 'SITE':
+          const site = await prisma.site.findUnique({
+            where: { id: data.locationId },
+            select: { name: true }
+          })
+          locationName = site?.name || data.locationId
+          break
+        case 'VEHICLE':
+          // TODO: Implement vehicle lookup when vehicle model exists
+          locationName = data.locationId
+          break
+      }
+    } catch (error) {
+      console.error('Error fetching location name:', error)
+      // Continue with locationId as fallback
+    }
+
     const stock = await InventoryStockRepository.setQuantity(
       data.inventoryItemId,
       data.locationId,
       data.locationType,
       data.newQuantity,
-      session.user.id
+      session.user.id,
+      locationName
     )
 
     // Create adjustment movement
@@ -442,7 +506,86 @@ export class InventoryService {
     id: string
   ): Promise<WorkOrderInventoryRequestWithRelations | null> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_REQUESTS)
-    return await InventoryRequestRepository.findById(id)
+    const request = await InventoryRequestRepository.findById(id)
+
+    if (!request) return null
+
+    let sourceLocationName: string | undefined
+    let destinationLocationName: string | undefined
+    let destinationLocationId: string | undefined
+    let destinationLocationType: 'WAREHOUSE' | 'VEHICLE' | 'SITE' | undefined
+
+    try {
+      // Add source location name if location is specified
+      if (request.sourceLocationId && request.sourceLocationType) {
+        if (request.sourceLocationType === 'WAREHOUSE') {
+          const company = await prisma.company.findUnique({
+            where: { id: request.sourceLocationId },
+            select: { name: true }
+          })
+          sourceLocationName = company?.name || request.sourceLocationId
+        } else if (request.sourceLocationType === 'SITE') {
+          const site = await prisma.site.findUnique({
+            where: { id: request.sourceLocationId },
+            select: { name: true }
+          })
+          sourceLocationName = site?.name || request.sourceLocationId
+        } else if (request.sourceLocationType === 'VEHICLE') {
+          // TODO: Fetch vehicle name when vehicle endpoint is implemented
+          sourceLocationName = request.sourceLocationId
+        }
+      }
+
+      // Calculate destination location based on work order
+      // If work order has siteId → destination is SITE
+      // Otherwise → destination is requester's company (WAREHOUSE)
+      const workOrder = await prisma.workOrder.findUnique({
+        where: { id: request.workOrderId },
+        select: { siteId: true }
+      })
+
+      if (workOrder?.siteId) {
+        destinationLocationType = 'SITE'
+        destinationLocationId = workOrder.siteId
+        const site = await prisma.site.findUnique({
+          where: { id: workOrder.siteId },
+          select: { name: true }
+        })
+        destinationLocationName = site?.name || workOrder.siteId
+      } else if (request.requestedBy) {
+        // Fetch requester's company
+        const requester = await prisma.user.findUnique({
+          where: { id: request.requestedBy },
+          select: { companyId: true }
+        })
+
+        if (requester?.companyId) {
+          destinationLocationType = 'WAREHOUSE'
+          destinationLocationId = requester.companyId
+          const company = await prisma.company.findUnique({
+            where: { id: requester.companyId },
+            select: { name: true }
+          })
+          destinationLocationName = company?.name || requester.companyId
+        }
+      }
+
+      return {
+        ...request,
+        sourceLocationName,
+        destinationLocationName,
+        destinationLocationId,
+        destinationLocationType
+      } as WorkOrderInventoryRequestWithRelations & {
+        sourceLocationName?: string
+        destinationLocationName?: string
+        destinationLocationId?: string
+        destinationLocationType?: 'WAREHOUSE' | 'VEHICLE' | 'SITE'
+      }
+    } catch (error) {
+      console.error('Error fetching location names:', error)
+      return request
+    }
   }
 
   static async createRequest(
@@ -479,12 +622,208 @@ export class InventoryService {
   ): Promise<WorkOrderInventoryRequestWithRelations> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.APPROVE_INVENTORY_REQUEST)
 
-    return await InventoryRequestRepository.approve(
-      id,
-      session.user.id,
-      data.quantityApproved || 0,
-      data.reviewNotes
-    )
+    // Get the request to retrieve work order and destination information
+    const request = await InventoryRequestRepository.findById(id)
+    if (!request) {
+      throw new Error("Solicitud de inventario no encontrada")
+    }
+
+    if (request.status !== "PENDING") {
+      throw new Error(`La solicitud con estado ${request.status} no puede ser aprobada`)
+    }
+
+    const quantityApproved = data.quantityApproved || request.quantityRequested
+
+    let sourceStock
+
+    // Check if technician specified source location (new flow)
+    if (request.sourceLocationId && request.sourceLocationType) {
+      // NEW FLOW: Use the source location that the technician specified when creating the request
+      sourceStock = await InventoryStockRepository.findByItemAndLocation(
+        request.inventoryItemId,
+        request.sourceLocationId,
+        request.sourceLocationType
+      )
+
+      if (!sourceStock) {
+        // Get all stock locations to help debug
+        const allStock = await InventoryStockRepository.findByItem(request.inventoryItemId)
+        const locations = allStock.map(s => `${s.locationName} (${s.locationType}): ${s.availableQuantity} disponible`)
+
+        throw new Error(
+          `No hay stock en la ubicación solicitada (${request.sourceLocationId}). Stock disponible en: ${locations.join(', ') || 'ninguna ubicación'}`
+        )
+      }
+
+      if (sourceStock.availableQuantity < quantityApproved) {
+        throw new Error(
+          `Stock insuficiente en ${sourceStock.locationName}. Disponible: ${sourceStock.availableQuantity}, Solicitado: ${quantityApproved}`
+        )
+      }
+
+      console.log('Using technician-selected source location:', {
+        inventoryItemId: request.inventoryItemId,
+        sourceLocationId: sourceStock.locationId,
+        sourceLocationType: sourceStock.locationType,
+        locationName: sourceStock.locationName,
+        available: sourceStock.availableQuantity,
+        requested: quantityApproved
+      })
+    } else {
+      // FALLBACK FOR OLD REQUESTS: Auto-select location with most stock
+      console.warn('Old request without source location, using auto-selection fallback')
+
+      const allStockLocations = await InventoryStockRepository.findByItem(request.inventoryItemId)
+
+      // Filter locations with sufficient available stock
+      const validLocations = allStockLocations.filter(
+        stock => stock.availableQuantity >= quantityApproved
+      )
+
+      if (validLocations.length === 0) {
+        const totalAvailable = allStockLocations.reduce((sum, s) => sum + s.availableQuantity, 0)
+        throw new Error(
+          `Stock insuficiente. Solicitado: ${quantityApproved}, Disponible total: ${totalAvailable}. ` +
+          `Ubicaciones: ${allStockLocations.map(s => `${s.locationName}: ${s.availableQuantity}`).join(', ')}`
+        )
+      }
+
+      // Choose the location with most stock
+      sourceStock = validLocations.reduce((best, current) =>
+        current.availableQuantity > best.availableQuantity ? current : best
+      )
+
+      console.log('Auto-selected source location (fallback for old request):', {
+        inventoryItemId: request.inventoryItemId,
+        sourceLocationId: sourceStock.locationId,
+        sourceLocationType: sourceStock.locationType,
+        locationName: sourceStock.locationName,
+        available: sourceStock.availableQuantity,
+        requested: quantityApproved
+      })
+    }
+
+    // Perform stock transfer BEFORE approving the request
+    // This ensures the request is only approved if transfer succeeds
+    try {
+      // Fetch work order to get siteId
+      const workOrder = await prisma.workOrder.findUnique({
+        where: { id: request.workOrderId },
+        select: { siteId: true }
+      })
+
+      // Determine destination from work order's site or technician's company
+      let destinationLocationId: string
+      let destinationLocationType: LocationType
+      let destinationCompanyId: string | undefined
+
+      if (workOrder?.siteId) {
+        // Work order is for a client site
+        destinationLocationId = workOrder.siteId
+        destinationLocationType = "SITE"
+      } else {
+        // Work order is internal - use the requesting user's company as warehouse
+        // Fetch requester's company
+        const requester = await prisma.user.findUnique({
+          where: { id: request.requestedBy },
+          select: { companyId: true }
+        })
+        destinationLocationId = requester?.companyId || session.user.companyId!
+        destinationLocationType = "WAREHOUSE"
+        destinationCompanyId = destinationLocationId
+      }
+
+      // Get source company ID from the location
+      let sourceCompanyId: string | undefined
+      if (sourceStock.locationType === "WAREHOUSE") {
+        // Warehouse location uses company ID
+        sourceCompanyId = sourceStock.locationId
+      }
+
+      // Decrement from source
+      await InventoryStockRepository.decrementQuantity(
+        request.inventoryItemId,
+        sourceStock.locationId,
+        sourceStock.locationType,
+        quantityApproved
+      )
+
+      // Increment at destination (or create if doesn't exist)
+      const existingDestStock = await InventoryStockRepository.findByItemAndLocation(
+        request.inventoryItemId,
+        destinationLocationId,
+        destinationLocationType
+      )
+
+      if (existingDestStock) {
+        await InventoryStockRepository.incrementQuantity(
+          request.inventoryItemId,
+          destinationLocationId,
+          destinationLocationType,
+          quantityApproved
+        )
+      } else {
+        // Get location name
+        let locationName = destinationLocationId
+        if (destinationLocationType === "WAREHOUSE") {
+          const company = await prisma.company.findUnique({
+            where: { id: destinationLocationId },
+            select: { name: true }
+          })
+          locationName = company?.name || destinationLocationId
+        } else if (destinationLocationType === "SITE") {
+          const site = await prisma.site.findUnique({
+            where: { id: destinationLocationId },
+            select: { name: true }
+          })
+          locationName = site?.name || destinationLocationId
+        }
+
+        const stockData: Prisma.InventoryStockCreateInput = {
+          inventoryItem: { connect: { id: request.inventoryItemId } },
+          locationId: destinationLocationId,
+          locationType: destinationLocationType,
+          locationName,
+          quantity: quantityApproved,
+          availableQuantity: quantityApproved,
+          reservedQuantity: 0
+        }
+        await InventoryStockRepository.create(stockData)
+      }
+
+      // Create transfer movement
+      const movementData: Prisma.InventoryMovementCreateInput = {
+        type: 'TRANSFER',
+        inventoryItem: { connect: { id: request.inventoryItemId } },
+        fromLocationId: sourceStock.locationId,
+        fromLocationType: sourceStock.locationType,
+        ...(sourceCompanyId && { fromCompany: { connect: { id: sourceCompanyId } } }),
+        toLocationId: destinationLocationId,
+        toLocationType: destinationLocationType,
+        ...(destinationCompanyId && { toCompany: { connect: { id: destinationCompanyId } } }),
+        quantity: quantityApproved,
+        reason: `Transferencia automática: ${sourceStock.locationName} → ${destinationLocationType === 'WAREHOUSE' ? 'Bodega' : 'Sede'}`,
+        notes: data.reviewNotes,
+        workOrder: { connect: { id: request.workOrderId } },
+        request: { connect: { id: request.id } },
+        creator: { connect: { id: session.user.id } }
+      }
+
+      await InventoryMovementRepository.create(movementData)
+
+      // IMPORTANT: Only approve the request AFTER successful transfer
+      return await InventoryRequestRepository.approve(
+        id,
+        session.user.id,
+        quantityApproved,
+        data.reviewNotes,
+        sourceStock.locationId,
+        sourceStock.locationType
+      )
+    } catch (error) {
+      console.error("Error creating stock transfer:", error)
+      throw new Error("Error al transferir el stock: " + (error instanceof Error ? error.message : "Error desconocido"))
+    }
   }
 
   static async rejectRequest(
