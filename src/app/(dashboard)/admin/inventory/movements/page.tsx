@@ -210,7 +210,7 @@ export default function InventoryMovementsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Movimientos de Inventario</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Movimientos de Inventario</h2>
           <p className="text-muted-foreground">
             Historial de todos los movimientos de inventario
           </p>

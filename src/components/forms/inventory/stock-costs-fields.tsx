@@ -57,8 +57,8 @@ export function StockCostsFields({ form }: StockCostsFieldsProps) {
                     step="0.01"
                     placeholder="0.00"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                    value={field.value ?? 0}
                   />
                 </FormControl>
                 <FormMessage />

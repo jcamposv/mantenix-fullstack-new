@@ -8,10 +8,17 @@ export const createInventoryItemSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   description: z.string().optional(),
   category: z.string().optional(),
+  subcategory: z.string().optional(),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
+  partNumber: z.string().optional(),
   unit: z.string().min(1, "La unidad es requerida"),
-  unitCost: z.number().min(0, "El costo unitario debe ser mayor o igual a 0"),
-  minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0"),
+  unitCost: z.number().min(0, "El costo unitario debe ser mayor o igual a 0").optional().default(0),
+  minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").default(0),
   maxStock: z.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
+  reorderPoint: z.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").optional().default(0),
+  lastPurchasePrice: z.number().min(0, "El precio de última compra debe ser mayor o igual a 0").optional(),
+  images: z.array(z.string()).optional(),
   companyId: z.string().min(1, "El ID de la empresa es requerido")
 })
 

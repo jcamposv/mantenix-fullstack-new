@@ -227,6 +227,7 @@ export function CreateInventoryRequestDialog({
                         min="1"
                         disabled={submitting}
                         {...field}
+                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 1)}
                         className="flex-1"
                       />
                       {selectedItem && (

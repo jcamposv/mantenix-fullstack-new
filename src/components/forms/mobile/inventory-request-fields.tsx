@@ -79,7 +79,7 @@ export function InventoryRequestFields({
                   min="1"
                   disabled={disabled}
                   {...field}
-                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : "")}
+                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 1)}
                   className="flex-1 text-sm"
                 />
                 {selectedItem && (

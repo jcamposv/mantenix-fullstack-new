@@ -162,7 +162,7 @@ export default function InventoryRequestDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-3xl font-bold tracking-tight">Solicitud de Inventario</h2>
+              <h2 className="text-2xl font-bold tracking-tight">Solicitud de Inventario</h2>
               <Badge className={statusOption?.color}>{statusOption?.label}</Badge>
               <Badge variant="outline" className={urgencyOption?.color}>{urgencyOption?.label}</Badge>
             </div>
