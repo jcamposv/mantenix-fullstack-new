@@ -8,7 +8,10 @@ import type {
   InventoryRequestFilters,
   PaginatedInventoryRequestsResponse,
   ReviewInventoryRequestData,
-  DeliverInventoryRequestData
+  DeliverInventoryRequestData,
+  DeliverFromWarehouseData,
+  ReceiveAtDestinationData,
+  ConfirmReceiptData
 } from "@/types/inventory.types"
 import { updateInventoryRequestSchema } from "@/app/api/schemas/inventory-schemas"
 import type { z } from "zod"
@@ -95,6 +98,30 @@ export class InventoryRequestService {
     data: DeliverInventoryRequestData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
     return await InventoryService.deliverRequest(session, id, data)
+  }
+
+  static async deliverFromWarehouse(
+    session: AuthenticatedSession,
+    id: string,
+    data: DeliverFromWarehouseData
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    return await InventoryService.deliverFromWarehouse(session, id, data)
+  }
+
+  static async receiveAtDestinationWarehouse(
+    session: AuthenticatedSession,
+    id: string,
+    data: ReceiveAtDestinationData
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    return await InventoryService.receiveAtDestinationWarehouse(session, id, data)
+  }
+
+  static async confirmReceipt(
+    session: AuthenticatedSession,
+    id: string,
+    data: ConfirmReceiptData
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    return await InventoryService.confirmReceipt(session, id, data)
   }
 
   static async cancel(

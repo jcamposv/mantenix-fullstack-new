@@ -104,8 +104,10 @@ enum InventoryRequestStatus {
   PENDING // Pendiente de aprobación
   APPROVED // Aprobado por jefe
   REJECTED // Rechazado
-  IN_TRANSIT // En tránsito (si es transferencia)
-  DELIVERED // Entregado
+  IN_TRANSIT // En tránsito (transferencia inter-empresa)
+  RECEIVED_AT_DESTINATION // Recibido en bodega destino (inter-empresa)
+  READY_FOR_PICKUP // Listo para entrega al técnico
+  DELIVERED // Entregado y confirmado por técnico
   CANCELLED // Cancelado
 }
 
@@ -215,6 +217,9 @@ model User {
   inventoryRequestsRequested WorkOrderInventoryRequest[] @relation("InventoryRequestRequester")
   inventoryRequestsReviewed  WorkOrderInventoryRequest[] @relation("InventoryRequestReviewer")
   inventoryRequestsDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestDeliverer")
+  inventoryRequestsWarehouseDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestWarehouseDeliverer")
+  inventoryRequestsDestinationWarehouseReceived WorkOrderInventoryRequest[] @relation("InventoryRequestDestinationWarehouseReceiver")
+  inventoryRequestsReceived  WorkOrderInventoryRequest[] @relation("InventoryRequestReceiver")
 
   // Inventory movement relations
   inventoryMovementsCreated InventoryMovement[] @relation("InventoryMovementCreator")
@@ -1297,6 +1302,21 @@ model WorkOrderInventoryRequest {
   deliveredBy String?
   deliverer   User?    @relation("InventoryRequestDeliverer", fields: [deliveredBy], references: [id])
   deliveredAt DateTime?
+
+  // Warehouse delivery tracking (entrega física desde bodega origen)
+  warehouseDeliveredBy String?
+  warehouseDeliverer   User?    @relation("InventoryRequestWarehouseDeliverer", fields: [warehouseDeliveredBy], references: [id])
+  warehouseDeliveredAt DateTime?
+
+  // Destination warehouse receipt (recepción en bodega destino - solo inter-empresa)
+  destinationWarehouseReceivedBy String?
+  destinationWarehouseReceiver   User?    @relation("InventoryRequestDestinationWarehouseReceiver", fields: [destinationWarehouseReceivedBy], references: [id])
+  destinationWarehouseReceivedAt DateTime?
+
+  // Technician receipt confirmation (confirmación de recepción del técnico)
+  receivedBy String?
+  receiver   User?    @relation("InventoryRequestReceiver", fields: [receivedBy], references: [id])
+  receivedAt DateTime?
 
   // Notes
   notes   String?

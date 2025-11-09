@@ -42,10 +42,10 @@ interface InventoryRequestsResponse {
   total: number
 }
 
-export default function InventoryRequestsPage() {
+export default function WorkOrderApprovalsPage() {
   const router = useRouter()
   const { data: requests, loading, refetch } = useTableData<InventoryRequest>({
-    endpoint: '/api/admin/inventory/requests',
+    endpoint: '/api/admin/inventory/requests?status=PENDING',
     transform: (data) => (data as InventoryRequestsResponse).requests || []
   })
 
@@ -103,20 +103,8 @@ export default function InventoryRequestsPage() {
       cell: ({ row }) => {
         const request = row.original
         return (
-          <div className="space-y-1">
-            <div className="font-semibold">
-              {request.quantityRequested} {request.inventoryItem.unit}
-            </div>
-            {request.quantityApproved && (
-              <div className="text-xs text-green-600">
-                Aprobado: {request.quantityApproved}
-              </div>
-            )}
-            {request.quantityDelivered > 0 && (
-              <div className="text-xs text-blue-600">
-                Entregado: {request.quantityDelivered}
-              </div>
-            )}
+          <div className="font-semibold">
+            {request.quantityRequested} {request.inventoryItem.unit}
           </div>
         )
       },
@@ -165,9 +153,9 @@ export default function InventoryRequestsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Entregas de Inventario</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Aprobaciones de Inventario</h2>
           <p className="text-muted-foreground">
-            Solicitudes aprobadas pendientes de entrega desde bodega
+            Solicitudes pendientes de aprobación para órdenes de trabajo
           </p>
         </div>
       </div>

@@ -69,6 +69,11 @@ export const BASE_NAV_ITEMS = [
         url: "/work-orders/new/select-template",
       },
       {
+        title: "Aprobaciones",
+        url: "/admin/work-orders/approvals",
+        badge: true,
+      },
+      {
         title: "Templates",
         url: "/admin/work-order-templates",
       },
@@ -283,8 +288,9 @@ export const getFeatureNavItems = (enabledFeatures: {
           url: "/admin/inventory/items"
         },
         {
-          title: "Solicitudes",
-          url: "/admin/inventory/requests"
+          title: "Entregas",
+          url: "/admin/inventory/requests",
+          badge: true,
         },
         {
           title: "Movimientos",

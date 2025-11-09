@@ -9,6 +9,8 @@ export type InventoryRequestStatus =
   | "APPROVED"
   | "REJECTED"
   | "IN_TRANSIT"
+  | "RECEIVED_AT_DESTINATION"
+  | "READY_FOR_PICKUP"
   | "DELIVERED"
   | "CANCELLED"
 export type RequestUrgency = "LOW" | "NORMAL" | "HIGH" | "CRITICAL"
@@ -195,6 +197,12 @@ export interface WorkOrderInventoryRequest {
   reviewNotes: string | null
   deliveredBy: string | null
   deliveredAt: string | null
+  warehouseDeliveredBy: string | null
+  warehouseDeliveredAt: string | null
+  destinationWarehouseReceivedBy: string | null
+  destinationWarehouseReceivedAt: string | null
+  receivedBy: string | null
+  receivedAt: string | null
   notes: string | null
   urgency: RequestUrgency
   createdAt: string
@@ -210,6 +218,7 @@ export interface WorkOrderInventoryRequestWithRelations extends WorkOrderInvento
     number: string
     title: string
     status: string
+    companyId: string
   }
   inventoryItem?: {
     id: string
@@ -246,6 +255,24 @@ export interface WorkOrderInventoryRequestWithRelations extends WorkOrderInvento
     id: string
     name: string
     email: string
+  } | null
+  warehouseDeliverer?: {
+    id: string
+    name: string
+    email: string
+    role: Role
+  } | null
+  destinationWarehouseReceiver?: {
+    id: string
+    name: string
+    email: string
+    role: Role
+  } | null
+  receiver?: {
+    id: string
+    name: string
+    email: string
+    role: Role
   } | null
 }
 
@@ -450,6 +477,27 @@ export interface DeliverInventoryRequestData {
 }
 
 /**
+ * Deliver from warehouse data (Encargado de bodega entrega físicamente)
+ */
+export interface DeliverFromWarehouseData {
+  notes?: string
+}
+
+/**
+ * Receive at destination warehouse data (Bodega destino recibe - solo inter-empresa)
+ */
+export interface ReceiveAtDestinationData {
+  notes?: string
+}
+
+/**
+ * Confirm receipt data (Técnico confirma recepción)
+ */
+export interface ConfirmReceiptData {
+  notes?: string
+}
+
+/**
  * Create inventory movement data
  */
 export interface CreateInventoryMovementData {
@@ -495,6 +543,7 @@ export interface InventoryRequestFilters {
   workOrderId?: string
   inventoryItemId?: string
   status?: InventoryRequestStatus
+  excludeStatuses?: InventoryRequestStatus[]
   urgency?: RequestUrgency
   requestedBy?: string
   sourceCompanyId?: string

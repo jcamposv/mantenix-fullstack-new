@@ -2,49 +2,54 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, CheckCircle, XCircle, Package, User, Calendar, Loader2, ArrowRight, Warehouse, Building2, Truck } from "lucide-react"
+import { ArrowLeft, User, Calendar, Loader2, ArrowRight, Warehouse, Building2, Truck } from "lucide-react"
 import { toast } from "sonner"
-import { REQUEST_STATUS_OPTIONS, REQUEST_URGENCY_OPTIONS, type ApproveRequestFormData, type RejectRequestFormData } from "@/schemas/inventory"
+import { REQUEST_URGENCY_OPTIONS, type ApproveRequestFormData, type RejectRequestFormData } from "@/schemas/inventory"
 import { ApproveRequestDialog } from "@/components/inventory/approve-request-dialog"
 import { RejectRequestDialog } from "@/components/inventory/reject-request-dialog"
-
-interface RequestDetail {
-  id: string
-  workOrder: { id: string; number: string; title: string }
-  inventoryItem: { id: string; code: string; name: string; unit: string }
-  quantityRequested: number
-  quantityApproved: number | null
-  quantityDelivered: number
-  sourceLocationId: string | null
-  sourceLocationType: "WAREHOUSE" | "VEHICLE" | "SITE" | null
-  sourceLocationName?: string
-  destinationLocationId?: string | null
-  destinationLocationType?: "WAREHOUSE" | "VEHICLE" | "SITE" | null
-  destinationLocationName?: string
-  status: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED"
-  urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
-  requestedAt: string
-  reviewedAt: string | null
-  deliveredAt: string | null
-  requester: { id: string; name: string; email: string }
-  reviewer: { id: string; name: string } | null
-  notes: string | null
-  reviewNotes: string | null
-}
+import { InventoryRequestStatusBadge } from "@/components/inventory/inventory-request-status-badge"
+import { InventoryRequestTimeline } from "@/components/inventory/inventory-request-timeline"
+import { InventoryRequestActions } from "@/components/inventory/inventory-request-actions"
+import { DeliverFromWarehouseDialog } from "@/components/inventory/deliver-from-warehouse-dialog"
+import { ReceiveAtDestinationDialog } from "@/components/inventory/receive-at-destination-dialog"
+import { ConfirmReceiptDialog } from "@/components/inventory/confirm-receipt-dialog"
+import { useInventoryRequestActions } from "@/hooks/use-inventory-request-actions"
+import type { WorkOrderInventoryRequestWithRelations } from "@/types/inventory.types"
+import { Badge } from "@/components/ui/badge"
+import type { Role } from "@prisma/client"
 
 export default function InventoryRequestDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const { data: session } = useSession()
   const id = params.id as string
 
-  const [request, setRequest] = useState<RequestDetail | null>(null)
+  const [request, setRequest] = useState<(WorkOrderInventoryRequestWithRelations & {
+    sourceLocationName?: string
+    destinationLocationName?: string
+    destinationLocationId?: string
+    destinationLocationType?: 'WAREHOUSE' | 'VEHICLE' | 'SITE'
+  }) | null>(null)
   const [loading, setLoading] = useState(true)
   const [approveDialogOpen, setApproveDialogOpen] = useState(false)
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+  const [deliverDialogOpen, setDeliverDialogOpen] = useState(false)
+  const [receiveDestinationDialogOpen, setReceiveDestinationDialogOpen] = useState(false)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const { deliverFromWarehouse, receiveAtDestination, confirmReceipt, isLoading: actionLoading } = useInventoryRequestActions({
+    requestId: id,
+    onSuccess: () => {
+      setDeliverDialogOpen(false)
+      setReceiveDestinationDialogOpen(false)
+      setConfirmDialogOpen(false)
+      fetchRequestData()
+    }
+  })
 
   useEffect(() => {
     fetchRequestData()
@@ -115,29 +120,6 @@ export default function InventoryRequestDetailPage() {
     }
   }
 
-  const handleDeliver = async () => {
-    try {
-      setIsSubmitting(true)
-      const response = await fetch(`/api/admin/inventory/requests/${id}/deliver`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: "" }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al marcar como entregada')
-      }
-
-      toast.success('Solicitud marcada como entregada')
-      fetchRequestData()
-    } catch (error) {
-      console.error('Error delivering request:', error)
-      toast.error(error instanceof Error ? error.message : 'Error al marcar como entregada')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -149,56 +131,60 @@ export default function InventoryRequestDetailPage() {
 
   if (!request) return null
 
-  const statusOption = REQUEST_STATUS_OPTIONS.find(opt => opt.value === request.status)
   const urgencyOption = REQUEST_URGENCY_OPTIONS.find(opt => opt.value === request.urgency)
+  const quantity = request.quantityApproved || request.quantityRequested
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold tracking-tight">Solicitud de Inventario</h2>
-              <Badge className={statusOption?.color}>{statusOption?.label}</Badge>
-              <Badge variant="outline" className={urgencyOption?.color}>{urgencyOption?.label}</Badge>
-            </div>
-            <p className="text-muted-foreground mt-1">
-              OT-{request.workOrder.number} - {request.workOrder.title}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {request.status === "PENDING" && (
-            <>
-              <Button variant="outline" onClick={() => setRejectDialogOpen(true)}>
-                <XCircle className="mr-2 h-4 w-4" />
-                Rechazar
-              </Button>
-              <Button onClick={() => setApproveDialogOpen(true)}>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Aprobar
-              </Button>
-            </>
-          )}
-          {request.status === "APPROVED" && (
-            <Button onClick={handleDeliver} disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Package className="mr-2 h-4 w-4" />
-              Marcar como Entregada
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold tracking-tight">Solicitud de Inventario</h2>
+                <InventoryRequestStatusBadge status={request.status} />
+                <Badge variant="outline" className={urgencyOption?.color}>{urgencyOption?.label}</Badge>
+              </div>
+              <p className="text-muted-foreground mt-1">
+                OT-{request.workOrder?.number} - {request.workOrder?.title}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          {session?.user && (session.user as unknown as { role?: Role; companyId?: string }).role && (session.user as unknown as { companyId?: string }).companyId && (
+            <InventoryRequestActions
+              status={request.status}
+              userRole={(session.user as unknown as { role: Role }).role}
+              userCompanyId={(session.user as unknown as { companyId: string }).companyId}
+              sourceCompanyId={request.sourceCompanyId}
+              destinationCompanyId={request.workOrder?.companyId}
+              warehouseDeliveredAt={request.warehouseDeliveredAt}
+              destinationWarehouseReceivedAt={request.destinationWarehouseReceivedAt}
+              receivedAt={request.receivedAt}
+              onDeliverFromWarehouse={() => setDeliverDialogOpen(true)}
+              onReceiveAtDestination={() => setReceiveDestinationDialogOpen(true)}
+              onConfirmReceipt={() => setConfirmDialogOpen(true)}
+              onApprove={() => setApproveDialogOpen(true)}
+              onReject={() => setRejectDialogOpen(true)}
+              isLoading={isSubmitting || actionLoading}
+            />
           )}
         </div>
+
+        {/* Timeline Horizontal */}
+        <InventoryRequestTimeline request={request} horizontal />
       </div>
 
       {/* Transfer Route */}
       {(request.sourceLocationName || request.destinationLocationName) && (
-        <Card className="border-2">
+        <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg">Ruta de Transferencia</CardTitle>
+            <CardTitle className="text-lg mb-0">Ruta de Transferencia</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between gap-4">
@@ -261,31 +247,31 @@ export default function InventoryRequestDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Item Info */}
-        <Card>
+        <Card className="shadow-none">
           <CardHeader>
             <CardTitle>Ítem Solicitado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <div className="text-sm font-medium text-muted-foreground">Nombre</div>
-              <div className="mt-1 font-medium">{request.inventoryItem.name}</div>
+              <div className="mt-1 font-medium">{request.inventoryItem?.name}</div>
             </div>
             <div>
               <div className="text-sm font-medium text-muted-foreground">Código</div>
-              <div className="mt-1">{request.inventoryItem.code}</div>
+              <div className="mt-1">{request.inventoryItem?.code}</div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Solicitado</div>
                 <div className="mt-1 text-lg font-semibold">
-                  {request.quantityRequested} {request.inventoryItem.unit}
+                  {request.quantityRequested} {request.inventoryItem?.unit}
                 </div>
               </div>
               {request.quantityApproved && (
                 <div>
                   <div className="text-sm font-medium text-muted-foreground">Aprobado</div>
                   <div className="mt-1 text-lg font-semibold text-green-600">
-                    {request.quantityApproved} {request.inventoryItem.unit}
+                    {request.quantityApproved} {request.inventoryItem?.unit}
                   </div>
                 </div>
               )}
@@ -293,7 +279,7 @@ export default function InventoryRequestDetailPage() {
                 <div>
                   <div className="text-sm font-medium text-muted-foreground">Entregado</div>
                   <div className="mt-1 text-lg font-semibold text-blue-600">
-                    {request.quantityDelivered} {request.inventoryItem.unit}
+                    {request.quantityDelivered} {request.inventoryItem?.unit}
                   </div>
                 </div>
               )}
@@ -302,7 +288,7 @@ export default function InventoryRequestDetailPage() {
         </Card>
 
         {/* Request Info */}
-        <Card>
+        <Card className="shadow-none">
           <CardHeader>
             <CardTitle>Información de la Solicitud</CardTitle>
           </CardHeader>
@@ -311,9 +297,9 @@ export default function InventoryRequestDetailPage() {
               <div className="text-sm font-medium text-muted-foreground">Solicitante</div>
               <div className="mt-1 flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span>{request.requester.name}</span>
+                <span>{request.requester?.name}</span>
               </div>
-              <div className="text-sm text-muted-foreground">{request.requester.email}</div>
+              <div className="text-sm text-muted-foreground">{request.requester?.email}</div>
             </div>
             <div>
               <div className="text-sm font-medium text-muted-foreground">Fecha de Solicitud</div>
@@ -352,16 +338,15 @@ export default function InventoryRequestDetailPage() {
         </Card>
       </div>
 
+
       {/* Dialogs */}
       <ApproveRequestDialog
         open={approveDialogOpen}
         onOpenChange={setApproveDialogOpen}
         onSubmit={handleApprove}
         defaultQuantity={request.quantityRequested}
-        sourceLocationName={request.sourceLocationName}
+        sourceLocationName={request.sourceLocation?.name}
         sourceLocationType={request.sourceLocationType || undefined}
-        destinationLocationName={request.destinationLocationName}
-        destinationLocationType={request.destinationLocationType || undefined}
         isLoading={isSubmitting}
       />
 
@@ -370,6 +355,38 @@ export default function InventoryRequestDetailPage() {
         onOpenChange={setRejectDialogOpen}
         onSubmit={handleReject}
         isLoading={isSubmitting}
+      />
+
+      <DeliverFromWarehouseDialog
+        open={deliverDialogOpen}
+        onOpenChange={setDeliverDialogOpen}
+        onSubmit={deliverFromWarehouse}
+        itemName={request.inventoryItem?.name || ""}
+        itemCode={request.inventoryItem?.code || ""}
+        quantity={quantity}
+        sourceLocationName={request.sourceLocation?.name}
+        isLoading={actionLoading}
+      />
+
+      <ReceiveAtDestinationDialog
+        open={receiveDestinationDialogOpen}
+        onOpenChange={setReceiveDestinationDialogOpen}
+        onSubmit={receiveAtDestination}
+        itemName={request.inventoryItem?.name || ""}
+        itemCode={request.inventoryItem?.code || ""}
+        quantity={quantity}
+        isLoading={actionLoading}
+      />
+
+      <ConfirmReceiptDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onSubmit={confirmReceipt}
+        itemName={request.inventoryItem?.name || ""}
+        itemCode={request.inventoryItem?.code || ""}
+        quantity={quantity}
+        warehouseDeliveredAt={request.warehouseDeliveredAt || undefined}
+        isLoading={actionLoading}
       />
     </div>
   )
