@@ -280,9 +280,13 @@ export const getFeatureNavItems = (enabledFeatures: {
   if (enabledFeatures.hasExternalClientMgmt || enabledFeatures.hasInternalCorporateGroup) {
     items.push({
       title: "Inventario",
-      url: "/admin/inventory",
+      url: "/admin/inventory/dashboard",
       icon: Package,
       items: [
+        {
+          title: "Dashboard",
+          url: "/admin/inventory/dashboard"
+        },
         {
           title: "Productos",
           url: "/admin/inventory/items"

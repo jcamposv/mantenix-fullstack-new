@@ -725,3 +725,45 @@ export interface LowStockAlert {
     quantity: number
   }[]
 }
+
+/**
+ * Dashboard metrics
+ */
+export interface InventoryDashboardMetrics {
+  kpis: {
+    totalUniqueItems: number
+    lowStockCount: number
+    criticalStockCount: number
+    pendingRequests: number
+    approvedRequests: number
+    inTransitRequests: number
+    movementsToday: {
+      in: number
+      out: number
+    }
+  }
+  lowStockAlerts: LowStockAlert[]
+  topRequestedItems: {
+    itemId: string
+    itemCode: string
+    itemName: string
+    requestCount: number
+  }[]
+  recentActivity: {
+    id: string
+    type: 'REQUEST_CREATED' | 'REQUEST_APPROVED' | 'REQUEST_REJECTED' | 'WAREHOUSE_DELIVERED' | 'TECHNICIAN_RECEIVED' | 'STOCK_IN' | 'STOCK_OUT'
+    timestamp: string
+    description: string
+    user?: {
+      name: string
+    }
+    request?: {
+      id: string
+      status: InventoryRequestStatus
+    }
+  }[]
+  requestsByStatus: {
+    status: InventoryRequestStatus
+    count: number
+  }[]
+}

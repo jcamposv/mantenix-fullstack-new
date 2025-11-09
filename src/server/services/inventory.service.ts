@@ -18,12 +18,15 @@ import type {
   ConfirmReceiptData,
   WorkOrderInventoryRequestWithRelations,
   InventoryRequestFilters,
+  InventoryRequestStatus,
   PaginatedInventoryRequestsResponse,
   InventoryMovementFilters,
   InventoryMovementWithRelations,
   PaginatedInventoryMovementsResponse,
   StockAdjustmentData,
-  TransferStockData
+  TransferStockData,
+  InventoryDashboardMetrics,
+  LowStockAlert
 } from "@/types/inventory.types"
 import type { AuthenticatedSession } from "@/types/auth.types"
 
@@ -1094,5 +1097,364 @@ export class InventoryService {
   ): Promise<InventoryMovementWithRelations | null> {
     await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
     return await InventoryMovementRepository.findById(id)
+  }
+
+  // ============================================
+  // DASHBOARD METRICS
+  // ============================================
+
+  static async getDashboardMetrics(
+    session: AuthenticatedSession
+  ): Promise<InventoryDashboardMetrics> {
+    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+
+    const companyId = session.user.companyId!
+
+    // KPIs - Get counts based on user's company
+    const [
+      totalUniqueItems,
+      allStockItems,
+      allRequests,
+      todayMovements
+    ] = await Promise.all([
+      // Total unique items with stock in user's company
+      prisma.inventoryItem.count({
+        where: {
+          stockLocations: {
+            some: {
+              locationId: companyId,
+              locationType: 'WAREHOUSE'
+            }
+          }
+        }
+      }),
+      // All stock items for user's company
+      prisma.inventoryStock.findMany({
+        where: {
+          locationId: companyId,
+          locationType: 'WAREHOUSE'
+        },
+        include: {
+          inventoryItem: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              minStock: true,
+              reorderPoint: true
+            }
+          }
+        }
+      }),
+      // All requests based on role
+      prisma.workOrderInventoryRequest.findMany({
+        where: session.user.role === 'ENCARGADO_BODEGA'
+          ? {
+              sourceCompanyId: companyId,
+              status: { notIn: ['PENDING', 'REJECTED', 'CANCELLED'] }
+            }
+          : {
+              workOrder: {
+                companyId: companyId
+              }
+            },
+        select: {
+          id: true,
+          status: true,
+          requestedAt: true,
+          requester: {
+            select: {
+              name: true
+            }
+          },
+          inventoryItem: {
+            select: {
+              code: true,
+              name: true
+            }
+          }
+        }
+      }),
+      // Today's movements
+      prisma.inventoryMovement.findMany({
+        where: {
+          OR: [
+            { fromCompany: { id: companyId } },
+            { toCompany: { id: companyId } }
+          ],
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0))
+          }
+        },
+        select: {
+          type: true
+        }
+      })
+    ])
+
+    // Calculate low stock and critical stock
+    const lowStockAlerts: LowStockAlert[] = []
+    let lowStockCount = 0
+    let criticalStockCount = 0
+
+    allStockItems.forEach(stock => {
+      const minStock = stock.inventoryItem.minStock || 0
+      const reorderPoint = stock.inventoryItem.reorderPoint || minStock
+
+      if (stock.availableQuantity <= 0) {
+        criticalStockCount++
+        lowStockAlerts.push({
+          inventoryItem: {
+            id: stock.inventoryItem.id,
+            code: stock.inventoryItem.code,
+            name: stock.inventoryItem.name,
+            minStock: minStock,
+            reorderPoint: reorderPoint
+          },
+          currentStock: stock.availableQuantity,
+          alertType: "OUT_OF_STOCK",
+          locations: [{
+            locationId: stock.locationId,
+            locationName: stock.locationName,
+            locationType: stock.locationType,
+            quantity: stock.availableQuantity
+          }]
+        })
+      } else if (minStock > 0 && stock.availableQuantity < minStock * 0.25) {
+        criticalStockCount++
+        lowStockAlerts.push({
+          inventoryItem: {
+            id: stock.inventoryItem.id,
+            code: stock.inventoryItem.code,
+            name: stock.inventoryItem.name,
+            minStock: minStock,
+            reorderPoint: reorderPoint
+          },
+          currentStock: stock.availableQuantity,
+          alertType: "BELOW_MIN",
+          locations: [{
+            locationId: stock.locationId,
+            locationName: stock.locationName,
+            locationType: stock.locationType,
+            quantity: stock.availableQuantity
+          }]
+        })
+      } else if (minStock > 0 && stock.availableQuantity < minStock) {
+        lowStockCount++
+        lowStockAlerts.push({
+          inventoryItem: {
+            id: stock.inventoryItem.id,
+            code: stock.inventoryItem.code,
+            name: stock.inventoryItem.name,
+            minStock: minStock,
+            reorderPoint: reorderPoint
+          },
+          currentStock: stock.availableQuantity,
+          alertType: "BELOW_MIN",
+          locations: [{
+            locationId: stock.locationId,
+            locationName: stock.locationName,
+            locationType: stock.locationType,
+            quantity: stock.availableQuantity
+          }]
+        })
+      }
+    })
+
+    // Sort alerts by severity
+    lowStockAlerts.sort((a, b) => {
+      const severityOrder = { "OUT_OF_STOCK": 0, "BELOW_MIN": 1, "BELOW_REORDER": 2 }
+      return severityOrder[a.alertType] - severityOrder[b.alertType]
+    })
+
+    // Count requests by status
+    const pendingRequests = allRequests.filter(r => r.status === 'PENDING').length
+    const approvedRequests = allRequests.filter(r => r.status === 'APPROVED').length
+    const inTransitRequests = allRequests.filter(r => r.status === 'IN_TRANSIT').length
+
+    // Count today's movements
+    const movementsToday = {
+      in: todayMovements.filter(m => m.type === 'IN').length,
+      out: todayMovements.filter(m => m.type === 'OUT').length
+    }
+
+    // Top requested items (last 30 days)
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const topRequested = await prisma.workOrderInventoryRequest.groupBy({
+      by: ['inventoryItemId'],
+      where: {
+        workOrder: {
+          companyId: companyId
+        },
+        createdAt: {
+          gte: thirtyDaysAgo
+        }
+      },
+      _count: {
+        id: true
+      },
+      orderBy: {
+        _count: {
+          id: 'desc'
+        }
+      },
+      take: 5
+    })
+
+    const topRequestedItems = await Promise.all(
+      topRequested.map(async (item) => {
+        const inventoryItem = await prisma.inventoryItem.findUnique({
+          where: { id: item.inventoryItemId },
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        })
+        return {
+          itemId: item.inventoryItemId,
+          itemCode: inventoryItem?.code || '',
+          itemName: inventoryItem?.name || '',
+          requestCount: item._count.id
+        }
+      })
+    )
+
+    // Recent activity (last 20 events)
+    const recentRequests = await prisma.workOrderInventoryRequest.findMany({
+      where: session.user.role === 'ENCARGADO_BODEGA'
+        ? {
+            sourceCompanyId: companyId,
+            status: { notIn: ['PENDING', 'REJECTED', 'CANCELLED'] }
+          }
+        : {
+            workOrder: {
+              companyId: companyId
+            }
+          },
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: 20,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        reviewedAt: true,
+        warehouseDeliveredAt: true,
+        receivedAt: true,
+        requester: {
+          select: {
+            name: true
+          }
+        },
+        reviewer: {
+          select: {
+            name: true
+          }
+        },
+        warehouseDeliverer: {
+          select: {
+            name: true
+          }
+        },
+        receiver: {
+          select: {
+            name: true
+          }
+        },
+        inventoryItem: {
+          select: {
+            name: true
+          }
+        },
+        quantityRequested: true,
+        quantityApproved: true
+      }
+    })
+
+    const recentActivity = recentRequests.flatMap(req => {
+      const activities: InventoryDashboardMetrics['recentActivity'] = []
+
+      // Created
+      activities.push({
+        id: `${req.id}-created`,
+        type: 'REQUEST_CREATED',
+        timestamp: req.createdAt.toISOString(),
+        description: `${req.requester.name} solicitó ${req.quantityRequested}x ${req.inventoryItem.name}`,
+        user: { name: req.requester.name },
+        request: { id: req.id, status: req.status }
+      })
+
+      // Reviewed
+      if (req.reviewedAt && req.reviewer) {
+        const isApproved = req.status !== 'REJECTED'
+        activities.push({
+          id: `${req.id}-reviewed`,
+          type: isApproved ? 'REQUEST_APPROVED' : 'REQUEST_REJECTED',
+          timestamp: req.reviewedAt.toISOString(),
+          description: `${req.reviewer.name} ${isApproved ? 'aprobó' : 'rechazó'} ${req.quantityApproved || req.quantityRequested}x ${req.inventoryItem.name}`,
+          user: { name: req.reviewer.name },
+          request: { id: req.id, status: req.status }
+        })
+      }
+
+      // Delivered from warehouse
+      if (req.warehouseDeliveredAt && req.warehouseDeliverer) {
+        activities.push({
+          id: `${req.id}-delivered`,
+          type: 'WAREHOUSE_DELIVERED',
+          timestamp: req.warehouseDeliveredAt.toISOString(),
+          description: `Bodega entregó ${req.quantityApproved || req.quantityRequested}x ${req.inventoryItem.name}`,
+          user: { name: req.warehouseDeliverer.name },
+          request: { id: req.id, status: req.status }
+        })
+      }
+
+      // Received by technician
+      if (req.receivedAt && req.receiver) {
+        activities.push({
+          id: `${req.id}-received`,
+          type: 'TECHNICIAN_RECEIVED',
+          timestamp: req.receivedAt.toISOString(),
+          description: `${req.receiver.name} confirmó recepción de ${req.quantityApproved || req.quantityRequested}x ${req.inventoryItem.name}`,
+          user: { name: req.receiver.name },
+          request: { id: req.id, status: req.status }
+        })
+      }
+
+      return activities
+    })
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 10)
+
+    // Requests by status
+    const requestsByStatus = Object.entries(
+      allRequests.reduce((acc, req) => {
+        acc[req.status] = (acc[req.status] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+    ).map(([status, count]) => ({
+      status: status as InventoryRequestStatus,
+      count
+    }))
+
+    return {
+      kpis: {
+        totalUniqueItems,
+        lowStockCount,
+        criticalStockCount,
+        pendingRequests,
+        approvedRequests,
+        inTransitRequests,
+        movementsToday
+      },
+      lowStockAlerts: lowStockAlerts.slice(0, 10), // Top 10
+      topRequestedItems,
+      recentActivity,
+      requestsByStatus
+    }
   }
 }
