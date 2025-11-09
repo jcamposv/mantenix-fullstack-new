@@ -9,7 +9,7 @@ import { useUserRole } from "@/hooks/useUserRole"
 import { parseCompanyFeatures } from "@/lib/features"
 import type { CompanyBranding } from "@/types/branding"
 import type { ServerUser, UserPermissions, CompanyFeature } from "./sidebar-types"
-import { BASE_NAV_ITEMS, CLIENT_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER, getFeatureNavItems } from "./navigation-config"
+import { BASE_NAV_ITEMS, SUPER_ADMIN_NAV_ITEMS, CLIENT_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER, getFeatureNavItems } from "./navigation-config"
 import { getInitials, getAvatarUrl } from "./sidebar-utils"
 
 interface UseSidebarDataProps {
@@ -91,12 +91,22 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
     return items
   }, [isExternalUser, hasAttendance, hasVacations, hasPermissions, hasExternalClientMgmt, hasInternalCorporateGroup])
 
-  // Navigation items - use CLIENT_NAV_ITEMS for external users
+  // Navigation items - different items based on user role
   const navItems = useMemo(() => {
-    const baseItems = isExternalUser ? CLIENT_NAV_ITEMS : BASE_NAV_ITEMS
-    // Merge base items with feature items
-    return [...baseItems, ...featureNavItems]
-  }, [isExternalUser, featureNavItems])
+    let baseItems: typeof BASE_NAV_ITEMS | typeof SUPER_ADMIN_NAV_ITEMS | typeof CLIENT_NAV_ITEMS = BASE_NAV_ITEMS
+
+    // SUPER_ADMIN gets minimal nav items (no operational features)
+    if (isSuperAdmin) {
+      baseItems = SUPER_ADMIN_NAV_ITEMS
+    }
+    // External clients get their own nav items
+    else if (isExternalUser) {
+      baseItems = CLIENT_NAV_ITEMS
+    }
+
+    // Merge base items with feature items (features not shown for SUPER_ADMIN)
+    return [...baseItems, ...(isSuperAdmin ? [] : featureNavItems)]
+  }, [isSuperAdmin, isExternalUser, featureNavItems])
 
   // Admin items (for super admin, group admin and company admin only, not for external users)
   const adminItems = useMemo(() => {

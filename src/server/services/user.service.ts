@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client"
 import { UserRepository } from "../repositories/user.repository"
 import { CompanyRepository } from "../repositories/company.repository"
 import { AuthService } from "./auth.service"
+import { SubscriptionGuard } from "../middleware/subscription-guard"
+import { SubscriptionService } from "./subscription.service"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { UserFilters, PaginatedUsersResponse, UserWithRelations } from "@/types/user.types"
 import type { CreateUserInput, UpdateUserInput } from "../../app/api/schemas/user-schemas"
@@ -112,6 +114,11 @@ export class UserService {
     // Validar relaciones según el rol del usuario que crea
     await this.validateUserRelations(userData, session)
 
+    // Validar límites de subscripción antes de crear el usuario
+    if (userData.companyId) {
+      await SubscriptionGuard.validateUserCreation(userData.companyId)
+    }
+
     // Obtener companyGroupId si el usuario tiene una companyId
     let companyGroupId: string | null = null
     if (userData.companyId) {
@@ -142,7 +149,26 @@ export class UserService {
       createData.site = { connect: { id: userData.siteId } }
     }
 
-    return await UserRepository.create(createData)
+    const newUser = await UserRepository.create(createData)
+
+    // Incrementar contador de uso de subscripción
+    if (userData.companyId) {
+      try {
+        const subscription = await SubscriptionService.getCompanySubscription(userData.companyId)
+        if (subscription) {
+          await SubscriptionService.incrementUsage({
+            subscriptionId: subscription.id,
+            field: 'users',
+            amount: 1
+          })
+        }
+      } catch (error) {
+        console.error('[UserService] Error incrementing subscription usage:', error)
+        // No lanzamos error para no fallar la creación del usuario
+      }
+    }
+
+    return newUser
   }
 
   /**
@@ -238,7 +264,26 @@ export class UserService {
       throw new Error("No puedes eliminar tu propio usuario")
     }
 
-    return await UserRepository.delete(id)
+    const deletedUser = await UserRepository.delete(id)
+
+    // Decrementar contador de uso de subscripción
+    if (deletedUser && deletedUser.companyId) {
+      try {
+        const subscription = await SubscriptionService.getCompanySubscription(deletedUser.companyId)
+        if (subscription) {
+          await SubscriptionService.decrementUsage({
+            subscriptionId: subscription.id,
+            field: 'users',
+            amount: 1
+          })
+        }
+      } catch (error) {
+        console.error('[UserService] Error decrementing subscription usage:', error)
+        // No lanzamos error para no fallar la eliminación del usuario
+      }
+    }
+
+    return deletedUser
   }
 
   /**

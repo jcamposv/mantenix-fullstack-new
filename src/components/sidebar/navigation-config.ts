@@ -18,8 +18,20 @@ import {
   Calendar,
   FileText,
   Package,
+  CreditCard,
 } from "lucide-react"
 
+// Navigation items for SUPER_ADMIN (SaaS administrator)
+export const SUPER_ADMIN_NAV_ITEMS = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: SquareTerminal,
+    isActive: true,
+  },
+]
+
+// Navigation items for regular users (company/group admins and operators)
 export const BASE_NAV_ITEMS = [
   {
     title: "Dashboard",
@@ -167,41 +179,88 @@ export const ADMIN_NAV_ITEMS = [
     icon: Building2,
     role: "ADMIN_EMPRESA", // Always shown for company admins
   },
+  // ========================================
+  // SUPER ADMIN - Gestión de Sistema
+  // ========================================
   {
-    name: "Usuarios del Sistema",
-    url: "/super-admin/users", // Super admin uses super-admin route
-    icon: Users,
-    role: "SUPER_ADMIN"
+    name: "Gestión de Empresas",
+    url: "/super-admin/companies",
+    icon: Building2,
+    role: "SUPER_ADMIN",
+    items: [
+      {
+        title: "Empresas",
+        url: "/super-admin/companies",
+      },
+      {
+        title: "Usuarios del Sistema",
+        url: "/super-admin/users",
+      },
+    ],
   },
+
+  // ========================================
+  // SUPER ADMIN - Facturación y Planes
+  // ========================================
+  {
+    name: "Facturación",
+    url: "/super-admin/subscription-plans",
+    icon: CreditCard,
+    role: "SUPER_ADMIN",
+    items: [
+      {
+        title: "Planes de Subscripción",
+        url: "/super-admin/subscription-plans",
+      },
+      {
+        title: "Subscripciones",
+        url: "/super-admin/subscriptions",
+      },
+    ],
+  },
+
+  // ========================================
+  // SUPER ADMIN - Configuración
+  // ========================================
+  {
+    name: "Configuración",
+    url: "/super-admin/features",
+    icon: Settings2,
+    role: "SUPER_ADMIN",
+    items: [
+      {
+        title: "Features Premium",
+        url: "/super-admin/features",
+      },
+      {
+        title: "Configuración de Emails",
+        url: "/super-admin/email-configurations",
+      },
+      {
+        title: "Ajustes del Sistema",
+        url: "/admin/settings",
+      },
+    ],
+  },
+
+  // ========================================
+  // ADMIN_GRUPO - Users
+  // ========================================
   {
     name: "Usuarios del Grupo",
-    url: "/admin/users", // Group admin uses admin route
+    url: "/admin/users",
     icon: Users,
     role: "ADMIN_GRUPO" // Group admins can manage users in group companies
   },
+
+  // ========================================
+  // ADMIN_EMPRESA - Users
+  // ========================================
   {
     name: "Usuarios de la Empresa",
-    url: "/admin/users", // Company admin uses admin route
+    url: "/admin/users",
     icon: Users,
     role: "ADMIN_EMPRESA"
-  },
-  {
-    name: "Features Premium",
-    url: "/super-admin/features",
-    icon: Sparkles,
-    role: "SUPER_ADMIN" // Only super admins can manage premium features
-  },
-  {
-    name: "Configuración de Emails",
-    url: "/super-admin/email-configurations",
-    icon: Mail,
-    role: "SUPER_ADMIN" // Only super admins can manage email configurations
-  },
-  {
-    name: "Configuración del Sistema",
-    url: "/admin/settings",
-    icon: Settings2,
-    role: "SUPER_ADMIN" // Only super admins can see system settings
   },
 ]
 

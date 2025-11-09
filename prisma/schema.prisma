@@ -85,13 +85,23 @@ enum AssetStatus {
 }
 
 enum FeatureModule {
+  // HR Modules
   HR_ATTENDANCE // Módulo de asistencia y marcaje
   HR_VACATIONS // Módulo de vacaciones
   HR_PERMISSIONS // Módulo de permisos
-  AI_ASSISTANT // Asistente de IA
+
+  // AI & Analytics
+  AI_ASSISTANT // Asistente de IA (add-on disponible bajo demanda)
   ADVANCED_ANALYTICS // Análisis avanzados
+
+  // Business Models
   EXTERNAL_CLIENT_MANAGEMENT // Gestión de clientes externos (ClientCompany, Sites)
   INTERNAL_CORPORATE_GROUP // Grupo corporativo con inventario compartido
+
+  // Platform Features (nuevos)
+  API_ACCESS // Acceso a API REST
+  PRIORITY_SUPPORT // Soporte prioritario
+  DEDICATED_SUPPORT // Soporte dedicado con account manager
 }
 
 enum LocationType {
@@ -302,6 +312,7 @@ model Company {
 
   // Relations
   companyGroup       CompanyGroup?        @relation(fields: [companyGroupId], references: [id])
+  subscription       Subscription?
   users              User[]
   auditLogs          AuditLog[]
   securityEvents     SecurityEvent[]
@@ -1395,4 +1406,202 @@ model InventoryMovement {
   @@index([createdBy])
   @@index([approvedBy])
   @@map("inventory_movements")
+}
+
+// ============================================================================
+// BILLING & SUBSCRIPTIONS
+// ============================================================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE      // Pago atrasado
+  CANCELED
+  TRIALING      // En período de prueba
+  INCOMPLETE    // Pago incompleto
+  PAUSED        // Pausado temporalmente
+}
+
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum PlanTier {
+  STARTER
+  BUSINESS
+  CORPORATE
+  ENTERPRISE
+  CUSTOM
+}
+
+model SubscriptionPlan {
+  id          String    @id @default(cuid())
+  name        String    @unique // "Starter", "Business", "Corporate"
+  tier        PlanTier
+  description String?
+
+  // Pricing
+  monthlyPrice  Float   // Precio mensual en USD
+  annualPrice   Float   // Precio anual en USD (con descuento)
+
+  // Limits
+  maxUsers              Int     @default(10)
+  maxCompanies          Int     @default(1)      // Para planes Corporate
+  maxWarehouses         Int     @default(2)
+  maxWorkOrdersPerMonth Int     @default(100)
+  maxInventoryItems     Int     @default(200)
+  maxStorageGB          Float   @default(5)      // GB de almacenamiento
+
+  // Overage pricing (cargos por exceso)
+  overageUserPrice      Float   @default(15)     // USD por usuario extra
+  overageStoragePrice   Float   @default(0.50)   // USD por GB extra
+  overageWorkOrderPrice Float   @default(1)      // USD por orden extra
+
+  isActive    Boolean   @default(true)
+  isPublic    Boolean   @default(true)  // Si se muestra públicamente
+
+  subscriptions Subscription[]
+  features      PlanFeature[]  // Features incluidos en este plan
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscription_plans")
+}
+
+// Tabla intermedia: Features incluidos en cada plan
+model PlanFeature {
+  id String @id @default(cuid())
+
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  module FeatureModule // Feature incluido en el plan
+
+  createdAt DateTime @default(now())
+
+  @@unique([planId, module]) // Un plan no puede tener el mismo feature duplicado
+  @@map("plan_features")
+}
+
+model Subscription {
+  id String @id @default(cuid())
+
+  // Company relationship
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Plan
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  // Billing
+  status          SubscriptionStatus @default(TRIALING)
+  billingInterval BillingInterval    @default(MONTHLY)
+
+  // Pricing (snapshot del plan al momento de subscribirse)
+  currentPrice Float
+
+  // Billing cycle
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEnd           DateTime?
+
+  // Cancellation
+  cancelAtPeriodEnd Boolean   @default(false)
+  canceledAt        DateTime?
+
+  // Stripe integration
+  stripeCustomerId       String?  @unique
+  stripeSubscriptionId   String?  @unique
+  stripePaymentMethodId  String?
+
+  // Usage tracking
+  usageMetrics UsageMetrics?
+  invoices     Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model UsageMetrics {
+  id String @id @default(cuid())
+
+  subscriptionId String       @unique
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Current usage for billing period
+  currentUsers              Int   @default(0)
+  currentCompanies          Int   @default(1)
+  currentWarehouses         Int   @default(0)
+  currentWorkOrdersThisMonth Int   @default(0)
+  currentInventoryItems     Int   @default(0)
+  currentStorageGB          Float @default(0)
+
+  // Peak usage (for reporting)
+  peakUsers         Int   @default(0)
+  peakStorageGB     Float @default(0)
+
+  // Last reset (inicio del período de facturación)
+  lastResetAt DateTime @default(now())
+
+  // Calculated overages
+  overageUsers       Int   @default(0)
+  overageStorageGB   Float @default(0)
+  overageWorkOrders  Int   @default(0)
+  overageCharges     Float @default(0) // Total de cargos por exceso
+
+  updatedAt DateTime @updatedAt
+
+  @@map("usage_metrics")
+}
+
+model Invoice {
+  id String @id @default(cuid())
+
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+  // Invoice details
+  invoiceNumber String   @unique // INV-2024-001
+  status        String   // "draft", "open", "paid", "void", "uncollectible"
+
+  // Amounts in USD
+  subtotal      Float
+  taxAmount     Float    @default(0)
+  totalAmount   Float
+
+  // Line items breakdown
+  planAmount    Float    // Costo del plan base
+  overageAmount Float    @default(0) // Cargos por exceso
+
+  // Billing period
+  periodStart   DateTime
+  periodEnd     DateTime
+
+  // Payment
+  dueDate       DateTime
+  paidAt        DateTime?
+
+  // Stripe
+  stripeInvoiceId String?  @unique
+  stripePaymentIntentId String?
+
+  // PDF
+  invoicePdfUrl String?
+
+  // Metadata
+  metadata      Json?    // Detalles adicionales
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("invoices")
 }

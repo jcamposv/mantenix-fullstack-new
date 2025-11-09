@@ -22,6 +22,15 @@ interface Company {
   _count: {
     users: number
   }
+  subscription?: {
+    id: string
+    planId: string
+    plan: {
+      id: string
+      name: string
+      tier: string
+    }
+  } | null
 }
 
 interface CompaniesResponse {
@@ -109,10 +118,13 @@ export default function CompaniesPage() {
       accessorKey: "tier",
       header: "Plan",
       cell: ({ row }) => {
-        const tier = row.getValue("tier") as string
+        const company = row.original
+        const planName = company.subscription?.plan?.name || company.tier
+        const planTier = company.subscription?.plan?.tier || company.tier
+
         return (
-          <Badge variant={tier === "ENTERPRISE" ? "default" : tier === "PROFESSIONAL" ? "secondary" : "outline"}>
-            {tier}
+          <Badge variant={planTier === "ENTERPRISE" ? "default" : planTier === "PROFESSIONAL" || planTier === "BUSINESS" ? "secondary" : "outline"}>
+            {planName}
           </Badge>
         )
       },

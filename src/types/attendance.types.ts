@@ -216,10 +216,11 @@ export interface FeatureModuleInfo {
   module: string
   name: string
   description: string
-  category: "HR" | "AI" | "ANALYTICS" | "BUSINESS_MODEL" | "OTHER"
+  category: "HR" | "AI" | "ANALYTICS" | "BUSINESS_MODEL" | "PLATFORM" | "SUPPORT" | "OTHER"
 }
 
 export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
+  // HR Modules
   HR_ATTENDANCE: {
     module: "HR_ATTENDANCE",
     name: "Asistencia y Marcaje",
@@ -238,18 +239,22 @@ export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
     description: "Gestión de permisos y justificaciones",
     category: "HR"
   },
+
+  // AI & Analytics
   AI_ASSISTANT: {
     module: "AI_ASSISTANT",
     name: "Asistente de IA",
-    description: "Asistente inteligente para mantenimiento predictivo",
+    description: "Asistente inteligente para mantenimiento predictivo (add-on)",
     category: "AI"
   },
   ADVANCED_ANALYTICS: {
     module: "ADVANCED_ANALYTICS",
-    name: "Análisis Avanzados",
+    name: "Dashboard de Métricas",
     description: "Reportes y estadísticas avanzadas",
     category: "ANALYTICS"
   },
+
+  // Business Models
   EXTERNAL_CLIENT_MANAGEMENT: {
     module: "EXTERNAL_CLIENT_MANAGEMENT",
     name: "Gestión de Clientes Externos",
@@ -258,8 +263,28 @@ export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
   },
   INTERNAL_CORPORATE_GROUP: {
     module: "INTERNAL_CORPORATE_GROUP",
-    name: "Grupo Corporativo",
+    name: "Grupo Corporativo Multi-Compañía",
     description: "Habilita grupo empresarial con inventario compartido y transferencias inter-company",
     category: "BUSINESS_MODEL"
+  },
+
+  // Platform Features
+  API_ACCESS: {
+    module: "API_ACCESS",
+    name: "Acceso a API REST",
+    description: "Acceso completo a la API REST para integraciones",
+    category: "PLATFORM"
+  },
+  PRIORITY_SUPPORT: {
+    module: "PRIORITY_SUPPORT",
+    name: "Soporte Prioritario",
+    description: "Soporte con tiempo de respuesta garantizado",
+    category: "SUPPORT"
+  },
+  DEDICATED_SUPPORT: {
+    module: "DEDICATED_SUPPORT",
+    name: "Soporte Dedicado",
+    description: "Account manager dedicado para tu empresa",
+    category: "SUPPORT"
   }
 }
