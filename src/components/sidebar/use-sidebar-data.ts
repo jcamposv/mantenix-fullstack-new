@@ -120,25 +120,38 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
         item.role === "SUPER_ADMIN"
       )
     } else if (isGroupAdmin) {
-      // Group admins can see items marked as ADMIN_GRUPO
-      items = ADMIN_NAV_ITEMS.filter(item =>
-        item.role === "ADMIN_GRUPO"
-      )
+      // Group admins can see the SAME items as company admins (they're a superior role)
+      // They see items for the company of the subdomain they're currently on
+      items = ADMIN_NAV_ITEMS.filter(item => {
+        if (item.role !== "ADMIN_EMPRESA") return false
 
-      // Filter "Clientes" menu if EXTERNAL_CLIENT_MANAGEMENT is not enabled
-      if (!hasExternalClientMgmt) {
-        items = items.filter(item => item.name !== "Clientes")
-      }
+        // Filter items that require specific features
+        if ('requiresFeature' in item) {
+          if (item.requiresFeature === "EXTERNAL_CLIENT_MANAGEMENT") {
+            return hasExternalClientMgmt
+          }
+          // Add more feature checks here as needed
+          return false
+        }
+
+        return true
+      })
     } else if (isCompanyAdmin) {
       // Company admins can see items marked as ADMIN_EMPRESA
-      items = ADMIN_NAV_ITEMS.filter(item =>
-        item.role === "ADMIN_EMPRESA"
-      )
+      items = ADMIN_NAV_ITEMS.filter(item => {
+        if (item.role !== "ADMIN_EMPRESA") return false
 
-      // Filter "Clientes" menu if EXTERNAL_CLIENT_MANAGEMENT is not enabled
-      if (!hasExternalClientMgmt) {
-        items = items.filter(item => item.name !== "Clientes")
-      }
+        // Filter items that require specific features
+        if ('requiresFeature' in item) {
+          if (item.requiresFeature === "EXTERNAL_CLIENT_MANAGEMENT") {
+            return hasExternalClientMgmt
+          }
+          // Add more feature checks here as needed
+          return false
+        }
+
+        return true
+      })
     }
 
     // Debug admin items

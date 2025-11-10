@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PermissionHelper } from "@/server/helpers/permission.helper";  
+import { getMobileOnlyRoles } from "@/lib/rbac/role-definitions";  
 
 export async function middleware(request: NextRequest) {
   try {
@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
 
     // Role-based route protection
     const pathname = request.nextUrl.pathname
-    const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, PermissionHelper.ROLES.SUPERVISOR, PermissionHelper.ROLES.CLIENTE_OPERARIO] as const
+    const mobileOnlyRoles = getMobileOnlyRoles()
 
     // Super admins can access any subdomain and any route
     if (user.role === 'SUPER_ADMIN') {
@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if mobile-only user is trying to access dashboard routes
-    if ((mobileOnlyRoles as readonly string[]).includes(user.role) && !pathname.startsWith('/mobile')) {
+    if (mobileOnlyRoles.includes(user.role) && !pathname.startsWith('/mobile')) {
       return NextResponse.redirect(new URL("/mobile", request.url))
     }
 

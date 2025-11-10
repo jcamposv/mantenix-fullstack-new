@@ -56,8 +56,13 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
   })
 
   useEffect(() => {
-    fetchSites()
-  }, [])
+    // Only fetch sites when EXTERNAL_CLIENT_MANAGEMENT is enabled
+    if (hasExternalClientMgmt) {
+      fetchSites()
+    } else {
+      setLoadingSites(false)
+    }
+  }, [hasExternalClientMgmt])
 
   // Update clientCompanyId when siteId changes
   useEffect(() => {
@@ -89,16 +94,16 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
 
 
   const handleSubmit = (data: AssetFormData) => {
-    // Get the selected site to determine the correct clientCompanyId
-    const selectedSite = sites.find(site => site.id === data.siteId)
+    // Get the selected site to determine the correct clientCompanyId (only when external client mgmt is enabled)
+    const selectedSite = hasExternalClientMgmt ? sites.find(site => site.id === data.siteId) : null
     const actualClientCompanyId = selectedSite?.clientCompany?.id || clientCompanyId
 
     // Transform date strings to proper format for API
     const transformedData = {
       ...data,
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate).toISOString() : undefined,
-      // Pass the actual clientCompanyId for image path correction
-      _clientCompanyId: actualClientCompanyId
+      // Pass the actual clientCompanyId for image path correction (only relevant when external client mgmt is enabled)
+      _clientCompanyId: hasExternalClientMgmt ? actualClientCompanyId : undefined
     }
     onSubmit(transformedData)
   }

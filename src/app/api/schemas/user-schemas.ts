@@ -1,12 +1,12 @@
 import { z } from "zod"
+import { roleSchema } from "@/lib/rbac/role-schemas"
 
 // Schema para crear usuarios
+// Role validation is now centralized in role-schemas.ts
 export const createUserSchema = z.object({
   name: z.string().min(1, "El nombre es requerido").max(100, "El nombre es muy largo"),
   email: z.string().email("Email inválido"),
-  role: z.enum(["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "JEFE_MANTENIMIENTO", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"], {
-    message: "Rol inválido"
-  }),
+  role: roleSchema,
   companyId: z.string().optional(),
   clientCompanyId: z.string().optional(),
   siteId: z.string().optional(),
@@ -20,7 +20,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
-  role: z.enum(["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "JEFE_MANTENIMIENTO", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]).optional(),
+  role: roleSchema.optional(),
   companyId: z.string().optional(),
   clientCompanyId: z.string().optional(),
   siteId: z.string().optional(),

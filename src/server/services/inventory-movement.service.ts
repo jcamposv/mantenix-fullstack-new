@@ -63,7 +63,7 @@ export class InventoryMovementService {
     }
 
     // Filtrar por empresa del usuario si no es superadmin
-    if (session.user.role !== 'SUPERADMIN') {
+    if (session.user.role !== 'SUPER_ADMIN') {
       const companyFilter = {
         OR: [
           { fromCompanyId: session.user.companyId },
@@ -112,7 +112,7 @@ export class InventoryMovementService {
     }
 
     // Verificar que pertenece a la empresa del usuario (si no es superadmin)
-    if (session.user.role !== 'SUPERADMIN') {
+    if (session.user.role !== 'SUPER_ADMIN') {
       const belongsToCompany =
         movement.fromCompanyId === session.user.companyId ||
         movement.toCompanyId === session.user.companyId
@@ -140,7 +140,7 @@ export class InventoryMovementService {
     const movements = await InventoryMovementRepository.findByItem(inventoryItemId)
 
     // Filtrar por empresa si no es superadmin
-    if (session.user.role !== 'SUPERADMIN') {
+    if (session.user.role !== 'SUPER_ADMIN') {
       return movements.filter(movement =>
         movement.fromCompanyId === session.user.companyId ||
         movement.toCompanyId === session.user.companyId
@@ -176,7 +176,7 @@ export class InventoryMovementService {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
-    const companyId = session.user.role === 'SUPERADMIN' ? undefined : session.user.companyId
+    const companyId = session.user.role === 'SUPER_ADMIN' ? undefined : session.user.companyId
 
     return await InventoryMovementRepository.getStatsByType(companyId)
   }
@@ -194,7 +194,7 @@ export class InventoryMovementService {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
-    const companyId = session.user.role === 'SUPERADMIN' ? undefined : session.user.companyId
+    const companyId = session.user.role === 'SUPER_ADMIN' ? undefined : session.user.companyId
 
     return await InventoryMovementRepository.getTotalValue(companyId, dateFrom, dateTo)
   }
