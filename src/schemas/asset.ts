@@ -5,7 +5,7 @@ export const assetSchema = z.object({
   code: z.string().min(1, "El código es requerido"),
   description: z.string().optional(),
   location: z.string().min(1, "La ubicación es requerida"),
-  siteId: z.string().min(1, "La sede es requerida"),
+  siteId: z.string().min(1, "La sede es requerida").optional(),
   images: z.array(z.string()).optional(),
   status: z.enum(["OPERATIVO", "EN_MANTENIMIENTO", "FUERA_DE_SERVICIO"]).optional(),
   manufacturer: z.string().optional(),

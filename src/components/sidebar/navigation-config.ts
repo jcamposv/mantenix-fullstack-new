@@ -135,19 +135,11 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
-    name: "Clientes",
-    url: "/admin/client-companies", 
-    icon: Building2,
-    role: "ADMIN_EMPRESA", // Only company admins can see client companies
+    name: "Gestión",
+    url: "/admin/assets",
+    icon: Package,
+    role: "ADMIN_EMPRESA", // Company and group admins - always visible
     items: [
-      {
-        title: "Clientes",
-        url: "/admin/client-companies",
-      },
-      {
-        title: "Sedes",
-        url: "/admin/sites",
-      },
       {
         title: "Activos",
         url: "/admin/assets",
@@ -155,6 +147,27 @@ export const ADMIN_NAV_ITEMS = [
       {
         title: "Templates OT",
         url: "/admin/work-order-templates",
+      },
+      {
+        title: "Inventario",
+        url: "/admin/inventory",
+      },
+    ],
+  },
+  {
+    name: "Clientes",
+    url: "/admin/client-companies",
+    icon: Building2,
+    role: "ADMIN_EMPRESA", // Only visible with EXTERNAL_CLIENT_MANAGEMENT
+    requiresFeature: "EXTERNAL_CLIENT_MANAGEMENT",
+    items: [
+      {
+        title: "Empresas Cliente",
+        url: "/admin/client-companies",
+      },
+      {
+        title: "Sedes",
+        url: "/admin/sites",
       },
     ],
   },
@@ -165,7 +178,7 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN"
   },
   {
-    name: "Usuarios de la Empresa",
+    name: "Usuarios",
     url: "/admin/users", // Company admin uses admin route
     icon: Users,
     role: "ADMIN_EMPRESA"

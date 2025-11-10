@@ -3,6 +3,7 @@ import { WorkOrderRepository } from '@/server/repositories/work-order.repository
 import { WorkOrderTemplateRepository } from '@/server/repositories/work-order-template.repository'
 import { EmailSenderService } from './email-sender.service'
 import { prisma } from '@/lib/prisma'
+import { getCurrentCompanyId } from '@/lib/company-context'
 import type {
   CreateWorkOrderData,
   UpdateWorkOrderData,
@@ -24,10 +25,8 @@ export class WorkOrderService {
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number }
   ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
-    // Permission check - users can only see work orders from their company
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
-    }
+    // Get company ID based on role and current subdomain
+    const companyId = await getCurrentCompanyId(session)
 
     // For external users, filter based on their role
     const enhancedFilters = { ...filters }
@@ -44,7 +43,7 @@ export class WorkOrderService {
     return await WorkOrderRepository.findMany(
       enhancedFilters,
       pagination,
-      session.user.companyId
+      companyId
     )
   }
 
@@ -55,11 +54,10 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderWithRelations | null> {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
-    }
+    // Get company ID based on role and current subdomain
+    const companyId = await getCurrentCompanyId(session)
 
-    const workOrder = await WorkOrderRepository.findById(id, session.user.companyId)
+    const workOrder = await WorkOrderRepository.findById(id, companyId)
 
     // Additional permission check for external users
     if (workOrder && session.user.role.startsWith("CLIENTE") && session.user.siteId) {
@@ -78,8 +76,11 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     workOrderData: CreateWorkOrderData
   ): Promise<WorkOrderWithRelations> {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
+    // Get company ID based on role and current subdomain
+    const companyId = await getCurrentCompanyId(session)
+
+    if (!companyId) {
+      throw new Error("No se pudo determinar la empresa")
     }
 
     // Permission check - only certain roles can create work orders
@@ -97,7 +98,7 @@ export class WorkOrderService {
 
     // Generate work order number (with prefix if provided)
     const number = await WorkOrderRepository.generateNumber(
-      session.user.companyId,
+      companyId,
       workOrderData.prefixId
     )
 
@@ -106,7 +107,7 @@ export class WorkOrderService {
     if (workOrderData.templateId) {
       templateData = await WorkOrderTemplateRepository.findFirst({
         id: workOrderData.templateId,
-        companyId: session.user.companyId,
+        companyId,
         isActive: true
       })
       if (!templateData) {
@@ -134,7 +135,7 @@ export class WorkOrderService {
       tools: workOrderData.tools || [],
       materials: workOrderData.materials || [],
       customFieldValues: (workOrderData.customFieldValues ?? undefined) as Prisma.InputJsonValue | undefined,
-      company: { connect: { id: session.user.companyId } },
+      company: { connect: { id: companyId } },
       creator: { connect: { id: session.user.id } }
     }
 
@@ -171,7 +172,7 @@ export class WorkOrderService {
     }
 
     // Return the complete work order with assignments
-    const completeWorkOrder = await WorkOrderRepository.findById(workOrder.id, session.user.companyId) as WorkOrderWithRelations
+    const completeWorkOrder = await WorkOrderRepository.findById(workOrder.id, companyId) as WorkOrderWithRelations
 
     // Send email notifications (async, don't block response)
     this.sendWorkOrderCreatedEmails(completeWorkOrder, session).catch(error => {
@@ -188,10 +189,17 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     templateData: WorkOrderFromTemplateData
   ): Promise<WorkOrderWithRelations> {
+    // Get company ID based on role and current subdomain
+    const companyId = await getCurrentCompanyId(session)
+
+    if (!companyId) {
+      throw new Error("No se pudo determinar la empresa")
+    }
+
     // Get template data
     const template = await WorkOrderTemplateRepository.findFirst({
       id: templateData.templateId,
-      companyId: session.user.companyId,
+      companyId,
       isActive: true
     })
 
@@ -228,11 +236,7 @@ export class WorkOrderService {
     id: string,
     updateData: UpdateWorkOrderData
   ): Promise<WorkOrderWithRelations | null> {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
-    }
-
-    // Get existing work order
+    // Get existing work order (getCurrentCompanyId is called inside)
     const existingWorkOrder = await this.getWorkOrderById(session, id)
     if (!existingWorkOrder) {
       throw new Error("Orden de trabajo no encontrada")
@@ -350,17 +354,13 @@ export class WorkOrderService {
     workOrderId: string,
     assignmentData: WorkOrderAssignmentData
   ) {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
-    }
-
     // Permission check - only supervisors can assign
     const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR']
     if (!allowedRoles.includes(session.user.role)) {
       throw new Error("No tienes permisos para asignar usuarios")
     }
 
-    // Verify work order exists and belongs to user's company
+    // Verify work order exists and belongs to current company (getCurrentCompanyId is called inside)
     const workOrder = await this.getWorkOrderById(session, workOrderId)
     if (!workOrder) {
       throw new Error("Orden de trabajo no encontrada")
@@ -413,17 +413,13 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderWithRelations | null> {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
-    }
-
     // Permission check - only admins can delete
     const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA']
     if (!allowedRoles.includes(session.user.role)) {
       throw new Error("No tienes permisos para eliminar órdenes de trabajo")
     }
 
-    // Verify work order exists and belongs to user's company
+    // Verify work order exists and belongs to current company (getCurrentCompanyId is called inside)
     const workOrder = await this.getWorkOrderById(session, id)
     if (!workOrder) {
       throw new Error("Orden de trabajo no encontrada")
@@ -458,8 +454,11 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     filters?: WorkOrderFilters
   ): Promise<WorkOrderStats> {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
+    // Get company ID based on role and current subdomain
+    const companyId = await getCurrentCompanyId(session)
+
+    if (!companyId) {
+      throw new Error("No se pudo determinar la empresa")
     }
 
     // For external users, filter based on their role
@@ -475,7 +474,7 @@ export class WorkOrderService {
     }
 
     return await WorkOrderRepository.getStats(
-      session.user.companyId,
+      companyId,
       enhancedFilters
     )
   }
@@ -487,8 +486,11 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     filters?: WorkOrderFilters
   ) {
-    if (!session?.user?.companyId) {
-      throw new Error("Usuario no tiene una empresa asignada")
+    // Get company ID based on role and current subdomain
+    const companyId = await getCurrentCompanyId(session)
+
+    if (!companyId) {
+      throw new Error("No se pudo determinar la empresa")
     }
 
     // For external users, filter based on their role
@@ -504,10 +506,10 @@ export class WorkOrderService {
     }
 
     const [stats, recentActivity, performanceMetrics, upcomingWorkOrders] = await Promise.all([
-      WorkOrderRepository.getDashboardStats(session.user.companyId, enhancedFilters),
-      WorkOrderRepository.getRecentActivity(session.user.companyId, 10, enhancedFilters),
-      WorkOrderRepository.getPerformanceMetrics(session.user.companyId, 7, enhancedFilters),
-      WorkOrderRepository.getUpcomingWorkOrders(session.user.companyId, 10, enhancedFilters)
+      WorkOrderRepository.getDashboardStats(companyId, enhancedFilters),
+      WorkOrderRepository.getRecentActivity(companyId, 10, enhancedFilters),
+      WorkOrderRepository.getPerformanceMetrics(companyId, 7, enhancedFilters),
+      WorkOrderRepository.getUpcomingWorkOrders(companyId, 10, enhancedFilters)
     ])
 
     return {

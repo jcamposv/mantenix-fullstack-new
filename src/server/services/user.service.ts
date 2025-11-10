@@ -4,6 +4,7 @@ import { CompanyRepository } from "../repositories/company.repository"
 import { AuthService } from "./auth.service"
 import { SubscriptionGuard } from "../middleware/subscription-guard"
 import { SubscriptionService } from "./subscription.service"
+import { getCurrentCompanyId } from "@/lib/company-context"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { UserFilters, PaginatedUsersResponse, UserWithRelations } from "@/types/user.types"
 import type { CreateUserInput, UpdateUserInput } from "../../app/api/schemas/user-schemas"
@@ -16,23 +17,28 @@ export class UserService {
   
   /**
    * Construye el WHERE clause para filtrar usuarios según el rol del usuario
+   * Uses getCurrentCompanyId to respect subdomain context for ADMIN_GRUPO
    */
-  static buildWhereClause(session: AuthenticatedSession, userId?: string, filters?: UserFilters): Prisma.UserWhereInput {
+  static async buildWhereClause(session: AuthenticatedSession, userId?: string, filters?: UserFilters): Promise<Prisma.UserWhereInput> {
     const whereClause: Prisma.UserWhereInput = userId ? { id: userId } : {}
 
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los usuarios
     } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      if (!session.user.companyId) {
-        throw new Error("Usuario sin empresa asociada")
+      // Get company ID based on current subdomain (for ADMIN_GRUPO)
+      const companyId = await getCurrentCompanyId(session)
+
+      if (!companyId) {
+        throw new Error("No se pudo determinar la empresa")
       }
-      // Admin empresa/grupo puede ver usuarios de su empresa y clientes
+
+      // Admin empresa/grupo puede ver usuarios de la empresa actual y sus clientes
       whereClause.OR = [
-        { companyId: session.user.companyId },
+        { companyId },
         {
           clientCompany: {
-            tenantCompanyId: session.user.companyId
+            tenantCompanyId: companyId
           }
         }
       ]
@@ -67,7 +73,7 @@ export class UserService {
    * Obtiene un usuario por ID verificando permisos
    */
   static async getById(userId: string, session: AuthenticatedSession): Promise<UserWithRelations | null> {
-    const whereClause = this.buildWhereClause(session, userId)
+    const whereClause = await this.buildWhereClause(session, userId)
     return await UserRepository.findFirst(whereClause)
   }
 
@@ -79,12 +85,12 @@ export class UserService {
     const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_all_users') ||
                          AuthService.canUserPerformAction(session.user.role, 'view_company_users') ||
                          AuthService.canUserPerformAction(session.user.role, 'view_client_users')
-    
+
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver usuarios")
     }
 
-    const whereClause = this.buildWhereClause(session, undefined, filters)
+    const whereClause = await this.buildWhereClause(session, undefined, filters)
     const { users, total } = await UserRepository.findMany(whereClause, page, limit)
 
     return {
@@ -302,6 +308,7 @@ export class UserService {
 
   /**
    * Valida las relaciones del usuario según el rol del usuario que está creando/actualizando
+   * ADMIN_GRUPO can create users for the company of the subdomain they're currently on
    */
   private static async validateUserRelations(userData: Partial<CreateUserInput | UpdateUserInput>, session: AuthenticatedSession): Promise<void> {
     // Los super admin pueden asignar cualquier relación
@@ -309,10 +316,15 @@ export class UserService {
       return
     }
 
-    // Los admin empresa/grupo solo pueden crear usuarios en su empresa o empresas cliente
+    // Los admin empresa/grupo solo pueden crear usuarios en la empresa actual (subdomain)
     if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      if (userData.companyId && userData.companyId !== session.user.companyId) {
-        throw new Error("No puedes asignar usuarios a otras empresas")
+      if (userData.companyId) {
+        // Get current company ID based on subdomain
+        const currentCompanyId = await getCurrentCompanyId(session)
+
+        if (userData.companyId !== currentCompanyId) {
+          throw new Error("Solo puedes crear usuarios para la empresa del subdominio actual")
+        }
       }
       // TODO: Validar que clientCompanyId pertenezca a la empresa del admin
     }

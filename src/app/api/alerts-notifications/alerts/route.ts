@@ -61,8 +61,19 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      // Admin empresa/grupo puede ver alertas de todas las sedes de su empresa
+    } else if (session.user.role === "ADMIN_EMPRESA") {
+      // Admin empresa puede ver alertas de todas las sedes de su empresa
+      if (!session.user.companyId) {
+        return NextResponse.json({ error: "Usuario sin empresa asociada" }, { status: 400 })
+      }
+
+      whereClause.site = {
+        clientCompany: {
+          tenantCompanyId: session.user.companyId
+        }
+      }
+    } else if (session.user.role === "JEFE_MANTENIMIENTO") {
+      // Jefe de mantenimiento ve alertas de su empresa
       if (!session.user.companyId) {
         return NextResponse.json({ error: "Usuario sin empresa asociada" }, { status: 400 })
       }
