@@ -59,6 +59,18 @@ export const createWorkOrderSchema = workOrderSchema.omit({
 // Schema for updating work orders
 export const updateWorkOrderSchema = workOrderSchema.partial()
 
+// Schema for quick creating work orders from calendar
+export const quickCreateWorkOrderSchema = z.object({
+  templateId: z.string().min(1, "Debes seleccionar un template"),
+  title: z.string().min(1, "El título es requerido").max(255),
+  description: z.string().optional(),
+  priority: workOrderPrioritySchema,
+  scheduledDate: z.date().optional(),
+  siteId: z.string().optional(),
+  assetId: z.string().optional(),
+  assignedUserIds: z.array(z.string()).optional()
+})
+
 // Schema for completing work orders
 export const completeWorkOrderSchema = z.object({
   observations: z.string().optional(),
@@ -77,6 +89,7 @@ export const workOrderAssignmentSchema = z.object({
 export type WorkOrderFormData = z.infer<typeof workOrderSchema>
 export type CreateWorkOrderData = z.infer<typeof createWorkOrderSchema>
 export type UpdateWorkOrderData = z.infer<typeof updateWorkOrderSchema>
+export type QuickCreateWorkOrderData = z.infer<typeof quickCreateWorkOrderSchema>
 export type CompleteWorkOrderData = z.infer<typeof completeWorkOrderSchema>
 export type WorkOrderAssignmentData = z.infer<typeof workOrderAssignmentSchema>
 export type WorkOrderType = z.infer<typeof workOrderTypeSchema>

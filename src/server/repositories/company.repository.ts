@@ -14,6 +14,19 @@ export class CompanyRepository {
         users: true,
         clientCompanies: true
       }
+    },
+    subscription: {
+      select: {
+        id: true,
+        planId: true,
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            tier: true
+          }
+        }
+      }
     }
   }
 

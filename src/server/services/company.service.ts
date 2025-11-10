@@ -123,7 +123,20 @@ export class CompanyService {
       ipWhitelist: data.ipWhitelist || []
     }
 
-    return await CompanyRepository.create(createData)
+    const company = await CompanyRepository.create(createData)
+
+    // Crear subscripción si se proporcionó un planId
+    if (data.planId) {
+      const { SubscriptionService } = await import('./subscription.service')
+      await SubscriptionService.createSubscription({
+        companyId: company.id,
+        planId: data.planId,
+        billingInterval: 'MONTHLY',
+        startDate: new Date()
+      })
+    }
+
+    return company
   }
 
   static async update(session: AuthenticatedSession, id: string, data: UpdateCompanyData): Promise<CompanyWithRelations> {
@@ -155,7 +168,37 @@ export class CompanyService {
       ...(typeof data.isActive === 'boolean' && { isActive: data.isActive })
     }
 
-    return await CompanyRepository.update(id, updateData)
+    const company = await CompanyRepository.update(id, updateData)
+
+    // Manejar cambio de plan
+    if (data.planId) {
+      const { SubscriptionService } = await import('./subscription.service')
+      const { SubscriptionRepository } = await import('../repositories/subscription.repository')
+
+      // Verificar si ya tiene subscripción
+      const existingSubscription = await SubscriptionRepository.findByCompanyId(id)
+
+      if (existingSubscription) {
+        // Actualizar plan existente
+        await SubscriptionService.updateSubscription({
+          id: existingSubscription.id,
+          planId: data.planId
+        })
+
+        // Re-activar features del nuevo plan
+        await SubscriptionService.activatePlanFeatures(id, data.planId)
+      } else {
+        // Crear nueva subscripción
+        await SubscriptionService.createSubscription({
+          companyId: id,
+          planId: data.planId,
+          billingInterval: 'MONTHLY',
+          startDate: new Date()
+        })
+      }
+    }
+
+    return company
   }
 
   static async delete(session: AuthenticatedSession, id: string): Promise<CompanyWithRelations> {

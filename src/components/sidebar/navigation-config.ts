@@ -18,8 +18,20 @@ import {
   Calendar,
   FileText,
   Package,
+  CreditCard,
 } from "lucide-react"
 
+// Navigation items for SUPER_ADMIN (SaaS administrator)
+export const SUPER_ADMIN_NAV_ITEMS = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: SquareTerminal,
+    isActive: true,
+  },
+]
+
+// Navigation items for regular users (company/group admins and operators)
 export const BASE_NAV_ITEMS = [
   {
     title: "Dashboard",
@@ -123,22 +135,10 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
-    name: "Grupos Corporativos",
-    url: "/admin/company-groups",
-    icon: Building2,
-    role: "SUPER_ADMIN" // Super admins can manage company groups
-  },
-  {
-    name: "Grupos Corporativos",
-    url: "/admin/company-groups",
-    icon: Building2,
-    role: "ADMIN_GRUPO" // Group admins can manage company groups
-  },
-  {
     name: "Clientes",
-    url: "/admin/client-companies",
+    url: "/admin/client-companies", 
     icon: Building2,
-    role: "ADMIN_EMPRESA", // Only shown if EXTERNAL_CLIENT_MANAGEMENT is enabled
+    role: "ADMIN_EMPRESA", // Only company admins can see client companies
     items: [
       {
         title: "Clientes",
@@ -148,31 +148,21 @@ export const ADMIN_NAV_ITEMS = [
         title: "Sedes",
         url: "/admin/sites",
       },
+      {
+        title: "Activos",
+        url: "/admin/assets",
+      },
+      {
+        title: "Templates OT",
+        url: "/admin/work-order-templates",
+      },
     ],
-  },
-  {
-    name: "Activos",
-    url: "/admin/assets",
-    icon: Building2,
-    role: "ADMIN_GRUPO", // Always shown for group admins
-  },
-  {
-    name: "Activos",
-    url: "/admin/assets",
-    icon: Building2,
-    role: "ADMIN_EMPRESA", // Always shown for company admins
   },
   {
     name: "Usuarios del Sistema",
     url: "/super-admin/users", // Super admin uses super-admin route
     icon: Users,
     role: "SUPER_ADMIN"
-  },
-  {
-    name: "Usuarios del Grupo",
-    url: "/admin/users", // Group admin uses admin route
-    icon: Users,
-    role: "ADMIN_GRUPO" // Group admins can manage users in group companies
   },
   {
     name: "Usuarios de la Empresa",
@@ -216,7 +206,6 @@ export const getFeatureNavItems = (enabledFeatures: {
 }) => {
   const items = []
 
-  // HR Features
   if (enabledFeatures.hasAttendance) {
     items.push({
       title: "Asistencia",
@@ -266,29 +255,6 @@ export const getFeatureNavItems = (enabledFeatures: {
         {
           title: "Solicitudes",
           url: "/admin/permissions"
-        }
-      ]
-    })
-  }
-
-  // Inventory (available if either feature is enabled)
-  if (enabledFeatures.hasExternalClientMgmt || enabledFeatures.hasInternalCorporateGroup) {
-    items.push({
-      title: "Inventario",
-      url: "/admin/inventory",
-      icon: Package,
-      items: [
-        {
-          title: "Productos",
-          url: "/admin/inventory/items"
-        },
-        {
-          title: "Solicitudes",
-          url: "/admin/inventory/requests"
-        },
-        {
-          title: "Movimientos",
-          url: "/admin/inventory/movements"
         }
       ]
     })

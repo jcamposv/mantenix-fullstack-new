@@ -1,6 +1,5 @@
 "use client"
 
-
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +7,9 @@ import { DataTable } from "@/components/ui/data-table"
 import { Package } from "lucide-react"
 import { TableActions, createViewAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
-import { REQUEST_STATUS_OPTIONS, REQUEST_URGENCY_OPTIONS } from "@/schemas/inventory"
+import { REQUEST_URGENCY_OPTIONS } from "@/schemas/inventory"
+import { InventoryRequestStatusBadge } from "@/components/inventory/inventory-request-status-badge"
+import type { InventoryRequestStatus } from "@/types/inventory.types"
 
 interface InventoryRequest {
   id: string
@@ -26,7 +27,7 @@ interface InventoryRequest {
   quantityRequested: number
   quantityApproved: number | null
   quantityDelivered: number
-  status: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED"
+  status: InventoryRequestStatus
   urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
   requestedAt: string
   requester: {
@@ -52,14 +53,6 @@ export default function InventoryRequestsPage() {
     router.push(`/admin/inventory/requests/${requestId}`)
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusOption = REQUEST_STATUS_OPTIONS.find(opt => opt.value === status)
-    return (
-      <Badge className={statusOption?.color || "bg-gray-500"}>
-        {statusOption?.label || status}
-      </Badge>
-    )
-  }
 
   const getUrgencyBadge = (urgency: string) => {
     const urgencyOption = REQUEST_URGENCY_OPTIONS.find(opt => opt.value === urgency)
@@ -131,7 +124,7 @@ export default function InventoryRequestsPage() {
     {
       accessorKey: "status",
       header: "Estado",
-      cell: ({ row }) => getStatusBadge(row.original.status),
+      cell: ({ row }) => <InventoryRequestStatusBadge status={row.original.status} />,
     },
     {
       accessorKey: "urgency",
@@ -172,9 +165,9 @@ export default function InventoryRequestsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Solicitudes de Inventario</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Entregas de Inventario</h2>
           <p className="text-muted-foreground">
-            Gestiona las solicitudes de inventario de órdenes de trabajo
+            Solicitudes aprobadas pendientes de entrega desde bodega
           </p>
         </div>
       </div>

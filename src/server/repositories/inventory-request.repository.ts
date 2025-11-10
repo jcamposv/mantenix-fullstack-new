@@ -16,6 +16,8 @@ export class InventoryRequestRepository {
       requestedAt: Date
       reviewedAt: Date | null
       deliveredAt: Date | null
+      warehouseDeliveredAt: Date | null
+      receivedAt: Date | null
       createdAt: Date
       updatedAt: Date
       [key: string]: unknown
@@ -26,6 +28,8 @@ export class InventoryRequestRepository {
       requestedAt: item.requestedAt instanceof Date ? item.requestedAt.toISOString() : String(item.requestedAt),
       reviewedAt: item.reviewedAt instanceof Date ? item.reviewedAt.toISOString() : (item.reviewedAt ? String(item.reviewedAt) : null),
       deliveredAt: item.deliveredAt instanceof Date ? item.deliveredAt.toISOString() : (item.deliveredAt ? String(item.deliveredAt) : null),
+      warehouseDeliveredAt: item.warehouseDeliveredAt instanceof Date ? item.warehouseDeliveredAt.toISOString() : (item.warehouseDeliveredAt ? String(item.warehouseDeliveredAt) : null),
+      receivedAt: item.receivedAt instanceof Date ? item.receivedAt.toISOString() : (item.receivedAt ? String(item.receivedAt) : null),
       createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : String(item.createdAt),
       updatedAt: item.updatedAt instanceof Date ? item.updatedAt.toISOString() : String(item.updatedAt)
     }
@@ -80,6 +84,22 @@ export class InventoryRequestRepository {
         id: true,
         name: true,
         email: true
+      }
+    },
+    warehouseDeliverer: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    },
+    receiver: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
       }
     }
   }
@@ -268,7 +288,7 @@ export class InventoryRequestRepository {
     sourceLocationId?: string,
     sourceLocationType?: LocationType
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    return await InventoryRequestRepository.update(id, {
+    const updateData: Prisma.WorkOrderInventoryRequestUpdateInput = {
       status: 'APPROVED',
       quantityApproved,
       reviewer: { connect: { id: reviewedBy } },
@@ -276,7 +296,14 @@ export class InventoryRequestRepository {
       reviewNotes,
       ...(sourceLocationId && { sourceLocationId }),
       ...(sourceLocationType && { sourceLocationType: sourceLocationType as LocationType })
-    })
+    }
+
+    // If source is a WAREHOUSE, set sourceCompanyId
+    if (sourceLocationId && sourceLocationType === 'WAREHOUSE') {
+      updateData.sourceCompany = { connect: { id: sourceLocationId } }
+    }
+
+    return await InventoryRequestRepository.update(id, updateData)
   }
 
   /**
@@ -317,6 +344,74 @@ export class InventoryRequestRepository {
       quantityDelivered,
       deliverer: { connect: { id: deliveredBy } },
       deliveredAt: new Date()
+    })
+  }
+
+  /**
+   * Deliver from warehouse (Encargado de bodega entrega físicamente)
+   */
+  static async deliverFromWarehouse(
+    id: string,
+    warehouseDeliveredBy: string,
+    notes?: string
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    const request = await InventoryRequestRepository.findById(id)
+    if (!request) {
+      throw new Error("Solicitud de inventario no encontrada")
+    }
+
+    // Determine if it's same company or inter-company transfer
+    const isSameCompany = !request.sourceCompanyId ||
+      request.sourceCompanyId === request.workOrder?.companyId
+
+    return await InventoryRequestRepository.update(id, {
+      status: isSameCompany ? InventoryRequestStatus.READY_FOR_PICKUP : InventoryRequestStatus.IN_TRANSIT,
+      warehouseDeliverer: { connect: { id: warehouseDeliveredBy } },
+      warehouseDeliveredAt: new Date(),
+      ...(notes && { reviewNotes: notes })
+    })
+  }
+
+  /**
+   * Receive at destination warehouse (Bodega destino recibe - solo inter-empresa)
+   */
+  static async receiveAtDestinationWarehouse(
+    id: string,
+    destinationWarehouseReceivedBy: string,
+    notes?: string
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    return await InventoryRequestRepository.update(id, {
+      status: InventoryRequestStatus.RECEIVED_AT_DESTINATION,
+      destinationWarehouseReceiver: { connect: { id: destinationWarehouseReceivedBy } },
+      destinationWarehouseReceivedAt: new Date(),
+      ...(notes && { reviewNotes: notes })
+    })
+  }
+
+  /**
+   * Prepare for technician pickup (Bodega prepara para entregar al técnico)
+   */
+  static async prepareForPickup(
+    id: string
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    return await InventoryRequestRepository.update(id, {
+      status: InventoryRequestStatus.READY_FOR_PICKUP
+    })
+  }
+
+  /**
+   * Confirm receipt (Técnico confirma recepción)
+   */
+  static async confirmReceipt(
+    id: string,
+    receivedBy: string,
+    notes?: string
+  ): Promise<WorkOrderInventoryRequestWithRelations> {
+    return await InventoryRequestRepository.update(id, {
+      status: InventoryRequestStatus.DELIVERED,
+      receiver: { connect: { id: receivedBy } },
+      receivedAt: new Date(),
+      ...(notes && { notes })
     })
   }
 

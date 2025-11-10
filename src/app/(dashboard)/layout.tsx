@@ -1,32 +1,46 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { DynamicBreadcrumbs } from "@/components/dynamic-breadcrumbs"
-import { Separator } from "@/components/ui/separator"
+import { AppSidebar } from '@/components/app-sidebar';
+import { DynamicBreadcrumbs } from '@/components/dynamic-breadcrumbs';
+import { Separator } from '@/components/ui/separator';
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Toaster } from "@/components/ui/sonner"
-import { PWABrandingUpdater } from "@/components/pwa-branding-updater"
-import { headers } from "next/headers"
-import { prisma } from "@/lib/prisma"
-import { getCurrentUserWithRole } from "@/lib/auth-utils"
-import type { CompanyBranding } from "@/types/branding"
+} from '@/components/ui/sidebar';
+import { Toaster } from '@/components/ui/sonner';
+import { PWABrandingUpdater } from '@/components/pwa-branding-updater';
+import { headers } from 'next/headers';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUserWithRole } from '@/lib/auth-utils';
+import type { CompanyBranding } from '@/types/branding';
+import type { ReactNode } from 'react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
+/**
+ * Dashboard Layout
+ * Main layout for authenticated dashboard pages
+ * Optimized for minimal vertical space usage
+ * Follows Next.js App Router Server Component patterns
+ */
+
+/**
+ * Fetches company branding based on subdomain
+ * Server-side function that runs on each request
+ *
+ * @returns Company branding or null if not found
+ */
 async function getCompanyBranding(): Promise<CompanyBranding | null> {
   try {
-    const headersList = await headers()
-    const host = headersList.get('host') || ''
-    const subdomain = host.split('.')[0]
-    
+    const headersList = await headers();
+    const host = headersList.get('host') || '';
+    const subdomain = host.split('.')[0];
+
     // Only fetch if we have a subdomain (not just localhost or main domain)
     if (subdomain && subdomain !== 'localhost' && subdomain !== host) {
       const company = await prisma.company.findUnique({
-        where: { 
+        where: {
           subdomain: subdomain,
-          isActive: true 
+          isActive: true,
         },
         select: {
           name: true,
@@ -35,22 +49,50 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
           primaryColor: true,
           secondaryColor: true,
           backgroundColor: true,
-        }
-      })
+        },
+      });
 
-      return company
+      return company;
     }
-    
-    return null
+
+    return null;
   } catch (error) {
-    console.warn('Failed to fetch company branding:', error)
-    return null
+    console.warn('Failed to fetch company branding:', error);
+    return null;
   }
 }
 
-async function getServerSideData() {
+interface UserPermissions {
+  isSuperAdmin: boolean;
+  isGroupAdmin: boolean;
+  isCompanyAdmin: boolean;
+}
+
+interface ServerSideData {
+  user: Awaited<ReturnType<typeof getCurrentUserWithRole>>;
+  availableCompanies: Array<{
+    id: string;
+    name: string;
+    subdomain: string | null;
+    logo: string | null;
+    isActive: boolean;
+  }> | null;
+  companyFeatures: Array<{
+    module: import('@prisma/client').FeatureModule;
+    isEnabled: boolean;
+  }> | null;
+  userPermissions: UserPermissions;
+}
+
+/**
+ * Fetches all server-side data needed for the dashboard layout
+ * Includes user data, permissions, available companies, and features
+ *
+ * @returns Server-side data object
+ */
+async function getServerSideData(): Promise<ServerSideData> {
   try {
-    const user = await getCurrentUserWithRole()
+    const user = await getCurrentUserWithRole();
 
     if (!user) {
       return {
@@ -60,24 +102,24 @@ async function getServerSideData() {
         userPermissions: {
           isSuperAdmin: false,
           isGroupAdmin: false,
-          isCompanyAdmin: false
-        }
-      }
+          isCompanyAdmin: false,
+        },
+      };
     }
 
-    const userPermissions = {
+    const userPermissions: UserPermissions = {
       isSuperAdmin: user.role === 'SUPER_ADMIN',
       isGroupAdmin: user.role === 'ADMIN_GRUPO',
-      isCompanyAdmin: user.role === 'ADMIN_EMPRESA'
-    }
+      isCompanyAdmin: user.role === 'ADMIN_EMPRESA',
+    };
 
     // Fetch companies based on user role
-    let availableCompanies = null
+    let availableCompanies = null;
     if (userPermissions.isSuperAdmin) {
       // SUPER_ADMIN can see all companies
       availableCompanies = await prisma.company.findMany({
         where: {
-          isActive: true
+          isActive: true,
         },
         select: {
           id: true,
@@ -87,28 +129,28 @@ async function getServerSideData() {
           isActive: true,
         },
         orderBy: {
-          name: 'asc'
-        }
-      })
+          name: 'asc',
+        },
+      });
     } else if (userPermissions.isGroupAdmin) {
       // ADMIN_GRUPO can see companies in their group
       // First, try to get companyGroupId from user, or from their company
-      let groupId = user.companyGroupId
+      let groupId = user.companyGroupId;
 
       if (!groupId && user.companyId) {
         // If user doesn't have companyGroupId directly, get it from their company
         const userCompany = await prisma.company.findUnique({
           where: { id: user.companyId },
-          select: { companyGroupId: true }
-        })
-        groupId = userCompany?.companyGroupId ?? null
+          select: { companyGroupId: true },
+        });
+        groupId = userCompany?.companyGroupId ?? null;
       }
 
       if (groupId) {
         availableCompanies = await prisma.company.findMany({
           where: {
             companyGroupId: groupId,
-            isActive: true
+            isActive: true,
           },
           select: {
             id: true,
@@ -118,36 +160,36 @@ async function getServerSideData() {
             isActive: true,
           },
           orderBy: {
-            name: 'asc'
-          }
-        })
+            name: 'asc',
+          },
+        });
       }
     }
 
     // Fetch company features for the user's company
-    let companyFeatures = null
-    const companyId = user.companyId || user.company?.id
+    let companyFeatures = null;
+    const companyId = user.companyId || user.company?.id;
     if (companyId) {
       companyFeatures = await prisma.companyFeature.findMany({
         where: {
           companyId: companyId,
-          isEnabled: true
+          isEnabled: true,
         },
         select: {
           module: true,
-          isEnabled: true
-        }
-      })
+          isEnabled: true,
+        },
+      });
     }
 
     return {
       user,
       availableCompanies,
       companyFeatures,
-      userPermissions
-    }
+      userPermissions,
+    };
   } catch (error) {
-    console.warn('Failed to fetch server side data:', error)
+    console.warn('Failed to fetch server side data:', error);
     return {
       user: null,
       availableCompanies: null,
@@ -155,15 +197,27 @@ async function getServerSideData() {
       userPermissions: {
         isSuperAdmin: false,
         isGroupAdmin: false,
-        isCompanyAdmin: false
-      }
-    }
+        isCompanyAdmin: false,
+      },
+    };
   }
 }
 
-export default async function Page({ children }: { children: React.ReactNode }) {
-  const companyBranding = await getCompanyBranding()
-  const { user, availableCompanies, companyFeatures, userPermissions } = await getServerSideData()
+interface DashboardLayoutProps {
+  children: ReactNode;
+}
+
+/**
+ * Main Dashboard Layout Component
+ * Server Component that provides the layout structure for all dashboard pages
+ * Optimized for minimal vertical space while maintaining functionality
+ */
+export default async function DashboardLayout({
+  children,
+}: DashboardLayoutProps) {
+  const companyBranding = await getCompanyBranding();
+  const { user, availableCompanies, companyFeatures, userPermissions } =
+    await getServerSideData();
 
   return (
     <SidebarProvider>
@@ -175,19 +229,21 @@ export default async function Page({ children }: { children: React.ReactNode }) 
         companyFeatures={companyFeatures}
       />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
+        {/* Optimized header - reduced from h-16 to h-12 for space efficiency */}
+        <header className="flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-10">
+          <div className="flex items-center gap-2 px-3">
+            <SidebarTrigger className="-ml-1 h-7 w-7" />
             <Separator
               orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
+              className="mr-2 h-4 data-[orientation=vertical]:h-4"
             />
             <DynamicBreadcrumbs />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" >
-            <div className="h-full bg-white rounded-xl p-4">
+        {/* Optimized content container - reduced padding for more space */}
+        <div className="flex flex-1 flex-col gap-3 p-3 pt-3">
+          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-lg md:min-h-min">
+            <div className="h-full bg-white rounded-lg p-3 md:p-4">
               {children}
             </div>
           </div>
@@ -196,5 +252,5 @@ export default async function Page({ children }: { children: React.ReactNode }) 
       <PWABrandingUpdater />
       <Toaster />
     </SidebarProvider>
-  )
+  );
 }

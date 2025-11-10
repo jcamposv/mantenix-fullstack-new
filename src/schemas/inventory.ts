@@ -94,6 +94,24 @@ export const rejectRequestSchema = z.object({
 export type RejectRequestFormData = z.infer<typeof rejectRequestSchema>
 
 /**
+ * Schema para entregar desde bodega (Encargado de bodega)
+ */
+export const deliverFromWarehouseSchema = z.object({
+  notes: z.string().optional(),
+})
+
+export type DeliverFromWarehouseFormData = z.infer<typeof deliverFromWarehouseSchema>
+
+/**
+ * Schema para confirmar recepción (Técnico)
+ */
+export const confirmReceiptSchema = z.object({
+  notes: z.string().optional(),
+})
+
+export type ConfirmReceiptFormData = z.infer<typeof confirmReceiptSchema>
+
+/**
  * Schema para company group
  */
 export const companyGroupSchema = z.object({
@@ -133,7 +151,11 @@ export const REQUEST_STATUS_OPTIONS = [
   { value: "PENDING", label: "Pendiente", color: "bg-gray-500" },
   { value: "APPROVED", label: "Aprobada", color: "bg-green-500" },
   { value: "REJECTED", label: "Rechazada", color: "bg-red-500" },
+  { value: "IN_TRANSIT", label: "En Tránsito", color: "bg-purple-500" },
+  { value: "RECEIVED_AT_DESTINATION", label: "Recibido en Destino", color: "bg-indigo-500" },
+  { value: "READY_FOR_PICKUP", label: "Listo para Entrega", color: "bg-cyan-500" },
   { value: "DELIVERED", label: "Entregada", color: "bg-blue-500" },
+  { value: "CANCELLED", label: "Cancelada", color: "bg-gray-600" },
 ] as const
 
 /**

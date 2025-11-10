@@ -20,12 +20,16 @@ export interface WorkOrder {
   status: WorkOrderStatus
 
   // Location and asset
-  siteId: string
+  siteId: string | null
   assetId: string | null
   
   // Template integration
   templateId: string | null
   customFieldValues: JsonValue | null
+  
+  // Recurring work orders
+  isRecurring: boolean
+  scheduleId: string | null
   
   // Dates
   scheduledDate: string | null

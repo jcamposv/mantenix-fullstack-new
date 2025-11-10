@@ -85,13 +85,23 @@ enum AssetStatus {
 }
 
 enum FeatureModule {
+  // HR Modules
   HR_ATTENDANCE // Módulo de asistencia y marcaje
   HR_VACATIONS // Módulo de vacaciones
   HR_PERMISSIONS // Módulo de permisos
-  AI_ASSISTANT // Asistente de IA
+
+  // AI & Analytics
+  AI_ASSISTANT // Asistente de IA (add-on disponible bajo demanda)
   ADVANCED_ANALYTICS // Análisis avanzados
+
+  // Business Models
   EXTERNAL_CLIENT_MANAGEMENT // Gestión de clientes externos (ClientCompany, Sites)
   INTERNAL_CORPORATE_GROUP // Grupo corporativo con inventario compartido
+
+  // Platform Features (nuevos)
+  API_ACCESS // Acceso a API REST
+  PRIORITY_SUPPORT // Soporte prioritario
+  DEDICATED_SUPPORT // Soporte dedicado con account manager
 }
 
 enum LocationType {
@@ -104,8 +114,10 @@ enum InventoryRequestStatus {
   PENDING // Pendiente de aprobación
   APPROVED // Aprobado por jefe
   REJECTED // Rechazado
-  IN_TRANSIT // En tránsito (si es transferencia)
-  DELIVERED // Entregado
+  IN_TRANSIT // En tránsito (transferencia inter-empresa)
+  RECEIVED_AT_DESTINATION // Recibido en bodega destino (inter-empresa)
+  READY_FOR_PICKUP // Listo para entrega al técnico
+  DELIVERED // Entregado y confirmado por técnico
   CANCELLED // Cancelado
 }
 
@@ -199,6 +211,7 @@ model User {
   workOrdersCreated           WorkOrder[]           @relation("WorkOrderCreator")
   workOrderAssignments        WorkOrderAssignment[] @relation("WorkOrderAssignments")
   workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
+  workOrderSchedulesCreated   WorkOrderSchedule[]   @relation("WorkOrderScheduleCreator")
 
   // Password Reset relations
   passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
@@ -215,6 +228,9 @@ model User {
   inventoryRequestsRequested WorkOrderInventoryRequest[] @relation("InventoryRequestRequester")
   inventoryRequestsReviewed  WorkOrderInventoryRequest[] @relation("InventoryRequestReviewer")
   inventoryRequestsDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestDeliverer")
+  inventoryRequestsWarehouseDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestWarehouseDeliverer")
+  inventoryRequestsDestinationWarehouseReceived WorkOrderInventoryRequest[] @relation("InventoryRequestDestinationWarehouseReceiver")
+  inventoryRequestsReceived  WorkOrderInventoryRequest[] @relation("InventoryRequestReceiver")
 
   // Inventory movement relations
   inventoryMovementsCreated InventoryMovement[] @relation("InventoryMovementCreator")
@@ -297,6 +313,7 @@ model Company {
 
   // Relations
   companyGroup       CompanyGroup?        @relation(fields: [companyGroupId], references: [id])
+  subscription       Subscription?
   users              User[]
   auditLogs          AuditLog[]
   securityEvents     SecurityEvent[]
@@ -305,6 +322,7 @@ model Company {
   workOrderTemplates WorkOrderTemplate[]
   workOrderPrefixes  WorkOrderPrefix[]
   workOrders         WorkOrder[]
+  workOrderSchedules WorkOrderSchedule[]
   emailConfiguration EmailConfiguration?
   features           CompanyFeature[]
   locations          CompanyLocation[]
@@ -390,6 +408,7 @@ model Site {
 
   // Work orders in this site
   workOrders WorkOrder[]
+  schedules  WorkOrderSchedule[]
 
   @@index([clientCompanyId])
   @@index([isActive])
@@ -431,6 +450,7 @@ model Asset {
 
   // Work orders related to this asset
   workOrders WorkOrder[]
+  schedules  WorkOrderSchedule[]
 
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -654,6 +674,31 @@ enum WorkOrderStatus {
   CANCELLED // Cancelada
 }
 
+enum RecurrenceType {
+  DAILY // Diario
+  WEEKLY // Semanal
+  MONTHLY // Mensual
+  YEARLY // Anual
+  METER_BASED // Basado en lecturas de medidores
+}
+
+enum RecurrenceEndType {
+  NEVER // Sin fin
+  AFTER_OCCURRENCES // Después de X ocurrencias
+  ON_DATE // En fecha específica
+}
+
+enum MeterType {
+  HOURS_RUN // Horas de funcionamiento
+  KILOMETERS // Kilómetros
+  MILES // Millas
+  TEMPERATURE // Temperatura
+  PRESSURE // Presión
+  CYCLES // Ciclos de operación
+  VIBRATION // Vibración
+  CUSTOM // Personalizado
+}
+
 enum CustomFieldType {
   TEXT // Input de texto simple
   TEXTAREA // Área de texto multilinea
@@ -739,6 +784,7 @@ model WorkOrderTemplate {
 
   // Relations with work orders
   workOrders WorkOrder[] @relation("WorkOrderFromTemplate")
+  schedules  WorkOrderSchedule[]
 
   @@index([companyId])
   @@index([status])
@@ -801,6 +847,11 @@ model WorkOrder {
   templateId        String? // Template base usado
   customFieldValues Json? // Valores de campos personalizados del template
 
+  // Programación recurrente (para mantenimiento preventivo)
+  isRecurring Boolean @default(false) // Si fue generada automáticamente
+  scheduleId  String? // Programación que generó esta OT
+  schedule    WorkOrderSchedule? @relation("GeneratedFromSchedule", fields: [scheduleId], references: [id], onDelete: SetNull)
+
   // Fechas importantes
   scheduledDate DateTime? // Fecha programada
   startedAt     DateTime? // Fecha de inicio real
@@ -854,6 +905,7 @@ model WorkOrder {
   @@index([siteId])
   @@index([assetId])
   @@index([templateId])
+  @@index([scheduleId])
   @@index([prefixId])
   @@index([status])
   @@index([type])
@@ -861,6 +913,7 @@ model WorkOrder {
   @@index([scheduledDate])
   @@index([createdBy])
   @@index([isActive])
+  @@index([isRecurring])
   @@map("work_orders")
 }
 
@@ -882,6 +935,88 @@ model WorkOrderAssignment {
   @@index([userId])
   @@index([assignedBy])
   @@map("work_order_assignments")
+}
+
+// ============================================================================
+// WORK ORDER SCHEDULING & RECURRENCE
+// ============================================================================
+
+// Programación de órdenes de trabajo recurrentes (Mantenimiento Preventivo)
+model WorkOrderSchedule {
+  id String @id @default(cuid())
+
+  // Información básica
+  name        String // Nombre descriptivo de la programación
+  description String? // Descripción opcional
+
+  // Configuración de recurrencia
+  recurrenceType     RecurrenceType // Tipo de recurrencia
+  recurrenceInterval Int            @default(1) // Cada cuántos días/semanas/meses (ej: cada 2 semanas)
+
+  // Fin de recurrencia
+  recurrenceEndType  RecurrenceEndType // Cómo termina la recurrencia
+  recurrenceEndValue Int? // Número de ocurrencias (solo si recurrenceEndType = AFTER_OCCURRENCES)
+  recurrenceEndDate  DateTime? // Fecha de fin (solo si recurrenceEndType = ON_DATE)
+
+  // Días de la semana (para recurrencia WEEKLY)
+  // [1,2,3,4,5] = Lun-Vie, [6,7] = Fin de semana
+  weekDays Int[] @default([])
+
+  // Para mantenimiento basado en medidores (METER_BASED)
+  meterType           MeterType? // Tipo de medidor
+  meterThreshold      Float? // Umbral para generar OT (ej: cada 100 horas)
+  currentMeterReading Float      @default(0) // Lectura actual del medidor
+
+  // Template a usar para generar las OT
+  templateId String
+  template   WorkOrderTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  // Asset relacionado (opcional)
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  // Site relacionado (opcional)
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  // Asignación predefinida
+  assignedUserIds String[] @default([]) // IDs de usuarios asignados automáticamente
+
+  // Tracking de generación
+  lastGeneratedAt    DateTime? // Última vez que se generó una OT
+  nextGenerationDate DateTime? // Próxima fecha programada
+
+  // Estadísticas
+  totalGenerated     Int @default(0) // Total de OT generadas
+  totalCompleted     Int @default(0) // Total completadas
+  totalSkipped       Int @default(0) // Total saltadas
+  completionRate     Float @default(0) // % de completitud
+
+  // Control de acceso y propiedad
+  companyId String // Empresa propietaria
+  createdBy String // Usuario que creó la programación
+
+  // Estado
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator User    @relation("WorkOrderScheduleCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  // Órdenes generadas por esta programación
+  generatedWorkOrders WorkOrder[] @relation("GeneratedFromSchedule")
+
+  @@index([companyId])
+  @@index([templateId])
+  @@index([assetId])
+  @@index([siteId])
+  @@index([isActive])
+  @@index([nextGenerationDate])
+  @@index([recurrenceType])
+  @@map("work_order_schedules")
 }
 
 // ============================================================================
@@ -1298,6 +1433,21 @@ model WorkOrderInventoryRequest {
   deliverer   User?    @relation("InventoryRequestDeliverer", fields: [deliveredBy], references: [id])
   deliveredAt DateTime?
 
+  // Warehouse delivery tracking (entrega física desde bodega origen)
+  warehouseDeliveredBy String?
+  warehouseDeliverer   User?    @relation("InventoryRequestWarehouseDeliverer", fields: [warehouseDeliveredBy], references: [id])
+  warehouseDeliveredAt DateTime?
+
+  // Destination warehouse receipt (recepción en bodega destino - solo inter-empresa)
+  destinationWarehouseReceivedBy String?
+  destinationWarehouseReceiver   User?    @relation("InventoryRequestDestinationWarehouseReceiver", fields: [destinationWarehouseReceivedBy], references: [id])
+  destinationWarehouseReceivedAt DateTime?
+
+  // Technician receipt confirmation (confirmación de recepción del técnico)
+  receivedBy String?
+  receiver   User?    @relation("InventoryRequestReceiver", fields: [receivedBy], references: [id])
+  receivedAt DateTime?
+
   // Notes
   notes   String?
   urgency RequestUrgency @default(NORMAL)
@@ -1375,4 +1525,202 @@ model InventoryMovement {
   @@index([createdBy])
   @@index([approvedBy])
   @@map("inventory_movements")
+}
+
+// ============================================================================
+// BILLING & SUBSCRIPTIONS
+// ============================================================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE      // Pago atrasado
+  CANCELED
+  TRIALING      // En período de prueba
+  INCOMPLETE    // Pago incompleto
+  PAUSED        // Pausado temporalmente
+}
+
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum PlanTier {
+  STARTER
+  BUSINESS
+  CORPORATE
+  ENTERPRISE
+  CUSTOM
+}
+
+model SubscriptionPlan {
+  id          String    @id @default(cuid())
+  name        String    @unique // "Starter", "Business", "Corporate"
+  tier        PlanTier
+  description String?
+
+  // Pricing
+  monthlyPrice  Float   // Precio mensual en USD
+  annualPrice   Float   // Precio anual en USD (con descuento)
+
+  // Limits
+  maxUsers              Int     @default(10)
+  maxCompanies          Int     @default(1)      // Para planes Corporate
+  maxWarehouses         Int     @default(2)
+  maxWorkOrdersPerMonth Int     @default(100)
+  maxInventoryItems     Int     @default(200)
+  maxStorageGB          Float   @default(5)      // GB de almacenamiento
+
+  // Overage pricing (cargos por exceso)
+  overageUserPrice      Float   @default(15)     // USD por usuario extra
+  overageStoragePrice   Float   @default(0.50)   // USD por GB extra
+  overageWorkOrderPrice Float   @default(1)      // USD por orden extra
+
+  isActive    Boolean   @default(true)
+  isPublic    Boolean   @default(true)  // Si se muestra públicamente
+
+  subscriptions Subscription[]
+  features      PlanFeature[]  // Features incluidos en este plan
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscription_plans")
+}
+
+// Tabla intermedia: Features incluidos en cada plan
+model PlanFeature {
+  id String @id @default(cuid())
+
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  module FeatureModule // Feature incluido en el plan
+
+  createdAt DateTime @default(now())
+
+  @@unique([planId, module]) // Un plan no puede tener el mismo feature duplicado
+  @@map("plan_features")
+}
+
+model Subscription {
+  id String @id @default(cuid())
+
+  // Company relationship
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Plan
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  // Billing
+  status          SubscriptionStatus @default(TRIALING)
+  billingInterval BillingInterval    @default(MONTHLY)
+
+  // Pricing (snapshot del plan al momento de subscribirse)
+  currentPrice Float
+
+  // Billing cycle
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEnd           DateTime?
+
+  // Cancellation
+  cancelAtPeriodEnd Boolean   @default(false)
+  canceledAt        DateTime?
+
+  // Stripe integration
+  stripeCustomerId       String?  @unique
+  stripeSubscriptionId   String?  @unique
+  stripePaymentMethodId  String?
+
+  // Usage tracking
+  usageMetrics UsageMetrics?
+  invoices     Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model UsageMetrics {
+  id String @id @default(cuid())
+
+  subscriptionId String       @unique
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Current usage for billing period
+  currentUsers              Int   @default(0)
+  currentCompanies          Int   @default(1)
+  currentWarehouses         Int   @default(0)
+  currentWorkOrdersThisMonth Int   @default(0)
+  currentInventoryItems     Int   @default(0)
+  currentStorageGB          Float @default(0)
+
+  // Peak usage (for reporting)
+  peakUsers         Int   @default(0)
+  peakStorageGB     Float @default(0)
+
+  // Last reset (inicio del período de facturación)
+  lastResetAt DateTime @default(now())
+
+  // Calculated overages
+  overageUsers       Int   @default(0)
+  overageStorageGB   Float @default(0)
+  overageWorkOrders  Int   @default(0)
+  overageCharges     Float @default(0) // Total de cargos por exceso
+
+  updatedAt DateTime @updatedAt
+
+  @@map("usage_metrics")
+}
+
+model Invoice {
+  id String @id @default(cuid())
+
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+  // Invoice details
+  invoiceNumber String   @unique // INV-2024-001
+  status        String   // "draft", "open", "paid", "void", "uncollectible"
+
+  // Amounts in USD
+  subtotal      Float
+  taxAmount     Float    @default(0)
+  totalAmount   Float
+
+  // Line items breakdown
+  planAmount    Float    // Costo del plan base
+  overageAmount Float    @default(0) // Cargos por exceso
+
+  // Billing period
+  periodStart   DateTime
+  periodEnd     DateTime
+
+  // Payment
+  dueDate       DateTime
+  paidAt        DateTime?
+
+  // Stripe
+  stripeInvoiceId String?  @unique
+  stripePaymentIntentId String?
+
+  // PDF
+  invoicePdfUrl String?
+
+  // Metadata
+  metadata      Json?    // Detalles adicionales
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("invoices")
 }

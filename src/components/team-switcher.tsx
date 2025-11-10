@@ -3,6 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import { ChevronsUpDown } from "lucide-react"
+import type { AvailableCompany } from "@/components/sidebar/sidebar-types"
 
 import {
   DropdownMenu,
@@ -23,14 +24,6 @@ interface Company {
   logo: string
   hasCustomBranding: boolean
   plan: string
-}
-
-interface AvailableCompany {
-  id: string
-  name: string
-  subdomain: string
-  logo?: string | null
-  isActive: boolean
 }
 
 export function TeamSwitcher({

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { CompanyGroupRepository } from "@/server/repositories/company-group.repository"
 import { PermissionHelper } from "@/server/helpers/permission.helper"
+
 import type {
   CompanyGroupWithRelations,
   CompanyGroupWithDetails,

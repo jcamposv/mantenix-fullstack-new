@@ -141,6 +141,27 @@ export const deliverInventoryRequestSchema = z.object({
 })
 
 /**
+ * Schema para entregar desde bodega (Encargado de bodega)
+ */
+export const deliverFromWarehouseSchema = z.object({
+  notes: z.string().optional()
+})
+
+/**
+ * Schema para recibir en bodega destino (Encargado de bodega destino)
+ */
+export const receiveAtDestinationSchema = z.object({
+  notes: z.string().optional()
+})
+
+/**
+ * Schema para confirmar recepción (Técnico)
+ */
+export const confirmReceiptSchema = z.object({
+  notes: z.string().optional()
+})
+
+/**
  * Schema para filtros de solicitudes de inventario
  */
 export const inventoryRequestFiltersSchema = z.object({

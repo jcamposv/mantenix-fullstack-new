@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useSidebarData, type AppSidebarProps } from "@/components/sidebar"
 
+
 interface ExtendedAppSidebarProps extends AppSidebarProps, React.ComponentProps<typeof Sidebar> {}
 
 export function AppSidebar({
