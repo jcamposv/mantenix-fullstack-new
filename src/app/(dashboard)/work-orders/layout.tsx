@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutDashboard, List, Calendar, CalendarClock } from 'lucide-react';
+import type { JSX } from 'react';
 
 interface WorkOrdersLayoutProps {
   children: React.ReactNode;

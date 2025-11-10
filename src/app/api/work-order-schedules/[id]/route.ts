@@ -11,9 +11,12 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     // Get authenticated session
     const sessionResult = await AuthService.getAuthenticatedSession()
     if (sessionResult instanceof NextResponse) {
@@ -21,7 +24,7 @@ export async function GET(
     }
     const session = sessionResult
 
-    const schedule = await WorkOrderScheduleService.getScheduleById(session, params.id)
+    const schedule = await WorkOrderScheduleService.getScheduleById(session, id)
 
     if (!schedule) {
       return NextResponse.json(
@@ -49,9 +52,12 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     // Get authenticated session
     const sessionResult = await AuthService.getAuthenticatedSession()
     if (sessionResult instanceof NextResponse) {
@@ -64,17 +70,21 @@ export async function PATCH(
     const scheduleData = updateWorkOrderScheduleSchema.parse(body)
 
     // Convert date strings (YYYY-MM-DD) to Date objects if present
+    // Convert null to undefined for optional fields
     const input = {
-      id: params.id,
+      id,
       ...scheduleData,
       recurrenceEndDate: scheduleData.recurrenceEndDate
         ? new Date(`${scheduleData.recurrenceEndDate}T00:00:00`)
-        : scheduleData.recurrenceEndDate === null
-          ? null
-          : undefined,
+        : undefined,
       nextGenerationDate: scheduleData.nextGenerationDate
         ? new Date(`${scheduleData.nextGenerationDate}T00:00:00`)
         : undefined,
+      recurrenceEndValue: scheduleData.recurrenceEndValue ?? undefined,
+      meterType: (scheduleData.meterType ?? undefined) as import('@prisma/client').MeterType | undefined,
+      meterThreshold: scheduleData.meterThreshold ?? undefined,
+      assetId: scheduleData.assetId ?? undefined,
+      siteId: scheduleData.siteId ?? undefined,
     }
 
     // Update schedule
@@ -110,9 +120,12 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     // Get authenticated session
     const sessionResult = await AuthService.getAuthenticatedSession()
     if (sessionResult instanceof NextResponse) {
@@ -120,7 +133,7 @@ export async function DELETE(
     }
     const session = sessionResult
 
-    await WorkOrderScheduleService.deleteSchedule(session, params.id)
+    await WorkOrderScheduleService.deleteSchedule(session, id)
 
     return NextResponse.json({ message: "Programación eliminada exitosamente" })
   } catch (error) {

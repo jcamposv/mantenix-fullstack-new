@@ -3,7 +3,7 @@
  * Handles preventive maintenance scheduling, recurrence logic, and automatic work order generation
  */
 
-import { Prisma, RecurrenceType, RecurrenceEndType, WorkOrderStatus } from "@prisma/client"
+import { Prisma, RecurrenceType, RecurrenceEndType, MeterType, WorkOrderStatus } from "@prisma/client"
 import { WorkOrderScheduleRepository } from "@/server/repositories/work-order-schedule.repository"
 import { WorkOrderRepository } from "@/server/repositories/work-order.repository"
 import type { AuthenticatedSession } from "@/types/auth.types"
@@ -21,7 +21,7 @@ export interface CreateScheduleInput {
   recurrenceEndValue?: number
   recurrenceEndDate?: Date
   weekDays?: number[] // For WEEKLY: [0=Sunday, 1=Monday, ..., 6=Saturday]
-  meterType?: string
+  meterType?: MeterType
   meterThreshold?: number
   templateId: string
   assetId?: string
@@ -173,7 +173,7 @@ export class WorkOrderScheduleService {
       recurrenceEndValue: input.recurrenceEndValue,
       recurrenceEndDate: input.recurrenceEndDate,
       weekDays: input.weekDays ?? [],
-      meterType: input.meterType as any,
+      meterType: input.meterType,
       meterThreshold: input.meterThreshold,
       nextGenerationDate,
       assignedUserIds: input.assignedUserIds ?? [],
@@ -205,6 +205,10 @@ export class WorkOrderScheduleService {
 
     // Check name uniqueness if name is being changed
     if (input.name && input.name !== schedule.name) {
+      if (!session.user.companyId) {
+        throw new Error("Usuario sin empresa asociada")
+      }
+      
       const nameExists = await WorkOrderScheduleRepository.checkNameExists(
         input.name,
         session.user.companyId,
@@ -240,7 +244,7 @@ export class WorkOrderScheduleService {
     if (input.weekDays) updateData.weekDays = input.weekDays
 
     // Update meter configuration
-    if (input.meterType !== undefined) updateData.meterType = input.meterType as any
+    if (input.meterType !== undefined) updateData.meterType = input.meterType
     if (input.meterThreshold !== undefined) updateData.meterThreshold = input.meterThreshold
 
     // Update assignments
@@ -312,7 +316,7 @@ export class WorkOrderScheduleService {
           const sortedWeekDays = [...weekDays].sort((a, b) => a - b)
 
           // Find next weekday in current week
-          let nextDay = sortedWeekDays.find(day => day > currentDay)
+          const nextDay = sortedWeekDays.find(day => day > currentDay)
 
           if (nextDay !== undefined) {
             // Next occurrence is in the current week
@@ -455,11 +459,11 @@ export class WorkOrderScheduleService {
       number,
       title: `${schedule.template.name} - ${schedule.name}`,
       description: schedule.description ?? schedule.template.description,
-      status: WorkOrderStatus.PENDING,
+      type: 'PREVENTIVO',
+      status: schedule.assignedUserIds.length > 0 ? WorkOrderStatus.ASSIGNED : WorkOrderStatus.DRAFT,
       isRecurring: true,
-      assignedUserIds: schedule.assignedUserIds,
       company: { connect: { id: schedule.companyId } },
-      createdBy: { connect: { id: schedule.createdBy } },
+      creator: { connect: { id: schedule.createdBy } },
       schedule: { connect: { id: scheduleId } }
     }
 
@@ -474,6 +478,15 @@ export class WorkOrderScheduleService {
 
     // Create work order
     const workOrder = await WorkOrderRepository.create(workOrderData)
+
+    // Assign users if specified in schedule
+    if (schedule.assignedUserIds.length > 0) {
+      await WorkOrderRepository.createAssignments(
+        workOrder.id,
+        schedule.assignedUserIds,
+        schedule.createdBy
+      )
+    }
 
     // Update schedule statistics
     await WorkOrderScheduleRepository.incrementGenerated(scheduleId)

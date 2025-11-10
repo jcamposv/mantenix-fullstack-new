@@ -11,26 +11,29 @@ export const dynamic = 'force-dynamic'
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     // Get authenticated session
-    const sessionResult = await AuthService.getAuthenticatedSession()
+    const sessionResult = await AuthService.getAuthenticatedSession();
     if (sessionResult instanceof NextResponse) {
-      return sessionResult
+      return sessionResult;
     }
-    const session = sessionResult
+    const session = sessionResult;
 
     // Parse request body
-    const body = await request.json()
-    const { newReading } = updateMeterReadingSchema.parse(body)
+    const body = await request.json();
+    const { newReading } = updateMeterReadingSchema.parse(body);
 
     // Update meter reading
     const result = await WorkOrderScheduleService.updateMeterReading(
       session,
-      params.id,
+      id,
       newReading
-    )
+    );
 
     return NextResponse.json({
       message: "Lectura de medidor actualizada exitosamente",

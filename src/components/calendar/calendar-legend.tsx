@@ -5,6 +5,7 @@
  */
 
 import type { LegendItem } from '@/lib/calendar-constants';
+import type { JSX } from 'react';
 
 interface CalendarLegendProps {
   title?: string;

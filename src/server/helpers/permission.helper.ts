@@ -18,6 +18,7 @@ export class PermissionHelper {
   } as const
 
   static readonly PERMISSIONS = {
+
     CREATE_ALERT: 'create_alert',
     UPDATE_ALERT: 'update_alert',
     DELETE_ALERT: 'delete_alert',
@@ -45,6 +46,11 @@ export class PermissionHelper {
     UPDATE_COMPANY: 'update_company',
     DELETE_COMPANY: 'delete_company',
     VIEW_COMPANIES: 'view_companies',
+    CREATE_COMPANY_GROUP: 'create_company_group',
+    UPDATE_COMPANY_GROUP: 'update_company_group',
+    DELETE_COMPANY_GROUP: 'delete_company_group',
+    VIEW_COMPANY_GROUPS: 'view_company_groups',
+    MANAGE_GROUP_COMPANIES: 'manage_group_companies',
     CREATE_ASSET: 'create_asset',
     UPDATE_ASSET: 'update_asset',
     DELETE_ASSET: 'delete_asset',
@@ -112,6 +118,11 @@ export class PermissionHelper {
       this.PERMISSIONS.UPDATE_COMPANY,
       this.PERMISSIONS.DELETE_COMPANY,
       this.PERMISSIONS.VIEW_COMPANIES,
+      this.PERMISSIONS.CREATE_COMPANY_GROUP,
+      this.PERMISSIONS.UPDATE_COMPANY_GROUP,
+      this.PERMISSIONS.DELETE_COMPANY_GROUP,
+      this.PERMISSIONS.VIEW_COMPANY_GROUPS,
+      this.PERMISSIONS.MANAGE_GROUP_COMPANIES,
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
@@ -173,6 +184,11 @@ export class PermissionHelper {
       this.PERMISSIONS.UPDATE_SITE,
       this.PERMISSIONS.DELETE_SITE,
       this.PERMISSIONS.VIEW_SITES,
+      this.PERMISSIONS.CREATE_COMPANY_GROUP,
+      this.PERMISSIONS.UPDATE_COMPANY_GROUP,
+      this.PERMISSIONS.DELETE_COMPANY_GROUP,
+      this.PERMISSIONS.VIEW_COMPANY_GROUPS,
+      this.PERMISSIONS.MANAGE_GROUP_COMPANIES,
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,

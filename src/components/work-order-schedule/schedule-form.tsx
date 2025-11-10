@@ -1,44 +1,65 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Form } from "@/components/ui/form"
-import { Separator } from "@/components/ui/separator"
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
+import { Separator } from '@/components/ui/separator';
 import {
   workOrderScheduleSchema,
   createEmptyScheduleForm,
-  type WorkOrderScheduleFormData
-} from "@/schemas/work-order-schedule"
-import { ScheduleBasicInfo } from "./schedule-basic-info"
-import { RecurrenceConfig } from "./recurrence-config"
-import { MeterConfig } from "./meter-config"
-import { RecurrenceEndConfig } from "./recurrence-end-config"
-import { ScheduleAssignments } from "./schedule-assignments"
+  type WorkOrderScheduleFormData,
+} from '@/schemas/work-order-schedule';
+import { ScheduleBasicInfo } from './schedule-basic-info';
+import { RecurrenceConfig } from './recurrence-config';
+import { MeterConfig } from './meter-config';
+import { RecurrenceEndConfig } from './recurrence-end-config';
+import { ScheduleAssignments } from './schedule-assignments';
 
 interface ScheduleFormProps {
-  onSuccess?: () => void
-  onCancel?: () => void
-  initialDate?: Date
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  initialDate?: Date;
+}
+
+interface Template {
+  id: string;
+  name: string;
+}
+
+interface Asset {
+  id: string;
+  name: string;
+  code?: string;
+}
+
+interface Site {
+  id: string;
+  name: string;
 }
 
 export function ScheduleForm({ onSuccess, onCancel, initialDate }: ScheduleFormProps) {
-  const [loading, setLoading] = useState(false)
-  const [templates, setTemplates] = useState<any[]>([])
-  const [assets, setAssets] = useState<any[]>([])
-  const [sites, setSites] = useState<any[]>([])
+  const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [dataLoading, setDataLoading] = useState(true)
 
   const form = useForm<WorkOrderScheduleFormData>({
-    resolver: zodResolver(workOrderScheduleSchema),
-    defaultValues: {
-      ...createEmptyScheduleForm(),
-      startDate: initialDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(workOrderScheduleSchema) as any,
+    defaultValues: createEmptyScheduleForm(),
   })
+
+  // Set initial date if provided
+  useEffect(() => {
+    if (initialDate) {
+      form.setValue('startDate', initialDate.toISOString().split('T')[0]);
+    }
+  }, [initialDate, form]);
 
   // Fetch templates, assets, and sites
   useEffect(() => {

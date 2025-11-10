@@ -201,6 +201,8 @@ export const getFeatureNavItems = (enabledFeatures: {
   hasAttendance?: boolean
   hasVacations?: boolean
   hasPermissions?: boolean
+  hasExternalClientMgmt?: boolean
+  hasInternalCorporateGroup?: boolean
 }) => {
   const items = []
 

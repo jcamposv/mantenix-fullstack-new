@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
     // Add time to avoid timezone issues
     const input = {
       ...scheduleData,
+      meterType: scheduleData.meterType as import('@prisma/client').MeterType | undefined,
       recurrenceEndDate: scheduleData.recurrenceEndDate
         ? new Date(`${scheduleData.recurrenceEndDate}T00:00:00`)
         : undefined,

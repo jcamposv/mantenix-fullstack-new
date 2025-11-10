@@ -1,12 +1,19 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Loader2, Calendar, Clock, Repeat, Trash2, Play, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { toast } from "sonner"
-import { getRecurrenceTypeLabel, getRecurrenceEndTypeLabel, getMeterTypeLabel } from "@/schemas/work-order-schedule"
+import { useState, useEffect } from 'react';
+import { Loader2, Calendar, Clock, Repeat, Trash2, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { 
+  getRecurrenceTypeLabel, 
+  getRecurrenceEndTypeLabel, 
+  getMeterTypeLabel,
+  type RecurrenceType,
+  type RecurrenceEndType,
+  type MeterType
+} from '@/schemas/work-order-schedule';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,16 +23,38 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from '@/components/ui/alert-dialog';
 
 interface ScheduleDetailsProps {
-  scheduleId: string
-  onDelete?: () => void
-  onClose?: () => void
+  scheduleId: string;
+  onDelete?: () => void;
+  onClose?: () => void;
+}
+
+interface Schedule {
+  name: string;
+  description?: string;
+  isActive: boolean;
+  recurrenceType: RecurrenceType;
+  recurrenceInterval: number;
+  weekDays?: number[];
+  meterType?: MeterType;
+  meterThreshold?: number;
+  currentMeterReading?: number;
+  recurrenceEndType: RecurrenceEndType;
+  recurrenceEndValue?: number;
+  recurrenceEndDate?: string;
+  nextGenerationDate?: string;
+  template: { name: string };
+  asset?: { name: string; code?: string };
+  site?: { name: string };
+  totalGenerated: number;
+  totalCompleted: number;
+  completionRate: number;
 }
 
 export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetailsProps) {
-  const [schedule, setSchedule] = useState<any>(null)
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -73,26 +102,26 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
 
   const handleGenerate = async () => {
     try {
-      setGenerating(true)
+      setGenerating(true);
       const response = await fetch(`/api/work-order-schedules/${scheduleId}/generate`, {
-        method: "POST",
-      })
+        method: 'POST',
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Error al generar orden")
+        const error = await response.json();
+        throw new Error(error.error || 'Error al generar orden');
       }
 
-      const data = await response.json()
-      toast.success("Orden de trabajo generada exitosamente")
-      fetchSchedule() // Refresh to show updated stats
+      await response.json();
+      toast.success('Orden de trabajo generada exitosamente');
+      fetchSchedule(); // Refresh to show updated stats
     } catch (error) {
-      console.error("Error generating work order:", error)
-      toast.error(error instanceof Error ? error.message : "Error al generar orden")
+      console.error('Error generating work order:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al generar orden');
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -145,7 +174,7 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
               {getRecurrenceTypeLabel(schedule.recurrenceType)}
               {schedule.recurrenceInterval > 1 && ` (cada ${schedule.recurrenceInterval})`}
             </p>
-            {schedule.recurrenceType === "WEEKLY" && schedule.weekDays?.length > 0 && (
+            {schedule.recurrenceType === "WEEKLY" && schedule.weekDays && schedule.weekDays.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 Días: {schedule.weekDays.map((d: number) =>
                   ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][d]

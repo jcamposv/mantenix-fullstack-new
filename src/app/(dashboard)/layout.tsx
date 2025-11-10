@@ -78,7 +78,7 @@ interface ServerSideData {
     isActive: boolean;
   }> | null;
   companyFeatures: Array<{
-    module: string;
+    module: import('@prisma/client').FeatureModule;
     isEnabled: boolean;
   }> | null;
   userPermissions: UserPermissions;
@@ -214,7 +214,7 @@ interface DashboardLayoutProps {
  */
 export default async function DashboardLayout({
   children,
-}: DashboardLayoutProps): Promise<JSX.Element> {
+}: DashboardLayoutProps) {
   const companyBranding = await getCompanyBranding();
   const { user, availableCompanies, companyFeatures, userPermissions } =
     await getServerSideData();

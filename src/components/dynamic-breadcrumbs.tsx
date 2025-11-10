@@ -1,5 +1,6 @@
 "use client";
 
+import { JSX } from 'react';
 import { usePathname } from 'next/navigation';
 import { Breadcrumb, BreadcrumbList } from '@/components/ui/breadcrumb';
 import { buildBreadcrumbs } from './breadcrumbs/breadcrumb-builder';

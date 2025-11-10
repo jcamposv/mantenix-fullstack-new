@@ -1,46 +1,47 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import FullCalendar from "@fullcalendar/react"
-import dayGridPlugin from "@fullcalendar/daygrid"
-import timeGridPlugin from "@fullcalendar/timegrid"
-import interactionPlugin from "@fullcalendar/interaction"
-import listPlugin from "@fullcalendar/list"
+import type { ReactNode, JSX } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
 import type {
   EventClickArg,
   DateSelectArg,
   EventContentArg,
   EventDropArg,
-  DatesSetArg
-} from "@fullcalendar/core"
-import esLocale from "@fullcalendar/core/locales/es"
-import { Loader2 } from "lucide-react"
+  DatesSetArg,
+} from '@fullcalendar/core';
+import esLocale from '@fullcalendar/core/locales/es';
+import { Loader2 } from 'lucide-react';
 
 export interface CalendarEvent {
-  id: string
-  title: string
-  start: Date | string
-  backgroundColor?: string
-  borderColor?: string
-  extendedProps?: Record<string, any>
+  id: string;
+  title: string;
+  start: Date | string;
+  backgroundColor?: string;
+  borderColor?: string;
+  extendedProps?: Record<string, unknown>;
 }
 
 interface BaseCalendarProps {
-  events: CalendarEvent[]
-  loading?: boolean
-  onEventClick?: (info: EventClickArg) => void
-  onDateSelect?: (selectInfo: DateSelectArg) => void
-  onEventDrop?: (dropInfo: EventDropArg) => void
-  onDatesSet?: (dateInfo: DatesSetArg) => void
-  renderEventContent?: (eventInfo: EventContentArg) => React.ReactNode
-  editable?: boolean
-  selectable?: boolean
-  initialView?: "dayGridMonth" | "timeGridWeek" | "timeGridDay" | "listWeek"
+  events: CalendarEvent[];
+  loading?: boolean;
+  onEventClick?: (info: EventClickArg) => void;
+  onDateSelect?: (selectInfo: DateSelectArg) => void;
+  onEventDrop?: (dropInfo: EventDropArg) => void;
+  onDatesSet?: (dateInfo: DatesSetArg) => void;
+  renderEventContent?: (eventInfo: EventContentArg) => ReactNode;
+  editable?: boolean;
+  selectable?: boolean;
+  initialView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listWeek';
 }
 
 /**
  * Base Calendar Component
  * Reusable wrapper around FullCalendar with common configuration
+ * Follows Next.js expert standards with proper TypeScript typing
  */
 export function BaseCalendar({
   events,
@@ -52,8 +53,8 @@ export function BaseCalendar({
   renderEventContent,
   editable = false,
   selectable = false,
-  initialView = "dayGridMonth"
-}: BaseCalendarProps) {
+  initialView = 'dayGridMonth',
+}: BaseCalendarProps): JSX.Element {
   return (
     <div className="relative">
       {/* Loading indicator */}
@@ -73,9 +74,9 @@ export function BaseCalendar({
 
           // Header toolbar configuration
           headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
           }}
 
           // Event handlers
@@ -99,28 +100,24 @@ export function BaseCalendar({
           // Styling
           height="auto"
           aspectRatio={1.8}
-
           // Event display
           eventDisplay="block"
           displayEventTime={false}
-
           // Button text in Spanish
           buttonText={{
-            today: "Hoy",
-            month: "Mes",
-            week: "Semana",
-            day: "Día",
-            list: "Lista"
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día',
+            list: 'Lista',
           }}
-
           // All-day slot text
           allDayText="Todo el día"
-
           // View configuration
           views={{
             dayGridMonth: {
-              dayMaxEventRows: 3
-            }
+              dayMaxEventRows: 3,
+            },
           }}
         />
       </div>
@@ -146,5 +143,5 @@ export function BaseCalendar({
         }
       `}</style>
     </div>
-  )
+  );
 }

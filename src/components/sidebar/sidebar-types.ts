@@ -8,7 +8,7 @@ import type { FeatureModule } from "@prisma/client"
 export interface AvailableCompany {
   id: string
   name: string
-  subdomain: string
+  subdomain: string | null
   logo?: string | null
   isActive: boolean
 }

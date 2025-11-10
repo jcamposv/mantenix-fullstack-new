@@ -10,21 +10,24 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     // Get authenticated session
-    const sessionResult = await AuthService.getAuthenticatedSession()
+    const sessionResult = await AuthService.getAuthenticatedSession();
     if (sessionResult instanceof NextResponse) {
-      return sessionResult
+      return sessionResult;
     }
-    const session = sessionResult
+    const session = sessionResult;
 
     // Verify schedule ownership
-    await WorkOrderScheduleService.getScheduleById(session, params.id)
+    await WorkOrderScheduleService.getScheduleById(session, id);
 
     // Generate work order
-    const workOrder = await WorkOrderScheduleService.generateWorkOrderFromSchedule(params.id)
+    const workOrder = await WorkOrderScheduleService.generateWorkOrderFromSchedule(id);
 
     return NextResponse.json({
       message: "Orden de trabajo generada exitosamente",

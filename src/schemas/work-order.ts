@@ -65,10 +65,7 @@ export const quickCreateWorkOrderSchema = z.object({
   title: z.string().min(1, "El título es requerido").max(255),
   description: z.string().optional(),
   priority: workOrderPrioritySchema,
-  scheduledDate: z.preprocess(
-    (val) => (typeof val === "string" ? new Date(val) : val),
-    z.date()
-  ).optional(),
+  scheduledDate: z.date().optional(),
   siteId: z.string().optional(),
   assetId: z.string().optional(),
   assignedUserIds: z.array(z.string()).optional()

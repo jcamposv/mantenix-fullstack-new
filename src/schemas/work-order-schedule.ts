@@ -133,12 +133,13 @@ export const getMeterTypeLabel = (type: MeterType): string => {
 }
 
 // Helper function to create empty schedule form data
-export const createEmptyScheduleForm = (): Partial<WorkOrderScheduleFormData> => ({
+export const createEmptyScheduleForm = (): WorkOrderScheduleFormData => ({
   name: "",
   description: "",
   recurrenceType: "WEEKLY",
   recurrenceInterval: 1,
   recurrenceEndType: "NEVER",
+  templateId: "",
   weekDays: [],
   assignedUserIds: [],
   startDate: new Date().toISOString().split('T')[0],

@@ -34,7 +34,6 @@ import { formatDate } from "@/lib/calendar-utils"
 import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 import {
   quickCreateWorkOrderSchema,
-  workOrderPrioritySchema,
   type QuickCreateWorkOrderData
 } from "@/schemas/work-order"
 
@@ -90,7 +89,8 @@ export function QuickCreateWorkOrder({
   const [loadingData, setLoadingData] = useState(false)
 
   const form = useForm<QuickCreateWorkOrderData>({
-    resolver: zodResolver(quickCreateWorkOrderSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(quickCreateWorkOrderSchema) as any,
     defaultValues: {
       templateId: "",
       title: "",
