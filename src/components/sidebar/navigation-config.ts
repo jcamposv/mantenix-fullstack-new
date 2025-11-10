@@ -81,11 +81,6 @@ export const BASE_NAV_ITEMS = [
         url: "/work-orders/new/select-template",
       },
       {
-        title: "Aprobaciones",
-        url: "/admin/work-orders/approvals",
-        badge: true,
-      },
-      {
         title: "Templates",
         url: "/admin/work-order-templates",
       },
@@ -140,22 +135,10 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
-    name: "Grupos Corporativos",
-    url: "/admin/company-groups",
-    icon: Building2,
-    role: "SUPER_ADMIN" // Super admins can manage company groups
-  },
-  {
-    name: "Grupos Corporativos",
-    url: "/admin/company-groups",
-    icon: Building2,
-    role: "ADMIN_GRUPO" // Group admins can manage company groups
-  },
-  {
     name: "Clientes",
-    url: "/admin/client-companies",
+    url: "/admin/client-companies", 
     icon: Building2,
-    role: "ADMIN_EMPRESA", // Only shown if EXTERNAL_CLIENT_MANAGEMENT is enabled
+    role: "ADMIN_EMPRESA", // Only company admins can see client companies
     items: [
       {
         title: "Clientes",
@@ -165,102 +148,45 @@ export const ADMIN_NAV_ITEMS = [
         title: "Sedes",
         url: "/admin/sites",
       },
-    ],
-  },
-  {
-    name: "Activos",
-    url: "/admin/assets",
-    icon: Building2,
-    role: "ADMIN_GRUPO", // Always shown for group admins
-  },
-  {
-    name: "Activos",
-    url: "/admin/assets",
-    icon: Building2,
-    role: "ADMIN_EMPRESA", // Always shown for company admins
-  },
-  // ========================================
-  // SUPER ADMIN - Gestión de Sistema
-  // ========================================
-  {
-    name: "Gestión de Empresas",
-    url: "/super-admin/companies",
-    icon: Building2,
-    role: "SUPER_ADMIN",
-    items: [
       {
-        title: "Empresas",
-        url: "/super-admin/companies",
+        title: "Activos",
+        url: "/admin/assets",
       },
       {
-        title: "Usuarios del Sistema",
-        url: "/super-admin/users",
+        title: "Templates OT",
+        url: "/admin/work-order-templates",
       },
     ],
   },
-
-  // ========================================
-  // SUPER ADMIN - Facturación y Planes
-  // ========================================
   {
-    name: "Facturación",
-    url: "/super-admin/subscription-plans",
-    icon: CreditCard,
-    role: "SUPER_ADMIN",
-    items: [
-      {
-        title: "Planes de Subscripción",
-        url: "/super-admin/subscription-plans",
-      },
-      {
-        title: "Subscripciones",
-        url: "/super-admin/subscriptions",
-      },
-    ],
-  },
-
-  // ========================================
-  // SUPER ADMIN - Configuración
-  // ========================================
-  {
-    name: "Configuración",
-    url: "/super-admin/features",
-    icon: Settings2,
-    role: "SUPER_ADMIN",
-    items: [
-      {
-        title: "Features Premium",
-        url: "/super-admin/features",
-      },
-      {
-        title: "Configuración de Emails",
-        url: "/super-admin/email-configurations",
-      },
-      {
-        title: "Ajustes del Sistema",
-        url: "/admin/settings",
-      },
-    ],
-  },
-
-  // ========================================
-  // ADMIN_GRUPO - Users
-  // ========================================
-  {
-    name: "Usuarios del Grupo",
-    url: "/admin/users",
+    name: "Usuarios del Sistema",
+    url: "/super-admin/users", // Super admin uses super-admin route
     icon: Users,
-    role: "ADMIN_GRUPO" // Group admins can manage users in group companies
+    role: "SUPER_ADMIN"
   },
-
-  // ========================================
-  // ADMIN_EMPRESA - Users
-  // ========================================
   {
     name: "Usuarios de la Empresa",
-    url: "/admin/users",
+    url: "/admin/users", // Company admin uses admin route
     icon: Users,
     role: "ADMIN_EMPRESA"
+  },
+  {
+    name: "Features Premium",
+    url: "/super-admin/features",
+    icon: Sparkles,
+    role: "SUPER_ADMIN" // Only super admins can manage premium features
+  },
+  {
+    name: "Configuración de Emails",
+    url: "/super-admin/email-configurations",
+    icon: Mail,
+    role: "SUPER_ADMIN" // Only super admins can manage email configurations
+  },
+  {
+    name: "Configuración del Sistema",
+    url: "/admin/settings",
+    icon: Settings2,
+    role: "SUPER_ADMIN" // Only super admins can see system settings
   },
 ]
 
@@ -275,12 +201,9 @@ export const getFeatureNavItems = (enabledFeatures: {
   hasAttendance?: boolean
   hasVacations?: boolean
   hasPermissions?: boolean
-  hasExternalClientMgmt?: boolean
-  hasInternalCorporateGroup?: boolean
 }) => {
   const items = []
 
-  // HR Features
   if (enabledFeatures.hasAttendance) {
     items.push({
       title: "Asistencia",
@@ -330,34 +253,6 @@ export const getFeatureNavItems = (enabledFeatures: {
         {
           title: "Solicitudes",
           url: "/admin/permissions"
-        }
-      ]
-    })
-  }
-
-  // Inventory (available if either feature is enabled)
-  if (enabledFeatures.hasExternalClientMgmt || enabledFeatures.hasInternalCorporateGroup) {
-    items.push({
-      title: "Inventario",
-      url: "/admin/inventory/dashboard",
-      icon: Package,
-      items: [
-        {
-          title: "Dashboard",
-          url: "/admin/inventory/dashboard"
-        },
-        {
-          title: "Productos",
-          url: "/admin/inventory/items"
-        },
-        {
-          title: "Entregas",
-          url: "/admin/inventory/requests",
-          badge: true,
-        },
-        {
-          title: "Movimientos",
-          url: "/admin/inventory/movements"
         }
       ]
     })

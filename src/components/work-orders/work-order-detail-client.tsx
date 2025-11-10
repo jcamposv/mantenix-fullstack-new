@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Edit, Printer } from "lucide-react"
 import { WorkOrderConsolidatedInfo } from "./work-order-consolidated-info"
 import { WorkOrderToolsMaterials } from "./work-order-tools-materials"
-import { WorkOrderInventoryRequests } from "./work-order-inventory-requests"
 import { WorkOrderCustomFieldsDisplay } from "./work-order-custom-fields-display"
 import { PrintableWorkOrder } from "./printable-work-order"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
@@ -68,9 +67,6 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
         <WorkOrderConsolidatedInfo workOrder={workOrder} />
 
         <WorkOrderToolsMaterials workOrder={workOrder} />
-
-        {/* Inventory Requests */}
-        <WorkOrderInventoryRequests workOrderId={workOrder.id} />
 
         {/* Custom Fields - Each field has its own card */}
         {Object.keys(customFieldValues).length > 0 && (

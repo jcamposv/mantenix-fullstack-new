@@ -211,6 +211,7 @@ model User {
   workOrdersCreated           WorkOrder[]           @relation("WorkOrderCreator")
   workOrderAssignments        WorkOrderAssignment[] @relation("WorkOrderAssignments")
   workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
+  workOrderSchedulesCreated   WorkOrderSchedule[]   @relation("WorkOrderScheduleCreator")
 
   // Password Reset relations
   passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
@@ -321,6 +322,7 @@ model Company {
   workOrderTemplates WorkOrderTemplate[]
   workOrderPrefixes  WorkOrderPrefix[]
   workOrders         WorkOrder[]
+  workOrderSchedules WorkOrderSchedule[]
   emailConfiguration EmailConfiguration?
   features           CompanyFeature[]
   locations          CompanyLocation[]
@@ -406,6 +408,7 @@ model Site {
 
   // Work orders in this site
   workOrders WorkOrder[]
+  schedules  WorkOrderSchedule[]
 
   @@index([clientCompanyId])
   @@index([isActive])
@@ -447,6 +450,7 @@ model Asset {
 
   // Work orders related to this asset
   workOrders WorkOrder[]
+  schedules  WorkOrderSchedule[]
 
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -670,6 +674,31 @@ enum WorkOrderStatus {
   CANCELLED // Cancelada
 }
 
+enum RecurrenceType {
+  DAILY // Diario
+  WEEKLY // Semanal
+  MONTHLY // Mensual
+  YEARLY // Anual
+  METER_BASED // Basado en lecturas de medidores
+}
+
+enum RecurrenceEndType {
+  NEVER // Sin fin
+  AFTER_OCCURRENCES // Después de X ocurrencias
+  ON_DATE // En fecha específica
+}
+
+enum MeterType {
+  HOURS_RUN // Horas de funcionamiento
+  KILOMETERS // Kilómetros
+  MILES // Millas
+  TEMPERATURE // Temperatura
+  PRESSURE // Presión
+  CYCLES // Ciclos de operación
+  VIBRATION // Vibración
+  CUSTOM // Personalizado
+}
+
 enum CustomFieldType {
   TEXT // Input de texto simple
   TEXTAREA // Área de texto multilinea
@@ -755,6 +784,7 @@ model WorkOrderTemplate {
 
   // Relations with work orders
   workOrders WorkOrder[] @relation("WorkOrderFromTemplate")
+  schedules  WorkOrderSchedule[]
 
   @@index([companyId])
   @@index([status])
@@ -817,6 +847,11 @@ model WorkOrder {
   templateId        String? // Template base usado
   customFieldValues Json? // Valores de campos personalizados del template
 
+  // Programación recurrente (para mantenimiento preventivo)
+  isRecurring Boolean @default(false) // Si fue generada automáticamente
+  scheduleId  String? // Programación que generó esta OT
+  schedule    WorkOrderSchedule? @relation("GeneratedFromSchedule", fields: [scheduleId], references: [id], onDelete: SetNull)
+
   // Fechas importantes
   scheduledDate DateTime? // Fecha programada
   startedAt     DateTime? // Fecha de inicio real
@@ -870,6 +905,7 @@ model WorkOrder {
   @@index([siteId])
   @@index([assetId])
   @@index([templateId])
+  @@index([scheduleId])
   @@index([prefixId])
   @@index([status])
   @@index([type])
@@ -877,6 +913,7 @@ model WorkOrder {
   @@index([scheduledDate])
   @@index([createdBy])
   @@index([isActive])
+  @@index([isRecurring])
   @@map("work_orders")
 }
 
@@ -898,6 +935,88 @@ model WorkOrderAssignment {
   @@index([userId])
   @@index([assignedBy])
   @@map("work_order_assignments")
+}
+
+// ============================================================================
+// WORK ORDER SCHEDULING & RECURRENCE
+// ============================================================================
+
+// Programación de órdenes de trabajo recurrentes (Mantenimiento Preventivo)
+model WorkOrderSchedule {
+  id String @id @default(cuid())
+
+  // Información básica
+  name        String // Nombre descriptivo de la programación
+  description String? // Descripción opcional
+
+  // Configuración de recurrencia
+  recurrenceType     RecurrenceType // Tipo de recurrencia
+  recurrenceInterval Int            @default(1) // Cada cuántos días/semanas/meses (ej: cada 2 semanas)
+
+  // Fin de recurrencia
+  recurrenceEndType  RecurrenceEndType // Cómo termina la recurrencia
+  recurrenceEndValue Int? // Número de ocurrencias (solo si recurrenceEndType = AFTER_OCCURRENCES)
+  recurrenceEndDate  DateTime? // Fecha de fin (solo si recurrenceEndType = ON_DATE)
+
+  // Días de la semana (para recurrencia WEEKLY)
+  // [1,2,3,4,5] = Lun-Vie, [6,7] = Fin de semana
+  weekDays Int[] @default([])
+
+  // Para mantenimiento basado en medidores (METER_BASED)
+  meterType           MeterType? // Tipo de medidor
+  meterThreshold      Float? // Umbral para generar OT (ej: cada 100 horas)
+  currentMeterReading Float      @default(0) // Lectura actual del medidor
+
+  // Template a usar para generar las OT
+  templateId String
+  template   WorkOrderTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  // Asset relacionado (opcional)
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  // Site relacionado (opcional)
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  // Asignación predefinida
+  assignedUserIds String[] @default([]) // IDs de usuarios asignados automáticamente
+
+  // Tracking de generación
+  lastGeneratedAt    DateTime? // Última vez que se generó una OT
+  nextGenerationDate DateTime? // Próxima fecha programada
+
+  // Estadísticas
+  totalGenerated     Int @default(0) // Total de OT generadas
+  totalCompleted     Int @default(0) // Total completadas
+  totalSkipped       Int @default(0) // Total saltadas
+  completionRate     Float @default(0) // % de completitud
+
+  // Control de acceso y propiedad
+  companyId String // Empresa propietaria
+  createdBy String // Usuario que creó la programación
+
+  // Estado
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator User    @relation("WorkOrderScheduleCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  // Órdenes generadas por esta programación
+  generatedWorkOrders WorkOrder[] @relation("GeneratedFromSchedule")
+
+  @@index([companyId])
+  @@index([templateId])
+  @@index([assetId])
+  @@index([siteId])
+  @@index([isActive])
+  @@index([nextGenerationDate])
+  @@index([recurrenceType])
+  @@map("work_order_schedules")
 }
 
 // ============================================================================

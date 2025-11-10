@@ -79,9 +79,7 @@ export const featureModuleEnum = z.enum([
   "HR_VACATIONS",
   "HR_PERMISSIONS",
   "AI_ASSISTANT",
-  "ADVANCED_ANALYTICS",
-  "EXTERNAL_CLIENT_MANAGEMENT",
-  "INTERNAL_CORPORATE_GROUP"
+  "ADVANCED_ANALYTICS"
 ])
 
 export const toggleFeatureSchema = z.object({

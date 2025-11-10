@@ -513,7 +513,20 @@ export class InventoryService {
       }
     }
 
-    const whereClause = this.buildRequestWhereClause(roleBasedFilters)
+    let whereClause = this.buildRequestWhereClause(roleBasedFilters)
+
+    // Filter by company for non-SUPER_ADMIN roles
+    // SUPER_ADMIN can see all requests
+    // Other roles can only see requests from work orders in their company
+    if (session.user.role !== 'SUPER_ADMIN' && session.user.companyId) {
+      whereClause = {
+        ...whereClause,
+        workOrder: {
+          companyId: session.user.companyId
+        }
+      }
+    }
+
     const { requests, total } = await InventoryRequestRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
