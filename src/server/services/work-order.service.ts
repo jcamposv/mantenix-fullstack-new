@@ -297,6 +297,26 @@ export class WorkOrderService {
       }
     }
 
+    // Update assignments if provided
+    if (updateData.assignedUserIds !== undefined) {
+      if (updateData.assignedUserIds.length > 0) {
+        // Create/update assignments
+        await WorkOrderRepository.createAssignments(
+          id,
+          updateData.assignedUserIds,
+          session.user.id
+        )
+
+        // Update status to ASSIGNED if currently DRAFT
+        if (!updateData.status && existingWorkOrder.status === 'DRAFT') {
+          updatePrismaData.status = 'ASSIGNED'
+        }
+      } else {
+        // Remove all assignments if empty array provided
+        await WorkOrderRepository.createAssignments(id, [], session.user.id)
+      }
+    }
+
     return await WorkOrderRepository.update(id, updatePrismaData)
   }
 

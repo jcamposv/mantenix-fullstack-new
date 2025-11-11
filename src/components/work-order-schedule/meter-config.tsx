@@ -42,7 +42,7 @@ export function MeterConfig({ form }: MeterConfigProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo de Medidor</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar tipo" />
@@ -77,6 +77,7 @@ export function MeterConfig({ form }: MeterConfigProps) {
                 min="0"
                 placeholder="Ej: 1000"
                 {...field}
+                value={field.value ?? ""}
               />
             </FormControl>
             <FormDescription>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Loader2, Calendar, Clock, Repeat, Trash2, Play } from 'lucide-react';
+import { Loader2, Calendar, Clock, Repeat, Trash2, Play, Edit, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { 
-  getRecurrenceTypeLabel, 
-  getRecurrenceEndTypeLabel, 
+import {
+  getRecurrenceTypeLabel,
+  getRecurrenceEndTypeLabel,
   getMeterTypeLabel,
   type RecurrenceType,
   type RecurrenceEndType,
@@ -24,11 +24,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ScheduleEditForm } from './schedule-edit-form';
 
 interface ScheduleDetailsProps {
   scheduleId: string;
   onDelete?: () => void;
   onClose?: () => void;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface Schedule {
@@ -48,6 +62,7 @@ interface Schedule {
   template: { name: string };
   asset?: { name: string; code?: string };
   site?: { name: string };
+  assignedUserIds?: string[];
   totalGenerated: number;
   totalCompleted: number;
   completionRate: number;
@@ -55,29 +70,55 @@ interface Schedule {
 
 export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetailsProps) {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(false)
-  const [generating, setGenerating] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
-    fetchSchedule()
-  }, [scheduleId])
+    fetchSchedule();
+  }, [scheduleId]);
 
   const fetchSchedule = async () => {
     try {
-      setLoading(true)
-      const response = await fetch(`/api/work-order-schedules/${scheduleId}`)
-      if (!response.ok) throw new Error("Error al cargar programación")
-      const data = await response.json()
-      setSchedule(data)
+      setLoading(true);
+      const response = await fetch(`/api/work-order-schedules/${scheduleId}`);
+      if (!response.ok) throw new Error("Error al cargar programación");
+      const data = await response.json();
+      setSchedule(data);
+
+      // Fetch assigned users details
+      if (data.assignedUserIds && data.assignedUserIds.length > 0) {
+        fetchAssignedUsers(data.assignedUserIds);
+      }
     } catch (error) {
-      console.error("Error fetching schedule:", error)
-      toast.error("Error al cargar los detalles")
+      console.error("Error fetching schedule:", error);
+      toast.error("Error al cargar los detalles");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const fetchAssignedUsers = async (userIds: string[]) => {
+    try {
+      const usersResponse = await fetch(`/api/admin/users?page=1&limit=100`);
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        const allUsers = usersData.users || [];
+        const filteredUsers = allUsers.filter((u: User) => userIds.includes(u.id));
+        setAssignedUsers(filteredUsers);
+      }
+    } catch (error) {
+      console.error("Error fetching assigned users:", error);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    setShowEditDialog(false);
+    fetchSchedule(); // Refresh data
+  };
 
   const handleDelete = async () => {
     try {
@@ -253,6 +294,29 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
             <p className="text-sm text-muted-foreground">{schedule.site.name}</p>
           </div>
         )}
+
+        {/* Assigned Users */}
+        {schedule.assignedUserIds && schedule.assignedUserIds.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-medium">Usuarios Asignados</p>
+            </div>
+            {assignedUsers.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {assignedUsers.map((user) => (
+                  <Badge key={user.id} variant="secondary">
+                    {user.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {schedule.assignedUserIds.length} usuario(s) asignado(s)
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <Separator />
@@ -287,6 +351,12 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
           Generar Orden Ahora
         </Button>
         <Button
+          variant="outline"
+          onClick={() => setShowEditDialog(true)}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
           variant="destructive"
           onClick={() => setShowDeleteDialog(true)}
           disabled={deleting}
@@ -294,6 +364,23 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Programación</DialogTitle>
+            <DialogDescription>
+              Actualiza la configuración de la programación de mantenimiento
+            </DialogDescription>
+          </DialogHeader>
+          <ScheduleEditForm
+            scheduleId={scheduleId}
+            onSuccess={handleEditSuccess}
+            onCancel={() => setShowEditDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -318,5 +405,5 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

@@ -94,6 +94,7 @@ export default function WorkOrdersCalendarPage(): JSX.Element {
         workOrderId={previewDialog.data}
         open={previewDialog.isOpen}
         onOpenChange={previewDialog.close}
+        onUpdate={triggerRefetch}
       />
 
       {/* Quick Create Modal */}

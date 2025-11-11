@@ -29,7 +29,7 @@ export const meterTypeSchema = z.enum([
 // Main work order schedule form schema
 export const workOrderScheduleSchema = z.object({
   name: z.string().min(1, "El nombre es requerido").max(200),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
 
   // Recurrence configuration
   recurrenceType: recurrenceTypeSchema,
@@ -37,24 +37,24 @@ export const workOrderScheduleSchema = z.object({
 
   // End conditions
   recurrenceEndType: recurrenceEndTypeSchema,
-  recurrenceEndValue: z.coerce.number().int().min(1).optional(),
-  recurrenceEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)").optional(),
+  recurrenceEndValue: z.coerce.number().int().min(1).optional().nullable(),
+  recurrenceEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)").optional().nullable(),
 
   // Week days for WEEKLY recurrence (0=Sunday, 6=Saturday)
-  weekDays: z.array(z.number().int().min(0).max(6)).optional(),
+  weekDays: z.array(z.number().int().min(0).max(6)).optional().nullable(),
 
   // Meter-based configuration
-  meterType: meterTypeSchema.optional(),
-  meterThreshold: z.coerce.number().positive().optional(),
+  meterType: meterTypeSchema.optional().nullable(),
+  meterThreshold: z.coerce.number().positive().optional().nullable(),
 
   // Relations
   templateId: z.string().min(1, "El template es requerido"),
-  assetId: z.string().optional(),
-  siteId: z.string().optional(),
-  assignedUserIds: z.array(z.string()).optional(),
+  assetId: z.string().optional().nullable(),
+  siteId: z.string().optional().nullable(),
+  assignedUserIds: z.array(z.string()).optional().nullable(),
 
   // Optional start date (date only, not datetime)
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)").optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)").optional().nullable(),
 }).refine((data) => {
   // Validate end conditions
   if (data.recurrenceEndType === "AFTER_OCCURRENCES" && !data.recurrenceEndValue) {

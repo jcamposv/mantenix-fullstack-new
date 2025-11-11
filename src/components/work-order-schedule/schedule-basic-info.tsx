@@ -58,6 +58,7 @@ export function ScheduleBasicInfo({ form, templates }: ScheduleBasicInfoProps) {
                 className="resize-none"
                 rows={3}
                 {...field}
+                value={field.value ?? ""}
               />
             </FormControl>
             <FormMessage />
@@ -71,7 +72,7 @@ export function ScheduleBasicInfo({ form, templates }: ScheduleBasicInfoProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Template de Orden de Trabajo</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar template" />

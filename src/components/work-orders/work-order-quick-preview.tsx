@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, ExternalLink, User, Building, Wrench, Calendar, FileText } from "lucide-react"
+import { Loader2, ExternalLink, User, Building, Wrench, Calendar, FileText, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,25 +10,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { toast } from "sonner"
 import { WorkOrderStatusBadge } from "./work-order-status-badge"
 import { WorkOrderPriorityBadge } from "./work-order-priority-badge"
 import { WorkOrderTypeBadge } from "./work-order-type-badge"
+import { UserAssignmentSelect } from "./user-assignment-select"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 
 interface WorkOrderQuickPreviewProps {
   workOrderId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onUpdate?: () => void
 }
 
 export function WorkOrderQuickPreview({
   workOrderId,
   open,
   onOpenChange,
+  onUpdate,
 }: WorkOrderQuickPreviewProps) {
   const router = useRouter()
   const [workOrder, setWorkOrder] = useState<WorkOrderWithRelations | null>(null)
   const [loading, setLoading] = useState(false)
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([])
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     if (!workOrderId || !open) {
@@ -50,7 +57,17 @@ export function WorkOrderQuickPreview({
         const data = await response.json()
         console.log("Work order data:", data)
         // API returns { workOrder: {...} }, extract it
-        setWorkOrder(data.workOrder || data)
+        const wo = data.workOrder || data
+        setWorkOrder(wo)
+
+        // Set current assignments
+        if (wo.assignments && wo.assignments.length > 0) {
+          const userIds = wo.assignments.map((a: { userId: string }) => a.userId)
+          console.log("Setting initial assigned users:", userIds, wo.assignments)
+          setAssignedUserIds(userIds)
+        } else {
+          setAssignedUserIds([])
+        }
       } catch (error) {
         console.error("Error fetching work order:", error)
       } finally {
@@ -60,6 +77,59 @@ export function WorkOrderQuickPreview({
 
     fetchWorkOrder()
   }, [workOrderId, open])
+
+  const handleUpdateAssignments = async () => {
+    if (!workOrderId) return
+
+    try {
+      setIsUpdating(true)
+      console.log("Updating with assignedUserIds:", assignedUserIds)
+
+      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignedUserIds
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("Update failed:", errorData)
+        throw new Error(errorData.error || "Error al actualizar asignaciones")
+      }
+
+      const updateResult = await response.json()
+      console.log("Update result:", updateResult)
+
+      toast.success("Asignaciones actualizadas exitosamente")
+      onUpdate?.() // Trigger calendar refresh
+
+      // Refetch work order to show updated data
+      const fetchResponse = await fetch(`/api/work-orders/${workOrderId}`)
+      if (fetchResponse.ok) {
+        const data = await fetchResponse.json()
+        const wo = data.workOrder || data
+        console.log("Refetched work order:", wo)
+        setWorkOrder(wo)
+
+        // Update assigned users state
+        if (wo.assignments && wo.assignments.length > 0) {
+          const newUserIds = wo.assignments.map((a: { userId: string }) => a.userId)
+          console.log("Updating assignedUserIds to:", newUserIds)
+          setAssignedUserIds(newUserIds)
+        } else {
+          console.log("No assignments, clearing")
+          setAssignedUserIds([])
+        }
+      }
+    } catch (error) {
+      console.error("Error updating assignments:", error)
+      toast.error(error instanceof Error ? error.message : "Error al actualizar asignaciones")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const handleViewDetails = () => {
     if (workOrderId) {
@@ -156,6 +226,34 @@ export function WorkOrderQuickPreview({
                 </p>
               </div>
             )}
+
+            <Separator />
+
+            {/* User Assignment Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h4 className="text-sm font-medium">Asignar Usuarios</h4>
+              </div>
+
+              <UserAssignmentSelect
+                value={assignedUserIds}
+                onChange={setAssignedUserIds}
+                disabled={isUpdating}
+                placeholder="Seleccionar usuarios para asignar..."
+              />
+
+              <Button
+                onClick={handleUpdateAssignments}
+                disabled={isUpdating}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Actualizar Asignaciones
+              </Button>
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">

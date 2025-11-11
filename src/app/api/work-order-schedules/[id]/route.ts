@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { WorkOrderScheduleService } from "@/server/services/work-order-schedule.service"
 import { AuthService } from "@/server/services/auth.service"
 import { updateWorkOrderScheduleSchema } from "@/app/api/schemas/work-order-schedule-schemas"
+import type { UpdateScheduleInput } from "@/server/services/work-order-schedule.service"
 
 export const dynamic = 'force-dynamic'
 
@@ -74,6 +75,7 @@ export async function PATCH(
     const input = {
       id,
       ...scheduleData,
+      description: scheduleData.description ?? undefined,
       recurrenceEndDate: scheduleData.recurrenceEndDate
         ? new Date(`${scheduleData.recurrenceEndDate}T00:00:00`)
         : undefined,
@@ -88,7 +90,7 @@ export async function PATCH(
     }
 
     // Update schedule
-    const schedule = await WorkOrderScheduleService.updateSchedule(session, input)
+    const schedule = await WorkOrderScheduleService.updateSchedule(session, input as UpdateScheduleInput)
 
     return NextResponse.json(schedule)
   } catch (error) {

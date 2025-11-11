@@ -53,7 +53,7 @@ export function RecurrenceConfig({ form }: RecurrenceConfigProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo de Recurrencia</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue />
@@ -139,7 +139,7 @@ export function RecurrenceConfig({ form }: RecurrenceConfigProps) {
               <FormItem>
                 <FormLabel>Fecha de Inicio</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

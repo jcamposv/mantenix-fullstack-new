@@ -37,7 +37,7 @@ export function RecurrenceEndConfig({ form }: RecurrenceEndConfigProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Terminar</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue />
@@ -67,6 +67,7 @@ export function RecurrenceEndConfig({ form }: RecurrenceEndConfigProps) {
                   min="1"
                   placeholder="Ej: 12"
                   {...field}
+                  value={field.value ?? ""}
                 />
               </FormControl>
               <FormMessage />
@@ -83,7 +84,7 @@ export function RecurrenceEndConfig({ form }: RecurrenceEndConfigProps) {
             <FormItem>
               <FormLabel>Fecha de Fin</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" {...field} value={field.value ?? ""} />
               </FormControl>
               <FormMessage />
             </FormItem>

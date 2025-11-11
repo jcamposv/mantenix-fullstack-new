@@ -247,8 +247,10 @@ export class WorkOrderScheduleService {
     if (input.meterType !== undefined) updateData.meterType = input.meterType
     if (input.meterThreshold !== undefined) updateData.meterThreshold = input.meterThreshold
 
-    // Update assignments
-    if (input.assignedUserIds) updateData.assignedUserIds = input.assignedUserIds
+    // Update assignments - use !== undefined to allow empty arrays
+    if (input.assignedUserIds !== undefined) {
+      updateData.assignedUserIds = input.assignedUserIds
+    }
 
     // Update next generation date (for drag and drop)
     if (input.nextGenerationDate !== undefined) {

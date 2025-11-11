@@ -54,7 +54,7 @@ export const createWorkOrderScheduleSchema = z.object({
  */
 export const updateWorkOrderScheduleSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
 
   recurrenceType: z.nativeEnum(RecurrenceType).optional(),
   recurrenceInterval: z.number().int().min(1).optional(),
@@ -63,7 +63,7 @@ export const updateWorkOrderScheduleSchema = z.object({
   recurrenceEndValue: z.number().int().min(1).optional().nullable(),
   recurrenceEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 
-  weekDays: z.array(z.number().int().min(0).max(6)).optional(),
+  weekDays: z.array(z.number().int().min(0).max(6)).optional().nullable(),
 
   meterType: z.string().optional().nullable(),
   meterThreshold: z.number().positive().optional().nullable(),
@@ -71,10 +71,10 @@ export const updateWorkOrderScheduleSchema = z.object({
   templateId: z.string().optional(),
   assetId: z.string().optional().nullable(),
   siteId: z.string().optional().nullable(),
-  assignedUserIds: z.array(z.string()).optional(),
+  assignedUserIds: z.array(z.string()).optional().nullable(),
 
   isActive: z.boolean().optional(),
-  nextGenerationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  nextGenerationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 })
 
 /**
