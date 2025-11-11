@@ -179,6 +179,7 @@ export interface UpdateWorkOrderData {
   completionNotes?: string
   actualDuration?: number
   actualCost?: number
+  assignedUserIds?: string[]
 }
 
 // Complete work order data interface
