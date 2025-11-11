@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, JSX } from "react"
+import { useCallback, useState, useEffect, JSX } from "react"
 import { useRouter } from "next/navigation"
 import type {
   DateSelectArg,
@@ -20,7 +20,6 @@ import { Edit, Users, Eye, Trash2 } from "lucide-react"
 import { BaseCalendar } from "../base-calendar"
 import { useOTCalendarEvents } from "@/hooks/use-ot-calendar-events"
 import { useOTCalendarActions } from "@/hooks/use-ot-calendar-actions"
-import { useOTCalendarFilters } from "@/hooks/use-ot-calendar-filters"
 import type { CalendarFilters } from "@/types/calendar.types"
 
 interface OTCalendarProps {
@@ -46,9 +45,9 @@ interface OTCalendarProps {
   refetchKey?: number
 
   /**
-   * Initial filters for calendar
+   * Current filters for calendar (controlled from parent)
    */
-  initialFilters?: Partial<CalendarFilters>
+  filters: CalendarFilters
 
   /**
    * Enable or disable drag and drop
@@ -87,7 +86,7 @@ export function OTCalendar({
   onWorkOrderClick,
   onDateSelect,
   refetchKey,
-  initialFilters,
+  filters,
   editable = true,
   selectable = true,
   showDeleteButton = true,
@@ -95,7 +94,6 @@ export function OTCalendar({
   const router = useRouter()
 
   // Custom hooks for state management
-  const { filters } = useOTCalendarFilters(initialFilters)
   const { events, loading, fetchEvents, refetch } = useOTCalendarEvents({
     refetchKey,
     initialFilters: filters,

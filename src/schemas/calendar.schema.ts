@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { getEventTypeColor } from "@/lib/calendar-colors"
 
 /**
  * Calendar Event Type Schema
@@ -12,6 +13,19 @@ export const calendarEventTypeSchema = z.enum([
   "PLANNED_SHUTDOWN",
   "METER_BASED_TRIGGER",
 ])
+
+/**
+ * Calendar Event Types Constant for iteration
+ */
+export const CALENDAR_EVENT_TYPES = [
+  "PREVENTIVE_SCHEDULE",
+  "PREVENTIVE_WO",
+  "CORRECTIVE_WO",
+  "REPAIR_WO",
+  "INSPECTION",
+  "PLANNED_SHUTDOWN",
+  "METER_BASED_TRIGGER",
+] as const
 
 /**
  * Calendar View Type Schema
@@ -127,44 +141,6 @@ export const getEventTypeLabel = (type: CalendarEventTypeSchema): string => {
 
 /**
  * Helper function to get event type color
+ * Re-exported from centralized color constants
  */
-export const getEventTypeColor = (type: CalendarEventTypeSchema): { bg: string; border: string; text: string } => {
-  const colors: Record<CalendarEventTypeSchema, { bg: string; border: string; text: string }> = {
-    PREVENTIVE_SCHEDULE: {
-      bg: "#3B82F6",
-      border: "#2563EB",
-      text: "#FFFFFF",
-    },
-    PREVENTIVE_WO: {
-      bg: "#10B981",
-      border: "#059669",
-      text: "#FFFFFF",
-    },
-    CORRECTIVE_WO: {
-      bg: "#EF4444",
-      border: "#DC2626",
-      text: "#FFFFFF",
-    },
-    REPAIR_WO: {
-      bg: "#F59E0B",
-      border: "#D97706",
-      text: "#FFFFFF",
-    },
-    INSPECTION: {
-      bg: "#8B5CF6",
-      border: "#7C3AED",
-      text: "#FFFFFF",
-    },
-    PLANNED_SHUTDOWN: {
-      bg: "#6B7280",
-      border: "#4B5563",
-      text: "#FFFFFF",
-    },
-    METER_BASED_TRIGGER: {
-      bg: "#EC4899",
-      border: "#DB2777",
-      text: "#FFFFFF",
-    },
-  }
-  return colors[type]
-}
+export { getEventTypeColor }

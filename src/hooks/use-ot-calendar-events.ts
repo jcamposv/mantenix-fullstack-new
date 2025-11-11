@@ -31,9 +31,6 @@ export function useOTCalendarEvents(
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [lastRange, setLastRange] = useState<{ start: Date; end: Date } | null>(null)
-  const [currentFilters, setCurrentFilters] = useState<CalendarFilters | undefined>(
-    initialFilters
-  )
 
   /**
    * Fetch calendar events from API
@@ -44,9 +41,8 @@ export function useOTCalendarEvents(
         setLoading(true)
         setError(null)
 
-        // Store range and filters for refetch
+        // Store range for refetch
         setLastRange({ start, end })
-        setCurrentFilters(filters)
 
         const startISO = start.toISOString()
         const endISO = end.toISOString()
@@ -85,13 +81,13 @@ export function useOTCalendarEvents(
   )
 
   /**
-   * Refetch with last used range and filters
+   * Refetch with last used range and current filters from props
    */
   const refetch = useCallback(async (): Promise<void> => {
     if (lastRange) {
-      await fetchEvents(lastRange.start, lastRange.end, currentFilters)
+      await fetchEvents(lastRange.start, lastRange.end, initialFilters)
     }
-  }, [lastRange, currentFilters, fetchEvents])
+  }, [lastRange, initialFilters, fetchEvents])
 
   /**
    * Refetch when refetchKey changes
@@ -101,6 +97,15 @@ export function useOTCalendarEvents(
       refetch()
     }
   }, [refetchKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Refetch when filters change (after initial calendar load)
+   */
+  useEffect(() => {
+    if (lastRange) {
+      fetchEvents(lastRange.start, lastRange.end, initialFilters)
+    }
+  }, [initialFilters]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     events,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, JSX } from "react"
-import { Plus, Filter } from "lucide-react"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OTCalendar, CalendarLegend, CalendarFiltersPanel } from "@/components/calendar/ot-calendar"
 import { ScheduleForm } from "@/components/work-order-schedule/schedule-form"
@@ -11,13 +11,6 @@ import { useDialogState } from "@/hooks/use-dialog-state"
 import { useCalendarRefetch } from "@/hooks/use-calendar-refetch"
 import { useOTCalendarFilters } from "@/hooks/use-ot-calendar-filters"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 
 interface DateRange {
   start: Date
@@ -44,7 +37,6 @@ interface DateRange {
  */
 export default function WorkOrderSchedulePage(): JSX.Element {
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null)
-  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState<boolean>(false)
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
   const [workOrderSheetOpen, setWorkOrderSheetOpen] = useState<boolean>(false)
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
@@ -134,51 +126,7 @@ export default function WorkOrderSchedulePage(): JSX.Element {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Filter Sheet (Mobile) */}
-          <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="md:hidden h-8">
-                <Filter className="h-3.5 w-3.5 mr-1.5" />
-                <span className="text-xs">Filtros</span>
-                {hasActiveFilters && (
-                  <span className="ml-2 h-2 w-2 rounded-full bg-primary" />
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px]">
-              <SheetHeader>
-                <SheetTitle>Filtros</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4">
-                <CalendarFiltersPanel
-                  selectedEventTypes={filters.eventTypes}
-                  onEventTypesChange={setEventTypes}
-                  selectedStatuses={filters.statuses}
-                  onStatusesChange={setStatuses}
-                  selectedPriorities={filters.priorities}
-                  onPrioritiesChange={setPriorities}
-                  showCompleted={filters.showCompleted}
-                  onShowCompletedChange={setShowCompleted}
-                  onResetFilters={resetFilters}
-                  hasActiveFilters={hasActiveFilters}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Create Button */}
-          <Button onClick={handleCreateFromButton} size="sm" className="shrink-0 h-8">
-            <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-            <span className="hidden sm:inline text-xs">Nueva Programación</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex flex-1 gap-4 min-h-0">
-        {/* Sidebar (Desktop) */}
-        <aside className="hidden md:flex flex-col gap-3 w-64 flex-shrink-0 overflow-y-auto">
-          <CalendarLegend />
+          {/* Filter Button - Now compact with Popover */}
           <CalendarFiltersPanel
             selectedEventTypes={filters.eventTypes}
             onEventTypesChange={setEventTypes}
@@ -191,21 +139,32 @@ export default function WorkOrderSchedulePage(): JSX.Element {
             onResetFilters={resetFilters}
             hasActiveFilters={hasActiveFilters}
           />
-        </aside>
 
-        {/* Calendar - New Unified OTCalendar */}
-        <div className="flex-1 min-w-0">
-          <OTCalendar
-            onScheduleClick={handleScheduleClick}
-            onWorkOrderClick={handleWorkOrderClick}
-            onDateSelect={handleDateSelect}
-            refetchKey={refetchKey}
-            initialFilters={filters}
-            editable={true}
-            selectable={true}
-            showDeleteButton={true}
-          />
+          {/* Create Button */}
+          <Button onClick={handleCreateFromButton} size="sm" className="shrink-0 h-8">
+            <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline text-xs">Nueva Programación</span>
+          </Button>
         </div>
+      </div>
+
+      {/* Legend Row - Horizontal compact */}
+      <div className="flex items-center justify-between gap-4 px-2 py-2 bg-muted/30 rounded-lg border">
+        <CalendarLegend />
+      </div>
+
+      {/* Calendar - Full Width */}
+      <div className="flex-1 min-h-0">
+        <OTCalendar
+          onScheduleClick={handleScheduleClick}
+          onWorkOrderClick={handleWorkOrderClick}
+          onDateSelect={handleDateSelect}
+          refetchKey={refetchKey}
+          filters={filters}
+          editable={true}
+          selectable={true}
+          showDeleteButton={true}
+        />
       </div>
 
       {/* Work Order Detail Sheet - Outlook Style */}

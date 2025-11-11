@@ -1,4 +1,5 @@
 import { CalendarRepository } from "@/server/repositories/calendar.repository"
+import { getCalendarEventColor } from "@/lib/calendar-colors"
 import type {
   CalendarEvent,
   CalendarFilters,
@@ -43,7 +44,7 @@ export class CalendarService {
     // Transform schedules to calendar events
     const scheduleEvents: CalendarEvent[] = schedules.map((schedule) => {
       const eventType = this.mapRecurrenceToEventType(schedule.recurrenceType)
-      const colors = this.getEventColors(eventType, null)
+      const colors = getCalendarEventColor(eventType)
 
       return {
         id: `schedule-${schedule.id}`,
@@ -73,9 +74,10 @@ export class CalendarService {
     })
 
     // Transform work orders to calendar events
+    // IMPORTANT: Color is determined by TYPE only, not by status
     const workOrderEvents: CalendarEvent[] = workOrders.map((workOrder) => {
       const eventType = this.mapWorkOrderTypeToEventType(workOrder.type)
-      const colors = this.getEventColors(eventType, workOrder.status)
+      const colors = getCalendarEventColor(eventType)
 
       // Get assigned technicians
       const assignedTechnicians = workOrder.assignments.map((assignment) => ({
@@ -236,91 +238,4 @@ export class CalendarService {
     return mapping[workOrderType] ?? "CORRECTIVE_WO"
   }
 
-  /**
-   * Get event colors based on type and status
-   * Uses consistent color scheme across the application
-   */
-  private static getEventColors(
-    eventType: CalendarEventType,
-    status: WorkOrderStatus | null
-  ): { bg: string; border: string; text: string } {
-    // For schedules, use type-based colors
-    if (!status) {
-      const scheduleColors: Record<
-        CalendarEventType,
-        { bg: string; border: string; text: string }
-      > = {
-        PREVENTIVE_SCHEDULE: {
-          bg: "#3B82F6",
-          border: "#2563EB",
-          text: "#FFFFFF",
-        },
-        METER_BASED_TRIGGER: {
-          bg: "#EC4899",
-          border: "#DB2777",
-          text: "#FFFFFF",
-        },
-        PREVENTIVE_WO: {
-          bg: "#10B981",
-          border: "#059669",
-          text: "#FFFFFF",
-        },
-        CORRECTIVE_WO: {
-          bg: "#EF4444",
-          border: "#DC2626",
-          text: "#FFFFFF",
-        },
-        REPAIR_WO: {
-          bg: "#F59E0B",
-          border: "#D97706",
-          text: "#FFFFFF",
-        },
-        INSPECTION: {
-          bg: "#8B5CF6",
-          border: "#7C3AED",
-          text: "#FFFFFF",
-        },
-        PLANNED_SHUTDOWN: {
-          bg: "#6B7280",
-          border: "#4B5563",
-          text: "#FFFFFF",
-        },
-      }
-      return scheduleColors[eventType]
-    }
-
-    // For work orders, use status-based colors (more important than type)
-    const statusColors: Record<
-      WorkOrderStatus,
-      { bg: string; border: string; text: string }
-    > = {
-      DRAFT: {
-        bg: "#94A3B8",
-        border: "#64748B",
-        text: "#FFFFFF",
-      },
-      ASSIGNED: {
-        bg: "#3B82F6",
-        border: "#2563EB",
-        text: "#FFFFFF",
-      },
-      IN_PROGRESS: {
-        bg: "#F59E0B",
-        border: "#D97706",
-        text: "#FFFFFF",
-      },
-      COMPLETED: {
-        bg: "#10B981",
-        border: "#059669",
-        text: "#FFFFFF",
-      },
-      CANCELLED: {
-        bg: "#6B7280",
-        border: "#4B5563",
-        text: "#FFFFFF",
-      },
-    }
-
-    return statusColors[status]
-  }
 }
