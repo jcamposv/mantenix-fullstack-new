@@ -2,14 +2,14 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, List, Calendar, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, List, Calendar } from 'lucide-react';
 import type { JSX } from 'react';
 
 interface WorkOrdersLayoutProps {
   children: React.ReactNode;
 }
 
-type TabValue = 'dashboard' | 'list' | 'calendar' | 'schedule';
+type TabValue = 'dashboard' | 'list' | 'schedule';
 
 /**
  * Work Orders Layout
@@ -29,7 +29,6 @@ export default function WorkOrdersLayout({
   const getActiveTab = (): TabValue | null => {
     if (pathname === '/work-orders') return 'dashboard';
     if (pathname === '/work-orders/list') return 'list';
-    if (pathname === '/work-orders/calendar') return 'calendar';
     if (pathname === '/work-orders/schedule') return 'schedule';
     // For other routes like /work-orders/[id], /work-orders/new, etc, don't show tabs
     return null;
@@ -48,7 +47,6 @@ export default function WorkOrdersLayout({
     const routes: Record<TabValue, string> = {
       dashboard: '/work-orders',
       list: '/work-orders/list',
-      calendar: '/work-orders/calendar',
       schedule: '/work-orders/schedule',
     };
 
@@ -79,18 +77,11 @@ export default function WorkOrdersLayout({
                 <span className="hidden sm:inline">Lista</span>
               </TabsTrigger>
               <TabsTrigger
-                value="calendar"
+                value="schedule"
                 className="gap-1 px-2.5 py-1 border-0 border-b-2 border-transparent data-[state=active]:border-b-primary data-[state=active]:shadow-none rounded-none text-xs h-8"
               >
                 <Calendar className="h-3 w-3" />
                 <span className="hidden sm:inline">Calendario</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="schedule"
-                className="gap-1 px-2.5 py-1 border-0 border-b-2 border-transparent data-[state=active]:border-b-primary data-[state=active]:shadow-none rounded-none text-xs h-8"
-              >
-                <CalendarClock className="h-3 w-3" />
-                <span className="hidden sm:inline">Programaciones</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
