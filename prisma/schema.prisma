@@ -1724,3 +1724,60 @@ model Invoice {
   @@index([createdAt])
   @@map("invoices")
 }
+
+// ============================================================================
+// TIME TRACKING SYSTEM
+// ============================================================================
+
+enum TimeLogAction {
+  START   // Inicio de trabajo
+  PAUSE   // Pausa de trabajo
+  RESUME  // Reanudación de trabajo
+  COMPLETE // Finalización de trabajo
+}
+
+enum PauseReason {
+  WAITING_PARTS      // Esperando repuestos
+  WAITING_APPROVAL   // Esperando aprobación
+  LUNCH_BREAK        // Hora de almuerzo
+  OTHER_PRIORITY     // Otra prioridad
+  TECHNICAL_ISSUE    // Problema técnico
+  TRAVEL             // Viaje/Traslado
+  OTHER              // Otro
+}
+
+// Registro detallado de tiempo en órdenes de trabajo
+model WorkOrderTimeLog {
+  id          String   @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  // Acción registrada
+  action      TimeLogAction
+  pauseReason PauseReason?
+
+  // Timestamp del registro
+  timestamp   DateTime @default(now())
+
+  // Usuario que realizó la acción
+  userId      String
+  user        User     @relation("WorkOrderTimeLogs", fields: [userId], references: [id], onDelete: Restrict)
+
+  // Geolocalización (verificar que el técnico está en el sitio)
+  latitude    Float?
+  longitude   Float?
+
+  // Duración del segmento (calculado entre este log y el anterior en minutos)
+  segmentDurationMinutes Int?
+
+  // Notas adicionales
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workOrderId, timestamp])
+  @@index([userId])
+  @@index([action])
+  @@map("work_order_time_logs")
+}
