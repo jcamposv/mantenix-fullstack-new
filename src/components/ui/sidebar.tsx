@@ -606,12 +606,9 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Use a fixed width pattern to avoid hydration mismatch
-  // Different items will get different widths but consistently
+  // Random width between 50 to 90%.
   const width = React.useMemo(() => {
-    // Use a stable hash-like approach instead of Math.random()
-    // This ensures the same width for the same component instance
-    return "70%"
+    return `${Math.floor(Math.random() * 40) + 50}%`
   }, [])
 
   return (

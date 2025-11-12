@@ -20,16 +20,12 @@ export interface WorkOrder {
   status: WorkOrderStatus
 
   // Location and asset
-  siteId: string | null
+  siteId: string
   assetId: string | null
   
   // Template integration
   templateId: string | null
   customFieldValues: JsonValue | null
-  
-  // Recurring work orders
-  isRecurring: boolean
-  scheduleId: string | null
   
   // Dates
   scheduledDate: string | null
@@ -41,9 +37,6 @@ export interface WorkOrder {
   estimatedCost: number | null
   actualDuration: number | null
   actualCost: number | null
-  laborCost: number | null
-  partsCost: number | null
-  otherCosts: number | null
   
   // Instructions and resources
   instructions: string | null
@@ -206,8 +199,6 @@ export interface WorkOrderFilters {
   createdByMe?: boolean
   scheduledDateFrom?: Date
   scheduledDateTo?: Date
-  createdAtFrom?: Date
-  createdAtTo?: Date
   search?: string
   isActive?: boolean
 }

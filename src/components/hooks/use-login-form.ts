@@ -47,38 +47,23 @@ export function useLoginForm() {
         }
       } else {
         try {
-          // Validate subdomain access before redirecting
-          const subdomainValidation = await fetch('/api/auth/validate-subdomain', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'
-          })
-
-          const validationResult = await subdomainValidation.json()
-
-          if (!validationResult.success || !validationResult.canAccess) {
-            setError(validationResult.error || 'No tienes acceso a este subdominio')
-            return
-          }
-
-          // Get fresh session after successful login and validation
+          // Get fresh session after successful login
           const session = await getSession()
           const userRole = (session?.data?.user as { role?: string })?.role
           console.log("User role from session:", userRole) // Debug log
           console.log("Full session data:", session?.data?.user) // Debug log
-
+          
           // Mobile-only roles should be redirected to /mobile
-          const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO,
+          const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, 
             PermissionHelper.ROLES.CLIENTE_OPERARIO]
-
+          
           // Admin roles that can choose platform
-          const adminRoles = [PermissionHelper.ROLES.SUPER_ADMIN,
-            PermissionHelper.ROLES.ADMIN_EMPRESA,
+          const adminRoles = [PermissionHelper.ROLES.SUPER_ADMIN, 
+            PermissionHelper.ROLES.ADMIN_EMPRESA, 
             PermissionHelper.ROLES.SUPERVISOR,
             PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL,
-            PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE,
-            PermissionHelper.ROLES.ADMIN_GRUPO]
-
+            PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE]
+          
           if (userRole && mobileOnlyRoles.includes(userRole as typeof mobileOnlyRoles[number])) {
             console.log("Redirecting mobile user to /mobile")
             router.push("/mobile")
@@ -92,7 +77,7 @@ export function useLoginForm() {
           }
         } catch (redirectError) {
           console.error("Redirect error:", redirectError)
-          setError("Error al validar acceso. Por favor intenta de nuevo.")
+          router.push("/")
         }
       }
     } catch (err) {

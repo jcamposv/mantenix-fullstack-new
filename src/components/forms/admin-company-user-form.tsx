@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
-import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 import { createAdminUserSchema, type AdminUserFormData, EXTERNAL_ROLES } from "@/schemas/admin-user"
 import { AdminUserBasicInfo } from "./admin-user/admin-user-basic-info"
 import { AdminUserExternal } from "./admin-user/admin-user-external"
@@ -44,7 +43,6 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
   const [loadingClientCompanies, setLoadingClientCompanies] = useState(false)
   const [loadingSites, setLoadingSites] = useState(false)
   const { user: currentUser } = useCurrentUser()
-  const { hasExternalClientMgmt } = useCompanyFeatures()
 
   const form = useForm<AdminUserFormData>({
     resolver: zodResolver(createAdminUserSchema(mode)),
@@ -164,7 +162,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
               currentUserCompanyName={currentUser?.company?.name}
             />
             
-            <AdminUserExternal
+            <AdminUserExternal 
               control={form.control}
               isExternalUser={isExternalUser}
               selectedClientCompanyId={selectedClientCompanyId}
@@ -173,14 +171,12 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
               sites={sites}
               loadingClientCompanies={loadingClientCompanies}
               loadingSites={loadingSites}
-              hasExternalClientMgmt={hasExternalClientMgmt}
             />
             
-            <AdminUserRoleSettings
+            <AdminUserRoleSettings 
               control={form.control}
               isExternalUser={isExternalUser}
               selectedRole={selectedRole}
-              currentUserRole={currentUser?.role}
             />
 
             <div className="flex justify-end space-x-4">

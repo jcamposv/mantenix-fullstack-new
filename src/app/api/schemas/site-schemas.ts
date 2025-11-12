@@ -6,8 +6,8 @@ export const createSiteSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   contactName: z.string().optional(),
-  latitude: z.coerce.number().optional().nullable(),
-  longitude: z.coerce.number().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
   timezone: z.string().optional().default("UTC"),
   notes: z.string().optional().nullable(),
   clientCompanyId: z.string().min(1, "La empresa cliente es requerida")
@@ -19,8 +19,8 @@ export const updateSiteSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   contactName: z.string().optional(),
-  latitude: z.coerce.number().optional().nullable(),
-  longitude: z.coerce.number().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
   timezone: z.string().optional(),
   notes: z.string().optional().nullable()
 })

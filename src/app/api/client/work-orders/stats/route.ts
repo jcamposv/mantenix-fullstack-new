@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/client/work-orders/stats
  * Get work order statistics for client users
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()
@@ -25,18 +26,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get date filters from query params
-    const searchParams = request.nextUrl.searchParams
-    const dateFrom = searchParams.get('dateFrom')
-    const dateTo = searchParams.get('dateTo')
-
-    const dateRange = {
-      from: dateFrom ? new Date(dateFrom) : undefined,
-      to: dateTo ? new Date(dateTo) : undefined,
-    }
-
     // Get statistics using client service
-    const stats = await ClientWorkOrderService.getWorkOrderStats(session, dateRange)
+    const stats = await ClientWorkOrderService.getWorkOrderStats(session)
 
     return NextResponse.json({ stats })
   } catch (error) {

@@ -43,7 +43,7 @@ export default function NewEmailTemplatePage() {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <EmailTemplateForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

@@ -84,7 +84,7 @@ export default function EditSitePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <FormSkeleton fields={7} showTitle={true} showFooter={true} />
       </div>
     )
@@ -92,7 +92,7 @@ export default function EditSitePage() {
 
   if (!initialData) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <div className="text-center">
           <p className="text-muted-foreground">No se pudieron cargar los datos de la sede.</p>
         </div>
@@ -101,7 +101,7 @@ export default function EditSitePage() {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <SiteForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

@@ -61,7 +61,7 @@ export function ClientAlertForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Card className="w-full shadow-none">
+        <Card>
           <CardHeader>
             <CardTitle>Información Básica</CardTitle>
           </CardHeader>

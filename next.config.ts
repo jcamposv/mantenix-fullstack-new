@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'cdn.mantenix.com',
+        hostname: 'cdn.mantenix.ai',
         port: '',
         pathname: '/**',
       },

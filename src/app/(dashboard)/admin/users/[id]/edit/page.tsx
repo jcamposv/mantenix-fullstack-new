@@ -73,7 +73,7 @@ export default function EditUserPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <FormSkeleton fields={5} showTitle={true} showFooter={true} />
       </div>
     )
@@ -81,7 +81,7 @@ export default function EditUserPage() {
 
   if (!initialData) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <div className="text-center">
           <p className="text-muted-foreground">No se pudieron cargar los datos del usuario.</p>
         </div>
@@ -90,7 +90,7 @@ export default function EditUserPage() {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <UserForm
         mode="edit"
         onSubmit={handleSubmit}

@@ -14,7 +14,6 @@ import { WorkOrderFormAdvanced } from "@/components/work-orders/work-order-form-
 import { createWorkOrderSchema } from "@/schemas/work-order"
 import type { CreateWorkOrderData } from "@/types/work-order.types"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
-import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 
 interface Site {
   id: string
@@ -52,9 +51,6 @@ export function NewWorkOrderContent() {
   const [templates, setTemplates] = useState<WorkOrderTemplateWithRelations[]>([])
   const [prefixes, setPrefixes] = useState<Prefix[]>([])
   const [activeTab, setActiveTab] = useState("basic")
-
-  // Get company features to determine if external client management is enabled
-  const { hasExternalClientMgmt } = useCompanyFeatures()
 
   const form = useForm<CreateWorkOrderData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -210,12 +206,7 @@ export function NewWorkOrderContent() {
 
   const isBasicFormValid = () => {
     const { title, type, siteId, assignedUserIds } = form.getValues()
-    // If EXTERNAL_CLIENT_MANAGEMENT is enabled, siteId is required
-    // Otherwise, only title, type, and assignedUserIds are required
-    if (hasExternalClientMgmt) {
-      return title && type && siteId && assignedUserIds?.length > 0
-    }
-    return title && type && assignedUserIds?.length > 0
+    return title && type && siteId && assignedUserIds?.length > 0
   }
 
   return (

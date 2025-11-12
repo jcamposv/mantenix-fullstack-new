@@ -6,8 +6,7 @@ export const companySchema = z.object({
     .string()
     .min(2, "El subdominio debe tener al menos 2 caracteres")
     .regex(/^[a-z0-9-]+$/, "El subdominio solo puede contener letras minúsculas, números y guiones"),
-  tier: z.enum(["STARTER", "PROFESSIONAL", "ENTERPRISE"]).optional(),
-  planId: z.string().min(1, "Debe seleccionar un plan de subscripción"),
+  tier: z.enum(["STARTER", "PROFESSIONAL", "ENTERPRISE"]),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Debe ser un color hex válido"),
   secondaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Debe ser un color hex válido"),
   backgroundColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Debe ser un color hex válido"),

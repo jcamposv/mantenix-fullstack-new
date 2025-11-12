@@ -11,17 +11,9 @@ interface LogoUploadProps {
   value?: string
   onChange: (url: string) => void
   onRemove: () => void
-  label?: string
-  folder?: string
 }
 
-export function LogoUpload({
-  value,
-  onChange,
-  onRemove,
-  label = "Logo (Opcional)",
-  folder = "logos"
-}: LogoUploadProps) {
+export function LogoUpload({ value, onChange, onRemove }: LogoUploadProps) {
   const [uploading, setUploading] = useState(false)
 
   const handleLogoUpload = async (file: File) => {
@@ -29,7 +21,7 @@ export function LogoUpload({
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', folder)
+      formData.append('type', 'client-company-logo')
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -53,7 +45,7 @@ export function LogoUpload({
 
   return (
     <div className="space-y-4">
-      <Label>{label}</Label>
+      <Label>Logo de la Empresa (Opcional)</Label>
       <div className="flex items-start space-x-4">
         {value ? (
           <div className="relative">

@@ -57,8 +57,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const updateData: UpdateWorkOrderData = {
       ...validationResult.data,
-      scheduledDate: validationResult.data.scheduledDate
-        ? new Date(`${validationResult.data.scheduledDate}T00:00:00Z`)
+      scheduledDate: validationResult.data.scheduledDate 
+        ? new Date(validationResult.data.scheduledDate) 
         : undefined
     }
 

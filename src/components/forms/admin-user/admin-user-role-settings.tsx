@@ -8,18 +8,11 @@ interface AdminUserRoleSettingsProps {
   control: Control<AdminUserFormData>
   isExternalUser: boolean
   selectedRole: string | undefined
-  currentUserRole?: string
 }
 
-export function AdminUserRoleSettings({ control, isExternalUser, selectedRole, currentUserRole }: AdminUserRoleSettingsProps) {
+export function AdminUserRoleSettings({ control, isExternalUser, selectedRole }: AdminUserRoleSettingsProps) {
   // Get available roles based on user type
-  let availableRoles = isExternalUser ? EXTERNAL_ROLES : INTERNAL_ROLES
-
-  // Filter roles based on current user's role
-  if (!isExternalUser && currentUserRole === "ADMIN_EMPRESA") {
-    // ADMIN_EMPRESA cannot create other ADMIN_EMPRESA users
-    availableRoles = INTERNAL_ROLES.filter(role => role.value !== "ADMIN_EMPRESA")
-  }
+  const availableRoles = isExternalUser ? EXTERNAL_ROLES : INTERNAL_ROLES
   
   // Check if selected role requires site assignment
   const selectedRoleData = EXTERNAL_ROLES.find(role => role.value === selectedRole)
@@ -27,10 +20,6 @@ export function AdminUserRoleSettings({ control, isExternalUser, selectedRole, c
   
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case "ADMIN_EMPRESA":
-        return "default"
-      case "JEFE_MANTENIMIENTO":
-        return "default"
       case "SUPERVISOR":
         return "secondary"
       case "TECNICO":
@@ -77,11 +66,9 @@ export function AdminUserRoleSettings({ control, isExternalUser, selectedRole, c
               </SelectContent>
             </Select>
             <FormDescription>
-              {isExternalUser
+              {isExternalUser 
                 ? `Usuarios externos: Admin General (acceso a todas las sedes), Admin de Sede (acceso a sede específica), Operario (reportar incidencias)`
-                : currentUserRole === "ADMIN_GRUPO"
-                  ? "ADMIN_GRUPO puede crear: Admin Empresa, Jefe de Mantenimiento, Supervisor y Técnico"
-                  : "ADMIN_EMPRESA puede crear: Jefe de Mantenimiento, Supervisor y Técnico"
+                : "Usuarios internos: Supervisor y Técnico para operaciones internas de la empresa"
               }
               {isExternalUser && requiresSite && (
                 <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded text-amber-800 dark:text-amber-200 text-xs">

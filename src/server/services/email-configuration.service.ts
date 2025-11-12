@@ -26,11 +26,11 @@ export class EmailConfigurationService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las configuraciones
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa/grupo puede ver solo la configuración de su empresa
+      // Admin empresa puede ver solo la configuración de su empresa
       whereClause.companyId = session.user.companyId
     } else {
       throw new Error("Rol no autorizado para gestionar configuraciones de email")
@@ -179,7 +179,7 @@ export class EmailConfigurationService {
       return
     }
 
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
       if (session.user.companyId !== companyId) {
         throw new Error("No tienes acceso a esta empresa")
       }

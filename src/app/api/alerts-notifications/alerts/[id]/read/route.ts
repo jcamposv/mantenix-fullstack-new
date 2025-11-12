@@ -26,12 +26,12 @@ export async function POST(
 
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede acceder a todas las alertas
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      // Admin empresa/grupo puede acceder a alertas de su empresa
+    } else if (session.user.role === "ADMIN_EMPRESA") {
+      // Admin empresa puede acceder a alertas de su empresa
       if (!session.user.companyId) {
         return NextResponse.json({ error: "Usuario sin empresa asociada" }, { status: 400 })
       }
-
+      
       whereClause.site = {
         clientCompany: {
           tenantCompanyId: session.user.companyId

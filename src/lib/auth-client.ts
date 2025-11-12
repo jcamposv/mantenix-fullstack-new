@@ -103,7 +103,6 @@ export function useAuth() {
     
     // Role checking functions
     isSuperAdmin: () => enhancedUser?.role === 'SUPER_ADMIN',
-    isGroupAdmin: () => enhancedUser?.role === 'ADMIN_GRUPO',
     isCompanyAdmin: () => enhancedUser?.role === 'ADMIN_EMPRESA',
     isSupervisor: () => enhancedUser?.role === 'SUPERVISOR',
     isTechnician: () => enhancedUser?.role === 'TECNICO',
@@ -117,7 +116,6 @@ export function useAuth() {
  * TODO: Load company data based on companyId
  */
 type Branding = {
-  name?: string
   logo?: string
   primaryColor?: string
   secondaryColor?: string
@@ -220,7 +218,7 @@ export async function isMfaRequired(): Promise<boolean> {
   if (!user) return false
   
   // MFA required for admin roles
-  if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_GRUPO' || user.role === 'ADMIN_EMPRESA') {
+  if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_EMPRESA') {
     return true
   }
   

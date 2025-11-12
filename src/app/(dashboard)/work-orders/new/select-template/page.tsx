@@ -74,11 +74,11 @@ export default function SelectTemplatePage() {
   const activeTemplates = filteredTemplates.filter(template => template.status === "ACTIVE")
 
   return (
-    <div className="container mx-auto py-0 max-w-7xl">
+    <div className="container mx-auto py-6 max-w-7xl">
       <div className="mb-6">      
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Seleccionar Template</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Seleccionar Template</h1>
             <p className="text-muted-foreground mt-2">
               Elige un template para acelerar la creación de tu orden de trabajo
             </p>

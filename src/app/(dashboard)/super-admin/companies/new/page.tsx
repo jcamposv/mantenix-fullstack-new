@@ -40,7 +40,7 @@ export default function NewCompanyPage() {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <CompanyForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

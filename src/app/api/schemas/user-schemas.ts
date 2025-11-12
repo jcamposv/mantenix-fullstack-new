@@ -1,16 +1,15 @@
 import { z } from "zod"
-import { roleSchema } from "@/lib/rbac/role-schemas"
 
 // Schema para crear usuarios
-// Role validation is now centralized in role-schemas.ts
 export const createUserSchema = z.object({
   name: z.string().min(1, "El nombre es requerido").max(100, "El nombre es muy largo"),
   email: z.string().email("Email inválido"),
-  role: roleSchema,
+  role: z.enum(["SUPER_ADMIN", "ADMIN_EMPRESA", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"], {
+    message: "Rol inválido"
+  }),
   companyId: z.string().optional(),
   clientCompanyId: z.string().optional(),
   siteId: z.string().optional(),
-  hourlyRate: z.number().positive("La tarifa debe ser positiva").optional(),
   phone: z.string().max(20, "Teléfono muy largo").optional(),
   address: z.string().max(200, "Dirección muy larga").optional(),
   isActive: z.boolean().default(true),
@@ -21,11 +20,10 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
-  role: roleSchema.optional(),
+  role: z.enum(["SUPER_ADMIN", "ADMIN_EMPRESA", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]).optional(),
   companyId: z.string().optional(),
   clientCompanyId: z.string().optional(),
   siteId: z.string().optional(),
-  hourlyRate: z.number().positive("La tarifa debe ser positiva").optional(),
   phone: z.string().max(20).optional(),
   address: z.string().max(200).optional(),
   isActive: z.boolean().optional(),

@@ -137,10 +137,6 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
-      companyGroupId: {
-        type: "string",
-        required: false,
-      },
       avatar: {
         type: "string",
         required: false,
@@ -202,7 +198,7 @@ export const auth = betterAuth({
   
   // Trust proxy in production (for proper IP detection)
   trustedOrigins: process.env.NODE_ENV === "production" 
-    ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.com"}`] 
+    ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`] 
     : [
         "http://localhost:3000", 
         "http://*.localhost:3000",  // Allow any subdomain in development
@@ -219,10 +215,10 @@ export const auth = betterAuth({
     
   // CORS configuration
   cors: {
-    origin: process.env.NODE_ENV === "production"
-      ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.com"}`]
+    origin: process.env.NODE_ENV === "production" 
+      ? [`https://*.${process.env.DOMAIN_BASE || "mantenix.ai"}`]
       : [
-          "http://localhost:3000",
+          "http://localhost:3000", 
           "http://*.localhost:3000",  // Allow any subdomain in development
           "http://192.168.68.120:3000", // Allow mobile testing
           "http://192.168.1.*:3000",    // Allow common network ranges
@@ -236,14 +232,6 @@ export const auth = betterAuth({
         ],
     credentials: true,
   },
-
-  // Advanced configuration for cross-subdomain cookies
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: process.env.NODE_ENV === "production",
-      domain: process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.com"
-    }
-  }
 })
 
 // ============================================================================

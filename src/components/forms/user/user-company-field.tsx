@@ -44,7 +44,7 @@ export function UserCompanyField({
           <FormLabel>Company</FormLabel>
           <Select 
             onValueChange={field.onChange} 
-            defaultValue={(field.value as string | undefined) || undefined}
+            defaultValue={field.value || undefined}
             disabled={loadingCompanies || readOnly}
           >
             <FormControl>

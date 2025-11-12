@@ -174,7 +174,7 @@ export default function MyWorkOrdersPage() {
   ]
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <DataTable
         columns={columns}
         data={workOrders}

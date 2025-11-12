@@ -9,7 +9,6 @@ export const createCompanySchema = z.object({
     .max(50, "El subdominio no puede tener más de 50 caracteres")
     .regex(/^[a-zA-Z0-9-]+$/, "El subdominio solo puede contener letras, números y guiones"),
   tier: CompanyTierEnum.optional().default("STARTER"),
-  planId: z.string().min(1, "El plan de subscripción es requerido"),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Color primario debe ser un código hexadecimal válido").optional().default("#3b82f6"),
   secondaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Color secundario debe ser un código hexadecimal válido").optional().default("#64748b"),
   backgroundColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Color de fondo debe ser un código hexadecimal válido").optional().default("#ffffff"),
@@ -26,7 +25,6 @@ export const updateCompanySchema = z.object({
     .regex(/^[a-zA-Z0-9-]+$/, "El subdominio solo puede contener letras, números y guiones")
     .optional(),
   tier: CompanyTierEnum.optional(),
-  planId: z.string().optional(),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Color primario debe ser un código hexadecimal válido").optional(),
   secondaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Color secundario debe ser un código hexadecimal válido").optional(),
   backgroundColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Color de fondo debe ser un código hexadecimal válido").optional(),

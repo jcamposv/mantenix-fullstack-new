@@ -4,9 +4,9 @@ import { z } from "zod"
 export const workOrderTemplateStatusSchema = z.enum(["ACTIVE", "INACTIVE"])
 export const workOrderTemplatePrioritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
 export const customFieldTypeSchema = z.enum([
-  "TEXT", "TEXTAREA", "NUMBER", "SELECT", "RADIO", "CHECKBOX",
-  "CHECKLIST", "DATE", "TIME", "DATETIME", "IMAGE_BEFORE",
-  "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE", "TABLE"
+  "TEXT", "TEXTAREA", "NUMBER", "SELECT", "RADIO", "CHECKBOX", 
+  "CHECKLIST", "DATE", "TIME", "DATETIME", "IMAGE_BEFORE", 
+  "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE"
 ])
 
 // Role enum for assignment config
@@ -31,39 +31,6 @@ export const customFieldValidationSchema = z.object({
   message: z.string().optional()
 }).optional()
 
-// Table column schema
-export const tableColumnSchema = z.object({
-  id: z.string().min(1, "ID de columna es requerido"),
-  label: z.string().min(1, "Etiqueta de columna es requerida"),
-  type: z.enum(["text", "number", "select", "checkbox"]),
-  readonly: z.boolean().optional(),
-  width: z.string().optional(), // e.g., "100px", "20%"
-  options: z.array(z.string()).optional(), // Para columnas tipo select
-  required: z.boolean().optional()
-})
-
-// Table row schema (for predefined rows)
-export const tableRowSchema = z.record(z.string(), z.any())
-
-// Table configuration schema
-export const tableConfigSchema = z.object({
-  columns: z.array(tableColumnSchema).min(1, "Al menos una columna es requerida"),
-  rows: z.array(tableRowSchema).optional(), // Filas predefinidas (opcional)
-  allowAddRows: z.boolean().optional(), // Permitir agregar filas dinámicamente
-  allowDeleteRows: z.boolean().optional(), // Permitir eliminar filas
-  minRows: z.number().min(0).optional(),
-  maxRows: z.number().min(1).optional()
-}).refine((data) => {
-  // Validar que si allowDeleteRows es true, debe tener allowAddRows o rows predefinidas
-  if (data.allowDeleteRows && !data.allowAddRows && (!data.rows || data.rows.length === 0)) {
-    return false
-  }
-  return true
-}, {
-  message: "Si se permite eliminar filas, debe haber filas predefinidas o permitir agregar filas",
-  path: ["allowDeleteRows"]
-})
-
 // Custom field schema
 export const customFieldSchema = z.object({
   id: z.string().min(1, "ID del campo es requerido"),
@@ -76,8 +43,7 @@ export const customFieldSchema = z.object({
   validation: customFieldValidationSchema,
   defaultValue: z.unknown().optional(),
   placeholder: z.string().optional(),
-  multiple: z.boolean().optional(),
-  tableConfig: tableConfigSchema.optional()
+  multiple: z.boolean().optional()
 }).refine((data) => {
   // Validar que campos de tipo SELECT, RADIO y CHECKLIST tengan opciones
   if (["SELECT", "RADIO", "CHECKLIST"].includes(data.type)) {
@@ -87,15 +53,6 @@ export const customFieldSchema = z.object({
 }, {
   message: "Los campos SELECT, RADIO y CHECKLIST deben tener opciones definidas",
   path: ["options"]
-}).refine((data) => {
-  // Validar que campos de tipo TABLE tengan tableConfig
-  if (data.type === "TABLE") {
-    return data.tableConfig !== undefined && data.tableConfig !== null
-  }
-  return true
-}, {
-  message: "Los campos TABLE deben tener configuración de tabla (tableConfig)",
-  path: ["tableConfig"]
 })
 
 // Custom fields configuration schema
@@ -138,9 +95,6 @@ export type AssignmentConfig = z.infer<typeof assignmentConfigSchema>
 export type WorkOrderTemplateStatus = z.infer<typeof workOrderTemplateStatusSchema>
 export type WorkOrderTemplatePriority = z.infer<typeof workOrderTemplatePrioritySchema>
 export type CustomFieldType = z.infer<typeof customFieldTypeSchema>
-export type TableColumn = z.infer<typeof tableColumnSchema>
-export type TableRow = z.infer<typeof tableRowSchema>
-export type TableConfig = z.infer<typeof tableConfigSchema>
 
 // Helper function to create empty custom field
 export const createEmptyCustomField = (type: CustomFieldType, order: number): CustomField => ({
@@ -150,13 +104,7 @@ export const createEmptyCustomField = (type: CustomFieldType, order: number): Cu
   required: false,
   order,
   options: ["SELECT", "RADIO", "CHECKLIST"].includes(type) ? [""] : undefined,
-  multiple: false,
-  tableConfig: type === "TABLE" ? {
-    columns: [],
-    rows: [],
-    allowAddRows: false,
-    allowDeleteRows: false
-  } : undefined
+  multiple: false
 })
 
 // Helper function to get field type label
@@ -176,8 +124,7 @@ export const getFieldTypeLabel = (type: CustomFieldType): string => {
     IMAGE_AFTER: "Imágenes Después",
     VIDEO_BEFORE: "Videos Antes",
     VIDEO_AFTER: "Videos Después",
-    FILE: "Archivo",
-    TABLE: "Tabla"
+    FILE: "Archivo"
   }
   return labels[type]
 }

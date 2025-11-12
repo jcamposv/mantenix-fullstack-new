@@ -3,12 +3,11 @@
  */
 
 import type { CompanyBranding } from "@/types/branding"
-import type { FeatureModule } from "@prisma/client"
 
 export interface AvailableCompany {
   id: string
   name: string
-  subdomain: string | null
+  subdomain: string
   logo?: string | null
   isActive: boolean
 }
@@ -33,13 +32,7 @@ export interface ServerUser {
 
 export interface UserPermissions {
   isSuperAdmin: boolean
-  isGroupAdmin: boolean
   isCompanyAdmin: boolean
-}
-
-export interface CompanyFeature {
-  module: FeatureModule
-  isEnabled: boolean
 }
 
 export interface AppSidebarProps {
@@ -47,6 +40,5 @@ export interface AppSidebarProps {
   availableCompanies?: AvailableCompany[] | null
   serverUser?: ServerUser | null
   userPermissions?: UserPermissions
-  companyFeatures?: CompanyFeature[] | null
 }
 

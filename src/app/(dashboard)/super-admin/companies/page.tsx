@@ -22,15 +22,6 @@ interface Company {
   _count: {
     users: number
   }
-  subscription?: {
-    id: string
-    planId: string
-    plan: {
-      id: string
-      name: string
-      tier: string
-    }
-  } | null
 }
 
 interface CompaniesResponse {
@@ -108,7 +99,7 @@ export default function CompaniesPage() {
             )}
             <div>
               <div className="font-medium">{company.name}</div>
-              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.com</div>
+              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.ai</div>
             </div>
           </div>
         )
@@ -118,13 +109,10 @@ export default function CompaniesPage() {
       accessorKey: "tier",
       header: "Plan",
       cell: ({ row }) => {
-        const company = row.original
-        const planName = company.subscription?.plan?.name || company.tier
-        const planTier = company.subscription?.plan?.tier || company.tier
-
+        const tier = row.getValue("tier") as string
         return (
-          <Badge variant={planTier === "ENTERPRISE" ? "default" : planTier === "PROFESSIONAL" || planTier === "BUSINESS" ? "secondary" : "outline"}>
-            {planName}
+          <Badge variant={tier === "ENTERPRISE" ? "default" : tier === "PROFESSIONAL" ? "secondary" : "outline"}>
+            {tier}
           </Badge>
         )
       },
@@ -159,7 +147,7 @@ export default function CompaniesPage() {
   ]
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <DataTable
         columns={columns}
         data={companies}

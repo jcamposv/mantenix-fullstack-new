@@ -233,7 +233,7 @@ export default function AlertsPage() {
   ]
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <DataTable
         columns={columns}
         data={alerts}

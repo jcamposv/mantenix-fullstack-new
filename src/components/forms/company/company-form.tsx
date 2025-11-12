@@ -35,7 +35,6 @@ export function CompanyForm({
       name: initialData?.name || "",
       subdomain: initialData?.subdomain || "",
       tier: initialData?.tier || "STARTER",
-      planId: initialData?.planId || "",
       primaryColor: initialData?.primaryColor || "#3b82f6",
       secondaryColor: initialData?.secondaryColor || "#64748b",
       backgroundColor: initialData?.backgroundColor || "#ffffff",

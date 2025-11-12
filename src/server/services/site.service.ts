@@ -21,11 +21,11 @@ export class SiteService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las sedes
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    } else if (session.user.role === "ADMIN_EMPRESA") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa/grupo solo puede ver sedes de empresas cliente de su empresa
+      // Admin empresa solo puede ver sedes de empresas cliente de su empresa
       whereClause.clientCompany = {
         tenantCompanyId: session.user.companyId
       }
@@ -195,7 +195,7 @@ export class SiteService {
     }
 
     // Verificar permisos de acceso por rol
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    if (session.user.role === "ADMIN_EMPRESA") {
       if (!session.user.companyId || existingSite.clientCompany?.tenantCompany.id !== session.user.companyId) {
         throw new Error("No tienes acceso a esta sede")
       }
@@ -219,8 +219,8 @@ export class SiteService {
    * Valida que la empresa cliente existe y el usuario tiene acceso
    */
   private static async validateClientCompany(clientCompanyId: string, session: AuthenticatedSession): Promise<void> {
-    // Para admin empresa/grupo, verificar que la empresa cliente pertenece a su empresa
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    // Para admin empresa, verificar que la empresa cliente pertenece a su empresa
+    if (session.user.role === "ADMIN_EMPRESA") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }

@@ -101,7 +101,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
 
   if (fetchLoading) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <FormSkeleton fields={8} showTitle={true} showFooter={true} />
       </div>
     )
@@ -109,7 +109,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
 
   if (!initialData) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <div className="text-center">
           <p>Activo no encontrado</p>
         </div>
@@ -118,7 +118,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <AssetForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

@@ -27,12 +27,10 @@ import {
   X,
   Settings
 } from "lucide-react"
-import {
+import { 
   type CustomField,
-  type TableConfig,
-  getFieldTypeLabel
+  getFieldTypeLabel 
 } from "@/schemas/work-order-template"
-import { TableConfigEditor } from "./table-config-editor"
 
 interface CustomFieldEditorProps {
   field: CustomField
@@ -57,7 +55,6 @@ export function CustomFieldEditor({
   const supportsOptions = ["SELECT", "RADIO", "CHECKLIST"].includes(field.type)
   const supportsValidation = ["TEXT", "TEXTAREA", "NUMBER"].includes(field.type)
   const supportsMultiple = ["IMAGE_BEFORE", "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE"].includes(field.type)
-  const isTableType = field.type === "TABLE"
 
   const updateField = (updates: Partial<CustomField>) => {
     onUpdate({ ...field, ...updates })
@@ -309,17 +306,6 @@ export function CustomFieldEditor({
                     />
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Configuración de tabla para TABLE */}
-            {isTableType && (
-              <div className="space-y-3">
-                <label className="text-sm font-medium">Configuración de Tabla *</label>
-                <TableConfigEditor
-                  config={field.tableConfig}
-                  onChange={(tableConfig: TableConfig) => updateField({ tableConfig })}
-                />
               </div>
             )}
           </CardContent>

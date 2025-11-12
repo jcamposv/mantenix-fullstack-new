@@ -4,11 +4,13 @@ import { TableRow, TableCell } from "@/components/ui/table"
 interface DataTableSkeletonProps {
   columnCount: number
   rowCount?: number
+  cellHeight?: string
 }
 
 export function DataTableSkeleton({
   columnCount,
-  rowCount = 5
+  rowCount = 5,
+  cellHeight = "h-12"
 }: DataTableSkeletonProps) {
   return (
     <>

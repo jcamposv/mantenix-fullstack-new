@@ -24,7 +24,6 @@ export default function SuperAdminInviteUserPage() {
           email: data.email,
           role: data.role,
           companyId: data.companyId,
-          image: data.image,
           // Note: password is not needed for invitations
         }),
       })
@@ -52,7 +51,7 @@ export default function SuperAdminInviteUserPage() {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <SuperAdminUserForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

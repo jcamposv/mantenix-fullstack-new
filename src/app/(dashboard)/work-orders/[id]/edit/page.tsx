@@ -175,7 +175,7 @@ export default function EditWorkOrderPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-0 max-w-4xl">
+      <div className="container mx-auto py-6 max-w-4xl">
         <FormSkeleton fields={8} showTitle={true} showFooter={true} />
       </div>
     )

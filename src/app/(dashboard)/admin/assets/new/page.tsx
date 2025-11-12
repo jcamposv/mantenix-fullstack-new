@@ -46,7 +46,7 @@ export default function NewAssetPage() {
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <AssetForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

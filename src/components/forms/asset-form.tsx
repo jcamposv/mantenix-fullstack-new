@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { assetSchema, type AssetFormData } from "@/schemas/asset"
 import { AssetBasicInfo } from "./asset/asset-basic-info"
 import { AssetTechnicalInfo } from "./asset/asset-technical-info"
-import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 
 interface Site {
   id: string
@@ -34,7 +33,6 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
   const [sites, setSites] = useState<Site[]>([])
   const [loadingSites, setLoadingSites] = useState(true)
   const [currentClientCompanyId, setCurrentClientCompanyId] = useState(clientCompanyId)
-  const { hasExternalClientMgmt } = useCompanyFeatures()
 
   const form = useForm<AssetFormData>({
     resolver: zodResolver(assetSchema),
@@ -56,13 +54,8 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
   })
 
   useEffect(() => {
-    // Only fetch sites when EXTERNAL_CLIENT_MANAGEMENT is enabled
-    if (hasExternalClientMgmt) {
-      fetchSites()
-    } else {
-      setLoadingSites(false)
-    }
-  }, [hasExternalClientMgmt])
+    fetchSites()
+  }, [])
 
   // Update clientCompanyId when siteId changes
   useEffect(() => {
@@ -94,16 +87,16 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
 
 
   const handleSubmit = (data: AssetFormData) => {
-    // Get the selected site to determine the correct clientCompanyId (only when external client mgmt is enabled)
-    const selectedSite = hasExternalClientMgmt ? sites.find(site => site.id === data.siteId) : null
+    // Get the selected site to determine the correct clientCompanyId
+    const selectedSite = sites.find(site => site.id === data.siteId)
     const actualClientCompanyId = selectedSite?.clientCompany?.id || clientCompanyId
 
     // Transform date strings to proper format for API
     const transformedData = {
       ...data,
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate).toISOString() : undefined,
-      // Pass the actual clientCompanyId for image path correction (only relevant when external client mgmt is enabled)
-      _clientCompanyId: hasExternalClientMgmt ? actualClientCompanyId : undefined
+      // Pass the actual clientCompanyId for image path correction
+      _clientCompanyId: actualClientCompanyId
     }
     onSubmit(transformedData)
   }
@@ -121,16 +114,15 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="space-y-6">
-            <Card className="w-full shadow-none">
+            <Card>
               <CardHeader>
                 <CardTitle>Información Básica</CardTitle>
               </CardHeader>
               <CardContent>
-                <AssetBasicInfo
-                  form={form}
+                <AssetBasicInfo 
+                  form={form} 
                   sites={sites}
                   loadingSites={loadingSites}
-                  hasExternalClientMgmt={hasExternalClientMgmt}
                 />
               </CardContent>
             </Card>

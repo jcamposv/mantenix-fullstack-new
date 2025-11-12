@@ -5,15 +5,6 @@ export interface CompanyWithRelations extends Company {
     users: number
     clientCompanies: number
   }
-  subscription?: {
-    id: string
-    planId: string
-    plan: {
-      id: string
-      name: string
-      tier: string
-    }
-  } | null
 }
 
 export interface CompanyBranding {
@@ -38,7 +29,6 @@ export interface CreateCompanyData {
   name: string
   subdomain: string
   tier?: Tier
-  planId?: string
   primaryColor?: string
   secondaryColor?: string
   backgroundColor?: string
@@ -51,7 +41,6 @@ export interface UpdateCompanyData {
   name?: string
   subdomain?: string
   tier?: Tier
-  planId?: string
   primaryColor?: string
   secondaryColor?: string
   backgroundColor?: string

@@ -71,14 +71,14 @@ export default function EditEmailTemplatePage() {
 
   if (loadingData) {
     return (
-      <div className="container mx-auto py-0">
+      <div className="container mx-auto py-6">
         <FormSkeleton fields={4} showTitle={true} showFooter={true} />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <EmailTemplateForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

@@ -2,9 +2,6 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { AssetRepository } from "../repositories/asset.repository"
 import { AuthService } from "./auth.service"
-import { getCurrentCompanyId } from "@/lib/company-context"
-import { getOrCreateInternalSite } from "@/lib/internal-site-helper"
-import { parseCompanyFeatures } from "@/lib/features"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { AssetFilters, PaginatedAssetsResponse, AssetWithRelations } from "@/types/asset.types"
 import type { CreateAssetInput, UpdateAssetInput } from "../../app/api/schemas/asset-schemas"
@@ -17,27 +14,21 @@ export class AssetService {
   
   /**
    * Construye el WHERE clause para filtrar activos según el rol del usuario
-   * Uses getCurrentCompanyId to respect subdomain context for ADMIN_GRUPO
-   * Filters by tenantCompanyId to show both internal and external assets
    */
-  static async buildWhereClause(session: AuthenticatedSession, assetId?: string, filters?: AssetFilters): Promise<Prisma.AssetWhereInput> {
+  static buildWhereClause(session: AuthenticatedSession, assetId?: string, filters?: AssetFilters): Prisma.AssetWhereInput {
     const whereClause: Prisma.AssetWhereInput = assetId ? { id: assetId } : {}
 
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los activos
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      // Get company ID based on current subdomain (for ADMIN_GRUPO)
-      const companyId = await getCurrentCompanyId(session)
-
-      if (!companyId) {
-        throw new Error("No se pudo determinar la empresa")
+    } else if (session.user.role === "ADMIN_EMPRESA") {
+      if (!session.user.companyId) {
+        throw new Error("Usuario sin empresa asociada")
       }
-
-      // Admin empresa/grupo puede ver todos los activos (internos y externos) de su empresa
+      // Admin empresa solo puede ver activos de sedes de empresas cliente de su empresa
       whereClause.site = {
         clientCompany: {
-          tenantCompanyId: companyId
+          tenantCompanyId: session.user.companyId
         }
       }
     } else if (session.user.role === "CLIENTE_ADMIN_GENERAL") {
@@ -53,6 +44,12 @@ export class AssetService {
         throw new Error("Usuario sin sede asociada")
       }
       // Site admin can only view assets from their own site
+      whereClause.siteId = session.user.siteId
+    } else if (session.user.role === "USUARIO") {
+      if (!session.user.siteId) {
+        throw new Error("Usuario sin sede asociada")
+      }
+      // Usuario solo puede ver activos de su sede
       whereClause.siteId = session.user.siteId
     } else {
       throw new Error("Rol no autorizado para gestionar activos")
@@ -89,7 +86,7 @@ export class AssetService {
    * Obtiene un activo por ID verificando permisos
    */
   static async getById(assetId: string, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
-    const whereClause = await this.buildWhereClause(session, assetId)
+    const whereClause = this.buildWhereClause(session, assetId)
     return await AssetRepository.findFirst(whereClause)
   }
 
@@ -99,12 +96,12 @@ export class AssetService {
   static async getList(session: AuthenticatedSession, filters: AssetFilters, page: number, limit: number): Promise<PaginatedAssetsResponse> {
     // Verificar permisos
     const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
-
+    
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver activos")
     }
 
-    const whereClause = await this.buildWhereClause(session, undefined, filters)
+    const whereClause = this.buildWhereClause(session, undefined, filters)
     const { assets, total } = await AssetRepository.findMany(whereClause, page, limit)
 
     return {
@@ -122,18 +119,17 @@ export class AssetService {
   static async getAll(session: AuthenticatedSession): Promise<AssetWithRelations[]> {
     // Verificar permisos
     const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
-
+    
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver activos")
     }
 
-    const whereClause = await this.buildWhereClause(session)
+    const whereClause = this.buildWhereClause(session)
     return await AssetRepository.findAll(whereClause)
   }
 
   /**
    * Crea un nuevo activo
-   * Auto-assigns internal site when EXTERNAL_CLIENT_MANAGEMENT is disabled
    */
   static async create(assetData: CreateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations> {
     // Verificar permisos
@@ -141,38 +137,11 @@ export class AssetService {
       throw new Error("No tienes permisos para crear activos")
     }
 
-    // Get company ID for context
-    const companyId = await getCurrentCompanyId(session)
-
-    if (!companyId) {
-      throw new Error("No se pudo determinar la empresa")
-    }
-
-    // Check if company has EXTERNAL_CLIENT_MANAGEMENT feature
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { features: true }
-    })
-
-    const featureFlags = parseCompanyFeatures(company?.features)
-    const hasExternalClientMgmt = featureFlags.hasExternalClientMgmt
-
-    // Determine siteId: use provided or auto-assign internal site
-    let siteId = assetData.siteId
-
-    if (!siteId) {
-      if (hasExternalClientMgmt) {
-        throw new Error("La sede es requerida para activos externos")
-      }
-      // Auto-assign internal site for internal assets
-      siteId = await getOrCreateInternalSite(companyId, session.user.id)
-    } else {
-      // If siteId provided, validate user has access
-      await this.validateSite(siteId, session)
-    }
+    // Validate site according to role
+    await this.validateSite(assetData.siteId, session)
 
     // Verificar que el código no exista en la misma sede
-    const codeExists = await AssetRepository.checkCodeExists(assetData.code, siteId)
+    const codeExists = await AssetRepository.checkCodeExists(assetData.code, assetData.siteId)
     if (codeExists) {
       throw new Error("Ya existe un activo con este código en la sede seleccionada")
     }
@@ -192,7 +161,7 @@ export class AssetService {
       estimatedLifespan: assetData.estimatedLifespan,
       category: assetData.category,
       customFields: (assetData.customFields ?? undefined) as Prisma.InputJsonValue | undefined,
-      site: { connect: { id: siteId } }
+      site: { connect: { id: assetData.siteId } }
     }
 
     return await AssetRepository.create(createData)
@@ -265,9 +234,8 @@ export class AssetService {
     }
 
     // Verificar permisos de acceso por rol
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      const companyId = await getCurrentCompanyId(session)
-      if (!companyId || existingAsset.site?.clientCompany?.tenantCompanyId !== companyId) {
+    if (session.user.role === "ADMIN_EMPRESA") {
+      if (!session.user.companyId || existingAsset.site?.clientCompany?.tenantCompanyId !== session.user.companyId) {
         throw new Error("No tienes acceso a este activo")
       }
     } else if (session.user.role === "CLIENTE_ADMIN_GENERAL") {
@@ -291,22 +259,19 @@ export class AssetService {
 
   /**
    * Validates that the site exists and the user has access
-   * Uses getCurrentCompanyId for ADMIN_GRUPO context switching
    */
   private static async validateSite(siteId: string, session: AuthenticatedSession): Promise<void> {
-    // For company/group admin, verify that the site belongs to a client company of their company
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
-      const companyId = await getCurrentCompanyId(session)
-
-      if (!companyId) {
-        throw new Error("No se pudo determinar la empresa")
+    // For company admin, verify that the site belongs to a client company of their company
+    if (session.user.role === "ADMIN_EMPRESA") {
+      if (!session.user.companyId) {
+        throw new Error("Usuario sin empresa asociada")
       }
-
+      
       const site = await prisma.site.findFirst({
         where: {
           id: siteId,
           clientCompany: {
-            tenantCompanyId: companyId
+            tenantCompanyId: session.user.companyId
           },
           isActive: true
         }

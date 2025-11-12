@@ -17,25 +17,18 @@ export function useTableData<T>({ endpoint, transform, dependencies = [] }: UseT
       setLoading(true)
       setError(null)
       const response = await fetch(endpoint)
-
+      
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
       }
-
+      
       const result = await response.json()
-
-      // If transform is provided, use it with the full result
-      if (transform) {
-        const transformedData = transform(result)
-        setData(transformedData)
-      } else {
-        // TODO: STANDARDIZE API RESPONSES - All paginated endpoints should return { items: [], total, page, limit }
-        // Currently endpoints use different property names (items, companies, users, sites, etc.)
-        // This causes inconsistency and requires this fallback logic
-        // Recommendation: Refactor all list endpoints to use 'items' consistently
-        const items = result.items || result.companies || result.users || result.sites || result
-        setData(items)
-      }
+      
+      // Handle paginated responses
+      const items = result.items || result.companies || result.users || result.sites || result
+      const transformedData = transform ? transform(items) : items
+      
+      setData(transformedData)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error al cargar datos"
       setError(errorMessage)

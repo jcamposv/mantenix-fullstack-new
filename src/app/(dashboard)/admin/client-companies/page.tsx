@@ -221,7 +221,7 @@ const columns: ColumnDef<ClientCompany>[] = [
 ]
 
   return (
-    <div className="container mx-auto py-0">
+    <div className="container mx-auto py-6">
       <DataTable
         columns={columns}
         data={clientCompanies}

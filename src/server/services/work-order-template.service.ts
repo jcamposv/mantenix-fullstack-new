@@ -27,11 +27,11 @@ export class WorkOrderTemplateService {
     // Apply access filters by role
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin can see all templates
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    } else if (session.user.role === "ADMIN_EMPRESA") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Company/group admin can only see templates from their company
+      // Company admin can only see templates from their company
       whereClause.companyId = session.user.companyId
     } else {
       throw new Error("Rol no autorizado para gestionar templates de órdenes de trabajo")
@@ -203,7 +203,7 @@ export class WorkOrderTemplateService {
     }
 
     // Check access based on role
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    if (session.user.role === "ADMIN_EMPRESA") {
       if (!session.user.companyId || existingTemplate.companyId !== session.user.companyId) {
         throw new Error("No tienes acceso a este template")
       }

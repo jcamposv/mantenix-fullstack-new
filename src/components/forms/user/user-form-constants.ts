@@ -1,10 +1,11 @@
-/**
- * Roles are now centrally defined in @/lib/rbac/role-definitions.ts
- * This ensures consistency across the entire application
- */
-import { ALL_ROLES } from "@/lib/rbac/role-definitions"
-
-export const ROLES = ALL_ROLES
+export const ROLES = [
+  { value: "SUPER_ADMIN", label: "Super Admin", description: "Full system access" },
+  { value: "ADMIN_EMPRESA", label: "Company Admin", description: "Manage company and users" },
+  { value: "SUPERVISOR", label: "Supervisor", description: "Oversee operations" },
+  { value: "TECNICO", label: "Technician", description: "Field work and maintenance" },
+  { value: "CLIENTE_ADMIN", label: "Client Admin", description: "Manage client company" },
+  { value: "CLIENTE_OPERATIVO", label: "Client Operative", description: "Basic client operations" },
+]
 
 export const TIMEZONES = [
   { value: "UTC", label: "UTC" },

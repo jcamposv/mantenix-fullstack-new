@@ -1,39 +1,33 @@
-"use client";
+"use client"
 
-import { JSX } from 'react';
-import { usePathname } from 'next/navigation';
-import { Breadcrumb, BreadcrumbList } from '@/components/ui/breadcrumb';
-import { buildBreadcrumbs } from './breadcrumbs/breadcrumb-builder';
-import { BreadcrumbItemComponent } from './breadcrumbs/breadcrumb-item';
+import React from "react"
+import { usePathname } from "next/navigation"
+import { Breadcrumb, BreadcrumbList } from "@/components/ui/breadcrumb"
+import { buildBreadcrumbs } from "./breadcrumbs/breadcrumb-builder"
+import { BreadcrumbItemComponent } from "./breadcrumbs/breadcrumb-item"
 
-/**
- * DynamicBreadcrumbs Component
- * Displays navigation breadcrumbs based on current route
- * Optimized for minimal space usage with compact styling
- * Automatically hides on dashboard root and single-level routes
- */
-export function DynamicBreadcrumbs(): JSX.Element | null {
-  const pathname = usePathname();
-
+export function DynamicBreadcrumbs() {
+  const pathname = usePathname()
+  
   // Si estamos en el dashboard principal, no mostrar breadcrumbs
-  if (pathname === '/dashboard') {
-    return null;
+  if (pathname === "/dashboard") {
+    return null
   }
-
-  const breadcrumbs = buildBreadcrumbs(pathname);
-
+  
+  const breadcrumbs = buildBreadcrumbs(pathname)
+  
   // Si solo tenemos el dashboard, no mostrar breadcrumbs
   if (breadcrumbs.length <= 1) {
-    return null;
+    return null
   }
-
+  
   return (
-    <Breadcrumb className="text-xs">
-      <BreadcrumbList className="gap-1">
+    <Breadcrumb>
+      <BreadcrumbList>
         {breadcrumbs.map((crumb, index) => {
-          const isLast = index === breadcrumbs.length - 1;
-          const showSeparator = index > 0;
-
+          const isLast = index === breadcrumbs.length - 1
+          const showSeparator = index > 0
+          
           return (
             <BreadcrumbItemComponent
               key={crumb.path}
@@ -42,9 +36,9 @@ export function DynamicBreadcrumbs(): JSX.Element | null {
               isLast={isLast}
               showSeparator={showSeparator}
             />
-          );
+          )
         })}
       </BreadcrumbList>
     </Breadcrumb>
-  );
+  )
 }

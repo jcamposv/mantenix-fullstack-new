@@ -16,10 +16,7 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
-  ADMIN_GRUPO // Admin de grupo corporativo (ve todas las empresas del grupo)
   ADMIN_EMPRESA
-  JEFE_MANTENIMIENTO // Jefe de mantenimiento (aprueba solicitudes de inventario)
-  ENCARGADO_BODEGA // Encargado de bodega (entrega repuestos)
   SUPERVISOR
   TECNICO
   CLIENTE_ADMIN_GENERAL // Admin general que puede ver todas las sedes del cliente y generar alertas
@@ -84,69 +81,6 @@ enum AssetStatus {
   FUERA_DE_SERVICIO // No disponible para uso
 }
 
-enum FeatureModule {
-  // HR Modules
-  HR_ATTENDANCE // Módulo de asistencia y marcaje
-  HR_VACATIONS // Módulo de vacaciones
-  HR_PERMISSIONS // Módulo de permisos
-
-  // AI & Analytics
-  AI_ASSISTANT // Asistente de IA (add-on disponible bajo demanda)
-  ADVANCED_ANALYTICS // Análisis avanzados
-
-  // Business Models
-  EXTERNAL_CLIENT_MANAGEMENT // Gestión de clientes externos (ClientCompany, Sites)
-  INTERNAL_CORPORATE_GROUP // Grupo corporativo con inventario compartido
-
-  // Platform Features (nuevos)
-  API_ACCESS // Acceso a API REST
-  PRIORITY_SUPPORT // Soporte prioritario
-  DEDICATED_SUPPORT // Soporte dedicado con account manager
-}
-
-enum LocationType {
-  SITE // Sede/Site de cliente
-  WAREHOUSE // Bodega central de la empresa
-  VEHICLE // Vehículo/camión
-}
-
-enum InventoryRequestStatus {
-  PENDING // Pendiente de aprobación
-  APPROVED // Aprobado por jefe
-  REJECTED // Rechazado
-  IN_TRANSIT // En tránsito (transferencia inter-empresa)
-  RECEIVED_AT_DESTINATION // Recibido en bodega destino (inter-empresa)
-  READY_FOR_PICKUP // Listo para entrega al técnico
-  DELIVERED // Entregado y confirmado por técnico
-  CANCELLED // Cancelado
-}
-
-enum RequestUrgency {
-  LOW
-  NORMAL
-  HIGH
-  CRITICAL
-}
-
-enum MovementType {
-  IN // Entrada (compra, devolución)
-  OUT // Salida (uso, venta)
-  TRANSFER // Transferencia entre ubicaciones/empresas
-  ADJUSTMENT // Ajuste de inventario
-  WORK_ORDER // Consumo en orden de trabajo
-  RETURN // Devolución
-  DAMAGE // Daño/pérdida
-  COUNT_ADJUSTMENT // Ajuste por conteo físico
-}
-
-enum AttendanceStatus {
-  ON_TIME // A tiempo
-  LATE // Tarde
-  ABSENT // Ausente
-  JUSTIFIED // Justificado
-  EARLY_DEPARTURE // Salida temprana
-}
-
 // ============================================================================
 // BETTER AUTH CORE TABLES (with extensions)
 // ============================================================================
@@ -163,7 +97,6 @@ model User {
   // Better Auth extension fields (following best practices)
   role            Role      @default(TECNICO)
   companyId       String?
-  companyGroupId  String? // For ADMIN_GRUPO users
   isExternalUser  Boolean   @default(false)
   clientCompanyId String?
   siteId          String? // Site assignment for users (optional for company users, required for external users)
@@ -178,14 +111,10 @@ model User {
   mfaEnabled      Boolean   @default(false)
   isMfaVerified   Boolean   @default(false)
 
-  // Cost Configuration
-  hourlyRate      Decimal?  @default(20.00) @db.Decimal(10, 2) // Hourly rate for labor cost calculation
-
   // Relations
   accounts               Account[]
   sessions               Session[]
   company                Company?         @relation(fields: [companyId], references: [id])
-  companyGroup           CompanyGroup?    @relation(fields: [companyGroupId], references: [id])
   clientCompany          ClientCompany?   @relation(fields: [clientCompanyId], references: [id])
   site                   Site?            @relation(fields: [siteId], references: [id])
   auditLogs              AuditLog[]
@@ -214,33 +143,10 @@ model User {
   workOrdersCreated           WorkOrder[]           @relation("WorkOrderCreator")
   workOrderAssignments        WorkOrderAssignment[] @relation("WorkOrderAssignments")
   workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
-  workOrderSchedulesCreated   WorkOrderSchedule[]   @relation("WorkOrderScheduleCreator")
 
   // Password Reset relations
   passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
   passwordResetTokensCreated PasswordResetToken[] @relation("PasswordResetCreator")
-
-  // Attendance relations
-  attendanceRecords      AttendanceRecord[]
-  companyFeaturesEnabled CompanyFeature[]   @relation("FeatureEnabler")
-
-  // AI relations
-  aiUsageLogs AIUsageLog[]
-
-  // Inventory request relations
-  inventoryRequestsRequested WorkOrderInventoryRequest[] @relation("InventoryRequestRequester")
-  inventoryRequestsReviewed  WorkOrderInventoryRequest[] @relation("InventoryRequestReviewer")
-  inventoryRequestsDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestDeliverer")
-  inventoryRequestsWarehouseDelivered WorkOrderInventoryRequest[] @relation("InventoryRequestWarehouseDeliverer")
-  inventoryRequestsDestinationWarehouseReceived WorkOrderInventoryRequest[] @relation("InventoryRequestDestinationWarehouseReceiver")
-  inventoryRequestsReceived  WorkOrderInventoryRequest[] @relation("InventoryRequestReceiver")
-
-  // Inventory movement relations
-  inventoryMovementsCreated InventoryMovement[] @relation("InventoryMovementCreator")
-  inventoryMovementsApproved InventoryMovement[] @relation("InventoryMovementApprover")
-
-  // Time tracking relations
-  workOrderTimeLogs WorkOrderTimeLog[] @relation("WorkOrderTimeLogs")
 
   @@map("user")
 }
@@ -305,10 +211,6 @@ model Company {
   secondaryColor  String    @default("#64748b")
   backgroundColor String    @default("#ffffff")
   customFont      String?
-
-  // Company Group (for INTERNAL_CORPORATE_GROUP feature)
-  companyGroupId String?
-
   mfaEnforced     Boolean   @default(false)
   ipWhitelist     String[]  @default([])
   tier            Tier      @default(STARTER)
@@ -318,8 +220,6 @@ model Company {
   updatedAt       DateTime  @updatedAt
 
   // Relations
-  companyGroup       CompanyGroup?        @relation(fields: [companyGroupId], references: [id])
-  subscription       Subscription?
   users              User[]
   auditLogs          AuditLog[]
   securityEvents     SecurityEvent[]
@@ -328,17 +228,7 @@ model Company {
   workOrderTemplates WorkOrderTemplate[]
   workOrderPrefixes  WorkOrderPrefix[]
   workOrders         WorkOrder[]
-  workOrderSchedules WorkOrderSchedule[]
   emailConfiguration EmailConfiguration?
-  features           CompanyFeature[]
-  locations          CompanyLocation[]
-  attendanceRecords  AttendanceRecord[]
-  aiConfig           CompanyAIConfig?
-  aiUsageLogs        AIUsageLog[]
-  inventoryItems     InventoryItem[]
-  inventoryRequestsAsSource WorkOrderInventoryRequest[] @relation("InventoryRequestSourceCompany")
-  inventoryMovementsFrom InventoryMovement[] @relation("InventoryMovementFromCompany")
-  inventoryMovementsTo InventoryMovement[] @relation("InventoryMovementToCompany")
 
   @@index([subdomain])
   @@index([isActive])
@@ -414,7 +304,6 @@ model Site {
 
   // Work orders in this site
   workOrders WorkOrder[]
-  schedules  WorkOrderSchedule[]
 
   @@index([clientCompanyId])
   @@index([isActive])
@@ -456,7 +345,6 @@ model Asset {
 
   // Work orders related to this asset
   workOrders WorkOrder[]
-  schedules  WorkOrderSchedule[]
 
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -521,7 +409,7 @@ model UserInvitation {
   id              String    @id @default(cuid())
   email           String
   role            Role
-  companyId       String?   // Optional for SUPER_ADMIN and ADMIN_GRUPO
+  companyId       String
   isExternalUser  Boolean   @default(false)
   clientCompanyId String?
   siteId          String? // Site assignment for the invited user
@@ -531,11 +419,10 @@ model UserInvitation {
   usedAt          DateTime?
   createdBy       String
   image           String? // Profile photo URL for the invited user
-  hourlyRate      Decimal?  @db.Decimal(10, 2) // Hourly rate for labor cost calculation
   createdAt       DateTime  @default(now())
 
   // Relations
-  company       Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   creator       User           @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)
   clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
   site          Site?          @relation(fields: [siteId], references: [id], onDelete: SetNull)
@@ -681,31 +568,6 @@ enum WorkOrderStatus {
   CANCELLED // Cancelada
 }
 
-enum RecurrenceType {
-  DAILY // Diario
-  WEEKLY // Semanal
-  MONTHLY // Mensual
-  YEARLY // Anual
-  METER_BASED // Basado en lecturas de medidores
-}
-
-enum RecurrenceEndType {
-  NEVER // Sin fin
-  AFTER_OCCURRENCES // Después de X ocurrencias
-  ON_DATE // En fecha específica
-}
-
-enum MeterType {
-  HOURS_RUN // Horas de funcionamiento
-  KILOMETERS // Kilómetros
-  MILES // Millas
-  TEMPERATURE // Temperatura
-  PRESSURE // Presión
-  CYCLES // Ciclos de operación
-  VIBRATION // Vibración
-  CUSTOM // Personalizado
-}
-
 enum CustomFieldType {
   TEXT // Input de texto simple
   TEXTAREA // Área de texto multilinea
@@ -722,7 +584,6 @@ enum CustomFieldType {
   VIDEO_BEFORE // Campo para videos antes
   VIDEO_AFTER // Campo para videos después
   FILE // Campo para archivos generales
-  TABLE // Tabla con filas y columnas configurables
 }
 
 enum EmailTemplateType {
@@ -791,7 +652,6 @@ model WorkOrderTemplate {
 
   // Relations with work orders
   workOrders WorkOrder[] @relation("WorkOrderFromTemplate")
-  schedules  WorkOrderSchedule[]
 
   @@index([companyId])
   @@index([status])
@@ -846,18 +706,13 @@ model WorkOrder {
   priority WorkOrderPriority @default(MEDIUM) // Prioridad de la orden
   status   WorkOrderStatus   @default(DRAFT) // Estado de la orden
 
-  // Ubicación y activo (opcional cuando EXTERNAL_CLIENT_MANAGEMENT está deshabilitado)
-  siteId  String? // Sede donde se ejecuta (opcional)
+  // Ubicación y activo
+  siteId  String // Sede donde se ejecuta
   assetId String? // Activo relacionado (opcional)
 
   // Template relacionado (opcional)
   templateId        String? // Template base usado
   customFieldValues Json? // Valores de campos personalizados del template
-
-  // Programación recurrente (para mantenimiento preventivo)
-  isRecurring Boolean @default(false) // Si fue generada automáticamente
-  scheduleId  String? // Programación que generó esta OT
-  schedule    WorkOrderSchedule? @relation("GeneratedFromSchedule", fields: [scheduleId], references: [id], onDelete: SetNull)
 
   // Fechas importantes
   scheduledDate DateTime? // Fecha programada
@@ -867,17 +722,8 @@ model WorkOrder {
   // Estimaciones y costos
   estimatedDuration Int? // Duración estimada en minutos
   estimatedCost     Float? // Costo estimado
-  actualDuration    Int? // Duración real en minutos (elapsed time total)
-  actualCost        Float? // Costo real total (labor + parts + other)
-  laborCost         Float? // Labor cost (calculated from activeWorkTime × hourlyRate)
-  partsCost         Float? // Parts cost (sum of delivered inventory items)
-  otherCosts        Float? // Other manual costs (transport, contractors, etc.)
-
-  // Time tracking detallado (para MTTR preciso)
-  activeWorkTime    Int? // Tiempo real trabajado (minutos) - sin pausas
-  waitingTime       Int? // Tiempo de espera (minutos) - pausas acumuladas
-  diagnosticTime    Int? // Tiempo de diagnóstico (minutos)
-  travelTime        Int? // Tiempo de viaje (minutos)
+  actualDuration    Int? // Duración real en minutos
+  actualCost        Float? // Costo real
 
   // Instrucciones y seguridad
   instructions String? // Instrucciones específicas
@@ -901,7 +747,7 @@ model WorkOrder {
 
   // Relations
   company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  site     Site?              @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  site     Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
   asset    Asset?             @relation(fields: [assetId], references: [id], onDelete: SetNull)
   template WorkOrderTemplate? @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
   prefix   WorkOrderPrefix?   @relation(fields: [prefixId], references: [id], onDelete: SetNull)
@@ -910,21 +756,11 @@ model WorkOrder {
   // Assignments (many-to-many relationship for multiple users)
   assignments WorkOrderAssignment[]
 
-  // Inventory requests
-  inventoryRequests WorkOrderInventoryRequest[]
-
-  // Inventory movements
-  inventoryMovements InventoryMovement[]
-
-  // Time tracking logs
-  timeLogs WorkOrderTimeLog[]
-
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
   @@index([siteId])
   @@index([assetId])
   @@index([templateId])
-  @@index([scheduleId])
   @@index([prefixId])
   @@index([status])
   @@index([type])
@@ -932,7 +768,6 @@ model WorkOrder {
   @@index([scheduledDate])
   @@index([createdBy])
   @@index([isActive])
-  @@index([isRecurring])
   @@map("work_orders")
 }
 
@@ -954,88 +789,6 @@ model WorkOrderAssignment {
   @@index([userId])
   @@index([assignedBy])
   @@map("work_order_assignments")
-}
-
-// ============================================================================
-// WORK ORDER SCHEDULING & RECURRENCE
-// ============================================================================
-
-// Programación de órdenes de trabajo recurrentes (Mantenimiento Preventivo)
-model WorkOrderSchedule {
-  id String @id @default(cuid())
-
-  // Información básica
-  name        String // Nombre descriptivo de la programación
-  description String? // Descripción opcional
-
-  // Configuración de recurrencia
-  recurrenceType     RecurrenceType // Tipo de recurrencia
-  recurrenceInterval Int            @default(1) // Cada cuántos días/semanas/meses (ej: cada 2 semanas)
-
-  // Fin de recurrencia
-  recurrenceEndType  RecurrenceEndType // Cómo termina la recurrencia
-  recurrenceEndValue Int? // Número de ocurrencias (solo si recurrenceEndType = AFTER_OCCURRENCES)
-  recurrenceEndDate  DateTime? // Fecha de fin (solo si recurrenceEndType = ON_DATE)
-
-  // Días de la semana (para recurrencia WEEKLY)
-  // [1,2,3,4,5] = Lun-Vie, [6,7] = Fin de semana
-  weekDays Int[] @default([])
-
-  // Para mantenimiento basado en medidores (METER_BASED)
-  meterType           MeterType? // Tipo de medidor
-  meterThreshold      Float? // Umbral para generar OT (ej: cada 100 horas)
-  currentMeterReading Float      @default(0) // Lectura actual del medidor
-
-  // Template a usar para generar las OT
-  templateId String
-  template   WorkOrderTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
-
-  // Asset relacionado (opcional)
-  assetId String?
-  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
-
-  // Site relacionado (opcional)
-  siteId String?
-  site   Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
-
-  // Asignación predefinida
-  assignedUserIds String[] @default([]) // IDs de usuarios asignados automáticamente
-
-  // Tracking de generación
-  lastGeneratedAt    DateTime? // Última vez que se generó una OT
-  nextGenerationDate DateTime? // Próxima fecha programada
-
-  // Estadísticas
-  totalGenerated     Int @default(0) // Total de OT generadas
-  totalCompleted     Int @default(0) // Total completadas
-  totalSkipped       Int @default(0) // Total saltadas
-  completionRate     Float @default(0) // % de completitud
-
-  // Control de acceso y propiedad
-  companyId String // Empresa propietaria
-  createdBy String // Usuario que creó la programación
-
-  // Estado
-  isActive  Boolean   @default(true)
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  creator User    @relation("WorkOrderScheduleCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-
-  // Órdenes generadas por esta programación
-  generatedWorkOrders WorkOrder[] @relation("GeneratedFromSchedule")
-
-  @@index([companyId])
-  @@index([templateId])
-  @@index([assetId])
-  @@index([siteId])
-  @@index([isActive])
-  @@index([nextGenerationDate])
-  @@index([recurrenceType])
-  @@map("work_order_schedules")
 }
 
 // ============================================================================
@@ -1102,15 +855,15 @@ model EmailTemplate {
 
 // Tokens para reseteo de contraseña enviados por administradores
 model PasswordResetToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
+  id        String   @id @default(cuid())
+  token     String   @unique
   userId    String // Usuario que recibirá el reset
   createdBy String // Admin que generó el reset
   expiresAt DateTime
-  used      Boolean   @default(false)
+  used      Boolean  @default(false)
   usedAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   user    User @relation("PasswordResetUser", fields: [userId], references: [id], onDelete: Cascade)
@@ -1121,682 +874,4 @@ model PasswordResetToken {
   @@index([expiresAt])
   @@index([used])
   @@map("password_reset_tokens")
-}
-
-// ============================================================================
-// PREMIUM FEATURES SYSTEM
-// ============================================================================
-
-// Features habilitadas por empresa
-model CompanyFeature {
-  id         String        @id @default(cuid())
-  companyId  String
-  module     FeatureModule // Módulo habilitado
-  isEnabled  Boolean       @default(true)
-  enabledAt  DateTime      @default(now())
-  enabledBy  String? // Usuario que habilitó el feature
-  disabledAt DateTime?
-  disabledBy String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-
-  // Relations
-  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  enabledByUser User?   @relation("FeatureEnabler", fields: [enabledBy], references: [id], onDelete: SetNull)
-
-  @@unique([companyId, module]) // Una empresa solo puede tener un registro por módulo
-  @@index([companyId])
-  @@index([module])
-  @@index([isEnabled])
-  @@map("company_features")
-}
-
-// Ubicaciones/oficinas de la empresa para geofencing
-model CompanyLocation {
-  id           String  @id @default(cuid())
-  companyId    String
-  name         String // Nombre de la ubicación (ej: "Oficina Central", "Bodega Norte")
-  address      String?
-  latitude     Float // Coordenada para geofencing
-  longitude    Float // Coordenada para geofencing
-  radiusMeters Int     @default(100) // Radio en metros para considerar que está "dentro"
-
-  // Horarios de trabajo
-  workStartTime        String   @default("08:00") // Hora de entrada esperada (formato HH:mm)
-  workEndTime          String   @default("17:00") // Hora de salida esperada (formato HH:mm)
-  lateToleranceMinutes Int      @default(15) // Tolerancia en minutos antes de marcar como tarde
-  timezone             String   @default("America/Costa_Rica") // Timezone de la ubicación
-  workDays             String[] @default(["MON", "TUE", "WED", "THU", "FRI"]) // Días laborales
-
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  attendanceRecords AttendanceRecord[]
-
-  @@index([companyId])
-  @@index([isActive])
-  @@map("company_locations")
-}
-
-// ============================================================================
-// HR / ATTENDANCE SYSTEM
-// ============================================================================
-
-model AttendanceRecord {
-  id         String  @id @default(cuid())
-  companyId  String
-  userId     String
-  locationId String? // Ubicación desde donde marcó (opcional)
-
-  // Geolocalización
-  latitude  Float
-  longitude Float
-
-  // Marcaje de entrada/salida
-  checkInAt  DateTime
-  checkOutAt DateTime?
-
-  // Estado y metadata
-  status        AttendanceStatus // ON_TIME, LATE, ABSENT, JUSTIFIED, etc.
-  notes         String? // Notas opcionales (ej: justificación)
-  isManualEntry Boolean          @default(false) // Si fue creado manualmente por admin
-  manualEntryBy String? // Usuario que creó la entrada manual
-  deviceInfo    String? // Información del dispositivo (user agent)
-  ipAddress     String?
-
-  // Tiempos calculados
-  workDurationMinutes Int? // Duración en minutos (checkOut - checkIn)
-  lateMinutes         Int? // Minutos de retraso si llegó tarde
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location CompanyLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-
-  @@index([companyId])
-  @@index([userId])
-  @@index([locationId])
-  @@index([checkInAt])
-  @@index([status])
-  @@index([companyId, userId, checkInAt]) // Para búsquedas de asistencia por usuario y fecha
-  @@map("attendance_records")
-}
-
-// ============================================================================
-// AI / ARTIFICIAL INTELLIGENCE SYSTEM
-// ============================================================================
-
-enum AIOperationType {
-  INSIGHTS_GENERATION // Generación de insights para dashboard
-  REPORT_GENERATION // Generación de reportes
-  ANOMALY_DETECTION // Detección de anomalías
-  PREDICTIVE_ANALYSIS // Análisis predictivo
-  RECOMMENDATION // Recomendaciones
-}
-
-// Configuración de IA por empresa
-model CompanyAIConfig {
-  id        String @id @default(cuid())
-  companyId String @unique
-
-  // Límites mensuales
-  monthlyTokenLimit     Int @default(100000) // Límite de tokens por mes
-  alertThresholdPercent Int @default(80) // % para alertar (80% = alerta al llegar a 80%)
-
-  // Estado actual del mes
-  currentMonthTokens Int      @default(0) // Tokens usados en el mes actual
-  lastResetAt        DateTime @default(now()) // Última vez que se reinició el contador
-
-  // Configuración de features
-  insightsEnabled   Boolean @default(true) // Habilitar insights en dashboard
-  reportsEnabled    Boolean @default(true) // Habilitar generación de reportes
-  predictiveEnabled Boolean @default(false) // Habilitar análisis predictivo
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("company_ai_configs")
-}
-
-// Log de uso de IA (para tracking y billing)
-model AIUsageLog {
-  id        String  @id @default(cuid())
-  companyId String
-  userId    String? // Usuario que generó la solicitud (opcional)
-
-  // Detalles de la operación
-  operation        AIOperationType
-  model            String // Modelo usado (gpt-4, gpt-3.5-turbo, etc.)
-  promptTokens     Int // Tokens del prompt
-  completionTokens Int // Tokens de la respuesta
-  totalTokens      Int // Total de tokens
-  cost             Float? // Costo estimado en USD
-
-  // Metadata
-  success      Boolean @default(true)
-  errorMessage String?
-  duration     Int? // Duración en ms
-  metadata     Json? // Datos adicionales (fecha range, filtros, etc.)
-
-  createdAt DateTime @default(now())
-
-  // Relations
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([companyId])
-  @@index([userId])
-  @@index([operation])
-  @@index([createdAt])
-  @@index([companyId, createdAt]) // Para queries de uso mensual
-  @@map("ai_usage_logs")
-}
-
-// ============================================================================
-// COMPANY GROUP & INVENTORY MODELS
-// ============================================================================
-
-model CompanyGroup {
-  id          String  @id @default(cuid())
-  name        String // "Grupo Industrial XYZ"
-  description String?
-  logo        String? // Logo URL del grupo corporativo
-
-  // Settings
-  shareInventory       Boolean @default(true) // Compartir inventario entre empresas
-  autoApproveTransfers Boolean @default(false) // Aprobar transferencias automáticamente
-
-  // Relations
-  companies Company[]
-  users     User[] // ADMIN_GRUPO users
-
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("company_groups")
-}
-
-model InventoryItem {
-  id          String  @id @default(cuid())
-  code        String // SKU único
-  name        String
-  description String?
-  category    String?
-  subcategory String?
-
-  // Specifications
-  manufacturer String?
-  model        String?
-  partNumber   String?
-
-  // Units
-  unit         String @default("unidad") // "unidad", "litro", "kg", "metro"
-  minStock     Int    @default(0) // Stock mínimo
-  maxStock     Int? // Stock máximo
-  reorderPoint Int    @default(0) // Punto de reorden
-
-  // Costs
-  unitCost          Float?
-  lastPurchasePrice Float?
-  averageCost       Float?
-
-  // Media
-  images String[] @default([])
-
-  // Company ownership
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Relations
-  stockLocations    InventoryStock[]
-  movements         InventoryMovement[]
-  workOrderRequests WorkOrderInventoryRequest[]
-
-  isActive  Boolean   @default(true)
-  deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String
-
-  @@unique([companyId, code])
-  @@index([companyId])
-  @@index([category])
-  @@map("inventory_items")
-}
-
-model InventoryStock {
-  id String @id @default(cuid())
-
-  // Item
-  inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
-
-  // Location
-  locationId   String
-  locationType LocationType
-  locationName String // Para búsqueda
-
-  // Quantities
-  quantity          Int @default(0)
-  reservedQuantity  Int @default(0) // Reservado en OTs pendientes
-  availableQuantity Int @default(0) // quantity - reservedQuantity (calculado)
-
-  // Ubicación específica dentro del lugar
-  aisle String? // Pasillo
-  rack  String? // Estante
-  bin   String? // Contenedor
-
-  lastCountDate DateTime?
-  lastCountBy   String?
-
-  updatedAt DateTime @updatedAt
-
-  @@unique([inventoryItemId, locationId, locationType])
-  @@index([inventoryItemId])
-  @@index([locationId, locationType])
-  @@map("inventory_stock")
-}
-
-model WorkOrderInventoryRequest {
-  id String @id @default(cuid())
-
-  // Work Order
-  workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  // Item requested
-  inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-
-  // Quantities
-  quantityRequested Int
-  quantityApproved  Int?
-  quantityDelivered Int  @default(0)
-
-  // Source (de dónde se solicita)
-  sourceCompanyId String?
-  sourceCompany   Company? @relation("InventoryRequestSourceCompany", fields: [sourceCompanyId], references: [id])
-  sourceLocationId   String?
-  sourceLocationType LocationType?
-
-  // Destination (a dónde va)
-  destinationLocationId   String?
-  destinationLocationType LocationType?
-
-  // Status
-  status InventoryRequestStatus @default(PENDING)
-
-  // Workflow
-  requestedBy String
-  requester   User     @relation("InventoryRequestRequester", fields: [requestedBy], references: [id])
-  requestedAt DateTime @default(now())
-
-  reviewedBy  String?
-  reviewer    User?    @relation("InventoryRequestReviewer", fields: [reviewedBy], references: [id])
-  reviewedAt  DateTime?
-  reviewNotes String?
-
-  deliveredBy String?
-  deliverer   User?    @relation("InventoryRequestDeliverer", fields: [deliveredBy], references: [id])
-  deliveredAt DateTime?
-
-  // Warehouse delivery tracking (entrega física desde bodega origen)
-  warehouseDeliveredBy String?
-  warehouseDeliverer   User?    @relation("InventoryRequestWarehouseDeliverer", fields: [warehouseDeliveredBy], references: [id])
-  warehouseDeliveredAt DateTime?
-
-  // Destination warehouse receipt (recepción en bodega destino - solo inter-empresa)
-  destinationWarehouseReceivedBy String?
-  destinationWarehouseReceiver   User?    @relation("InventoryRequestDestinationWarehouseReceiver", fields: [destinationWarehouseReceivedBy], references: [id])
-  destinationWarehouseReceivedAt DateTime?
-
-  // Technician receipt confirmation (confirmación de recepción del técnico)
-  receivedBy String?
-  receiver   User?    @relation("InventoryRequestReceiver", fields: [receivedBy], references: [id])
-  receivedAt DateTime?
-
-  // Notes
-  notes   String?
-  urgency RequestUrgency @default(NORMAL)
-
-  // Inventory movements related to this request
-  inventoryMovements InventoryMovement[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([workOrderId])
-  @@index([inventoryItemId])
-  @@index([status])
-  @@index([sourceCompanyId])
-  @@index([requestedBy])
-  @@index([reviewedBy])
-  @@index([deliveredBy])
-  @@map("work_order_inventory_requests")
-}
-
-model InventoryMovement {
-  id String @id @default(cuid())
-
-  // Type
-  type MovementType
-
-  // Item
-  inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-
-  // Origin
-  fromLocationId   String?
-  fromLocationType LocationType?
-  fromCompanyId    String?
-  fromCompany      Company? @relation("InventoryMovementFromCompany", fields: [fromCompanyId], references: [id])
-
-  // Destination
-  toLocationId   String?
-  toLocationType LocationType?
-  toCompanyId    String?
-  toCompany      Company? @relation("InventoryMovementToCompany", fields: [toCompanyId], references: [id])
-
-  // Quantity
-  quantity  Int
-  unitCost  Float?
-  totalCost Float?
-
-  // References
-  workOrderId     String?
-  workOrder       WorkOrder? @relation(fields: [workOrderId], references: [id])
-  requestId       String?
-  request         WorkOrderInventoryRequest? @relation(fields: [requestId], references: [id])
-  purchaseOrderId String?
-
-  // Details
-  reason         String?
-  notes          String?
-  documentNumber String? // Factura, guía, etc.
-
-  // Audit
-  createdBy String
-  creator   User   @relation("InventoryMovementCreator", fields: [createdBy], references: [id])
-  approvedBy String?
-  approver   User?  @relation("InventoryMovementApprover", fields: [approvedBy], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([inventoryItemId])
-  @@index([type])
-  @@index([createdAt])
-  @@index([fromCompanyId])
-  @@index([toCompanyId])
-  @@index([workOrderId])
-  @@index([requestId])
-  @@index([createdBy])
-  @@index([approvedBy])
-  @@map("inventory_movements")
-}
-
-// ============================================================================
-// BILLING & SUBSCRIPTIONS
-// ============================================================================
-
-enum SubscriptionStatus {
-  ACTIVE
-  PAST_DUE      // Pago atrasado
-  CANCELED
-  TRIALING      // En período de prueba
-  INCOMPLETE    // Pago incompleto
-  PAUSED        // Pausado temporalmente
-}
-
-enum BillingInterval {
-  MONTHLY
-  ANNUAL
-}
-
-enum PlanTier {
-  STARTER
-  BUSINESS
-  CORPORATE
-  ENTERPRISE
-  CUSTOM
-}
-
-model SubscriptionPlan {
-  id          String    @id @default(cuid())
-  name        String    @unique // "Starter", "Business", "Corporate"
-  tier        PlanTier
-  description String?
-
-  // Pricing
-  monthlyPrice  Float   // Precio mensual en USD
-  annualPrice   Float   // Precio anual en USD (con descuento)
-
-  // Limits
-  maxUsers              Int     @default(10)
-  maxCompanies          Int     @default(1)      // Para planes Corporate
-  maxWarehouses         Int     @default(2)
-  maxWorkOrdersPerMonth Int     @default(100)
-  maxInventoryItems     Int     @default(200)
-  maxStorageGB          Float   @default(5)      // GB de almacenamiento
-
-  // Overage pricing (cargos por exceso)
-  overageUserPrice      Float   @default(15)     // USD por usuario extra
-  overageStoragePrice   Float   @default(0.50)   // USD por GB extra
-  overageWorkOrderPrice Float   @default(1)      // USD por orden extra
-
-  isActive    Boolean   @default(true)
-  isPublic    Boolean   @default(true)  // Si se muestra públicamente
-
-  subscriptions Subscription[]
-  features      PlanFeature[]  // Features incluidos en este plan
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("subscription_plans")
-}
-
-// Tabla intermedia: Features incluidos en cada plan
-model PlanFeature {
-  id String @id @default(cuid())
-
-  planId String
-  plan   SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-
-  module FeatureModule // Feature incluido en el plan
-
-  createdAt DateTime @default(now())
-
-  @@unique([planId, module]) // Un plan no puede tener el mismo feature duplicado
-  @@map("plan_features")
-}
-
-model Subscription {
-  id String @id @default(cuid())
-
-  // Company relationship
-  companyId String  @unique
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Plan
-  planId String
-  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  // Billing
-  status          SubscriptionStatus @default(TRIALING)
-  billingInterval BillingInterval    @default(MONTHLY)
-
-  // Pricing (snapshot del plan al momento de subscribirse)
-  currentPrice Float
-
-  // Billing cycle
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  trialEnd           DateTime?
-
-  // Cancellation
-  cancelAtPeriodEnd Boolean   @default(false)
-  canceledAt        DateTime?
-
-  // Stripe integration
-  stripeCustomerId       String?  @unique
-  stripeSubscriptionId   String?  @unique
-  stripePaymentMethodId  String?
-
-  // Usage tracking
-  usageMetrics UsageMetrics?
-  invoices     Invoice[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([companyId])
-  @@index([status])
-  @@map("subscriptions")
-}
-
-model UsageMetrics {
-  id String @id @default(cuid())
-
-  subscriptionId String       @unique
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-
-  // Current usage for billing period
-  currentUsers              Int   @default(0)
-  currentCompanies          Int   @default(1)
-  currentWarehouses         Int   @default(0)
-  currentWorkOrdersThisMonth Int   @default(0)
-  currentInventoryItems     Int   @default(0)
-  currentStorageGB          Float @default(0)
-
-  // Peak usage (for reporting)
-  peakUsers         Int   @default(0)
-  peakStorageGB     Float @default(0)
-
-  // Last reset (inicio del período de facturación)
-  lastResetAt DateTime @default(now())
-
-  // Calculated overages
-  overageUsers       Int   @default(0)
-  overageStorageGB   Float @default(0)
-  overageWorkOrders  Int   @default(0)
-  overageCharges     Float @default(0) // Total de cargos por exceso
-
-  updatedAt DateTime @updatedAt
-
-  @@map("usage_metrics")
-}
-
-model Invoice {
-  id String @id @default(cuid())
-
-  subscriptionId String
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
-
-  // Invoice details
-  invoiceNumber String   @unique // INV-2024-001
-  status        String   // "draft", "open", "paid", "void", "uncollectible"
-
-  // Amounts in USD
-  subtotal      Float
-  taxAmount     Float    @default(0)
-  totalAmount   Float
-
-  // Line items breakdown
-  planAmount    Float    // Costo del plan base
-  overageAmount Float    @default(0) // Cargos por exceso
-
-  // Billing period
-  periodStart   DateTime
-  periodEnd     DateTime
-
-  // Payment
-  dueDate       DateTime
-  paidAt        DateTime?
-
-  // Stripe
-  stripeInvoiceId String?  @unique
-  stripePaymentIntentId String?
-
-  // PDF
-  invoicePdfUrl String?
-
-  // Metadata
-  metadata      Json?    // Detalles adicionales
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([subscriptionId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("invoices")
-}
-
-// ============================================================================
-// TIME TRACKING SYSTEM
-// ============================================================================
-
-enum TimeLogAction {
-  START   // Inicio de trabajo
-  PAUSE   // Pausa de trabajo
-  RESUME  // Reanudación de trabajo
-  COMPLETE // Finalización de trabajo
-}
-
-enum PauseReason {
-  WAITING_PARTS      // Esperando repuestos
-  WAITING_APPROVAL   // Esperando aprobación
-  LUNCH_BREAK        // Hora de almuerzo
-  OTHER_PRIORITY     // Otra prioridad
-  TECHNICAL_ISSUE    // Problema técnico
-  TRAVEL             // Viaje/Traslado
-  OTHER              // Otro
-}
-
-// Registro detallado de tiempo en órdenes de trabajo
-model WorkOrderTimeLog {
-  id          String   @id @default(cuid())
-  workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  // Acción registrada
-  action      TimeLogAction
-  pauseReason PauseReason?
-
-  // Timestamp del registro
-  timestamp   DateTime @default(now())
-
-  // Usuario que realizó la acción
-  userId      String
-  user        User     @relation("WorkOrderTimeLogs", fields: [userId], references: [id], onDelete: Restrict)
-
-  // Geolocalización (verificar que el técnico está en el sitio)
-  latitude    Float?
-  longitude   Float?
-
-  // Duración del segmento (calculado entre este log y el anterior en minutos)
-  segmentDurationMinutes Int?
-
-  // Notas adicionales
-  notes String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([workOrderId, timestamp])
-  @@index([userId])
-  @@index([action])
-  @@map("work_order_time_logs")
 }

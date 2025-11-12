@@ -12,16 +12,16 @@ export function WorkOrderInstructions({ workOrder }: WorkOrderInstructionsProps)
   if (!workOrder.instructions && !workOrder.safetyNotes) return null
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Instrucciones y Seguridad</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle>Instrucciones y Seguridad</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {workOrder.instructions && (
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <label className="text-sm font-medium">Instrucciones</label>
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <label className="text-sm font-medium">Instrucciones de Trabajo</label>
             </div>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
               {workOrder.instructions}
@@ -31,9 +31,9 @@ export function WorkOrderInstructions({ workOrder }: WorkOrderInstructionsProps)
 
         {workOrder.safetyNotes && (
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Shield className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <label className="text-sm font-medium">Seguridad</label>
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <label className="text-sm font-medium">Notas de Seguridad</label>
             </div>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
               {workOrder.safetyNotes}

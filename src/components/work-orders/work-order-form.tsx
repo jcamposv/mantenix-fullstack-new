@@ -21,7 +21,6 @@ import { TemplateCustomFields } from "./template-custom-fields"
 import type { CreateWorkOrderData } from "@/types/work-order.types"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
 import { useState, useEffect } from "react"
-import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 
 interface WorkOrderFormProps {
   form: UseFormReturn<CreateWorkOrderData>
@@ -70,9 +69,6 @@ export function WorkOrderForm({
   })
 
   const form = externalForm || internalForm
-
-  // Get company features to determine if external client management is enabled
-  const { hasExternalClientMgmt } = useCompanyFeatures()
 
   // Find the selected template if templateId is provided
   const selectedTemplateFromId = templates.find(t => t.id === form.watch("templateId"))
@@ -324,77 +320,75 @@ export function WorkOrderForm({
           </CardContent>
         </Card>
 
-        {/* Location and Asset - Only show if EXTERNAL_CLIENT_MANAGEMENT feature is enabled */}
-        {hasExternalClientMgmt && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ubicación y Activo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="siteId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sede</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar sede..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sites.map((site) => (
-                          <SelectItem key={site.id} value={site.id}>
-                            {site.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* Location and Asset */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ubicación y Activo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="siteId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sede</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar sede..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="assetId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Activo (Opcional)</FormLabel>
-                    <Select
-                      value={field.value || "no-asset"}
-                      onValueChange={(value) => {
-                        const assetId = value === "no-asset" ? "" : value
-                        field.onChange(assetId)
-                      }}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar activo..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no-asset">Sin activo específico</SelectItem>
-                        {assets.map((asset) => (
-                          <SelectItem key={asset.id} value={asset.id}>
-                            <div className="flex flex-col">
-                              <span>{asset.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                Código: {asset.code}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-        )}
+            <FormField
+              control={form.control}
+              name="assetId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Activo (Opcional)</FormLabel>
+                  <Select 
+                    value={field.value || "no-asset"} 
+                    onValueChange={(value) => {
+                      const assetId = value === "no-asset" ? "" : value
+                      field.onChange(assetId)
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar activo..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="no-asset">Sin activo específico</SelectItem>
+                      {assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          <div className="flex flex-col">
+                            <span>{asset.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              Código: {asset.code}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
         {/* Scheduling and Estimates */}
         <Card>
