@@ -71,14 +71,15 @@ export async function PATCH(
 
     // Convert date strings (YYYY-MM-DD) to Date objects if present
     // Convert null to undefined for optional fields
+    // IMPORTANT: Use 'Z' suffix to force UTC timezone and avoid date shifting
     const input = {
       id,
       ...scheduleData,
       recurrenceEndDate: scheduleData.recurrenceEndDate
-        ? new Date(`${scheduleData.recurrenceEndDate}T00:00:00`)
+        ? new Date(`${scheduleData.recurrenceEndDate}T00:00:00Z`)
         : undefined,
       nextGenerationDate: scheduleData.nextGenerationDate
-        ? new Date(`${scheduleData.nextGenerationDate}T00:00:00`)
+        ? new Date(`${scheduleData.nextGenerationDate}T00:00:00Z`)
         : undefined,
       recurrenceEndValue: scheduleData.recurrenceEndValue ?? undefined,
       meterType: (scheduleData.meterType ?? undefined) as import('@prisma/client').MeterType | undefined,
