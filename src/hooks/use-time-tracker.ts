@@ -7,7 +7,7 @@
 
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type { TimeLogAction, PauseReason } from "@prisma/client"
 import type { TimeLogSummary } from "@/types/time-tracking.types"
 
@@ -59,10 +59,29 @@ export function useTimeTracker({
   const [basePausedMinutes, setBasePausedMinutes] = useState(0)
   const [baseTotalMinutes, setBaseTotalMinutes] = useState(0)
 
+  // Stable refs for callbacks to prevent unnecessary re-fetches
+  const onActionCompleteRef = useRef(onActionComplete)
+  const onErrorRef = useRef(onError)
+
+  useEffect(() => {
+    onActionCompleteRef.current = onActionComplete
+    onErrorRef.current = onError
+  }, [onActionComplete, onError])
+
+  // Prevent duplicate fetches
+  const isFetching = useRef(false)
+
   /**
    * Fetch time summary from API
    */
   const fetchSummary = useCallback(async () => {
+    // Prevent duplicate calls
+    if (isFetching.current) {
+      return
+    }
+
+    isFetching.current = true
+
     try {
       const response = await fetch(
         `/api/work-orders/${workOrderId}/time-summary`
@@ -96,9 +115,11 @@ export function useTimeTracker({
       const errorMessage =
         err instanceof Error ? err.message : "Error desconocido"
       setError(errorMessage)
-      onError?.(errorMessage)
+      onErrorRef.current?.(errorMessage)
+    } finally {
+      isFetching.current = false
     }
-  }, [workOrderId, onError])
+  }, [workOrderId])
 
   /**
    * Log a time action
@@ -140,6 +161,8 @@ export function useTimeTracker({
               action,
               pauseReason: options?.pauseReason,
               notes: options?.notes,
+              // Send client timestamp for accuracy (avoids network delay)
+              timestamp: new Date().toISOString(),
               location: location
                 ? {
                     latitude: location.coords.latitude,
@@ -160,18 +183,18 @@ export function useTimeTracker({
         // Refresh summary after action
         await fetchSummary()
 
-        onActionComplete?.(action)
+        onActionCompleteRef.current?.(action)
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Error desconocido"
         setError(errorMessage)
-        onError?.(errorMessage)
+        onErrorRef.current?.(errorMessage)
         throw err
       } finally {
         setIsLoading(false)
       }
     },
-    [workOrderId, fetchSummary, onActionComplete, onError]
+    [workOrderId, fetchSummary]
   )
 
   /**
@@ -216,11 +239,12 @@ export function useTimeTracker({
   }, [fetchSummary])
 
   /**
-   * Fetch initial summary on mount
+   * Fetch initial summary on mount (only once)
    */
   useEffect(() => {
     fetchSummary()
-  }, [fetchSummary])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return {
     // State

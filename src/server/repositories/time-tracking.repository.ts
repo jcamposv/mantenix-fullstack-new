@@ -201,7 +201,9 @@ export class TimeTrackingRepository {
       const nextLog = logs[i + 1] as WorkOrderTimeLog | undefined
 
       if (nextLog) {
-        const segmentMinutes = log.segmentDurationMinutes || 0
+        // Calculate segment duration with second precision (use decimals, not round)
+        const segmentMs = nextLog.timestamp.getTime() - log.timestamp.getTime()
+        const segmentMinutes = segmentMs / 60000
 
         // If current action is START or RESUME, it's active work time
         if (log.action === "START" || log.action === "RESUME") {
@@ -215,14 +217,22 @@ export class TimeTrackingRepository {
               (pauseBreakdown[log.pauseReason] || 0) + segmentMinutes
           }
         }
+      } else {
+        // Last log - if it's an active state (START or RESUME), count time until now
+        if (log.action === "START" || log.action === "RESUME") {
+          const now = new Date()
+          const elapsedMs = now.getTime() - log.timestamp.getTime()
+          const elapsedMinutes = elapsedMs / 60000
+          activeWorkMinutes += elapsedMinutes
+        }
       }
     }
 
-    // Calculate total elapsed time from first to last log
+    // Calculate total elapsed time from first log to now (or last log if completed)
     const firstLog = logs[0] as WorkOrderTimeLog
-    totalElapsedMinutes = Math.round(
-      (lastLog.timestamp.getTime() - firstLog.timestamp.getTime()) / 60000
-    )
+    const endTime = lastLog.action === "COMPLETE" ? lastLog.timestamp : new Date()
+    const totalMs = endTime.getTime() - firstLog.timestamp.getTime()
+    totalElapsedMinutes = totalMs / 60000
 
     // Determine current status
     let currentStatus: TimeLogSummary["currentStatus"]

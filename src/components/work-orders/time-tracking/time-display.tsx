@@ -42,9 +42,11 @@ export function TimeDisplay({
   }, [isRunning, stopwatch])
 
   const formatTime = (totalSeconds: number): string => {
-    const hours = Math.floor(totalSeconds / 3600)
-    const minutes = Math.floor((totalSeconds % 3600) / 60)
-    const secs = totalSeconds % 60
+    // Floor to remove decimal precision
+    const seconds = Math.floor(totalSeconds)
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
 
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
@@ -54,10 +56,10 @@ export function TimeDisplay({
   // Calculate seconds from stopwatch
   const stopwatchSeconds = stopwatch.hours * 3600 + stopwatch.minutes * 60 + stopwatch.seconds
 
-  // Calculate display times
-  const activeSeconds = baseActiveMinutes * 60 + stopwatchSeconds
-  const pausedSeconds = basePausedMinutes * 60
-  const totalSeconds = baseTotalMinutes * 60 + stopwatchSeconds
+  // Calculate display times (floor to remove decimals from minutes conversion)
+  const activeSeconds = Math.floor(baseActiveMinutes * 60) + stopwatchSeconds
+  const pausedSeconds = Math.floor(basePausedMinutes * 60)
+  const totalSeconds = Math.floor(baseTotalMinutes * 60) + stopwatchSeconds
 
   return (
     <div className="bg-gradient-to-br from-background to-muted/20 border-2 rounded-xl p-6 text-center shadow-sm">

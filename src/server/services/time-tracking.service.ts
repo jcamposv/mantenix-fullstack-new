@@ -82,6 +82,7 @@ export class TimeTrackingService {
       pauseReason?: PauseReason
       notes?: string
       location?: GeolocationCoordinates
+      timestamp?: string
     }
   ): Promise<{ success: boolean; data?: WorkOrderTimeLog; error?: string }> {
     const userId = session.user.id
@@ -124,7 +125,8 @@ export class TimeTrackingService {
         notes: data.notes,
         latitude: data.location?.latitude,
         longitude: data.location?.longitude,
-        timestamp: new Date(),
+        // Use client timestamp if provided for accuracy, otherwise use server time
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
       })
 
       // If action is COMPLETE, update work order metrics

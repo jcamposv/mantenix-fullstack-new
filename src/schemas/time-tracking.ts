@@ -29,6 +29,7 @@ export const timeLogActionSchema = z.object({
   pauseReason: z.nativeEnum(PauseReason).optional(),
   notes: z.string().max(500).optional(),
   location: geolocationCoordinatesSchema.optional(),
+  timestamp: z.string().datetime().optional(), // Client timestamp for accuracy
 })
 
 export type TimeLogActionInput = z.infer<typeof timeLogActionSchema>
