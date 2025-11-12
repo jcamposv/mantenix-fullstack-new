@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Package, Loader2, ChevronRight, CheckCircle2 } from "lucide-react"
+import { Plus, Package, Loader2, ChevronRight, CheckCircle2, PackageOpen, AlertCircle } from "lucide-react"
 import { CreateInventoryRequestMobileDialog } from "./create-inventory-request-mobile-dialog"
 import { ConfirmReceiptDialog } from "@/components/inventory/confirm-receipt-dialog"
 import { REQUEST_STATUS_OPTIONS, REQUEST_URGENCY_OPTIONS } from "@/schemas/inventory"
@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { useInventoryRequestActions } from "@/hooks/use-inventory-request-actions"
 import type { PaginatedInventoryRequestsResponse, WorkOrderInventoryRequestWithRelations, InventoryRequestStatus, RequestUrgency } from "@/types/inventory.types"
+import { cn } from "@/lib/utils"
 
 interface InventoryRequest {
   id: string
@@ -128,95 +129,152 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     )
   }
 
+  const pendingConfirmationCount = requests.filter(r => canConfirmReceipt(r)).length
+
   return (
     <>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Repuestos Solicitados</CardTitle>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-1" />
+            <div className="flex items-center gap-2">
+              <PackageOpen className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-base font-semibold">Repuestos</CardTitle>
+              {pendingConfirmationCount > 0 && (
+                <Badge variant="default" className="ml-1 h-5 px-1.5 text-xs">
+                  {pendingConfirmationCount}
+                </Badge>
+              )}
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setShowCreateDialog(true)}
+              className="h-9 shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
               Solicitar
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="text-xs text-muted-foreground">Cargando repuestos...</p>
+              </div>
             </div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-6">
-              <Package className="mx-auto h-10 w-10 text-muted-foreground/50 mb-2" />
-              <p className="text-sm text-muted-foreground">No hay solicitudes</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Solicita repuestos necesarios para este trabajo
+            <div className="text-center py-8 px-4">
+              <div className="bg-muted/30 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                <Package className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-medium text-foreground mb-1">Sin solicitudes</p>
+              <p className="text-xs text-muted-foreground">
+                Solicita repuestos necesarios para realizar el trabajo
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateDialog(true)}
+                className="mt-4"
+              >
+                <Plus className="h-4 w-4 mr-1.5" />
+                Solicitar Repuesto
+              </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {requests.map((request) => (
-                <div
-                  key={request.id}
-                  className="p-3 border rounded-lg"
-                >
+            <div className="space-y-3">
+              {requests.map((request) => {
+                const needsConfirmation = canConfirmReceipt(request)
+                const isUrgent = request.urgency === 'URGENTE'
+
+                return (
                   <div
-                    className="cursor-pointer active:bg-accent/50 transition-colors -m-3 p-3 mb-2"
-                    onClick={() => handleViewRequest(request.id)}
+                    key={request.id}
+                    className={cn(
+                      "rounded-lg border-2 transition-all overflow-hidden",
+                      needsConfirmation && "border-primary/30 bg-primary/5",
+                      !needsConfirmation && "border-border hover:border-border/80"
+                    )}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 flex-1 min-w-0">
-                        <Package className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{request.inventoryItem.name}</p>
-                          <p className="text-xs text-muted-foreground">{request.inventoryItem.code}</p>
-                          {request.sourceCompany && (
-                            <p className="text-xs text-blue-600 mt-0.5">
-                              {request.sourceCompany.name}
+                    <div
+                      className="cursor-pointer active:bg-accent/50 transition-colors p-4"
+                      onClick={() => handleViewRequest(request.id)}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={cn(
+                            "rounded-full p-2 flex-shrink-0",
+                            needsConfirmation ? "bg-primary/10" : "bg-muted"
+                          )}>
+                            <Package className={cn(
+                              "h-5 w-5",
+                              needsConfirmation ? "text-primary" : "text-muted-foreground"
+                            )} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate leading-tight mb-1">
+                              {request.inventoryItem.name}
                             </p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {request.inventoryItem.code}
+                            </p>
+                            {request.sourceCompany && (
+                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
+                                📍 {request.sourceCompany.name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 pt-3 border-t">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {getStatusBadge(request.status)}
+                          {isUrgent && (
+                            <Badge variant="destructive" className="text-xs gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              Urgente
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-bold text-base">
+                            {request.quantityRequested} <span className="text-xs font-normal text-muted-foreground">{request.inventoryItem.unit}</span>
+                          </div>
+                          {request.quantityApproved && (
+                            <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                              ✓ Aprobado: {request.quantityApproved}
+                            </div>
                           )}
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      <div className="flex flex-wrap items-center gap-1">
-                        {getStatusBadge(request.status)}
-                        {getUrgencyBadge(request.urgency)}
+                    {needsConfirmation && (
+                      <div className="px-4 pb-4">
+                        <Button
+                          size="lg"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleConfirmReceipt(request.id)
+                          }}
+                          className="w-full h-12 font-semibold shadow-md hover:shadow-lg transition-all"
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? (
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-5 w-5 mr-2" />
+                          )}
+                          Confirmar Recepción
+                        </Button>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="font-semibold text-sm">
-                          {request.quantityRequested} {request.inventoryItem.unit}
-                        </div>
-                        {request.quantityApproved && (
-                          <div className="text-xs text-green-600">
-                            ✓ {request.quantityApproved}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
-
-                  {canConfirmReceipt(request) && (
-                    <div className="mt-2">
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleConfirmReceipt(request.id)
-                        }}
-                        className="w-full text-sm"
-                        variant="default"
-                        disabled={actionLoading}
-                      >
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Confirmar Recepción
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

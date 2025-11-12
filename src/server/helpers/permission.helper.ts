@@ -364,7 +364,14 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_COMMENT,
       this.PERMISSIONS.VIEW_ASSETS,
       this.PERMISSIONS.VIEW_ATTENDANCE,
-      this.PERMISSIONS.CREATE_ATTENDANCE
+      this.PERMISSIONS.CREATE_ATTENDANCE,
+      // Inventory requests (technicians can request parts and confirm receipt)
+      this.PERMISSIONS.VIEW_INVENTORY_REQUESTS,
+      this.PERMISSIONS.CREATE_INVENTORY_REQUEST,
+      this.PERMISSIONS.CONFIRM_RECEIPT,
+      // View inventory to know what's available
+      this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK
     ],
     [this.ROLES.SUPERVISOR]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -374,7 +381,16 @@ export class PermissionHelper {
       this.PERMISSIONS.VIEW_ASSETS,
       this.PERMISSIONS.VIEW_COMPANY_ATTENDANCE,
       this.PERMISSIONS.CREATE_ATTENDANCE,
-      this.PERMISSIONS.UPDATE_ATTENDANCE
+      this.PERMISSIONS.UPDATE_ATTENDANCE,
+      // Inventory requests (supervisors can view and manage requests from their team)
+      this.PERMISSIONS.VIEW_INVENTORY_REQUESTS,
+      this.PERMISSIONS.CREATE_INVENTORY_REQUEST,
+      this.PERMISSIONS.APPROVE_INVENTORY_REQUEST,
+      this.PERMISSIONS.REJECT_INVENTORY_REQUEST,
+      this.PERMISSIONS.CONFIRM_RECEIPT,
+      // View inventory
+      this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK
     ]
   }
 

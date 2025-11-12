@@ -2,14 +2,14 @@
  * useTimeTracker Hook
  *
  * Custom hook for work order time tracking
- * Manages timer state, actions (start, pause, resume, complete), and real-time updates
+ * Uses react-timer-hook for reliable stopwatch functionality
  */
 
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import type { TimeLogAction, PauseReason } from "@prisma/client"
-import type { TimeTrackerState, TimeLogSummary } from "@/types/time-tracking.types"
+import type { TimeLogSummary } from "@/types/time-tracking.types"
 
 interface UseTimeTrackerOptions {
   workOrderId: string
@@ -19,10 +19,16 @@ interface UseTimeTrackerOptions {
 
 interface UseTimeTrackerReturn {
   // State
-  state: TimeTrackerState
+  isTracking: boolean
+  isPaused: boolean
   summary: TimeLogSummary | null
   isLoading: boolean
   error: string | null
+
+  // Base time values (in minutes)
+  baseActiveMinutes: number
+  basePausedMinutes: number
+  baseTotalMinutes: number
 
   // Actions
   start: () => Promise<void>
@@ -32,7 +38,6 @@ interface UseTimeTrackerReturn {
 
   // Utils
   refresh: () => Promise<void>
-  formatTime: (seconds: number) => string
 }
 
 export function useTimeTracker({
@@ -40,21 +45,19 @@ export function useTimeTracker({
   onActionComplete,
   onError,
 }: UseTimeTrackerOptions): UseTimeTrackerReturn {
-  const [state, setState] = useState<TimeTrackerState>({
-    isTracking: false,
-    isPaused: false,
-    startTime: null,
-    lastPauseTime: null,
-    elapsedSeconds: 0,
-    activeSeconds: 0,
-    pausedSeconds: 0,
-  })
-
+  // API state
   const [summary, setSummary] = useState<TimeLogSummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  // Tracking state
+  const [isTracking, setIsTracking] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+
+  // Base times from server (in minutes)
+  const [baseActiveMinutes, setBaseActiveMinutes] = useState(0)
+  const [basePausedMinutes, setBasePausedMinutes] = useState(0)
+  const [baseTotalMinutes, setBaseTotalMinutes] = useState(0)
 
   /**
    * Fetch time summary from API
@@ -72,22 +75,22 @@ export function useTimeTracker({
       const data = await response.json()
 
       if (data.success) {
-        setSummary(data.data)
+        const summaryData = data.data as TimeLogSummary
+        setSummary(summaryData)
 
-        // Update state based on summary
-        setState((prev) => ({
-          ...prev,
-          isTracking:
-            data.data.currentStatus === "WORKING" ||
-            data.data.currentStatus === "PAUSED",
-          isPaused: data.data.currentStatus === "PAUSED",
-          startTime: data.data.lastActionTimestamp
-            ? new Date(data.data.lastActionTimestamp)
-            : null,
-          activeSeconds: data.data.activeWorkMinutes * 60,
-          pausedSeconds: data.data.pausedMinutes * 60,
-          elapsedSeconds: data.data.totalElapsedMinutes * 60,
-        }))
+        const isNowTracking =
+          summaryData.currentStatus === "WORKING" ||
+          summaryData.currentStatus === "PAUSED"
+        const isNowPaused = summaryData.currentStatus === "PAUSED"
+
+        // Update base times from server (keep in minutes)
+        setBaseActiveMinutes(summaryData.activeWorkMinutes)
+        setBasePausedMinutes(summaryData.pausedMinutes)
+        setBaseTotalMinutes(summaryData.totalElapsedMinutes)
+
+        // Update tracking state
+        setIsTracking(isNowTracking)
+        setIsPaused(isNowPaused)
       }
     } catch (err) {
       const errorMessage =
@@ -154,7 +157,7 @@ export function useTimeTracker({
           throw new Error(errorData.error || "Error al registrar acción")
         }
 
-        // Refresh summary
+        // Refresh summary after action
         await fetchSummary()
 
         onActionComplete?.(action)
@@ -206,45 +209,11 @@ export function useTimeTracker({
   )
 
   /**
-   * Format seconds to HH:MM:SS
+   * Refresh summary
    */
-  const formatTime = useCallback((seconds: number): string => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }, [])
-
-  /**
-   * Update timer every second when tracking
-   */
-  useEffect(() => {
-    if (state.isTracking && !state.isPaused && state.startTime) {
-      timerRef.current = setInterval(() => {
-        setState((prev) => {
-          if (!prev.startTime) return prev
-
-          const now = Date.now()
-          const elapsed = Math.floor((now - prev.startTime.getTime()) / 1000)
-
-          return {
-            ...prev,
-            elapsedSeconds: elapsed,
-            activeSeconds: prev.activeSeconds + 1,
-          }
-        })
-      }, 1000)
-
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current)
-        }
-      }
-    }
-  }, [state.isTracking, state.isPaused, state.startTime])
+  const refresh = useCallback(async () => {
+    await fetchSummary()
+  }, [fetchSummary])
 
   /**
    * Fetch initial summary on mount
@@ -253,23 +222,26 @@ export function useTimeTracker({
     fetchSummary()
   }, [fetchSummary])
 
-  /**
-   * Refresh summary
-   */
-  const refresh = useCallback(async () => {
-    await fetchSummary()
-  }, [fetchSummary])
-
   return {
-    state,
+    // State
+    isTracking,
+    isPaused,
     summary,
     isLoading,
     error,
+
+    // Base time values (in minutes)
+    baseActiveMinutes,
+    basePausedMinutes,
+    baseTotalMinutes,
+
+    // Actions
     start,
     pause,
     resume,
     complete,
+
+    // Utils
     refresh,
-    formatTime,
   }
 }
