@@ -390,17 +390,15 @@ export class AnalyticsRepository {
           }, 0) / assignedWOs.length
         : 0
 
-    // Calculate average completion time (start to completion)
+    // Calculate average completion time (actual work time, not wall clock)
     const completedWOs = workOrders.filter(
-      (wo) =>
-        wo.status === "COMPLETED" && wo.startedAt && wo.completedAt
+      (wo) => wo.status === "COMPLETED" && wo.actualDuration != null
     )
     const avgCompletionTime =
       completedWOs.length > 0
         ? completedWOs.reduce((sum, wo) => {
-            const start = new Date(wo.startedAt!).getTime()
-            const end = new Date(wo.completedAt!).getTime()
-            const completionTime = (end - start) / (1000 * 60 * 60) // Hours
+            // Use actualDuration (minutes) converted to hours for accurate work time
+            const completionTime = (wo.actualDuration || 0) / 60 // Convert minutes to hours
             return sum + completionTime
           }, 0) / completedWOs.length
         : 0

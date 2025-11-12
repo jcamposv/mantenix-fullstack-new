@@ -26,7 +26,19 @@ const PAUSE_REASON_LABELS: Record<string, string> = {
 }
 
 export function TimeSummaryCard({ workOrderId }: TimeSummaryCardProps) {
-  const { summary, formatTime } = useTimeTracker({ workOrderId })
+  const { summary } = useTimeTracker({ workOrderId })
+
+  // Format seconds to HH:MM:SS
+  const formatTime = (totalSeconds: number): string => {
+    const seconds = Math.floor(totalSeconds)
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+  }
 
   if (!summary) {
     return (

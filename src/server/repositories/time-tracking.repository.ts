@@ -274,6 +274,8 @@ export class TimeTrackingRepository {
         actualDuration: summary.totalElapsedMinutes,
         activeWorkTime: summary.activeWorkMinutes,
         waitingTime: summary.pausedMinutes,
+        status: "COMPLETED",
+        completedAt: new Date(),
         updatedAt: new Date(),
       },
     })
