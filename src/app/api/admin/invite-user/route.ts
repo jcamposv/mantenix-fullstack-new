@@ -19,16 +19,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user can invite users (Super Admin or Company Admin)
-    const canInvite = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_EMPRESA"
+    // Check if user can invite users (Super Admin, Group Admin or Company Admin)
+    const canInvite = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_GRUPO" || session.user.role === "ADMIN_EMPRESA"
     if (!canInvite) {
-      return NextResponse.json({ 
-        error: "Forbidden - Only administrators can invite users" 
+      return NextResponse.json({
+        error: "Forbidden - Only administrators can invite users"
       }, { status: 403 })
     }
 
     const body = await request.json()
-    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image } = body
+    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image, hourlyRate } = body
 
     // Validate required fields
     if (!email || !role || !name) {
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate client company belongs to the tenant (only for company admins)
-    if (isExternalUser && clientCompanyId && session.user.role === "ADMIN_EMPRESA") {
+    // Validate client company belongs to the tenant (only for company/group admins)
+    if (isExternalUser && clientCompanyId && (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO")) {
       if (!session.user.companyId) {
         return NextResponse.json(
           { error: "Admin user has no associated company" },
@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For company admins, ensure they can only invite to their own company
+    // For company/group admins, ensure they can only invite to their own company
     let targetCompanyId = companyId
-    if (session.user.role === "ADMIN_EMPRESA") {
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         return NextResponse.json(
           { error: "Admin user has no associated company" },
@@ -110,10 +110,10 @@ export async function POST(request: NextRequest) {
       targetCompanyId = session.user.companyId
     }
 
-    // Super admins must specify a company for non-super-admin roles
+    // Super admins must specify a company for all roles except SUPER_ADMIN
     if (session.user.role === "SUPER_ADMIN" && role !== "SUPER_ADMIN" && !targetCompanyId) {
       return NextResponse.json(
-        { error: "Company is required for non-super-admin roles" },
+        { error: "Company is required for this role" },
         { status: 400 }
       )
     }
@@ -175,6 +175,7 @@ export async function POST(request: NextRequest) {
         clientCompanyId: isExternalUser ? clientCompanyId : null,
         siteId: isExternalUser && siteId ? siteId : null,
         image: image || null,
+        hourlyRate: hourlyRate || null,
         token,
         expiresAt,
         createdBy: session.user.id
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
     let inviteLink
     if (company?.subdomain) {
       // Use company subdomain for tenant-specific invitation
-      const domainBase = process.env.DOMAIN_BASE || "mantenix.ai"
+      const domainBase = process.env.DOMAIN_BASE || "mantenix.com"
       const baseUrl = process.env.NODE_ENV === 'production' 
         ? `https://${company.subdomain}.${domainBase}`
         : `http://${company.subdomain}.localhost:3000`

@@ -248,12 +248,12 @@ export default function CriticalAlertsPage() {
   ]
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <div className="space-y-6">
         {/* Header con alerta informativa */}
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <AlertTriangle className="h-8 w-8 text-red-600" />
               Alertas Críticas
             </h2>

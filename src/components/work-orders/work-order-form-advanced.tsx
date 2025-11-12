@@ -8,10 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
-import { X, Plus, Users, FileText, Shield, Wrench, Check, ChevronsUpDown } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { X, Plus, Users, FileText, Shield, Wrench } from "lucide-react"
+import { UserMultiSelect } from "@/components/common/user-multi-select"
 import type { CreateWorkOrderData } from "@/types/work-order.types"
 
 interface WorkOrderFormAdvancedProps {
@@ -22,7 +20,6 @@ interface WorkOrderFormAdvancedProps {
 export function WorkOrderFormAdvanced({ form, users = [] }: WorkOrderFormAdvancedProps) {
   const [newTool, setNewTool] = useState("")
   const [newMaterial, setNewMaterial] = useState("")
-  const [userSelectOpen, setUserSelectOpen] = useState(false)
 
   const watchedTools = form.watch("tools") || []
   const watchedMaterials = form.watch("materials") || []
@@ -57,15 +54,8 @@ export function WorkOrderFormAdvanced({ form, users = [] }: WorkOrderFormAdvance
     form.setValue("materials", currentMaterials.filter((_, i) => i !== index))
   }
 
-  const toggleUserAssignment = (userId: string) => {
-    const currentAssigned = form.getValues("assignedUserIds") || []
-    const isAssigned = currentAssigned.includes(userId)
-    
-    if (isAssigned) {
-      form.setValue("assignedUserIds", currentAssigned.filter(id => id !== userId))
-    } else {
-      form.setValue("assignedUserIds", [...currentAssigned, userId])
-    }
+  const handleUserIdsChange = (userIds: string[]) => {
+    form.setValue("assignedUserIds", userIds, { shouldValidate: true })
   }
 
   return (
@@ -85,82 +75,15 @@ export function WorkOrderFormAdvanced({ form, users = [] }: WorkOrderFormAdvance
             render={() => (
               <FormItem>
                 <FormLabel>Usuarios Asignados</FormLabel>
-                <div className="space-y-2">
-                  <Popover open={userSelectOpen} onOpenChange={setUserSelectOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={userSelectOpen}
-                          className="w-full justify-between"
-                        >
-                          {watchedAssignedUsers.length === 0
-                            ? "Seleccionar usuarios..."
-                            : `${watchedAssignedUsers.length} usuario(s) seleccionado(s)`
-                          }
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar usuarios..." />
-                        <CommandEmpty>No se encontraron usuarios.</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {internalUsers.map((user) => (
-                            <CommandItem
-                              key={user.id}
-                              value={`${user.name} ${user.email}`}
-                              onSelect={() => toggleUserAssignment(user.id)}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  watchedAssignedUsers.includes(user.id) ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium">{user.name}</div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {user.email}
-                                </div>
-                              </div>
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {user.role.replace('_', ' ')}
-                              </Badge>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  {/* Selected users display */}
-                  {watchedAssignedUsers.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {watchedAssignedUsers.map((userId) => {
-                        const user = internalUsers.find(u => u.id === userId)
-                        if (!user) return null
-                        return (
-                          <Badge key={userId} variant="secondary" className="flex items-center gap-1">
-                            {user.name}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-0 ml-1"
-                              onClick={() => toggleUserAssignment(userId)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-                
+                <FormControl>
+                  <UserMultiSelect
+                    users={internalUsers}
+                    selectedUserIds={watchedAssignedUsers}
+                    onUserIdsChange={handleUserIdsChange}
+                    placeholder="Seleccionar usuarios..."
+                    emptyText="No se encontraron usuarios."
+                  />
+                </FormControl>
                 {internalUsers.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No hay usuarios internos disponibles para asignar

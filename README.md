@@ -12,7 +12,7 @@ Sistema de autenticación enterprise para plataforma SaaS multiempresa de gesti�
 ## 🎯 Características Principales
 
 ### 🏗️ Arquitectura Multiempresa
-- **Subdominios personalizados**: `acme.mantenix.ai`, `techservices.mantenix.ai`
+- **Subdominios personalizados**: `acme.mantenix.com`, `techservices.mantenix.com`
 - **Aislamiento total de datos** por `companyId`
 - **Branding dinámico**: Logo, colores y fuentes personalizadas
 - **6 roles jerárquicos**: SUPER_ADMIN → CLIENTE_OPERATIVO
@@ -143,7 +143,7 @@ npm run dev
 
 ### Super Administrador (Global)
 ```
-Email: admin@mantenix.ai
+Email: admin@mantenix.com
 Password: SuperAdmin123!@#
 Acceso: Gestión global del sistema
 ```
@@ -168,7 +168,7 @@ Técnico: tech@techservices.com / Tecnico123!@#
 
 ```mermaid
 graph TD
-    A[Usuario accede a acme.mantenix.ai] --> B[Middleware detecta subdomain]
+    A[Usuario accede a acme.mantenix.com] --> B[Middleware detecta subdomain]
     B --> C[Query Company por subdomain]
     C --> D[Aplicar branding dinámico]
     D --> E[Verificar autenticación]
@@ -311,7 +311,7 @@ Agregar a `/etc/hosts` (macOS/Linux) o `C:\Windows\System32\drivers\etc\hosts` (
 
 Configurar DNS con wildcard:
 ```
-*.mantenix.ai  CNAME  your-load-balancer.region.elb.amazonaws.com
+*.mantenix.com  CNAME  your-load-balancer.region.elb.amazonaws.com
 ```
 
 ## 📊 Monitoreo y Logs
@@ -340,8 +340,8 @@ Configurar DNS con wildcard:
 ```bash
 # Production .env
 NODE_ENV="production"
-NEXT_PUBLIC_APP_URL="https://mantenix.ai"
-BETTER_AUTH_URL="https://mantenix.ai"
+NEXT_PUBLIC_APP_URL="https://mantenix.com"
+BETTER_AUTH_URL="https://mantenix.com"
 
 # Database (con SSL)
 DATABASE_URL="postgresql://user:pass@prod-db:5432/mantenix?sslmode=require"
@@ -451,7 +451,7 @@ chore: tareas de mantenimiento
 
 ### Security Issues
 - **NO reportar vulnerabilidades via issues públicos**
-- Contactar directamente: security@mantenix.ai
+- Contactar directamente: security@mantenix.com
 
 ### Enterprise Support
 - Soporte 24/7 disponible para clientes Enterprise
@@ -467,6 +467,6 @@ Este proyecto está licenciado bajo los términos de la licencia MIT. Ver [LICEN
 
 **🏢 Mantenix** - Transformando la gestión de órdenes de trabajo con tecnología enterprise.
 
-[![Deployment Status](https://img.shields.io/badge/Deployment-Ready-green)](https://mantenix.ai)
-[![Security](https://img.shields.io/badge/Security-Enterprise-blue)](https://mantenix.ai/security)
-[![Support](https://img.shields.io/badge/Support-24%2F7-orange)](mailto:support@mantenix.ai)
+[![Deployment Status](https://img.shields.io/badge/Deployment-Ready-green)](https://mantenix.com)
+[![Security](https://img.shields.io/badge/Security-Enterprise-blue)](https://mantenix.com/security)
+[![Support](https://img.shields.io/badge/Support-24%2F7-orange)](mailto:support@mantenix.com)

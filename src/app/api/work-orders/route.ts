@@ -90,8 +90,9 @@ export async function POST(request: NextRequest) {
       ...validationResult.data,
       scheduledDate: validationResult.data.scheduledDate 
         ? new Date(validationResult.data.scheduledDate) 
-        : undefined
-    }
+        : undefined,
+      ...(validationResult.data.siteId && { siteId: validationResult.data.siteId })
+    } as CreateWorkOrderData
 
     // Create work order
     const workOrder = await WorkOrderService.createWorkOrder(session, workOrderData)

@@ -47,6 +47,31 @@ export function UserBasicFields({ control, mode }: UserBasicFieldsProps) {
           )}
         />
 
+        <FormField<UserFormData>
+          control={control}
+          name="hourlyRate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tarifa por Hora (₡)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="20.00"
+                  {...field}
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground">
+                Tarifa por hora para cálculo de costos de mano de obra (default: ₡20.00)
+              </p>
+            </FormItem>
+          )}
+        />
+
         {mode === "create" && (
           <FormField<UserFormData>
             control={control}
@@ -72,7 +97,7 @@ export function UserBasicFields({ control, mode }: UserBasicFieldsProps) {
           <FormItem>
             <FormControl>
               <ProfilePhotoUpload
-                value={field.value}
+                value={field.value as string | null | undefined}
                 onChange={field.onChange}
                 onRemove={() => field.onChange(null)}
                 userName={control._formValues.name || "User"}

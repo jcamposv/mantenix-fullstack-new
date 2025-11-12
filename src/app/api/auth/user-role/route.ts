@@ -15,6 +15,7 @@ export async function GET() {
       role: user.role,
       isAuthenticated: true,
       isSuperAdmin: user.role === 'SUPER_ADMIN',
+      isGroupAdmin: user.role === 'ADMIN_GRUPO',
       isCompanyAdmin: user.role === 'ADMIN_EMPRESA',
       companyId: user.companyId,
       company: user.company

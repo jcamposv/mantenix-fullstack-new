@@ -280,7 +280,7 @@ export default function AssetsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       {filteredSite && (
         <div className="mb-4">
           <Button 

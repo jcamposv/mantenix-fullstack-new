@@ -7,6 +7,7 @@ interface UserRole {
   role: string | null
   isAuthenticated: boolean
   isSuperAdmin: boolean
+  isGroupAdmin: boolean
   isCompanyAdmin: boolean
   companyId: string | null
 }
@@ -17,6 +18,7 @@ export function useUserRole() {
     role: null,
     isAuthenticated: false,
     isSuperAdmin: false,
+    isGroupAdmin: false,
     isCompanyAdmin: false,
     companyId: null,
   })
@@ -31,6 +33,7 @@ export function useUserRole() {
           role: null,
           isAuthenticated: false,
           isSuperAdmin: false,
+          isGroupAdmin: false,
           isCompanyAdmin: false,
           companyId: null,
         })

@@ -6,8 +6,9 @@ export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
   password: mode === "invite"
     ? z.string().optional()
     : z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-  role: z.enum(["SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]),
+  role: z.enum(["ADMIN_EMPRESA", "JEFE_MANTENIMIENTO", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]),
   companyId: z.string().optional(),
+  hourlyRate: z.number().positive("La tarifa debe ser positiva").optional().or(z.literal(null)),
   isExternalUser: z.boolean(),
   clientCompanyId: z.string().optional(),
   siteId: z.string().optional(),
@@ -39,6 +40,8 @@ export type AdminUserFormData = z.infer<ReturnType<typeof createAdminUserSchema>
 
 // Roles para usuarios internos de la empresa
 export const INTERNAL_ROLES = [
+  { value: "ADMIN_EMPRESA", label: "Admin Empresa", description: "Administrador de empresa", forGroupAdminOnly: true },
+  { value: "JEFE_MANTENIMIENTO", label: "Jefe de Mantenimiento", description: "Aprobar solicitudes de inventario y gestionar mantenimiento" },
   { value: "SUPERVISOR", label: "Supervisor", description: "Supervisar operaciones internas" },
   { value: "TECNICO", label: "Técnico", description: "Trabajo de campo y mantenimiento" },
 ]

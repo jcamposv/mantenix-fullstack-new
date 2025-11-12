@@ -54,7 +54,7 @@ export default function AdminCompanyInviteUserPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <AdminCompanyUserForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

@@ -33,11 +33,11 @@ export class EmailTemplateService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los templates
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa puede ver templates de su company
+      // Admin empresa/grupo puede ver templates de su company
       whereClause.emailConfiguration = {
         is: {
           companyId: session.user.companyId
@@ -91,7 +91,7 @@ export class EmailTemplateService {
 
     // Validar acceso
     if (session.user.role !== "SUPER_ADMIN") {
-      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
         if (config.companyId !== session.user.companyId) {
           throw new Error("No tienes acceso a esta configuración")
         }
@@ -144,7 +144,7 @@ export class EmailTemplateService {
 
     // Validar acceso
     if (session.user.role !== "SUPER_ADMIN") {
-      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
         if (config.companyId !== session.user.companyId) {
           throw new Error("No tienes acceso a esta configuración")
         }
@@ -176,7 +176,7 @@ export class EmailTemplateService {
 
     // Validar acceso
     if (session.user.role !== "SUPER_ADMIN") {
-      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
         if (config.companyId !== session.user.companyId) {
           throw new Error("No tienes acceso a esta configuración")
         }

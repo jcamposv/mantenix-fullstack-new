@@ -1,4 +1,5 @@
 import * as z from "zod"
+import { roleSchema } from "@/lib/rbac/role-schemas"
 
 export const createUserSchema = (mode: "create" | "invite" | "edit") => z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -6,8 +7,9 @@ export const createUserSchema = (mode: "create" | "invite" | "edit") => z.object
   password: mode === "create"
     ? z.string().min(8, "Password must be at least 8 characters")
     : z.string().optional(),
-  role: z.enum(["SUPER_ADMIN", "ADMIN_EMPRESA", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN", "CLIENTE_OPERATIVO"]),
+  role: roleSchema, // Centralized role validation
   companyId: z.string().optional(),
+  hourlyRate: z.number().positive("Hourly rate must be positive").optional().or(z.literal(null)),
   timezone: z.string(),
   locale: z.string(),
   image: z.string().nullable().optional(),

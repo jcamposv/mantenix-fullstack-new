@@ -3,6 +3,7 @@
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useAlerts } from "@/hooks/useAlerts"
+import { useInventoryRequestsCount } from "@/hooks/useInventoryRequestsCount"
 
 import {
   Collapsible,
@@ -32,10 +33,23 @@ export function NavMain({
     items?: {
       title: string
       url: string
+      badge?: boolean
     }[]
   }[]
 }) {
   const { unreadCount } = useAlerts()
+  const { pendingApprovalsCount, pendingDeliveriesCount } = useInventoryRequestsCount()
+
+  // Helper function to get badge count for a specific URL
+  const getBadgeCount = (url: string): number | null => {
+    if (url === '/admin/work-orders/approvals') {
+      return pendingApprovalsCount
+    }
+    if (url === '/admin/inventory/requests') {
+      return pendingDeliveriesCount
+    }
+    return null
+  }
 
   return (
     <SidebarGroup>
@@ -57,8 +71,8 @@ export function NavMain({
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                       {item.badge && unreadCount > 0 && (
-                        <Badge 
-                          variant="destructive" 
+                        <Badge
+                          variant="destructive"
                           className="ml-auto mr-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
                         >
                           {unreadCount > 99 ? '99+' : unreadCount}
@@ -69,15 +83,26 @@ export function NavMain({
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {item.items.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                      {item.items.map((subItem) => {
+                        const badgeCount = subItem.badge ? getBadgeCount(subItem.url) : null
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild>
+                              <a href={subItem.url} className="flex items-center justify-between w-full">
+                                <span>{subItem.title}</span>
+                                {badgeCount !== null && badgeCount > 0 && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="ml-auto h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+                                  >
+                                    {badgeCount > 99 ? '99+' : badgeCount}
+                                  </Badge>
+                                )}
+                              </a>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )
+                      })}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>

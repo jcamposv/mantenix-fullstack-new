@@ -36,14 +36,47 @@ export class CompanyService {
   }
 
   static async getList(
-    session: AuthenticatedSession, 
+    session: AuthenticatedSession,
     filters?: CompanyFilters,
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedCompaniesResponse> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
+    const isSuperAdmin = PermissionHelper.hasPermission(
+      session.user.role,
+      PermissionHelper.PERMISSIONS.VIEW_COMPANIES
+    )
+    const isGroupAdmin = session.user.role === 'ADMIN_GRUPO'
+    const isCompanyAdmin = session.user.role === 'ADMIN_EMPRESA'
 
-    const whereClause = this.buildWhereClause(filters)
+    // Build where clause based on role
+    let whereClause = this.buildWhereClause(filters)
+
+    if (!isSuperAdmin) {
+      if (isGroupAdmin) {
+        // ADMIN_GRUPO can see companies in their group
+        if (session.user.companyGroupId) {
+          whereClause = {
+            ...whereClause,
+            companyGroupId: session.user.companyGroupId
+          }
+        } else {
+          // If ADMIN_GRUPO doesn't have a companyGroupId, return only their company
+          whereClause = {
+            ...whereClause,
+            id: session.user.companyId
+          }
+        }
+      } else if (isCompanyAdmin) {
+        // ADMIN_EMPRESA can only see their own company
+        whereClause = {
+          ...whereClause,
+          id: session.user.companyId
+        }
+      } else {
+        throw new Error("No tienes permisos para ver empresas")
+      }
+    }
+
     const { companies, total } = await CompanyRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
@@ -90,7 +123,20 @@ export class CompanyService {
       ipWhitelist: data.ipWhitelist || []
     }
 
-    return await CompanyRepository.create(createData)
+    const company = await CompanyRepository.create(createData)
+
+    // Crear subscripción si se proporcionó un planId
+    if (data.planId) {
+      const { SubscriptionService } = await import('./subscription.service')
+      await SubscriptionService.createSubscription({
+        companyId: company.id,
+        planId: data.planId,
+        billingInterval: 'MONTHLY',
+        startDate: new Date()
+      })
+    }
+
+    return company
   }
 
   static async update(session: AuthenticatedSession, id: string, data: UpdateCompanyData): Promise<CompanyWithRelations> {
@@ -122,7 +168,37 @@ export class CompanyService {
       ...(typeof data.isActive === 'boolean' && { isActive: data.isActive })
     }
 
-    return await CompanyRepository.update(id, updateData)
+    const company = await CompanyRepository.update(id, updateData)
+
+    // Manejar cambio de plan
+    if (data.planId) {
+      const { SubscriptionService } = await import('./subscription.service')
+      const { SubscriptionRepository } = await import('../repositories/subscription.repository')
+
+      // Verificar si ya tiene subscripción
+      const existingSubscription = await SubscriptionRepository.findByCompanyId(id)
+
+      if (existingSubscription) {
+        // Actualizar plan existente
+        await SubscriptionService.updateSubscription({
+          id: existingSubscription.id,
+          planId: data.planId
+        })
+
+        // Re-activar features del nuevo plan
+        await SubscriptionService.activatePlanFeatures(id, data.planId)
+      } else {
+        // Crear nueva subscripción
+        await SubscriptionService.createSubscription({
+          companyId: id,
+          planId: data.planId,
+          billingInterval: 'MONTHLY',
+          startDate: new Date()
+        })
+      }
+    }
+
+    return company
   }
 
   static async delete(session: AuthenticatedSession, id: string): Promise<CompanyWithRelations> {

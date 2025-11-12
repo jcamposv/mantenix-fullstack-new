@@ -25,9 +25,9 @@ interface TemplateCustomFieldsProps {
 }
 
 const FIELD_TYPES: CustomFieldType[] = [
-  "TEXT", "TEXTAREA", "NUMBER", "SELECT", "RADIO", "CHECKBOX", 
-  "CHECKLIST", "DATE", "TIME", "DATETIME", "IMAGE_BEFORE", 
-  "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE"
+  "TEXT", "TEXTAREA", "NUMBER", "SELECT", "RADIO", "CHECKBOX",
+  "CHECKLIST", "DATE", "TIME", "DATETIME", "IMAGE_BEFORE",
+  "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE", "TABLE"
 ]
 
 export function TemplateCustomFields({ form }: TemplateCustomFieldsProps) {

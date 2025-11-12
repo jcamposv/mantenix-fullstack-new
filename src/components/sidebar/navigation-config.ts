@@ -13,8 +13,25 @@ import {
   ClipboardList,
   AlertCircle,
   Mail,
+  Sparkles,
+  Clock,
+  Calendar,
+  FileText,
+  Package,
+  CreditCard,
 } from "lucide-react"
 
+// Navigation items for SUPER_ADMIN (SaaS administrator)
+export const SUPER_ADMIN_NAV_ITEMS = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: SquareTerminal,
+    isActive: true,
+  },
+]
+
+// Navigation items for regular users (company/group admins and operators)
 export const BASE_NAV_ITEMS = [
   {
     title: "Dashboard",
@@ -118,19 +135,11 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
-    name: "Clientes",
-    url: "/admin/client-companies", 
-    icon: Building2,
-    role: "ADMIN_EMPRESA", // Only company admins can see client companies
+    name: "Gestión",
+    url: "/admin/assets",
+    icon: Package,
+    role: "ADMIN_EMPRESA", // Company and group admins - always visible
     items: [
-      {
-        title: "Clientes",
-        url: "/admin/client-companies",
-      },
-      {
-        title: "Sedes",
-        url: "/admin/sites",
-      },
       {
         title: "Activos",
         url: "/admin/assets",
@@ -138,6 +147,27 @@ export const ADMIN_NAV_ITEMS = [
       {
         title: "Templates OT",
         url: "/admin/work-order-templates",
+      },
+      {
+        title: "Inventario",
+        url: "/admin/inventory",
+      },
+    ],
+  },
+  {
+    name: "Clientes",
+    url: "/admin/client-companies",
+    icon: Building2,
+    role: "ADMIN_EMPRESA", // Only visible with EXTERNAL_CLIENT_MANAGEMENT
+    requiresFeature: "EXTERNAL_CLIENT_MANAGEMENT",
+    items: [
+      {
+        title: "Empresas Cliente",
+        url: "/admin/client-companies",
+      },
+      {
+        title: "Sedes",
+        url: "/admin/sites",
       },
     ],
   },
@@ -148,10 +178,16 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN"
   },
   {
-    name: "Usuarios de la Empresa",
+    name: "Usuarios",
     url: "/admin/users", // Company admin uses admin route
     icon: Users,
     role: "ADMIN_EMPRESA"
+  },
+  {
+    name: "Features Premium",
+    url: "/super-admin/features",
+    icon: Sparkles,
+    role: "SUPER_ADMIN" // Only super admins can manage premium features
   },
   {
     name: "Configuración de Emails",
@@ -171,5 +207,72 @@ export const FALLBACK_USER = {
   name: "Usuario",
   email: "user@example.com",
   avatar: "/avatars/default.jpg",
+}
+
+// Features habilitados dinámicamente
+export const getFeatureNavItems = (enabledFeatures: {
+  hasAttendance?: boolean
+  hasVacations?: boolean
+  hasPermissions?: boolean
+  hasExternalClientMgmt?: boolean
+  hasInternalCorporateGroup?: boolean
+}) => {
+  const items = []
+
+  if (enabledFeatures.hasAttendance) {
+    items.push({
+      title: "Asistencia",
+      url: "/admin/attendance",
+      icon: Clock,
+      items: [
+        {
+          title: "Registros",
+          url: "/admin/attendance"
+        },
+        {
+          title: "Reportes",
+          url: "/admin/attendance/reports"
+        },
+        {
+          title: "Ubicaciones",
+          url: "/admin/locations"
+        }
+      ]
+    })
+  }
+
+  if (enabledFeatures.hasVacations) {
+    items.push({
+      title: "Vacaciones",
+      url: "/admin/vacations",
+      icon: Calendar,
+      items: [
+        {
+          title: "Solicitudes",
+          url: "/admin/vacations"
+        },
+        {
+          title: "Balance",
+          url: "/admin/vacations/balance"
+        }
+      ]
+    })
+  }
+
+  if (enabledFeatures.hasPermissions) {
+    items.push({
+      title: "Permisos",
+      url: "/admin/permissions",
+      icon: FileText,
+      items: [
+        {
+          title: "Solicitudes",
+          url: "/admin/permissions"
+        }
+      ]
+    })
+  }
+
+  return items
 }
 

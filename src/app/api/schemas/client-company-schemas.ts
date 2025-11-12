@@ -9,8 +9,8 @@ export const createClientCompanySchema = z.object({
   contactName: z.string().min(1, "El nombre del contacto es requerido").max(255),
   tenantCompanyId: z.string().optional(),
   logo: z.string().optional(),
-  latitude: z.number().optional().nullable(),
-  longitude: z.number().optional().nullable(),
+  latitude: z.coerce.number().optional().nullable(),
+  longitude: z.coerce.number().optional().nullable(),
   notes: z.string().optional().nullable()
 })
 
@@ -22,8 +22,8 @@ export const updateClientCompanySchema = z.object({
   email: z.string().email("Email inválido").max(255).optional(),
   contactName: z.string().min(1, "El nombre del contacto es requerido").max(255).optional(),
   logo: z.string().optional(),
-  latitude: z.number().optional().nullable(),
-  longitude: z.number().optional().nullable(),
+  latitude: z.coerce.number().optional().nullable(),
+  longitude: z.coerce.number().optional().nullable(),
   notes: z.string().optional().nullable()
 })
 

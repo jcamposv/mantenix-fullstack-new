@@ -3,6 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import { ChevronsUpDown } from "lucide-react"
+import type { AvailableCompany } from "@/components/sidebar/sidebar-types"
 
 import {
   DropdownMenu,
@@ -25,22 +26,16 @@ interface Company {
   plan: string
 }
 
-interface AvailableCompany {
-  id: string
-  name: string
-  subdomain: string
-  logo?: string | null
-  isActive: boolean
-}
-
 export function TeamSwitcher({
   company,
   availableCompanies,
   isSuperAdmin = false,
+  isGroupAdmin = false,
 }: {
   company: Company
   availableCompanies?: AvailableCompany[] | null
   isSuperAdmin?: boolean
+  isGroupAdmin?: boolean
 }) {
   const { isMobile } = useSidebar()
 
@@ -48,22 +43,43 @@ export function TeamSwitcher({
     return null
   }
 
-  // Function to switch to a different company's dashboard
+  // Function to switch to a different company
   const switchToCompany = (companyData: AvailableCompany) => {
     if (companyData.subdomain) {
-      // Build the URL for the company's dashboard
-      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
-      const targetUrl = process.env.NODE_ENV === 'production' 
-        ? `https://${companyData.subdomain}.${domainBase}/dashboard`
-        : `http://${companyData.subdomain}.localhost:3000/dashboard`
-      
-      // Navigate to the company's dashboard
+      // Get current hostname to detect environment
+      const currentHost = window.location.hostname
+      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.com"
+
+      let targetUrl: string
+
+      if (process.env.NODE_ENV === 'production') {
+        // Extract environment from current hostname (e.g., "dev", "staging")
+        // Pattern: subdomain.env.domain.com or subdomain.domain.com
+        const hostParts = currentHost.split('.')
+
+        // Check if there's an environment subdomain
+        // e.g., codela.dev.mantenix.com -> ["codela", "dev", "mantenix", "com"]
+        // e.g., codela.mantenix.com -> ["codela", "mantenix", "com"]
+        let environment = ''
+        if (hostParts.length > 3) {
+          // Has environment (e.g., codela.dev.mantenix.com)
+          environment = `.${hostParts[1]}`
+        }
+
+        // Build target URL: subdomain.environment.domain.com (without /dashboard)
+        targetUrl = `https://${companyData.subdomain}${environment}.${domainBase}`
+      } else {
+        // Development: use localhost
+        targetUrl = `http://${companyData.subdomain}.localhost:3000`
+      }
+
+      // Navigate to the company (without /dashboard)
       window.location.href = targetUrl
     }
   }
 
-  // If super admin with companies available, show dropdown
-  if (isSuperAdmin && availableCompanies && availableCompanies.length > 0) {
+  // If super admin or group admin with companies available, show dropdown
+  if ((isSuperAdmin || isGroupAdmin) && availableCompanies && availableCompanies.length > 0) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>

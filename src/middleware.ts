@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PermissionHelper } from "@/server/helpers/permission.helper";  
+import { getMobileOnlyRoles } from "@/lib/rbac/role-definitions";  
 
 export async function middleware(request: NextRequest) {
   try {
@@ -26,7 +26,17 @@ export async function middleware(request: NextRequest) {
     // Get user with company info
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { company: true }
+      include: {
+        company: {
+          include: {
+            companyGroup: {
+              include: {
+                companies: true
+              }
+            }
+          }
+        }
+      }
     })
 
     if (!user) {
@@ -35,26 +45,34 @@ export async function middleware(request: NextRequest) {
 
     // Role-based route protection
     const pathname = request.nextUrl.pathname
-    const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, PermissionHelper.ROLES.SUPERVISOR, PermissionHelper.ROLES.CLIENTE_OPERARIO] as const
+    const mobileOnlyRoles = getMobileOnlyRoles()
 
     // Super admins can access any subdomain and any route
     if (user.role === 'SUPER_ADMIN') {
       return NextResponse.next()
     }
 
+    // Group admins can access any subdomain within their corporate group
+    if (user.role === 'ADMIN_GRUPO' && user.company?.companyGroup) {
+      const groupSubdomains = user.company.companyGroup.companies.map(c => c.subdomain)
+      if (groupSubdomains.includes(subdomain)) {
+        return NextResponse.next()
+      }
+    }
+
     // Regular users must access their company's subdomain
     if (user.company?.subdomain !== subdomain) {
       // Redirect to correct company subdomain
-      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
-      const correctUrl = process.env.NODE_ENV === 'production' 
+      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.com"
+      const correctUrl = process.env.NODE_ENV === 'production'
         ? `https://${user.company?.subdomain}.${domainBase}${request.nextUrl.pathname}`
         : `http://${user.company?.subdomain}.localhost:3000${request.nextUrl.pathname}`
-      
+
       return NextResponse.redirect(new URL(correctUrl))
     }
 
     // Check if mobile-only user is trying to access dashboard routes
-    if ((mobileOnlyRoles as readonly string[]).includes(user.role) && !pathname.startsWith('/mobile')) {
+    if (mobileOnlyRoles.includes(user.role) && !pathname.startsWith('/mobile')) {
       return NextResponse.redirect(new URL("/mobile", request.url))
     }
 

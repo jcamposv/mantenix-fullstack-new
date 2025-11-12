@@ -1,8 +1,9 @@
 import { getCurrentUserWithRole } from "@/lib/auth-utils"
 import { Toaster } from "@/components/ui/sonner"
+import { PWABrandingUpdater } from "@/components/pwa-branding-updater"
 import { redirect } from "next/navigation"
 import { MobileFooter, MobileFooterContent } from "@/components/mobile/mobile-footer"
-import { MobileNavigation } from "@/components/mobile/mobile-nav"
+import { MobileNavigation } from "@/components/mobile/mobile-nav-server"
 import { MobileHeader } from "@/components/mobile/mobile-header"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
@@ -93,10 +94,11 @@ export default async function FieldLayout({
       {/* Navigation bottom bar sticky para móvil */}
       <MobileFooter>
         <MobileFooterContent>
-          <MobileNavigation />
+          <MobileNavigation userRole={user.role} />
         </MobileFooterContent>
       </MobileFooter>
 
+      <PWABrandingUpdater />
       <Toaster />
     </div>
   )

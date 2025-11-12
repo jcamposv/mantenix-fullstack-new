@@ -191,7 +191,7 @@ export default function SuperAdminUsersPage() {
   ]
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <DataTable
         columns={columns}
         data={users}

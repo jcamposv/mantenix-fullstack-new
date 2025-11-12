@@ -14,6 +14,19 @@ export class CompanyRepository {
         users: true,
         clientCompanies: true
       }
+    },
+    subscription: {
+      select: {
+        id: true,
+        planId: true,
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            tier: true
+          }
+        }
+      }
     }
   }
 
@@ -120,5 +133,13 @@ export class CompanyRepository {
         isActive: true
       }
     })
+  }
+
+  static async getCompanyGroupId(companyId: string): Promise<string | null> {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { companyGroupId: true }
+    })
+    return company?.companyGroupId || null
   }
 }

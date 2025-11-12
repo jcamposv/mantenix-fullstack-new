@@ -5,6 +5,10 @@ export const workOrderTypeSchema = z.enum(["PREVENTIVO", "CORRECTIVO", "REPARACI
 export const workOrderPrioritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
 export const workOrderStatusSchema = z.enum(["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"])
 
+// Constants for iteration
+export const WORK_ORDER_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const
+export const WORK_ORDER_STATUSES = ["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const
+
 // Main work order form schema
 export const workOrderSchema = z.object({
   title: z.string().min(1, "El título es requerido").max(255),
@@ -14,8 +18,8 @@ export const workOrderSchema = z.object({
   status: workOrderStatusSchema.optional(),
   prefixId: z.string().optional(),
 
-  // Location and asset
-  siteId: z.string().min(1, "La sede es requerida"),
+  // Location and asset (optional if EXTERNAL_CLIENT_MANAGEMENT feature is disabled)
+  siteId: z.string().optional(),
   assetId: z.string().optional(),
   
   // Template integration
@@ -59,6 +63,18 @@ export const createWorkOrderSchema = workOrderSchema.omit({
 // Schema for updating work orders
 export const updateWorkOrderSchema = workOrderSchema.partial()
 
+// Schema for quick creating work orders from calendar
+export const quickCreateWorkOrderSchema = z.object({
+  templateId: z.string().min(1, "Debes seleccionar un template"),
+  title: z.string().min(1, "El título es requerido").max(255),
+  description: z.string().optional(),
+  priority: workOrderPrioritySchema,
+  scheduledDate: z.date().optional(),
+  siteId: z.string().optional(),
+  assetId: z.string().optional(),
+  assignedUserIds: z.array(z.string()).optional()
+})
+
 // Schema for completing work orders
 export const completeWorkOrderSchema = z.object({
   observations: z.string().optional(),
@@ -77,6 +93,7 @@ export const workOrderAssignmentSchema = z.object({
 export type WorkOrderFormData = z.infer<typeof workOrderSchema>
 export type CreateWorkOrderData = z.infer<typeof createWorkOrderSchema>
 export type UpdateWorkOrderData = z.infer<typeof updateWorkOrderSchema>
+export type QuickCreateWorkOrderData = z.infer<typeof quickCreateWorkOrderSchema>
 export type CompleteWorkOrderData = z.infer<typeof completeWorkOrderSchema>
 export type WorkOrderAssignmentData = z.infer<typeof workOrderAssignmentSchema>
 export type WorkOrderType = z.infer<typeof workOrderTypeSchema>
@@ -128,13 +145,15 @@ export const getWorkOrderStatusColor = (status: WorkOrderStatus): string => {
   return colors[status]
 }
 
-// Helper function to get priority color
+// Helper function to get priority color (for badges)
 export const getWorkOrderPriorityColor = (priority: WorkOrderPriority): string => {
   const colors: Record<WorkOrderPriority, string> = {
     LOW: "gray",
-    MEDIUM: "blue", 
+    MEDIUM: "blue",
     HIGH: "orange",
     URGENT: "red"
   }
   return colors[priority]
 }
+
+// Priority colors removed - priorities are displayed as text labels only

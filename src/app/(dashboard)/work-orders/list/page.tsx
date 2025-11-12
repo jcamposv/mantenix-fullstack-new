@@ -7,7 +7,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { User, Building, Wrench, Clock } from "lucide-react"
 import { toast } from "sonner"
-import { TableActions, createEditAction, createDeleteAction, createViewAction } from "@/components/common/table-actions"
+import { TableActions, createEditAction, createDeleteAction, createViewAction, createPrintAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
@@ -47,6 +47,19 @@ export default function WorkOrdersListPage() {
   const handleDelete = (workOrder: WorkOrderWithRelations) => {
     setWorkOrderToDelete(workOrder)
     setDeleteDialogOpen(true)
+  }
+
+  const handlePrint = (workOrderId: string) => {
+    // Open work order in new window for printing
+    const printUrl = `/work-orders/${workOrderId}?print=true`
+    const printWindow = window.open(printUrl, '_blank')
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        setTimeout(() => {
+          printWindow.print()
+        }, 500)
+      })
+    }
   }
 
   const confirmDelete = async () => {
@@ -210,17 +223,18 @@ export default function WorkOrdersListPage() {
         const workOrder = row.original
         const actions = [
           createViewAction(() => handleView(workOrder.id)),
+          createPrintAction(() => handlePrint(workOrder.id)),
           createEditAction(() => handleEdit(workOrder.id)),
           createDeleteAction(() => handleDelete(workOrder))
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
   ]
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <DataTable
         columns={columns}
         data={workOrders}
