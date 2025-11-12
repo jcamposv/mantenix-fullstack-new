@@ -296,6 +296,7 @@ export class AnalyticsRepository {
         createdAt: true,
         startedAt: true,
         completedAt: true,
+        actualDuration: true,
         assignments: {
           select: {
             assignedAt: true,

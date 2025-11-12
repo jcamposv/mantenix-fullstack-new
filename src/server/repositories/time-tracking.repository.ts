@@ -36,19 +36,42 @@ export class TimeTrackingRepository {
       segmentDurationMinutes = Math.round(durationMs / 60000) // Convert to minutes
     }
 
-    return await prisma.workOrderTimeLog.create({
-      data: {
-        workOrderId: data.workOrderId,
-        userId: data.userId,
-        action: data.action,
-        pauseReason: data.pauseReason || null,
-        timestamp: data.timestamp || new Date(),
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
-        notes: data.notes || null,
-        segmentDurationMinutes,
-      },
-    }) as WorkOrderTimeLog
+    const timestamp = data.timestamp || new Date()
+    const isFirstStart = data.action === "START" && !previousLog
+
+    // Use transaction to ensure atomic operation
+    const timeLog = await prisma.$transaction(async (tx) => {
+      // Create time log
+      const log = await tx.workOrderTimeLog.create({
+        data: {
+          workOrderId: data.workOrderId,
+          userId: data.userId,
+          action: data.action,
+          pauseReason: data.pauseReason || null,
+          timestamp,
+          latitude: data.latitude || null,
+          longitude: data.longitude || null,
+          notes: data.notes || null,
+          segmentDurationMinutes,
+        },
+      })
+
+      // If this is the first START, update work order startedAt and status
+      if (isFirstStart) {
+        await tx.workOrder.update({
+          where: { id: data.workOrderId },
+          data: {
+            startedAt: timestamp,
+            status: "IN_PROGRESS",
+            updatedAt: new Date(),
+          },
+        })
+      }
+
+      return log
+    })
+
+    return timeLog as WorkOrderTimeLog
   }
 
   /**
@@ -262,11 +285,89 @@ export class TimeTrackingRepository {
   }
 
   /**
+   * Calculate actual cost for a work order
+   * Cost = Labor Cost + Parts Cost + Other Costs
+   */
+  async calculateActualCost(workOrderId: string): Promise<{
+    laborCost: number
+    partsCost: number
+    otherCosts: number
+    totalCost: number
+  }> {
+    const DEFAULT_HOURLY_RATE = 20.0 // Default rate in CRC per hour
+
+    // 1. Get time summary for labor cost calculation
+    const summary = await this.getTimeSummary(workOrderId)
+    const hours = summary.activeWorkMinutes / 60
+
+    // 2. Get user's hourly rate (from first time log to get the technician)
+    const firstLog = await prisma.workOrderTimeLog.findFirst({
+      where: { workOrderId },
+      orderBy: { timestamp: "asc" },
+      include: {
+        user: {
+          select: {
+            hourlyRate: true,
+          },
+        },
+      },
+    })
+
+    const hourlyRate = firstLog?.user?.hourlyRate
+      ? Number(firstLog.user.hourlyRate)
+      : DEFAULT_HOURLY_RATE
+
+    const laborCost = hours * hourlyRate
+
+    // 3. Calculate parts cost from delivered inventory requests
+    const inventoryRequests = await prisma.workOrderInventoryRequest.findMany({
+      where: {
+        workOrderId,
+        status: "DELIVERED", // Only delivered items
+      },
+      include: {
+        inventoryItem: {
+          select: {
+            unitCost: true,
+          },
+        },
+      },
+    })
+
+    const partsCost = inventoryRequests.reduce((sum, request) => {
+      const quantity = request.quantityDelivered
+      const unitCost = request.inventoryItem.unitCost || 0
+      return sum + quantity * unitCost
+    }, 0)
+
+    // 4. Get manual other costs (already saved in work order)
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId },
+      select: { otherCosts: true },
+    })
+
+    const otherCosts = workOrder?.otherCosts || 0
+
+    // 5. Calculate total
+    const totalCost = laborCost + partsCost + otherCosts
+
+    return {
+      laborCost,
+      partsCost,
+      otherCosts,
+      totalCost,
+    }
+  }
+
+  /**
    * Update work order time metrics
    * Call this when completing a work order to update the calculated fields
    */
   async updateWorkOrderTimeMetrics(workOrderId: string): Promise<void> {
     const summary = await this.getTimeSummary(workOrderId)
+
+    // Calculate costs automatically
+    const costs = await this.calculateActualCost(workOrderId)
 
     await prisma.workOrder.update({
       where: { id: workOrderId },
@@ -274,6 +375,11 @@ export class TimeTrackingRepository {
         actualDuration: summary.totalElapsedMinutes,
         activeWorkTime: summary.activeWorkMinutes,
         waitingTime: summary.pausedMinutes,
+        // Auto-calculated costs
+        laborCost: costs.laborCost,
+        partsCost: costs.partsCost,
+        actualCost: costs.totalCost,
+        // Status
         status: "COMPLETED",
         completedAt: new Date(),
         updatedAt: new Date(),

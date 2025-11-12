@@ -186,7 +186,7 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
             <div className="space-y-3">
               {requests.map((request) => {
                 const needsConfirmation = canConfirmReceipt(request)
-                const isUrgent = request.urgency === 'URGENTE'
+                const isUrgent = request.urgency === 'CRITICAL'
 
                 return (
                   <div

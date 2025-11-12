@@ -191,7 +191,7 @@ export default function MobileWorkOrderDetailPage() {
               )}
             </div>
           </CardHeader>
-          {showForm && (
+          {showForm && workOrder.template?.customFields && (
             <CardContent className="pt-0">
               <WorkOrderCompleteForm
                 customFields={workOrder.template.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}

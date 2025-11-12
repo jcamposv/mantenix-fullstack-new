@@ -9,6 +9,7 @@ export const createUserSchema = (mode: "create" | "invite" | "edit") => z.object
     : z.string().optional(),
   role: roleSchema, // Centralized role validation
   companyId: z.string().optional(),
+  hourlyRate: z.number().positive("Hourly rate must be positive").optional().or(z.literal(null)),
   timezone: z.string(),
   locale: z.string(),
   image: z.string().nullable().optional(),
