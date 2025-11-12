@@ -92,6 +92,7 @@ export async function POST(
         clientCompanyId: invitation.clientCompanyId,
         siteId: invitation.siteId,
         image: invitation.image,
+        hourlyRate: invitation.hourlyRate,
       },
     })
 

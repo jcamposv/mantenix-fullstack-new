@@ -43,7 +43,7 @@ export function UserRoleField({ control, selectedRole, restrictedMode = false }:
       render={({ field }) => (
         <FormItem>
           <FormLabel>Role</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+          <Select onValueChange={field.onChange} defaultValue={(field.value as string | undefined) ?? undefined}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />

@@ -136,6 +136,7 @@ export class UserService {
       name: userData.name,
       email: userData.email,
       role: userData.role,
+      hourlyRate: userData.hourlyRate,
       image: userData.image
     }
 
@@ -219,7 +220,8 @@ export class UserService {
     const updateData: Prisma.UserUpdateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role
+      role: userData.role,
+      hourlyRate: userData.hourlyRate
     }
 
     // Solo actualizar image si fue proporcionado explícitamente

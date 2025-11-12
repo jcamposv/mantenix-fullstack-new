@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Edit, Printer } from "lucide-react"
 import { WorkOrderConsolidatedInfo } from "./work-order-consolidated-info"
+import { WorkOrderCostBreakdownCard } from "./cost-breakdown-card"
 import { WorkOrderToolsMaterials } from "./work-order-tools-materials"
 import { WorkOrderCustomFieldsDisplay } from "./work-order-custom-fields-display"
 import { PrintableWorkOrder } from "./printable-work-order"
@@ -25,6 +27,16 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
   const searchParams = useSearchParams()
   const printRef = useRef<HTMLDivElement>(null)
   const shouldPrint = searchParams.get('print') === 'true'
+  const { data: session } = useSession()
+
+  // Check if user can edit costs (JEFE_MANTENIMIENTO, ADMIN_EMPRESA, ADMIN_GRUPO, SUPER_ADMIN)
+  const user = session?.user as { role?: string } | undefined
+  const canEditCosts = Boolean(user?.role && [
+    "JEFE_MANTENIMIENTO",
+    "ADMIN_EMPRESA",
+    "ADMIN_GRUPO",
+    "SUPER_ADMIN"
+  ].includes(user.role))
 
   // Auto-print when shouldPrint is true
   useEffect(() => {
@@ -65,6 +77,17 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
       <div className="space-y-4 print:hidden">
         {/* Consolidated Info Card */}
         <WorkOrderConsolidatedInfo workOrder={workOrder} />
+
+        {/* Cost Breakdown - Only for completed work orders */}
+        <WorkOrderCostBreakdownCard
+          workOrderId={workOrder.id}
+          laborCost={workOrder.laborCost}
+          partsCost={workOrder.partsCost}
+          otherCosts={workOrder.otherCosts}
+          actualCost={workOrder.actualCost}
+          status={workOrder.status}
+          canEdit={canEditCosts}
+        />
 
         <WorkOrderToolsMaterials workOrder={workOrder} />
 

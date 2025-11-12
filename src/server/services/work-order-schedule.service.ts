@@ -250,7 +250,8 @@ export class WorkOrderScheduleService {
     // Update assignments
     if (input.assignedUserIds) updateData.assignedUserIds = input.assignedUserIds
 
-    // Update next generation date (for drag and drop)
+    // Update next generation date (only if explicitly provided, e.g., from drag-and-drop)
+    // Do NOT automatically recalculate when updating other schedule properties
     if (input.nextGenerationDate !== undefined) {
       updateData.nextGenerationDate = input.nextGenerationDate
     }
@@ -262,20 +263,6 @@ export class WorkOrderScheduleService {
     }
     if (input.siteId !== undefined) {
       updateData.site = input.siteId ? { connect: { id: input.siteId } } : { disconnect: true }
-    }
-
-    // Recalculate next generation date if recurrence changed (but not if manually set)
-    if (!input.nextGenerationDate && (input.recurrenceType || input.recurrenceInterval || input.weekDays)) {
-      const recurrenceType = input.recurrenceType ?? schedule.recurrenceType
-      const recurrenceInterval = input.recurrenceInterval ?? schedule.recurrenceInterval
-      const weekDays = input.weekDays ?? schedule.weekDays
-
-      updateData.nextGenerationDate = this.calculateNextGenerationDate(
-        schedule.lastGeneratedAt ?? new Date(),
-        recurrenceType,
-        recurrenceInterval,
-        weekDays
-      )
     }
 
     return await WorkOrderScheduleRepository.update(input.id, updateData)

@@ -1,13 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, Package, AlertTriangle, Clock, ArrowUpDown } from "lucide-react"
+import { Loader2, Package, AlertTriangle, Clock, ArrowUpDown, PackageSearch, FileText, ClipboardList, Plus } from "lucide-react"
 import { StatsCard } from "@/components/inventory/dashboard/stats-card"
 import { LowStockAlerts } from "@/components/inventory/dashboard/low-stock-alerts"
 import { RecentActivity } from "@/components/inventory/dashboard/recent-activity"
 import { TopRequestedItems } from "@/components/inventory/dashboard/top-requested-items"
 import type { InventoryDashboardMetrics } from "@/types/inventory.types"
 import { toast } from "sonner"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function InventoryDashboardPage() {
   const [metrics, setMetrics] = useState<InventoryDashboardMetrics | null>(null)
@@ -52,11 +54,50 @@ export default function InventoryDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard de Inventario</h2>
-        <p className="text-muted-foreground">
-          Resumen y métricas clave de tu inventario
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard de Inventario</h2>
+          <p className="text-muted-foreground">
+            Resumen y métricas clave de tu inventario
+          </p>
+        </div>
+        <Link href="/admin/inventory/items/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Item
+          </Button>
+        </Link>
+      </div>
+
+      {/* Quick Access Buttons */}
+      <div className="flex flex-wrap gap-3">
+        <Link href="/admin/inventory/items">
+          <Button variant="outline" className="h-auto py-3 cursor-pointer">
+            <PackageSearch className="h-5 w-5 mr-2" />
+            <div className="text-left">
+              <div className="font-semibold">Items</div>
+              <div className="text-xs text-muted-foreground">Ver lista de productos</div>
+            </div>
+          </Button>
+        </Link>
+        <Link href="/admin/inventory/requests">
+          <Button variant="outline" className="h-auto py-3 cursor-pointer">
+            <ClipboardList className="h-5 w-5 mr-2" />
+            <div className="text-left">
+              <div className="font-semibold">Solicitudes</div>
+              <div className="text-xs text-muted-foreground">Gestionar pedidos</div>
+            </div>
+          </Button>
+        </Link>
+        <Link href="/admin/inventory/movements">
+          <Button variant="outline" className="h-auto py-3 cursor-pointer">
+            <FileText className="h-5 w-5 mr-2" />
+            <div className="text-left">
+              <div className="font-semibold">Movimientos</div>
+              <div className="text-xs text-muted-foreground">Ver historial</div>
+            </div>
+          </Button>
+        </Link>
       </div>
 
       {/* KPIs Grid */}

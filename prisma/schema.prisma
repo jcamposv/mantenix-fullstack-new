@@ -178,6 +178,9 @@ model User {
   mfaEnabled      Boolean   @default(false)
   isMfaVerified   Boolean   @default(false)
 
+  // Cost Configuration
+  hourlyRate      Decimal?  @default(20.00) @db.Decimal(10, 2) // Hourly rate for labor cost calculation
+
   // Relations
   accounts               Account[]
   sessions               Session[]
@@ -235,6 +238,9 @@ model User {
   // Inventory movement relations
   inventoryMovementsCreated InventoryMovement[] @relation("InventoryMovementCreator")
   inventoryMovementsApproved InventoryMovement[] @relation("InventoryMovementApprover")
+
+  // Time tracking relations
+  workOrderTimeLogs WorkOrderTimeLog[] @relation("WorkOrderTimeLogs")
 
   @@map("user")
 }
@@ -525,6 +531,7 @@ model UserInvitation {
   usedAt          DateTime?
   createdBy       String
   image           String? // Profile photo URL for the invited user
+  hourlyRate      Decimal?  @db.Decimal(10, 2) // Hourly rate for labor cost calculation
   createdAt       DateTime  @default(now())
 
   // Relations
@@ -860,8 +867,17 @@ model WorkOrder {
   // Estimaciones y costos
   estimatedDuration Int? // Duración estimada en minutos
   estimatedCost     Float? // Costo estimado
-  actualDuration    Int? // Duración real en minutos
-  actualCost        Float? // Costo real
+  actualDuration    Int? // Duración real en minutos (elapsed time total)
+  actualCost        Float? // Costo real total (labor + parts + other)
+  laborCost         Float? // Labor cost (calculated from activeWorkTime × hourlyRate)
+  partsCost         Float? // Parts cost (sum of delivered inventory items)
+  otherCosts        Float? // Other manual costs (transport, contractors, etc.)
+
+  // Time tracking detallado (para MTTR preciso)
+  activeWorkTime    Int? // Tiempo real trabajado (minutos) - sin pausas
+  waitingTime       Int? // Tiempo de espera (minutos) - pausas acumuladas
+  diagnosticTime    Int? // Tiempo de diagnóstico (minutos)
+  travelTime        Int? // Tiempo de viaje (minutos)
 
   // Instrucciones y seguridad
   instructions String? // Instrucciones específicas
@@ -899,6 +915,9 @@ model WorkOrder {
 
   // Inventory movements
   inventoryMovements InventoryMovement[]
+
+  // Time tracking logs
+  timeLogs WorkOrderTimeLog[]
 
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
@@ -1723,4 +1742,61 @@ model Invoice {
   @@index([status])
   @@index([createdAt])
   @@map("invoices")
+}
+
+// ============================================================================
+// TIME TRACKING SYSTEM
+// ============================================================================
+
+enum TimeLogAction {
+  START   // Inicio de trabajo
+  PAUSE   // Pausa de trabajo
+  RESUME  // Reanudación de trabajo
+  COMPLETE // Finalización de trabajo
+}
+
+enum PauseReason {
+  WAITING_PARTS      // Esperando repuestos
+  WAITING_APPROVAL   // Esperando aprobación
+  LUNCH_BREAK        // Hora de almuerzo
+  OTHER_PRIORITY     // Otra prioridad
+  TECHNICAL_ISSUE    // Problema técnico
+  TRAVEL             // Viaje/Traslado
+  OTHER              // Otro
+}
+
+// Registro detallado de tiempo en órdenes de trabajo
+model WorkOrderTimeLog {
+  id          String   @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  // Acción registrada
+  action      TimeLogAction
+  pauseReason PauseReason?
+
+  // Timestamp del registro
+  timestamp   DateTime @default(now())
+
+  // Usuario que realizó la acción
+  userId      String
+  user        User     @relation("WorkOrderTimeLogs", fields: [userId], references: [id], onDelete: Restrict)
+
+  // Geolocalización (verificar que el técnico está en el sitio)
+  latitude    Float?
+  longitude   Float?
+
+  // Duración del segmento (calculado entre este log y el anterior en minutos)
+  segmentDurationMinutes Int?
+
+  // Notas adicionales
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workOrderId, timestamp])
+  @@index([userId])
+  @@index([action])
+  @@map("work_order_time_logs")
 }

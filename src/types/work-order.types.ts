@@ -41,6 +41,9 @@ export interface WorkOrder {
   estimatedCost: number | null
   actualDuration: number | null
   actualCost: number | null
+  laborCost: number | null
+  partsCost: number | null
+  otherCosts: number | null
   
   // Instructions and resources
   instructions: string | null

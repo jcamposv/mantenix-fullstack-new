@@ -44,6 +44,7 @@ export function UserForm({
       password: mode === "invite" || mode === "edit" ? undefined : "",
       role: initialData?.role || "TECNICO",
       companyId: initialData?.companyId || currentUser?.company?.id || undefined,
+      hourlyRate: initialData?.hourlyRate || 20.00,
       timezone: initialData?.timezone || "UTC",
       locale: initialData?.locale || "en",
       image: initialData?.image || null,
