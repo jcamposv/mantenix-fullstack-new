@@ -9,6 +9,7 @@ import { WorkOrderActions } from "@/components/forms/mobile/work-order-complete/
 import { WorkOrderCompleteForm } from "@/components/forms/mobile/work-order-complete/work-order-complete-form"
 import { WorkOrderReadonlyView } from "@/components/forms/mobile/work-order-complete/work-order-readonly-view"
 import { WorkOrderInventoryRequestsMobile } from "@/components/forms/mobile/work-order-inventory-requests"
+import { TimeTrackerCard, TimeSummaryCard } from "@/components/work-orders/time-tracking"
 import { useWorkOrderManagement } from "@/hooks/use-work-order-management"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 
@@ -58,12 +59,26 @@ export default function MobileWorkOrderDetailPage() {
 
   return (
     <div className="space-y-4">
-      <WorkOrderHeader 
+      <WorkOrderHeader
         workOrder={workOrder}
         currentUser={currentUser as unknown as { role: string } | null}
         onBack={() => router.back()}
         onAssetCreated={fetchWorkOrder}
       />
+
+      {/* Time Tracker - Show for IN_PROGRESS or ASSIGNED status */}
+      {(workOrder.status === 'IN_PROGRESS' || workOrder.status === 'ASSIGNED') && (
+        <TimeTrackerCard
+          workOrderId={workOrderId}
+          onActionComplete={fetchWorkOrder}
+          disabled={updating}
+        />
+      )}
+
+      {/* Time Summary - Show for COMPLETED status */}
+      {isCompleted && (
+        <TimeSummaryCard workOrderId={workOrderId} />
+      )}
 
       <Card>
         <CardContent>

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { OTCalendar, CalendarLegend, CalendarFiltersPanel, CalendarEventModal } from "@/components/calendar/ot-calendar"
+import { OTCalendar, CalendarLegend, CalendarFiltersPanel } from "@/components/calendar/ot-calendar"
+import { CalendarEventModal } from "@/components/calendar/ot-calendar/calendar-event-modal"
 import { useOTCalendarFilters } from "@/hooks/use-ot-calendar-filters"
 import { useRouter } from "next/navigation"
 import type { CalendarEvent } from "@/types/calendar.types"
@@ -163,7 +164,7 @@ export default function CalendarPage() {
             onScheduleClick={handleScheduleClick}
             onDateSelect={handleDateSelect}
             refetchKey={refetchKey}
-            initialFilters={filters}
+            filters={filters}
             editable={true}
             selectable={true}
           />

@@ -236,6 +236,9 @@ model User {
   inventoryMovementsCreated InventoryMovement[] @relation("InventoryMovementCreator")
   inventoryMovementsApproved InventoryMovement[] @relation("InventoryMovementApprover")
 
+  // Time tracking relations
+  workOrderTimeLogs WorkOrderTimeLog[] @relation("WorkOrderTimeLogs")
+
   @@map("user")
 }
 
@@ -860,8 +863,14 @@ model WorkOrder {
   // Estimaciones y costos
   estimatedDuration Int? // Duración estimada en minutos
   estimatedCost     Float? // Costo estimado
-  actualDuration    Int? // Duración real en minutos
+  actualDuration    Int? // Duración real en minutos (elapsed time total)
   actualCost        Float? // Costo real
+
+  // Time tracking detallado (para MTTR preciso)
+  activeWorkTime    Int? // Tiempo real trabajado (minutos) - sin pausas
+  waitingTime       Int? // Tiempo de espera (minutos) - pausas acumuladas
+  diagnosticTime    Int? // Tiempo de diagnóstico (minutos)
+  travelTime        Int? // Tiempo de viaje (minutos)
 
   // Instrucciones y seguridad
   instructions String? // Instrucciones específicas
@@ -899,6 +908,9 @@ model WorkOrder {
 
   // Inventory movements
   inventoryMovements InventoryMovement[]
+
+  // Time tracking logs
+  timeLogs WorkOrderTimeLog[]
 
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
