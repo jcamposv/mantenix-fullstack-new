@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, Package, AlertTriangle, Clock, TrendingUp, ArrowUpDown } from "lucide-react"
+import { Loader2, Package, AlertTriangle, Clock, ArrowUpDown } from "lucide-react"
 import { StatsCard } from "@/components/inventory/dashboard/stats-card"
 import { LowStockAlerts } from "@/components/inventory/dashboard/low-stock-alerts"
 import { RecentActivity } from "@/components/inventory/dashboard/recent-activity"

@@ -19,6 +19,7 @@ export default function EditCompanyGroupPage() {
 
   useEffect(() => {
     fetchGroupData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const fetchGroupData = async () => {

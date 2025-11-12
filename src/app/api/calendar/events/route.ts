@@ -54,7 +54,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: "Rango de fechas inválido",
-          details: dateRangeValidation.error.errors,
+          details: dateRangeValidation.error.issues,
         },
         { status: 400 }
       )
@@ -71,14 +71,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           return NextResponse.json(
             {
               error: "Filtros inválidos",
-              details: filtersValidation.error.errors,
+              details: filtersValidation.error.issues,
             },
             { status: 400 }
           )
         }
 
         filters = filtersValidation.data
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           {
             error: "Formato de filtros inválido",
@@ -87,6 +87,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           { status: 400 }
         )
       }
+    }
+
+    // Guard: Ensure companyId exists
+    if (!session.user.companyId) {
+      return NextResponse.json(
+        { error: "Usuario sin empresa asignada" },
+        { status: 403 }
+      )
     }
 
     // Get calendar events from service
@@ -121,7 +129,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: "Validación de datos fallida",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 }
       )

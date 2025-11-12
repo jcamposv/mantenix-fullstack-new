@@ -6,7 +6,7 @@ import type {
   CalendarEventType,
   CalendarDateRange,
 } from "@/types/calendar.types"
-import type { WorkOrderType, WorkOrderStatus } from "@/types/work-order.types"
+import type { WorkOrderType } from "@/types/work-order.types"
 import type { RecurrenceType } from "@/schemas/work-order-schedule"
 
 /**
@@ -42,36 +42,39 @@ export class CalendarService {
     ])
 
     // Transform schedules to calendar events
-    const scheduleEvents: CalendarEvent[] = schedules.map((schedule) => {
-      const eventType = this.mapRecurrenceToEventType(schedule.recurrenceType)
-      const colors = getCalendarEventColor(eventType)
+    // Filter out schedules without a next generation date
+    const scheduleEvents: CalendarEvent[] = schedules
+      .filter((schedule) => schedule.nextGenerationDate !== null)
+      .map((schedule) => {
+        const eventType = this.mapRecurrenceToEventType(schedule.recurrenceType)
+        const colors = getCalendarEventColor(eventType)
 
-      return {
-        id: `schedule-${schedule.id}`,
-        type: eventType,
-        title: `📅 ${schedule.name}`,
-        start: schedule.nextGenerationDate,
-        allDay: true,
-        backgroundColor: colors.bg,
-        borderColor: colors.border,
-        textColor: colors.text,
-        extendedProps: {
-          type: "schedule",
-          scheduleId: schedule.id,
-          description: schedule.description ?? undefined,
-          recurrenceType: schedule.recurrenceType as RecurrenceType,
-          completionRate: schedule.completionRate,
-          isActive: schedule.isActive,
-          templateName: schedule.template.name,
-          assetId: schedule.asset?.id,
-          assetName: schedule.asset?.name,
-          assetCode: schedule.asset?.code,
-          siteId: schedule.site?.id,
-          siteName: schedule.site?.name,
-          editable: true, // Schedules can be dragged
-        },
-      }
-    })
+        return {
+          id: `schedule-${schedule.id}`,
+          type: eventType,
+          title: `📅 ${schedule.name}`,
+          start: schedule.nextGenerationDate!,
+          allDay: true,
+          backgroundColor: colors.bg,
+          borderColor: colors.border,
+          textColor: colors.text,
+          extendedProps: {
+            type: "schedule",
+            scheduleId: schedule.id,
+            description: schedule.description ?? undefined,
+            recurrenceType: schedule.recurrenceType as RecurrenceType,
+            completionRate: schedule.completionRate,
+            isActive: schedule.isActive,
+            templateName: schedule.template.name,
+            assetId: schedule.asset?.id,
+            assetName: schedule.asset?.name,
+            assetCode: schedule.asset?.code,
+            siteId: schedule.site?.id,
+            siteName: schedule.site?.name,
+            editable: true, // Schedules can be dragged
+          },
+        }
+      })
 
     // Transform work orders to calendar events
     // IMPORTANT: Color is determined by TYPE only, not by status

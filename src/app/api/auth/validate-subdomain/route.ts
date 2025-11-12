@@ -11,9 +11,6 @@ import { validateSubdomainAccess } from '@/lib/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
-interface ValidateSubdomainRequest {
-  userId: string;
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {

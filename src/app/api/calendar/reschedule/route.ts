@@ -35,13 +35,21 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: "Datos de entrada inválidos",
-          details: validation.error.errors,
+          details: validation.error.issues,
         },
         { status: 400 }
       )
     }
 
     const { eventId, eventType, newDate } = validation.data
+
+    // Guard: Ensure companyId exists
+    if (!session.user.companyId) {
+      return NextResponse.json(
+        { error: "Usuario sin empresa asignada" },
+        { status: 403 }
+      )
+    }
 
     // Extract actual ID (remove prefix if present)
     const actualId = eventId.replace(/^(schedule-|workorder-)/, "")
@@ -78,7 +86,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: "Validación de datos fallida",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 }
       )

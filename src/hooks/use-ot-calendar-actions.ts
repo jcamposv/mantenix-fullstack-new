@@ -89,21 +89,16 @@ export function useOTCalendarActions(
 
       try {
         // Convert delta to milliseconds (FullCalendar delta is a Duration object)
-        // The delta object has properties like: years, months, days, milliseconds
+        // The delta object has properties: years, months, days, milliseconds
         let deltaMs: number | undefined
         if (info.delta) {
           // Calculate total milliseconds from the duration
+          // Note: Years and months are not easily converted to exact milliseconds
+          // so we focus on days and milliseconds for accurate time delta
           const days = info.delta.days || 0
-          const hours = info.delta.hours || 0
-          const minutes = info.delta.minutes || 0
-          const seconds = info.delta.seconds || 0
           const ms = info.delta.milliseconds || 0
 
-          deltaMs = (days * 24 * 60 * 60 * 1000) +
-                    (hours * 60 * 60 * 1000) +
-                    (minutes * 60 * 1000) +
-                    (seconds * 1000) +
-                    ms
+          deltaMs = (days * 24 * 60 * 60 * 1000) + ms
         }
 
         const requestBody = {

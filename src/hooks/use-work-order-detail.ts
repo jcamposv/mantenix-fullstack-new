@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import type { WorkOrderPriority, WorkOrderStatus } from "@prisma/client"
 import {
   workOrderDetailSchema,
   type WorkOrderDetailFormData,
@@ -44,7 +45,7 @@ export function useWorkOrderDetail({ workOrderId, onSuccess }: UseWorkOrderDetai
   const [saving, setSaving] = useState(false)
   const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null)
 
-  const form = useForm<WorkOrderDetailFormData>({
+  const form = useForm({
     resolver: zodResolver(workOrderDetailSchema),
     defaultValues: {
       title: "",
@@ -57,6 +58,7 @@ export function useWorkOrderDetail({ workOrderId, onSuccess }: UseWorkOrderDetai
     if (workOrderId) {
       loadWorkOrder()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workOrderId])
 
   const loadWorkOrder = async () => {
@@ -76,8 +78,8 @@ export function useWorkOrderDetail({ workOrderId, onSuccess }: UseWorkOrderDetai
       form.reset({
         title: data.title,
         description: data.description || "",
-        priority: data.priority as any,
-        status: data.status as any,
+        priority: data.priority as WorkOrderPriority,
+        status: data.status as WorkOrderStatus,
         scheduledDate: data.scheduledDate
           ? new Date(data.scheduledDate).toISOString().split("T")[0]
           : "",

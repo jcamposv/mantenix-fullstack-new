@@ -96,6 +96,9 @@ export interface CalendarEventExtendedProps {
 
   // Draggable flag
   editable?: boolean
+
+  // Index signature for compatibility with generic Record<string, unknown>
+  [key: string]: unknown
 }
 
 /**

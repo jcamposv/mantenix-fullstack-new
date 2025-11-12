@@ -18,6 +18,7 @@ export default function EditCompanyPage() {
 
   useEffect(() => {
     fetchCompany()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId])
 
   const fetchCompany = async () => {

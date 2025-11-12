@@ -8,4 +8,3 @@
 export { OTCalendar } from "./ot-calendar"
 export { CalendarLegend } from "./calendar-legend"
 export { CalendarFiltersPanel } from "./calendar-filters-panel"
-export { CalendarEventModal } from "./calendar-event-modal"

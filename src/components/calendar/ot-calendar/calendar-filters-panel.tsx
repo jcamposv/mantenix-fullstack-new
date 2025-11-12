@@ -46,8 +46,6 @@ export function CalendarFiltersPanel({
   onStatusesChange,
   selectedPriorities,
   onPrioritiesChange,
-  showCompleted,
-  onShowCompletedChange,
   onResetFilters,
   hasActiveFilters,
 }: CalendarFiltersPanelProps): JSX.Element {
@@ -61,8 +59,8 @@ export function CalendarFiltersPanel({
           label: getEventTypeLabel(type),
           color: getEventTypeColor(type).bg,
         })),
-        selectedValues: selectedEventTypes,
-        onChange: onEventTypesChange,
+        selectedValues: selectedEventTypes as string[],
+        onChange: onEventTypesChange as (values: string[]) => void,
       },
       {
         id: "statuses",
@@ -72,8 +70,8 @@ export function CalendarFiltersPanel({
           label: getWorkOrderStatusLabel(status),
           // No color - statuses are text-only
         })),
-        selectedValues: selectedStatuses,
-        onChange: onStatusesChange,
+        selectedValues: selectedStatuses as string[],
+        onChange: onStatusesChange as (values: string[]) => void,
       },
       {
         id: "priorities",
@@ -83,8 +81,8 @@ export function CalendarFiltersPanel({
           label: getWorkOrderPriorityLabel(priority),
           // No color - priorities are text-only
         })),
-        selectedValues: selectedPriorities,
-        onChange: onPrioritiesChange,
+        selectedValues: selectedPriorities as string[],
+        onChange: onPrioritiesChange as (values: string[]) => void,
       },
     ]
   }, [

@@ -1,6 +1,7 @@
 "use client"
 
 import { Loader2, Save, Trash2 } from "lucide-react"
+import type { UseFormReturn } from "react-hook-form"
 import {
   Sheet,
   SheetContent,
@@ -15,6 +16,7 @@ import { Form } from "@/components/ui/form"
 import { useScheduleDetail } from "@/hooks/use-schedule-detail"
 import { ScheduleInfoSection } from "./schedule-info-section"
 import { ScheduleAssignmentSection } from "./schedule-assignment-section"
+import type { ScheduleDetailFormData } from "@/schemas/schedule-detail.schema"
 
 interface ScheduleDetailSheetProps {
   scheduleId: string | null
@@ -69,12 +71,12 @@ export function ScheduleDetailSheet({
               <Form {...form}>
                 <form onSubmit={onSubmit} className="space-y-6 py-6">
                   {/* Basic Information Section */}
-                  <ScheduleInfoSection form={form} schedule={schedule} />
+                  <ScheduleInfoSection form={form as UseFormReturn<ScheduleDetailFormData>} schedule={schedule} />
 
                   <Separator />
 
                   {/* Assignment Section */}
-                  <ScheduleAssignmentSection form={form} />
+                  <ScheduleAssignmentSection form={form as UseFormReturn<ScheduleDetailFormData>} />
                 </form>
               </Form>
             </ScrollArea>

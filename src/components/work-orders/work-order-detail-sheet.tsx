@@ -1,6 +1,7 @@
 "use client"
 
 import { Loader2, Save, Trash2 } from "lucide-react"
+import type { UseFormReturn } from "react-hook-form"
 import {
   Sheet,
   SheetContent,
@@ -15,6 +16,7 @@ import { Form } from "@/components/ui/form"
 import { useWorkOrderDetail } from "@/hooks/use-work-order-detail"
 import { WorkOrderInfoSection } from "./work-order-info-section"
 import { WorkOrderAssignmentSection } from "./work-order-assignment-section"
+import type { WorkOrderDetailFormData } from "@/schemas/work-order-detail.schema"
 
 interface WorkOrderDetailSheetProps {
   workOrderId: string | null
@@ -69,12 +71,12 @@ export function WorkOrderDetailSheet({
               <Form {...form}>
                 <form onSubmit={onSubmit} className="space-y-6 py-6">
                   {/* Basic Information Section */}
-                  <WorkOrderInfoSection form={form} workOrder={workOrder} />
+                  <WorkOrderInfoSection form={form as UseFormReturn<WorkOrderDetailFormData>} workOrder={workOrder} />
 
                   <Separator />
 
                   {/* Assignment Section */}
-                  <WorkOrderAssignmentSection form={form} />
+                  <WorkOrderAssignmentSection form={form as UseFormReturn<WorkOrderDetailFormData>} />
                 </form>
               </Form>
             </ScrollArea>

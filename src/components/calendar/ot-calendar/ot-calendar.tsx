@@ -1,22 +1,12 @@
 "use client"
 
-import { useCallback, useState, useEffect, JSX } from "react"
-import { useRouter } from "next/navigation"
+import { useCallback, JSX } from "react"
 import type {
   DateSelectArg,
   DatesSetArg,
   EventContentArg,
 } from "@fullcalendar/core"
-import { X, MoreVertical } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Edit, Users, Eye, Trash2 } from "lucide-react"
+import { X, } from "lucide-react"
 import { BaseCalendar } from "../base-calendar"
 import { useOTCalendarEvents } from "@/hooks/use-ot-calendar-events"
 import { useOTCalendarActions } from "@/hooks/use-ot-calendar-actions"
@@ -91,7 +81,6 @@ export function OTCalendar({
   selectable = true,
   showDeleteButton = true,
 }: OTCalendarProps): JSX.Element {
-  const router = useRouter()
 
   // Custom hooks for state management
   const { events, loading, fetchEvents, refetch } = useOTCalendarEvents({
@@ -137,23 +126,6 @@ export function OTCalendar({
     },
     [onWorkOrderClick]
   )
-
-  /**
-   * Handle action menu clicks
-   */
-  const handleActionClick = useCallback(
-    (e: React.MouseEvent, workOrderId: string, action: "edit" | "assign" | "delete" | "view"): void => {
-      e.stopPropagation()
-
-      if (action === "view") {
-        router.push(`/work-orders/${workOrderId}`)
-      } else {
-        onWorkOrderClick?.(workOrderId, action)
-      }
-    },
-    [onWorkOrderClick, router]
-  )
-
   /**
    * Custom event content renderer
    * Different display for schedules vs work orders

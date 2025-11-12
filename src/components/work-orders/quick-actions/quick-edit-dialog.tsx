@@ -55,7 +55,7 @@ export function QuickEditDialog({
   onOpenChange,
   onSuccess,
 }: QuickEditDialogProps) {
-  const form = useForm<WorkOrderQuickEditData>({
+  const form = useForm({
     resolver: zodResolver(workOrderQuickEditSchema),
   })
 
@@ -238,7 +238,7 @@ export function QuickEditDialog({
             <FormField
               control={form.control}
               name="estimatedDuration"
-              render={({ field}) => (
+              render={({ field: { value, onChange, ...field } }) => (
                 <FormItem>
                   <FormLabel>Duración Estimada (horas)</FormLabel>
                   <FormControl>
@@ -247,8 +247,8 @@ export function QuickEditDialog({
                       step="0.5"
                       placeholder="0.0"
                       {...field}
-                      value={field.value || ""}
-                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      value={(value as number | undefined) ?? ""}
+                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                     />
                   </FormControl>
                   <FormMessage />

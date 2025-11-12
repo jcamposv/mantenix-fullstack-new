@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import type { RecurrenceType } from "@prisma/client"
 import {
   scheduleDetailSchema,
   type ScheduleDetailFormData,
@@ -39,7 +40,7 @@ export function useScheduleDetail({ scheduleId, onSuccess }: UseScheduleDetailOp
   const [saving, setSaving] = useState(false)
   const [schedule, setSchedule] = useState<ScheduleDetail | null>(null)
 
-  const form = useForm<ScheduleDetailFormData>({
+  const form = useForm({
     resolver: zodResolver(scheduleDetailSchema),
     defaultValues: {
       name: "",
@@ -54,6 +55,7 @@ export function useScheduleDetail({ scheduleId, onSuccess }: UseScheduleDetailOp
     if (scheduleId) {
       loadSchedule()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleId])
 
   const loadSchedule = async () => {
@@ -73,7 +75,7 @@ export function useScheduleDetail({ scheduleId, onSuccess }: UseScheduleDetailOp
       form.reset({
         name: data.name,
         description: data.description || "",
-        recurrenceType: data.recurrenceType as any,
+        recurrenceType: data.recurrenceType as RecurrenceType,
         interval: data.recurrenceInterval,
         isActive: data.isActive,
         assignedUserIds: data.assignedUserIds || [],

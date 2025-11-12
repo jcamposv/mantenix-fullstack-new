@@ -6,7 +6,6 @@
 import { SubscriptionRepository } from "@/server/repositories/subscription.repository"
 import { SubscriptionPlanRepository } from "@/server/repositories/subscription-plan.repository"
 import { UsageMetricsRepository } from "@/server/repositories/usage-metrics.repository"
-import { InvoiceRepository } from "@/server/repositories/invoice.repository"
 import { Prisma, SubscriptionStatus, BillingInterval, UsageMetrics, SubscriptionPlan } from "@prisma/client"
 import type {
   CreateSubscriptionInput,
