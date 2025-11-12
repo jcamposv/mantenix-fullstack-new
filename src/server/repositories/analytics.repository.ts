@@ -473,6 +473,9 @@ export class AnalyticsRepository {
         priority: true,
         actualCost: true,
         estimatedCost: true,
+        laborCost: true,
+        partsCost: true,
+        otherCosts: true,
         actualDuration: true,
       },
     })
@@ -483,10 +486,18 @@ export class AnalyticsRepository {
       return sum + cost
     }, 0)
 
-    // For now, labor cost is estimated as 60% of total cost
-    // In a real implementation, this would come from actual labor tracking
-    const totalLaborCost = totalMaintenanceCost * 0.6
-    const totalPartsCost = totalMaintenanceCost * 0.4
+    // Calculate total labor and parts cost from actual data
+    const totalLaborCost = workOrders.reduce((sum, wo) => {
+      return sum + (wo.laborCost || 0)
+    }, 0)
+
+    const totalPartsCost = workOrders.reduce((sum, wo) => {
+      return sum + (wo.partsCost || 0)
+    }, 0)
+
+    const totalOtherCosts = workOrders.reduce((sum, wo) => {
+      return sum + (wo.otherCosts || 0)
+    }, 0)
 
     // Estimate downtime cost (assuming $100/hour of downtime)
     const DOWNTIME_COST_PER_HOUR = 100
