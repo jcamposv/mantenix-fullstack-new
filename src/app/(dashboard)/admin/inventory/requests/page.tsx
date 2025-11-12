@@ -44,7 +44,7 @@ interface InventoryRequestsResponse {
 
 export default function InventoryRequestsPage() {
   const router = useRouter()
-  const { data: requests, loading, refetch } = useTableData<InventoryRequest>({
+  const { data: requests, loading } = useTableData<InventoryRequest>({
     endpoint: '/api/admin/inventory/requests',
     transform: (data) => (data as InventoryRequestsResponse).requests || []
   })

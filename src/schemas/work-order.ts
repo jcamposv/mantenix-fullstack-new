@@ -5,6 +5,10 @@ export const workOrderTypeSchema = z.enum(["PREVENTIVO", "CORRECTIVO", "REPARACI
 export const workOrderPrioritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
 export const workOrderStatusSchema = z.enum(["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"])
 
+// Constants for iteration
+export const WORK_ORDER_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const
+export const WORK_ORDER_STATUSES = ["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const
+
 // Main work order form schema
 export const workOrderSchema = z.object({
   title: z.string().min(1, "El título es requerido").max(255),
@@ -141,13 +145,15 @@ export const getWorkOrderStatusColor = (status: WorkOrderStatus): string => {
   return colors[status]
 }
 
-// Helper function to get priority color
+// Helper function to get priority color (for badges)
 export const getWorkOrderPriorityColor = (priority: WorkOrderPriority): string => {
   const colors: Record<WorkOrderPriority, string> = {
     LOW: "gray",
-    MEDIUM: "blue", 
+    MEDIUM: "blue",
     HIGH: "orange",
     URGENT: "red"
   }
   return colors[priority]
 }
+
+// Priority colors removed - priorities are displayed as text labels only

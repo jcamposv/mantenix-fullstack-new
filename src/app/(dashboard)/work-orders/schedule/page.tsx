@@ -1,146 +1,187 @@
-"use client";
+"use client"
 
-import { useState, JSX} from 'react';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { WorkOrderCalendar } from '@/components/calendar/work-order-calendar';
-import { ScheduleForm } from '@/components/work-order-schedule/schedule-form';
-import { ScheduleDetails } from '@/components/work-order-schedule/schedule-details';
-import { CalendarLegend } from '@/components/calendar/calendar-legend';
-import { useDialogState } from '@/hooks/use-dialog-state';
-import { useCalendarRefetch } from '@/hooks/use-calendar-refetch';
-import {
-  RECURRENCE_TYPE_LEGEND,
-  WORK_ORDER_STATUS_LEGEND_DARK,
-} from '@/lib/calendar-constants';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useState, JSX } from "react"
+import { Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { OTCalendar, CalendarLegend, CalendarFiltersPanel } from "@/components/calendar/ot-calendar"
+import { ScheduleForm } from "@/components/work-order-schedule/schedule-form"
+import { ScheduleDetailSheet } from "@/components/work-order-schedule/schedule-detail-sheet"
+import { WorkOrderDetailSheet } from "@/components/work-orders/work-order-detail-sheet"
+import { useDialogState } from "@/hooks/use-dialog-state"
+import { useCalendarRefetch } from "@/hooks/use-calendar-refetch"
+import { useOTCalendarFilters } from "@/hooks/use-ot-calendar-filters"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface DateRange {
-  start: Date;
-  end: Date;
+  start: Date
+  end: Date
 }
 
 /**
- * Work Order Schedule Page
- * Manages recurring work order schedules and displays upcoming generated orders
- * Follows SOLID principles with separated concerns via custom hooks
+ * Work Order Schedule Page - UNIFIED CALENDAR
+ * Displays both recurring schedules and generated work orders in one view
+ *
+ * Features:
+ * - Unified calendar view with schedules and work orders
+ * - Advanced filtering by type, status, priority, assets, sites
+ * - Color-coded events
+ * - Drag-and-drop rescheduling
+ * - Create schedules by date selection
+ * - Quick schedule details view
+ *
+ * Architecture:
+ * - Uses new OTCalendar component
+ * - Follows SOLID principles
+ * - Proper TypeScript typing
+ * - Custom hooks for state management
  */
 export default function WorkOrderSchedulePage(): JSX.Element {
-  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null)
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
+  const [workOrderSheetOpen, setWorkOrderSheetOpen] = useState<boolean>(false)
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
+  const [scheduleSheetOpen, setScheduleSheetOpen] = useState<boolean>(false)
 
-  // Use custom hooks for cleaner state management
-  const detailDialog = useDialogState<string>();
-  const createDialog = useDialogState();
-  const { triggerRefetch, refetchKey } = useCalendarRefetch();
+  // Dialog state management
+  const createDialog = useDialogState()
+  const { triggerRefetch, refetchKey } = useCalendarRefetch()
+
+  // Filter management
+  const {
+    filters,
+    setEventTypes,
+    setStatuses,
+    setPriorities,
+    setShowCompleted,
+    resetFilters,
+    hasActiveFilters,
+  } = useOTCalendarFilters({
+    // Default filters - show all
+    eventTypes: [],
+    statuses: [],
+    priorities: [],
+    assignedUserIds: [],
+    assetIds: [],
+    siteIds: [],
+    showCompleted: true,
+  })
 
   /**
-   * Handle event click - show schedule details
-   * Opens detail dialog with selected schedule
+   * Handle schedule event click - open detail sheet
+   * Outlook-style: everything in one place
    */
-  const handleEventClick = (scheduleId: string): void => {
-    detailDialog.open(scheduleId);
-  };
+  const handleScheduleClick = (scheduleId: string): void => {
+    setSelectedScheduleId(scheduleId)
+    setScheduleSheetOpen(true)
+  }
+
+  /**
+   * Handle work order event click - open detail sheet
+   * Outlook-style: everything in one place
+   */
+  const handleWorkOrderClick = (workOrderId: string): void => {
+    setSelectedWorkOrderId(workOrderId)
+    setWorkOrderSheetOpen(true)
+  }
 
   /**
    * Handle date selection - create new schedule
    * Opens create dialog with selected date range
    */
   const handleDateSelect = (start: Date, end: Date): void => {
-    setSelectedDateRange({ start, end });
-    createDialog.open();
-  };
+    setSelectedDateRange({ start, end })
+    createDialog.open()
+  }
 
   /**
    * Handle schedule creation success
    * Triggers calendar refetch and closes dialog
    */
   const handleCreateSuccess = (): void => {
-    createDialog.close();
-    setSelectedDateRange(null);
-    triggerRefetch();
-  };
+    createDialog.close()
+    setSelectedDateRange(null)
+    triggerRefetch()
+  }
 
-  /**
-   * Handle schedule deletion
-   * Triggers calendar refetch and closes dialog
-   */
-  const handleDeleteSuccess = (): void => {
-    detailDialog.close();
-    triggerRefetch();
-  };
 
   /**
    * Handle create dialog from button
    * Opens create dialog without date pre-selection
    */
   const handleCreateFromButton = (): void => {
-    setSelectedDateRange(null);
-    createDialog.open();
-  };
+    setSelectedDateRange(null)
+    createDialog.open()
+  }
 
   return (
-    <div className="space-y-3">
-      {/* Header - Ultra compact */}
+    <div className="flex flex-col h-[calc(100vh-4rem)] gap-3">
+      {/* Header - Compact */}
       <div className="flex items-start sm:items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-semibold tracking-tight truncate">
-            Programación de Mantenimiento
+            Calendario de Órdenes de Trabajo
           </h2>
           <p className="text-xs text-muted-foreground hidden md:block mt-0.5">
-            Calendario de órdenes de trabajo recurrentes y mantenimiento preventivo
+            Vista unificada de programaciones y órdenes de trabajo
           </p>
         </div>
-        <Button onClick={handleCreateFromButton} size="sm" className="shrink-0 h-8">
-          <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-          <span className="hidden sm:inline text-xs">Nueva Programación</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Filter Button - Now compact with Popover */}
+          <CalendarFiltersPanel
+            selectedEventTypes={filters.eventTypes}
+            onEventTypesChange={setEventTypes}
+            selectedStatuses={filters.statuses}
+            onStatusesChange={setStatuses}
+            selectedPriorities={filters.priorities}
+            onPrioritiesChange={setPriorities}
+            showCompleted={filters.showCompleted}
+            onShowCompletedChange={setShowCompleted}
+            onResetFilters={resetFilters}
+            hasActiveFilters={hasActiveFilters}
+          />
+
+          {/* Create Button */}
+          <Button onClick={handleCreateFromButton} size="sm" className="shrink-0 h-8">
+            <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline text-xs">Nueva Programación</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Legend - Ultra compact */}
-      <div className="space-y-1.5">
-        <CalendarLegend
-          title="📅 Programaciones:"
-          items={RECURRENCE_TYPE_LEGEND}
-        />
-        <CalendarLegend
-          title="🔧 Órdenes generadas:"
-          items={WORK_ORDER_STATUS_LEGEND_DARK}
+      {/* Legend Row - Horizontal compact */}
+      <div className="flex items-center justify-between gap-4 px-2 py-2 bg-muted/30 rounded-lg border">
+        <CalendarLegend />
+      </div>
+
+      {/* Calendar - Full Width */}
+      <div className="flex-1 min-h-0">
+        <OTCalendar
+          onScheduleClick={handleScheduleClick}
+          onWorkOrderClick={handleWorkOrderClick}
+          onDateSelect={handleDateSelect}
+          refetchKey={refetchKey}
+          filters={filters}
+          editable={true}
+          selectable={true}
+          showDeleteButton={true}
         />
       </div>
 
-      {/* Calendar */}
-      <WorkOrderCalendar
-        onEventClick={handleEventClick}
-        onDateSelect={handleDateSelect}
-        refetchKey={refetchKey}
+      {/* Work Order Detail Sheet - Outlook Style */}
+      <WorkOrderDetailSheet
+        workOrderId={selectedWorkOrderId}
+        open={workOrderSheetOpen}
+        onOpenChange={setWorkOrderSheetOpen}
+        onSuccess={triggerRefetch}
       />
 
-      {/* Schedule Detail Dialog */}
-      <Dialog open={detailDialog.isOpen} onOpenChange={detailDialog.close}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalles de Programación</DialogTitle>
-            <DialogDescription>
-              Información y configuración de la programación de mantenimiento
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {detailDialog.data && (
-              <ScheduleDetails
-                scheduleId={detailDialog.data}
-                onDelete={handleDeleteSuccess}
-                onClose={detailDialog.close}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Schedule Detail Sheet - Outlook Style */}
+      <ScheduleDetailSheet
+        scheduleId={selectedScheduleId}
+        open={scheduleSheetOpen}
+        onOpenChange={setScheduleSheetOpen}
+        onSuccess={triggerRefetch}
+      />
 
       {/* Create Schedule Dialog */}
       <Dialog open={createDialog.isOpen} onOpenChange={createDialog.close}>
@@ -159,5 +200,5 @@ export default function WorkOrderSchedulePage(): JSX.Element {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
