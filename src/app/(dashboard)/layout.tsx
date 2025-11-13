@@ -11,6 +11,7 @@ import { PWABrandingUpdater } from '@/components/pwa-branding-updater';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserWithRole } from '@/lib/auth-utils';
+import { FeatureService } from '@/server/services/feature.service';
 import type { CompanyBranding } from '@/types/branding';
 import type { ReactNode } from 'react';
 
@@ -166,20 +167,11 @@ async function getServerSideData(): Promise<ServerSideData> {
       }
     }
 
-    // Fetch company features for the user's company
+    // Fetch company features for the user's company using FeatureService
     let companyFeatures = null;
     const companyId = user.companyId || user.company?.id;
     if (companyId) {
-      companyFeatures = await prisma.companyFeature.findMany({
-        where: {
-          companyId: companyId,
-          isEnabled: true,
-        },
-        select: {
-          module: true,
-          isEnabled: true,
-        },
-      });
+      companyFeatures = await FeatureService.getCompanyFeaturesForLayout(companyId);
     }
 
     return {

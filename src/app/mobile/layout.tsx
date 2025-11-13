@@ -7,6 +7,8 @@ import { MobileNavigation } from "@/components/mobile/mobile-nav-server"
 import { MobileHeader } from "@/components/mobile/mobile-header"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
+import { parseCompanyFeatures } from "@/lib/features"
+import { FeatureService } from "@/server/services/feature.service"
 import type { CompanyBranding } from "@/types/branding"
 
 export const dynamic = 'force-dynamic'
@@ -51,10 +53,10 @@ export default async function FieldLayout({
 }) {
   // Obtener branding de la empresa
   const companyBranding = await getCompanyBranding()
-  
+
   // Verificar autenticación y roles permitidos para field
   const user = await getCurrentUserWithRole()
-  
+
   if (!user || !user.role) {
     redirect('/auth/signin')
   }
@@ -68,6 +70,7 @@ export default async function FieldLayout({
     'TECNICO',
     'SUPERVISOR',
     'ADMIN_EMPRESA',
+    'JEFE_MANTENIMIENTO',
     'SUPER_ADMIN'
   ]
 
@@ -79,6 +82,17 @@ export default async function FieldLayout({
   if (externalUserRoles.includes(user.role)) {
     if (!user.siteId) {
       redirect('/dashboard?error=no-site-assigned')
+    }
+  }
+
+  // Get company features for navigation using FeatureService
+  let companyFeatures = parseCompanyFeatures([])
+  if (user.companyId) {
+    try {
+      const features = await FeatureService.getCompanyFeaturesForLayout(user.companyId)
+      companyFeatures = parseCompanyFeatures(features)
+    } catch (error) {
+      console.error('Error fetching company features:', error)
     }
   }
 
@@ -95,7 +109,7 @@ export default async function FieldLayout({
       {/* Navigation bottom bar sticky para móvil */}
       <MobileFooter>
         <MobileFooterContent>
-          <MobileNavigation userRole={user.role} />
+          <MobileNavigation userRole={user.role} features={companyFeatures} />
         </MobileFooterContent>
       </MobileFooter>
 

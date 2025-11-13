@@ -92,6 +92,14 @@ export class FeatureService {
     return featuresMap
   }
 
+  /**
+   * Get company features for layout/public use (no session required)
+   * Used by Server Components like layouts that need features without auth context
+   */
+  static async getCompanyFeaturesForLayout(companyId: string) {
+    return await FeatureRepository.findAllByCompany(companyId)
+  }
+
   static async isModuleEnabled(companyId: string, module: FeatureModule): Promise<boolean> {
     return await FeatureRepository.isModuleEnabled(companyId, module)
   }
