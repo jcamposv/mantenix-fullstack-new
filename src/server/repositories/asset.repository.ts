@@ -21,12 +21,12 @@ export class AssetRepository {
             }
           }
         }
+      },
+      _count: {
+        select: {
+          workOrders: true
+        }
       }
-      // _count: {
-      //   select: {
-      //     workOrders: true // For future implementation
-      //   }
-      // }
     }
   }
 

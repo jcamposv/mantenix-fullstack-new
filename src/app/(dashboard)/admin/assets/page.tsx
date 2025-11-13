@@ -3,15 +3,19 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { Package, MapPin, Building2, Calendar } from "lucide-react"
+import { Package, MapPin, Building2, Calendar, RefreshCw, History, List } from "lucide-react"
 import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { SignedImage } from "@/components/signed-image"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { AssetStatusBadge } from "@/components/common/asset-status-badge"
+import { ChangeAssetStatusDialog } from "@/components/common/change-asset-status-dialog"
+import { AssetStatusHistoryDialog } from "@/components/common/asset-status-history-dialog"
+import type { ChangeAssetStatusData } from "@/schemas/asset-status"
+import { useSession } from "@/lib/auth-client"
 
 interface Asset {
   id: string
@@ -44,36 +48,12 @@ interface AssetsResponse {
   items?: Asset[]
 }
 
-const getEstadoBadgeVariant = (estado: string) => {
-  switch (estado) {
-    case "OPERATIVO":
-      return "default"
-    case "EN_MANTENIMIENTO":
-      return "secondary"
-    case "FUERA_DE_SERVICIO":
-      return "destructive"
-    default:
-      return "outline"
-  }
-}
-
-const getEstadoLabel = (estado: string) => {
-  switch (estado) {
-    case "OPERATIVO":
-      return "Operativo"
-    case "EN_MANTENIMIENTO":
-      return "En Mantenimiento"
-    case "FUERA_DE_SERVICIO":
-      return "Fuera de Servicio"
-    default:
-      return estado
-  }
-}
-
 export default function AssetsPage() {
   const [filteredSite, setFilteredSite] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
+
   const { data: allAssets, loading, refetch } = useTableData<Asset>({
     endpoint: '/api/admin/assets',
     transform: (data) => (data as AssetsResponse).assets || (data as AssetsResponse).items || (data as Asset[]) || []
@@ -82,6 +62,27 @@ export default function AssetsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Change status dialog state
+  const [changeStatusDialogOpen, setChangeStatusDialogOpen] = useState(false)
+  const [assetToChangeStatus, setAssetToChangeStatus] = useState<Asset | null>(null)
+  const [isChangingStatus, setIsChangingStatus] = useState(false)
+
+  // History dialog state
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false)
+  const [assetForHistory, setAssetForHistory] = useState<Asset | null>(null)
+
+  // Check if user can change status
+  const userRole = (session?.user as { role?: string })?.role
+  const canChangeStatus = Boolean(userRole && [
+    "OPERARIO",
+    "TECNICO",
+    "SUPERVISOR",
+    "JEFE_MANTENIMIENTO",
+    "ADMIN_EMPRESA",
+    "ADMIN_GRUPO",
+    "SUPER_ADMIN"
+  ].includes(userRole))
 
   useEffect(() => {
     const siteId = searchParams.get('siteId')
@@ -130,6 +131,50 @@ export default function AssetsPage() {
       toast.error('Error al desactivar el activo')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleViewHistory = (asset: Asset) => {
+    setAssetForHistory(asset)
+    setHistoryDialogOpen(true)
+  }
+
+  const handleViewFullHistory = (assetId: string) => {
+    router.push(`/admin/assets/${assetId}/status-history`)
+  }
+
+  const handleChangeStatus = (asset: Asset) => {
+    setAssetToChangeStatus(asset)
+    setChangeStatusDialogOpen(true)
+  }
+
+  const confirmChangeStatus = async (data: ChangeAssetStatusData) => {
+    if (!assetToChangeStatus) return
+
+    try {
+      setIsChangingStatus(true)
+      const response = await fetch('/api/assets/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+
+      if (response.ok) {
+        toast.success('Estado del activo actualizado exitosamente')
+        setChangeStatusDialogOpen(false)
+        setAssetToChangeStatus(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al cambiar el estado del activo')
+      }
+    } catch (error) {
+      console.error('Error changing asset status:', error)
+      toast.error('Error al cambiar el estado del activo')
+    } finally {
+      setIsChangingStatus(false)
     }
   }
 
@@ -207,11 +252,7 @@ export default function AssetsPage() {
       header: "Estado",
       cell: ({ row }) => {
         const status = row.getValue("status") as string
-        return (
-          <Badge variant={getEstadoBadgeVariant(status)}>
-            {getEstadoLabel(status)}
-          </Badge>
-        )
+        return <AssetStatusBadge status={status} />
       },
     },
     {
@@ -256,10 +297,25 @@ export default function AssetsPage() {
       cell: ({ row }) => {
         const asset = row.original
         const actions = [
+          {
+            label: "Ver Historial Rápido",
+            icon: History,
+            onClick: () => handleViewHistory(asset),
+          },
+          {
+            label: "Historial Completo",
+            icon: List,
+            onClick: () => handleViewFullHistory(asset.id),
+          },
+          ...(canChangeStatus ? [{
+            label: "Cambiar Estado",
+            icon: RefreshCw,
+            onClick: () => handleChangeStatus(asset),
+          }] : []),
           createEditAction(() => handleEdit(asset.id)),
           createDeleteAction(() => handleDelete(asset))
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
@@ -315,6 +371,27 @@ export default function AssetsPage() {
         variant="destructive"
         loading={isDeleting}
       />
+
+      {assetToChangeStatus && (
+        <ChangeAssetStatusDialog
+          open={changeStatusDialogOpen}
+          onOpenChange={setChangeStatusDialogOpen}
+          onSubmit={confirmChangeStatus}
+          assetId={assetToChangeStatus.id}
+          assetName={assetToChangeStatus.name}
+          currentStatus={assetToChangeStatus.status}
+          isLoading={isChangingStatus}
+        />
+      )}
+
+      {assetForHistory && (
+        <AssetStatusHistoryDialog
+          open={historyDialogOpen}
+          onOpenChange={setHistoryDialogOpen}
+          assetId={assetForHistory.id}
+          assetName={assetForHistory.name}
+        />
+      )}
     </div>
   )
 }

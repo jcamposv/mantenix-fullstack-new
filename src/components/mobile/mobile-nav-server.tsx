@@ -1,11 +1,16 @@
 import { MobileNavLink } from "./mobile-nav-link"
 import type { Role } from "@prisma/client"
+import type { FeatureFlags } from "@/lib/features"
 
 interface MobileNavigationProps {
   userRole: Role
+  features?: FeatureFlags
 }
 
-export function MobileNavigation({ userRole }: MobileNavigationProps) {
+export function MobileNavigation({ userRole, features }: MobileNavigationProps) {
+  // OPERARIO INTERNO: Máquinas, Órdenes, Perfil
+  const isInternalOperator = userRole === 'OPERARIO'
+
   // USUARIOS EXTERNOS (clientes): Alertas, Crear Alerta, Perfil
   const isExternalUser = ['CLIENTE_ADMIN_GENERAL', 'CLIENTE_ADMIN_SEDE', 'CLIENTE_OPERARIO'].includes(userRole)
 
@@ -15,12 +20,65 @@ export function MobileNavigation({ userRole }: MobileNavigationProps) {
   // ADMIN EMPRESA: Órdenes, Asistencia, Alertas, Perfil
   const isCompanyAdmin = userRole === 'ADMIN_EMPRESA'
 
-  // USUARIOS EXTERNOS: Alertas, Crear Alerta, Perfil
-  if (isExternalUser) {
+  // OPERARIO INTERNO: Máquinas, Crear OT, Perfil
+  if (isInternalOperator) {
     return (
       <div className="grid grid-cols-3 gap-2 w-full">
         <MobileNavLink
-          href="/mobile"
+          href="/mobile/assets"
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+            </svg>
+          }
+          label="Máquinas"
+        />
+        <MobileNavLink
+          href="/mobile/create-work-order"
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          label="Crear OT"
+        />
+        <MobileNavLink
+          href="/mobile/profile"
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          }
+          label="Perfil"
+        />
+      </div>
+    )
+  }
+
+  // USUARIOS EXTERNOS: Solo si tienen EXTERNAL_CLIENT_MANAGEMENT habilitado
+  if (isExternalUser) {
+    // Si no tienen el feature habilitado, solo mostrar perfil
+    if (!features?.hasExternalClientMgmt) {
+      return (
+        <div className="grid grid-cols-1 gap-2 w-full">
+          <MobileNavLink
+            href="/mobile/profile"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            }
+            label="Perfil"
+          />
+        </div>
+      )
+    }
+
+    // Con feature habilitado: Alertas, Crear Alerta, Perfil
+    return (
+      <div className="grid grid-cols-3 gap-2 w-full">
+        <MobileNavLink
+          href="/mobile/alerts"
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -85,10 +143,10 @@ export function MobileNavigation({ userRole }: MobileNavigationProps) {
     )
   }
 
-  // ADMIN_EMPRESA: Órdenes, Asistencia, Alertas, Perfil (4 botones)
+  // ADMIN_EMPRESA: Órdenes, Asistencia, Perfil (no ve alertas - eso es para clientes externos)
   if (isCompanyAdmin) {
     return (
-      <div className="grid grid-cols-4 gap-2 w-full">
+      <div className="grid grid-cols-3 gap-2 w-full">
         <MobileNavLink
           href="/mobile/work-orders"
           icon={
@@ -106,15 +164,6 @@ export function MobileNavigation({ userRole }: MobileNavigationProps) {
             </svg>
           }
           label="Asistencia"
-        />
-        <MobileNavLink
-          href="/mobile"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-          }
-          label="Alertas"
         />
         <MobileNavLink
           href="/mobile/profile"

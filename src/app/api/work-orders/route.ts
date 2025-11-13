@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const session = sessionResult
 
     const body = await request.json()
-    
+
     // Validate request data
     const validationResult = createWorkOrderSchema.safeParse(body)
     if (!validationResult.success) {
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
 
     const workOrderData: CreateWorkOrderData = {
       ...validationResult.data,
-      scheduledDate: validationResult.data.scheduledDate 
-        ? new Date(validationResult.data.scheduledDate) 
+      scheduledDate: validationResult.data.scheduledDate
+        ? new Date(validationResult.data.scheduledDate)
         : undefined,
       ...(validationResult.data.siteId && { siteId: validationResult.data.siteId })
     } as CreateWorkOrderData

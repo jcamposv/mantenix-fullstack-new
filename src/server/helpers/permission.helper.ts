@@ -13,6 +13,7 @@ export class PermissionHelper {
     JEFE_MANTENIMIENTO: 'JEFE_MANTENIMIENTO',
     ENCARGADO_BODEGA: 'ENCARGADO_BODEGA',
     TECNICO: 'TECNICO',
+    OPERARIO: 'OPERARIO',
     SUPERVISOR: 'SUPERVISOR',
     CLIENTE_ADMIN_GENERAL: 'CLIENTE_ADMIN_GENERAL',
     CLIENTE_ADMIN_SEDE: 'CLIENTE_ADMIN_SEDE',
@@ -94,7 +95,10 @@ export class PermissionHelper {
     DELIVER_FROM_WAREHOUSE: 'deliver_from_warehouse',
     CONFIRM_RECEIPT: 'confirm_receipt',
     DELETE_INVENTORY_REQUEST: 'delete_inventory_request',
-    VIEW_INVENTORY_MOVEMENTS: 'view_inventory_movements'
+    VIEW_INVENTORY_MOVEMENTS: 'view_inventory_movements',
+    // Asset Status permissions
+    CHANGE_ASSET_STATUS: 'change_asset_status',
+    VIEW_ASSET_STATUS_HISTORY: 'view_asset_status_history'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -164,7 +168,10 @@ export class PermissionHelper {
       this.PERMISSIONS.DELIVER_FROM_WAREHOUSE,
       this.PERMISSIONS.CONFIRM_RECEIPT,
       this.PERMISSIONS.DELETE_INVENTORY_REQUEST,
-      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS
+      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.ADMIN_GRUPO]: [
       // ADMIN_GRUPO tiene los mismos permisos que ADMIN_EMPRESA
@@ -229,7 +236,10 @@ export class PermissionHelper {
       this.PERMISSIONS.DELIVER_FROM_WAREHOUSE,
       this.PERMISSIONS.CONFIRM_RECEIPT,
       this.PERMISSIONS.DELETE_INVENTORY_REQUEST,
-      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS
+      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -287,7 +297,10 @@ export class PermissionHelper {
       this.PERMISSIONS.DELIVER_FROM_WAREHOUSE,
       this.PERMISSIONS.CONFIRM_RECEIPT,
       this.PERMISSIONS.DELETE_INVENTORY_REQUEST,
-      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS
+      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.JEFE_MANTENIMIENTO]: [
       // Work Order Management
@@ -309,7 +322,10 @@ export class PermissionHelper {
       this.PERMISSIONS.REJECT_INVENTORY_REQUEST,
       // View inventory to know what's available
       this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
-      this.PERMISSIONS.VIEW_INVENTORY_STOCK
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.ENCARGADO_BODEGA]: [
       // Inventory/Warehouse Management ONLY
@@ -338,7 +354,10 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.CLIENTE_ADMIN_SEDE]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -349,13 +368,19 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.CLIENTE_OPERARIO]: [
       this.PERMISSIONS.CREATE_ALERT,
       this.PERMISSIONS.VIEW_SITE_ALERTS,
       this.PERMISSIONS.CREATE_COMMENT,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.TECNICO]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -371,7 +396,10 @@ export class PermissionHelper {
       this.PERMISSIONS.CONFIRM_RECEIPT,
       // View inventory to know what's available
       this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
-      this.PERMISSIONS.VIEW_INVENTORY_STOCK
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.SUPERVISOR]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -390,7 +418,19 @@ export class PermissionHelper {
       this.PERMISSIONS.CONFIRM_RECEIPT,
       // View inventory
       this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
-      this.PERMISSIONS.VIEW_INVENTORY_STOCK
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
+    ],
+    [this.ROLES.OPERARIO]: [
+      // Plant operators who can update asset/machine status
+      this.PERMISSIONS.VIEW_ASSETS,
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      this.PERMISSIONS.CREATE_ALERT,
+      this.PERMISSIONS.VIEW_COMPANY_ALERTS,
+      this.PERMISSIONS.CREATE_COMMENT
     ]
   }
 

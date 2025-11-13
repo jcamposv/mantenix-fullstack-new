@@ -9,7 +9,6 @@
  */
 
 import { Role } from '@prisma/client';
-import type { PermissionHelper } from '@/server/helpers/permission.helper';
 
 export type BadgeVariant = 'default' | 'destructive' | 'secondary' | 'outline';
 
@@ -114,6 +113,18 @@ export const ROLE_DEFINITIONS: Record<Role, RoleDefinition> = {
     webAccessRestricted: true
   },
 
+  OPERARIO: {
+    value: 'OPERARIO',
+    label: 'Plant Operator',
+    description: 'Update asset/machine status',
+    badgeVariant: 'outline',
+    permissions: [],
+    needsCompany: true,
+    canBeCreatedBy: ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA'],
+    mobileOnly: true,
+    webAccessRestricted: true
+  },
+
   CLIENTE_ADMIN_GENERAL: {
     value: 'CLIENTE_ADMIN_GENERAL',
     label: 'Client General Admin',
@@ -208,3 +219,32 @@ export function getRoleBadgeVariant(role: Role): BadgeVariant {
 export function getRoleDefinition(role: Role): RoleDefinition | undefined {
   return ROLE_DEFINITIONS[role];
 }
+
+/**
+ * Utility: Get internal roles (company staff)
+ */
+export const INTERNAL_ROLE_VALUES: Role[] = [
+  'ADMIN_EMPRESA',
+  'JEFE_MANTENIMIENTO',
+  'ENCARGADO_BODEGA',
+  'SUPERVISOR',
+  'TECNICO',
+  'OPERARIO'
+] as const;
+
+/**
+ * Utility: Get external roles (client users)
+ */
+export const EXTERNAL_ROLE_VALUES: Role[] = [
+  'CLIENTE_ADMIN_GENERAL',
+  'CLIENTE_ADMIN_SEDE',
+  'CLIENTE_OPERARIO'
+] as const;
+
+/**
+ * Utility: Get all creatable roles (excludes SUPER_ADMIN and ADMIN_GRUPO)
+ */
+export const CREATABLE_ROLE_VALUES: Role[] = [
+  ...INTERNAL_ROLE_VALUES,
+  ...EXTERNAL_ROLE_VALUES
+] as const;
