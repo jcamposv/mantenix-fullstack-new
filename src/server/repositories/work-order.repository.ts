@@ -232,7 +232,8 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
           }
         },
         template: {
@@ -331,7 +332,8 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
           }
         },
         template: {
@@ -429,7 +431,8 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
           }
         },
         template: {

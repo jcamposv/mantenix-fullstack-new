@@ -61,8 +61,9 @@ export default async function FieldLayout({
 
   // Solo ciertos roles pueden acceder a la interfaz field (mobile)
   const allowedRoles = [
+    'OPERARIO', // Operario interno de planta
     'CLIENTE_OPERARIO',
-    'CLIENTE_ADMIN_SEDE', 
+    'CLIENTE_ADMIN_SEDE',
     'CLIENTE_ADMIN_GENERAL',
     'TECNICO',
     'SUPERVISOR',

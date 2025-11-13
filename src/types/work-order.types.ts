@@ -89,6 +89,7 @@ export interface WorkOrderWithRelations extends WorkOrder {
     manufacturer: string | null
     model: string | null
     location: string | null
+    status: string
   } | null
   template?: {
     id: string

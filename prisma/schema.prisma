@@ -22,6 +22,7 @@ enum Role {
   ENCARGADO_BODEGA // Encargado de bodega (entrega repuestos)
   SUPERVISOR
   TECNICO
+  OPERARIO // Operario de planta que puede actualizar estado de activos/máquinas
   CLIENTE_ADMIN_GENERAL // Admin general que puede ver todas las sedes del cliente y generar alertas
   CLIENTE_ADMIN_SEDE // Admin de sede específica que puede ver progreso de órdenes de su sede
   CLIENTE_OPERARIO // Operario que puede reportar errores/incidencias
@@ -242,6 +243,9 @@ model User {
   // Time tracking relations
   workOrderTimeLogs WorkOrderTimeLog[] @relation("WorkOrderTimeLogs")
 
+  // Asset status history relations
+  assetStatusChanges AssetStatusHistory[] @relation("AssetStatusChanges")
+
   @@map("user")
 }
 
@@ -339,6 +343,7 @@ model Company {
   inventoryRequestsAsSource WorkOrderInventoryRequest[] @relation("InventoryRequestSourceCompany")
   inventoryMovementsFrom InventoryMovement[] @relation("InventoryMovementFromCompany")
   inventoryMovementsTo InventoryMovement[] @relation("InventoryMovementToCompany")
+  productionLines ProductionLine[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -416,6 +421,9 @@ model Site {
   workOrders WorkOrder[]
   schedules  WorkOrderSchedule[]
 
+  // Production lines in this site
+  productionLines ProductionLine[]
+
   @@index([clientCompanyId])
   @@index([isActive])
   @@map("sites")
@@ -458,12 +466,20 @@ model Asset {
   workOrders WorkOrder[]
   schedules  WorkOrderSchedule[]
 
+  // Status history tracking
+  statusHistory        AssetStatusHistory[]
+
+  // Production line relationships
+  productionLineAssets ProductionLineAsset[]
+  isStandalone         Boolean              @default(true) // true = no está en línea de producción
+
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
   @@index([status])
   @@index([category])
   // @@index([responsibleId])   // Commented - Moved to WorkOrder
   @@index([isActive])
+  @@index([isStandalone])
   // @@index([nextMaintenance]) // Commented - Moved to WorkOrder
   @@map("assets")
 }
@@ -918,6 +934,9 @@ model WorkOrder {
 
   // Time tracking logs
   timeLogs WorkOrderTimeLog[]
+
+  // Asset status history relations
+  assetStatusHistory AssetStatusHistory[]
 
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
@@ -1799,4 +1818,97 @@ model WorkOrderTimeLog {
   @@index([userId])
   @@index([action])
   @@map("work_order_time_logs")
+}
+
+// ============================================================================
+// ASSET STATUS HISTORY & PRODUCTION LINES
+// ============================================================================
+
+model AssetStatusHistory {
+  id          String      @id @default(cuid())
+  assetId     String
+  status      AssetStatus // OPERATIVO, EN_MANTENIMIENTO, FUERA_DE_SERVICIO
+  startedAt   DateTime    @default(now())
+  endedAt     DateTime? // Null = estado actual
+  reason      String? // Motivo del cambio
+  notes       String? // Notas adicionales
+  changedBy   String // Usuario que hizo el cambio
+  workOrderId String? // WorkOrder asociada (si aplica)
+
+  // Relations
+  asset     Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user      User       @relation("AssetStatusChanges", fields: [changedBy], references: [id], onDelete: Restrict)
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId, startedAt])
+  @@index([changedBy])
+  @@index([workOrderId])
+  @@index([status])
+  @@map("asset_status_history")
+}
+
+model ProductionLine {
+  id          String  @id @default(cuid())
+  name        String // "Línea de Embotellado A"
+  code        String // "LINE-A-01"
+  description String?
+  siteId      String
+  companyId   String
+
+  // Production specifications
+  targetThroughput Int? // Unidades por hora objetivo
+  taktTime         Float? // Segundos por unidad
+
+  // Visual configuration for React Flow
+  flowConfiguration Json? // Configuración de React Flow (nodes, edges, positions)
+
+  // Status control
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  site    Site                  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  company Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets  ProductionLineAsset[] // Assets en esta línea
+
+  @@unique([code, companyId])
+  @@index([siteId])
+  @@index([companyId])
+  @@index([isActive])
+  @@map("production_lines")
+}
+
+model ProductionLineAsset {
+  id               String @id @default(cuid())
+  productionLineId String
+  assetId          String
+
+  // Position in production line
+  sequence Int // Orden en la línea (1, 2, 3...)
+  position Json? // {x, y} para React Flow
+
+  // Production specifications per asset
+  cycleTime Float? // Segundos por ciclo
+  capacity  Int? // Unidades por hora
+
+  // Visual configuration
+  nodeType String @default("machine") // machine, buffer, quality-check, conveyor
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productionLine ProductionLine @relation(fields: [productionLineId], references: [id], onDelete: Cascade)
+  asset          Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([productionLineId, assetId])
+  @@index([productionLineId])
+  @@index([assetId])
+  @@index([sequence])
+  @@map("production_line_assets")
 }

@@ -5,7 +5,7 @@ export const createAssetSchema = z.object({
   code: z.string().min(1, "El código del activo es requerido").max(100),
   description: z.string().optional(),
   location: z.string().min(1, "La ubicación es requerida").max(255),
-  siteId: z.string().min(1, "La sede es requerida").optional(),
+  siteId: z.string().optional(), // Can be optional - will auto-assign internal site if not provided
   images: z.array(z.string()).optional().default([]),
   status: z.enum(["OPERATIVO", "EN_MANTENIMIENTO", "FUERA_DE_SERVICIO"]).optional().default("OPERATIVO"),
   manufacturer: z.string().optional().nullable(),

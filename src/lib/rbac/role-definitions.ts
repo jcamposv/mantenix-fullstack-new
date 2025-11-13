@@ -9,7 +9,6 @@
  */
 
 import { Role } from '@prisma/client';
-import type { PermissionHelper } from '@/server/helpers/permission.helper';
 
 export type BadgeVariant = 'default' | 'destructive' | 'secondary' | 'outline';
 
@@ -106,6 +105,18 @@ export const ROLE_DEFINITIONS: Record<Role, RoleDefinition> = {
     value: 'TECNICO',
     label: 'Technician',
     description: 'Field work and maintenance',
+    badgeVariant: 'outline',
+    permissions: [],
+    needsCompany: true,
+    canBeCreatedBy: ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA'],
+    mobileOnly: true,
+    webAccessRestricted: true
+  },
+
+  OPERARIO: {
+    value: 'OPERARIO',
+    label: 'Plant Operator',
+    description: 'Update asset/machine status',
     badgeVariant: 'outline',
     permissions: [],
     needsCompany: true,

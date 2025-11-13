@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client'
 import { WorkOrderRepository } from '@/server/repositories/work-order.repository'
 import { WorkOrderTemplateRepository } from '@/server/repositories/work-order-template.repository'
 import { EmailSenderService } from './email-sender.service'
+import { AssetStatusService } from './asset-status.service'
 import { prisma } from '@/lib/prisma'
 import { getCurrentCompanyId } from '@/lib/company-context'
 import type {
@@ -162,6 +163,9 @@ export class WorkOrderService {
     // Create work order
     const workOrder = await WorkOrderRepository.create(createData)
 
+    // Note: Asset status must be changed MANUALLY by technician/operator
+    // Users can change status from the work order view or assets page
+
     // Create assignments
     if (workOrderData.assignedUserIds && workOrderData.assignedUserIds.length > 0) {
       await WorkOrderRepository.createAssignments(
@@ -294,6 +298,8 @@ export class WorkOrderService {
         updatePrismaData.startedAt = new Date()
       } else if (updateData.status === "COMPLETED" && !existingWorkOrder.completedAt) {
         updatePrismaData.completedAt = new Date()
+        // Note: Asset status must be changed MANUALLY by technician/operator
+        // Users can change status from the work order view or assets page
       }
     }
 
@@ -396,6 +402,9 @@ export class WorkOrderService {
     if (!canCancel) {
       throw new Error("No tienes permisos para cancelar esta orden de trabajo")
     }
+
+    // Note: Asset status must be changed MANUALLY by technician/operator
+    // Users can change status from the work order view or assets page
 
     // Update status to cancelled
     const updateData: UpdateWorkOrderData = {
