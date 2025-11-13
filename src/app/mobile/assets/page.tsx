@@ -35,7 +35,7 @@ interface Asset {
       name: string
     }
   }
-  _count: {
+  _count?: {
     workOrders: number
   }
 }
@@ -260,7 +260,7 @@ export default function MobileAssetsPage() {
                     </div>
 
                     {/* Órdenes de trabajo relacionadas */}
-                    {asset._count.workOrders > 0 && (
+                    {asset._count?.workOrders && asset._count.workOrders > 0 && (
                       <div className="mt-2 pt-2 border-t">
                         <Badge variant="outline" className="text-xs">
                           {asset._count.workOrders} {asset._count.workOrders === 1 ? 'OT' : 'OTs'}

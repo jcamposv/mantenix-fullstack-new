@@ -219,3 +219,32 @@ export function getRoleBadgeVariant(role: Role): BadgeVariant {
 export function getRoleDefinition(role: Role): RoleDefinition | undefined {
   return ROLE_DEFINITIONS[role];
 }
+
+/**
+ * Utility: Get internal roles (company staff)
+ */
+export const INTERNAL_ROLE_VALUES: Role[] = [
+  'ADMIN_EMPRESA',
+  'JEFE_MANTENIMIENTO',
+  'ENCARGADO_BODEGA',
+  'SUPERVISOR',
+  'TECNICO',
+  'OPERARIO'
+] as const;
+
+/**
+ * Utility: Get external roles (client users)
+ */
+export const EXTERNAL_ROLE_VALUES: Role[] = [
+  'CLIENTE_ADMIN_GENERAL',
+  'CLIENTE_ADMIN_SEDE',
+  'CLIENTE_OPERARIO'
+] as const;
+
+/**
+ * Utility: Get all creatable roles (excludes SUPER_ADMIN and ADMIN_GRUPO)
+ */
+export const CREATABLE_ROLE_VALUES: Role[] = [
+  ...INTERNAL_ROLE_VALUES,
+  ...EXTERNAL_ROLE_VALUES
+] as const;

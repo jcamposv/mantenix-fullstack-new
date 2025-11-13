@@ -26,7 +26,15 @@ export class AssetService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los activos
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    } else if (
+      session.user.role === "ADMIN_EMPRESA" ||
+      session.user.role === "ADMIN_GRUPO" ||
+      session.user.role === "JEFE_MANTENIMIENTO" ||
+      session.user.role === "ENCARGADO_BODEGA" ||
+      session.user.role === "SUPERVISOR" ||
+      session.user.role === "TECNICO" ||
+      session.user.role === "OPERARIO"
+    ) {
       // Get company ID based on current subdomain (for ADMIN_GRUPO)
       const companyId = await getCurrentCompanyId(session)
 
@@ -34,7 +42,7 @@ export class AssetService {
         throw new Error("No se pudo determinar la empresa")
       }
 
-      // Admin empresa/grupo puede ver todos los activos (internos y externos) de su empresa
+      // Personal interno de la empresa puede ver todos los activos (internos y externos) de su empresa
       whereClause.site = {
         clientCompany: {
           tenantCompanyId: companyId
@@ -48,11 +56,11 @@ export class AssetService {
       whereClause.site = {
         clientCompanyId: session.user.clientCompanyId
       }
-    } else if (session.user.role === "CLIENTE_ADMIN_SEDE") {
+    } else if (session.user.role === "CLIENTE_ADMIN_SEDE" || session.user.role === "CLIENTE_OPERARIO") {
       if (!session.user.siteId) {
         throw new Error("Usuario sin sede asociada")
       }
-      // Site admin can only view assets from their own site
+      // Site admin y operario cliente solo pueden ver activos de su sede
       whereClause.siteId = session.user.siteId
     } else {
       throw new Error("Rol no autorizado para gestionar activos")

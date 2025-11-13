@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -46,7 +46,7 @@ const TYPE_OPTIONS = [
   { value: "REPARACION", label: "Reparación", description: "Reparación general" },
 ]
 
-export default function MobileCreateWorkOrderPage() {
+function MobileCreateWorkOrderPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedAssetId = searchParams.get('assetId')
@@ -107,8 +107,8 @@ export default function MobileCreateWorkOrderPage() {
         },
         body: JSON.stringify({
           ...data,
-          status: 'DRAFT', // Crear como borrador para que lo asignen después
-          assignedUserIds: [], // No se asigna desde mobile
+          // Backend auto-asignará a JEFE_MANTENIMIENTO
+          // No enviamos assignedUserIds para activar la lógica automática
         }),
       })
 
@@ -155,7 +155,7 @@ export default function MobileCreateWorkOrderPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Título */}
-          <Card>
+          <Card className="shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Información Básica</CardTitle>
             </CardHeader>
@@ -200,7 +200,7 @@ export default function MobileCreateWorkOrderPage() {
           </Card>
 
           {/* Tipo y Prioridad */}
-          <Card>
+          <Card className="shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Tipo y Prioridad</CardTitle>
             </CardHeader>
@@ -261,7 +261,7 @@ export default function MobileCreateWorkOrderPage() {
           </Card>
 
           {/* Máquina/Activo */}
-          <Card>
+          <Card className="shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Package className="w-4 h-4" />
@@ -276,17 +276,16 @@ export default function MobileCreateWorkOrderPage() {
                   <FormItem>
                     <FormLabel>Seleccionar Máquina (Opcional)</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      onValueChange={(value) => field.onChange(value || undefined)}
+                      value={field.value || undefined}
                       disabled={loadingAssets}
                     >
                       <FormControl>
                         <SelectTrigger className="h-12 text-base">
-                          <SelectValue placeholder={loadingAssets ? "Cargando..." : "Seleccionar máquina"} />
+                          <SelectValue placeholder={loadingAssets ? "Cargando..." : "Ninguna (problema general)"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Sin máquina específica</SelectItem>
                         {assets.map((asset) => (
                           <SelectItem key={asset.id} value={asset.id}>
                             {asset.name} ({asset.code})
@@ -323,11 +322,28 @@ export default function MobileCreateWorkOrderPage() {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              La orden será creada como borrador y un supervisor la asignará a un técnico
+              La orden será asignada al Jefe de Mantenimiento para su revisión y asignación al técnico correspondiente
             </p>
           </div>
         </form>
       </Form>
     </div>
+  )
+}
+
+export default function MobileCreateWorkOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-4 pb-6">
+        <div className="animate-pulse">
+          <div className="h-10 bg-muted rounded w-1/3 mb-4"></div>
+          <div className="h-32 bg-muted rounded mb-4"></div>
+          <div className="h-32 bg-muted rounded mb-4"></div>
+          <div className="h-20 bg-muted rounded"></div>
+        </div>
+      </div>
+    }>
+      <MobileCreateWorkOrderPageContent />
+    </Suspense>
   )
 }

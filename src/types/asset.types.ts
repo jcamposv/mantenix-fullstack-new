@@ -30,7 +30,9 @@ export interface AssetWithRelations extends Asset {
       tenantCompanyId: string
     }
   } | null
-  _count?: Record<string, number>
+  _count?: {
+    workOrders: number
+  }
 }
 
 export interface CreateAssetData {

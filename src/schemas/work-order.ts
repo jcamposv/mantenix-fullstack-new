@@ -42,8 +42,8 @@ export const workOrderSchema = z.object({
   tools: z.array(z.string()).optional(),
   materials: z.array(z.string()).optional(),
   
-  // Assignment
-  assignedUserIds: z.array(z.string()).min(1, "Debe asignar al menos un usuario"),
+  // Assignment (optional - can be assigned later)
+  assignedUserIds: z.array(z.string()).optional(),
   
   // Final notes (for completion)
   observations: z.string().optional(),

@@ -85,7 +85,7 @@ export class WorkOrderService {
     }
 
     // Permission check - only certain roles can create work orders
-    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR']
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'SUPERVISOR', 'JEFE_MANTENIMIENTO', 'OPERARIO']
     if (!allowedRoles.includes(session.user.role)) {
       throw new Error("No tienes permisos para crear órdenes de trabajo")
     }
