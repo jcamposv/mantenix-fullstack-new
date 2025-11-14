@@ -23,6 +23,7 @@ interface WorkOrderCostBreakdownProps {
   laborCost: number | null
   partsCost: number | null
   otherCosts: number | null
+  downtimeCost: number | null
   actualCost: number | null
   status: string
   canEdit?: boolean // Only jefe/admin can edit
@@ -33,6 +34,7 @@ export function WorkOrderCostBreakdownCard({
   laborCost,
   partsCost,
   otherCosts,
+  downtimeCost,
   actualCost,
   status,
   canEdit = false,
@@ -107,7 +109,8 @@ export function WorkOrderCostBreakdownCard({
   const currentOtherCosts = isEditing
     ? parseFloat(editedOtherCosts) || 0
     : otherCosts || 0
-  const totalCost = currentLaborCost + currentPartsCost + currentOtherCosts
+  const currentDowntimeCost = downtimeCost || 0
+  const totalCost = currentLaborCost + currentPartsCost + currentOtherCosts + currentDowntimeCost
 
   return (
     <Card>
@@ -215,6 +218,32 @@ export function WorkOrderCostBreakdownCard({
           </div>
         </div>
 
+        {/* Downtime Cost - Only show if there's a cost */}
+        {currentDowntimeCost > 0 && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Costo de Parada</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pérdida de producción estimada
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-destructive">
+                  {formatCurrency(currentDowntimeCost)}
+                </p>
+                <Badge variant="secondary" className="text-xs">
+                  Auto
+                </Badge>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Edit Actions */}
         {isEditing && (
           <div className="flex items-center gap-2 pt-2">
@@ -257,6 +286,11 @@ export function WorkOrderCostBreakdownCard({
             <li>Mano de obra: Tiempo activo × tarifa por hora</li>
             <li>Repuestos: Suma de items entregados × precio unitario</li>
             <li>Otros costos: Ajustable manualmente por jefe/admin</li>
+            {currentDowntimeCost > 0 && (
+              <li className="text-destructive">
+                Costo de parada: Tiempo de downtime × (precio unitario × throughput)
+              </li>
+            )}
           </ul>
         </div>
       </CardContent>

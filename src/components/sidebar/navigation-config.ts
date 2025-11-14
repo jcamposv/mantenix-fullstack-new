@@ -19,6 +19,7 @@ import {
   FileText,
   Package,
   CreditCard,
+  Factory,
 } from "lucide-react"
 
 // Navigation items for SUPER_ADMIN (SaaS administrator)
@@ -87,6 +88,21 @@ export const BASE_NAV_ITEMS = [
       {
         title: "Prefijos de Numeración",
         url: "/admin/work-order-prefixes",
+      },
+    ],
+  },
+  {
+    title: "Líneas de Producción",
+    url: "/production-lines",
+    icon: Factory,
+    items: [
+      {
+        title: "Dashboard",
+        url: "/production-lines",
+      },
+      {
+        title: "Nueva Línea",
+        url: "/production-lines/new",
       },
     ],
   },

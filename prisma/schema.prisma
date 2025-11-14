@@ -884,10 +884,11 @@ model WorkOrder {
   estimatedDuration Int? // Duración estimada en minutos
   estimatedCost     Float? // Costo estimado
   actualDuration    Int? // Duración real en minutos (elapsed time total)
-  actualCost        Float? // Costo real total (labor + parts + other)
+  actualCost        Float? // Costo real total (labor + parts + other + downtime)
   laborCost         Float? // Labor cost (calculated from activeWorkTime × hourlyRate)
   partsCost         Float? // Parts cost (sum of delivered inventory items)
   otherCosts        Float? // Other manual costs (transport, contractors, etc.)
+  downtimeCost      Float? // Production line downtime cost (if asset is in a production line)
 
   // Time tracking detallado (para MTTR preciso)
   activeWorkTime    Int? // Tiempo real trabajado (minutos) - sin pausas
@@ -1861,6 +1862,7 @@ model ProductionLine {
   // Production specifications
   targetThroughput Int? // Unidades por hora objetivo
   taktTime         Float? // Segundos por unidad
+  unitPrice        Float? // Precio por unidad producida (para cálculo de costo de downtime)
 
   // Visual configuration for React Flow
   flowConfiguration Json? // Configuración de React Flow (nodes, edges, positions)
