@@ -84,6 +84,7 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
           laborCost={workOrder.laborCost}
           partsCost={workOrder.partsCost}
           otherCosts={workOrder.otherCosts}
+          downtimeCost={workOrder.downtimeCost}
           actualCost={workOrder.actualCost}
           status={workOrder.status}
           canEdit={canEditCosts}

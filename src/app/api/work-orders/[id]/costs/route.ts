@@ -1,7 +1,7 @@
 /**
  * PATCH /api/work-orders/[id]/costs
  *
- * Update work order costs (only otherCosts can be manually edited)
+ * Update work order costs (otherCosts and downtimeCost can be manually edited)
  * Labor and parts costs are auto-calculated
  */
 
@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic"
 
 // Schema for cost update
 const costUpdateSchema = z.object({
-  otherCosts: z.number().min(0, "Other costs cannot be negative"),
+  otherCosts: z.number().min(0, "Other costs cannot be negative").optional(),
+  downtimeCost: z.number().min(0, "Downtime cost cannot be negative").optional(),
 })
 
 interface RouteContext {
@@ -53,7 +54,7 @@ export async function PATCH(
 
     // Parse and validate request body
     const body = await request.json()
-    const { otherCosts } = costUpdateSchema.parse(body)
+    const { otherCosts, downtimeCost } = costUpdateSchema.parse(body)
 
     // Get current work order with costs
     const workOrder = await prisma.workOrder.findUnique({
@@ -63,8 +64,12 @@ export async function PATCH(
         status: true,
         actualCost: true,
         estimatedCost: true,
+        laborCost: true,
+        partsCost: true,
+        otherCosts: true,
+        downtimeCost: true,
       },
-    }) as { id: string; status: string; actualCost: number | null; estimatedCost: number | null; laborCost?: number | null; partsCost?: number | null; otherCosts?: number | null } | null
+    })
 
     if (!workOrder) {
       return NextResponse.json(
@@ -87,27 +92,42 @@ export async function PATCH(
     // Calculate new total cost
     const laborCost = workOrder.laborCost || 0
     const partsCost = workOrder.partsCost || 0
-    const newActualCost = laborCost + partsCost + otherCosts
+    const newOtherCosts = otherCosts !== undefined ? otherCosts : (workOrder.otherCosts || 0)
+    const newDowntimeCost = downtimeCost !== undefined ? downtimeCost : (workOrder.downtimeCost || 0)
+    const newActualCost = laborCost + partsCost + newOtherCosts + newDowntimeCost
+
+    // Prepare update data
+    const updateData: {
+      otherCosts?: number
+      downtimeCost?: number
+      actualCost: number
+      updatedAt: Date
+    } = {
+      actualCost: newActualCost,
+      updatedAt: new Date(),
+    }
+
+    if (otherCosts !== undefined) {
+      updateData.otherCosts = otherCosts
+    }
+
+    if (downtimeCost !== undefined) {
+      updateData.downtimeCost = downtimeCost
+    }
 
     // Update costs
-    // Note: Type assertion needed until Prisma client is regenerated
     const updatedWorkOrder = await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: {
-        otherCosts,
-        actualCost: newActualCost,
-        updatedAt: new Date(),
-      } as { otherCosts: number; actualCost: number; updatedAt: Date },
+      data: updateData,
       select: {
         id: true,
         actualCost: true,
+        laborCost: true,
+        partsCost: true,
+        otherCosts: true,
+        downtimeCost: true,
       },
-    }) as { id: string; actualCost: number | null; laborCost?: number | null; partsCost?: number | null; otherCosts?: number | null }
-    
-    // Manually add the values for response since select might not work for these fields
-    updatedWorkOrder.laborCost = laborCost
-    updatedWorkOrder.partsCost = partsCost
-    updatedWorkOrder.otherCosts = otherCosts
+    })
 
     return NextResponse.json({
       success: true,
