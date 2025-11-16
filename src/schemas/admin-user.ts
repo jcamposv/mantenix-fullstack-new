@@ -21,6 +21,7 @@ export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
   timezone: z.string(),
   locale: z.string(),
   image: z.string().nullable().optional(),
+  customRoleId: z.string().nullable().optional(),
 }).refine((data) => {
   // If external user is selected, client company is required
   if (data.isExternalUser && !data.clientCompanyId) {

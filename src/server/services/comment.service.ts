@@ -37,7 +37,7 @@ export class CommentService {
     }
 
     // Verificar permisos para comentar
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_comment')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_comment')) {
       throw new Error("No tienes permisos para comentar en alertas")
     }
 

@@ -113,7 +113,7 @@ export class EmailTemplateService {
     limit: number
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_email_templates')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'view_email_templates')) {
       throw new Error("No tienes permisos para ver templates de email")
     }
 
@@ -164,7 +164,7 @@ export class EmailTemplateService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_email_template')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_email_template')) {
       throw new Error("No tienes permisos para crear templates de email")
     }
 
@@ -217,7 +217,7 @@ export class EmailTemplateService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_email_template')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_email_template')) {
       throw new Error("No tienes permisos para actualizar templates de email")
     }
 
@@ -243,7 +243,7 @@ export class EmailTemplateService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_email_template')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_email_template')) {
       throw new Error("No tienes permisos para eliminar templates de email")
     }
 

@@ -23,7 +23,7 @@ export class AssetStatusService {
     session: AuthenticatedSession
   ) {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'change_asset_status')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'change_asset_status')) {
       throw new Error("No tienes permisos para cambiar el estado de activos")
     }
 
@@ -122,7 +122,7 @@ export class AssetStatusService {
     session: AuthenticatedSession
   ) {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_asset_status_history')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'view_asset_status_history')) {
       throw new Error("No tienes permisos para ver el historial de estados")
     }
 
@@ -188,7 +188,7 @@ export class AssetStatusService {
    */
   static async getCurrentAssetStatus(assetId: string, session: AuthenticatedSession) {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_asset_status_history')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'view_asset_status_history')) {
       throw new Error("No tienes permisos para ver el estado de activos")
     }
 
@@ -229,7 +229,7 @@ export class AssetStatusService {
     session: AuthenticatedSession
   ): Promise<number> {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_asset_status_history')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'view_asset_status_history')) {
       throw new Error("No tienes permisos para ver métricas de activos")
     }
 

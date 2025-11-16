@@ -60,6 +60,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       timezone: "UTC",
       locale: "es",
       image: null,
+      customRoleId: null,
     },
   })
 
@@ -77,6 +78,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
     if (isExternalUser) {
       // Reset role to first external role when switching to external user
       form.setValue("role", "CLIENTE_ADMIN_GENERAL")
+      form.setValue("customRoleId", null)
       fetchClientCompanies()
     } else {
       // Reset role to first internal role when switching to internal user
@@ -178,6 +180,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
             
             <AdminUserRoleSettings
               control={form.control}
+              setValue={form.setValue}
               isExternalUser={isExternalUser}
               selectedRole={selectedRole}
               currentUserRole={currentUser?.role}

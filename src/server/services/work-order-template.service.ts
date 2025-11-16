@@ -73,7 +73,7 @@ export class WorkOrderTemplateService {
    */
   static async getList(session: AuthenticatedSession, filters: WorkOrderTemplateFiltersInput) {
     // Verify permissions
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_work_order_templates')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
@@ -97,7 +97,7 @@ export class WorkOrderTemplateService {
    */
   static async getAll(session: AuthenticatedSession) {
     // Verify permissions
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_work_order_templates')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
@@ -112,7 +112,7 @@ export class WorkOrderTemplateService {
    */
   static async create(templateData: CreateWorkOrderTemplateInput, session: AuthenticatedSession) {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_work_order_template')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_work_order_template')) {
       throw new Error("No tienes permisos para crear templates de órdenes de trabajo")
     }
 
@@ -152,7 +152,7 @@ export class WorkOrderTemplateService {
     session: AuthenticatedSession
   ) {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_work_order_template')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_work_order_template')) {
       throw new Error("No tienes permisos para actualizar templates de órdenes de trabajo")
     }
 
@@ -192,7 +192,7 @@ export class WorkOrderTemplateService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verify permissions
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_work_order_template')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_work_order_template')) {
       throw new Error("No tienes permisos para eliminar templates de órdenes de trabajo")
     }
 
@@ -223,7 +223,7 @@ export class WorkOrderTemplateService {
    */
   static async getCategories(session: AuthenticatedSession): Promise<string[]> {
     // Verify permissions
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_work_order_templates')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
@@ -241,7 +241,7 @@ export class WorkOrderTemplateService {
    */
   static async getStats(session: AuthenticatedSession) {
     // Verify permissions
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_work_order_templates')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver estadísticas de templates")
@@ -268,7 +268,7 @@ export class WorkOrderTemplateService {
    */
   static async getTemplatesForAsset(assetId: string, session: AuthenticatedSession) {
     // Verify permissions
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_work_order_templates')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver templates de órdenes de trabajo")

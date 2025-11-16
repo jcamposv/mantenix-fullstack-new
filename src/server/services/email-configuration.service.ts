@@ -69,7 +69,7 @@ export class EmailConfigurationService {
     limit: number
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_email_configurations')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'view_email_configurations')) {
       throw new Error("No tienes permisos para ver configuraciones de email")
     }
 
@@ -93,7 +93,7 @@ export class EmailConfigurationService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_email_configuration')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_email_configuration')) {
       throw new Error("No tienes permisos para crear configuraciones de email")
     }
 
@@ -130,7 +130,7 @@ export class EmailConfigurationService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_email_configuration')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_email_configuration')) {
       throw new Error("No tienes permisos para actualizar configuraciones de email")
     }
 
@@ -158,7 +158,7 @@ export class EmailConfigurationService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_email_configuration')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_email_configuration')) {
       throw new Error("No tienes permisos para eliminar configuraciones de email")
     }
 

@@ -82,9 +82,9 @@ export class UserService {
    */
   static async getList(session: AuthenticatedSession, filters: UserFilters, page: number, limit: number): Promise<PaginatedUsersResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_all_users') ||
-                         AuthService.canUserPerformAction(session.user.role, 'view_company_users') ||
-                         AuthService.canUserPerformAction(session.user.role, 'view_client_users')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_all_users') ||
+                         await AuthService.canUserPerformActionAsync(session, 'view_company_users') ||
+                         await AuthService.canUserPerformActionAsync(session, 'view_client_users')
 
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver usuarios")
@@ -107,7 +107,7 @@ export class UserService {
    */
   static async create(userData: CreateUserInput & { password?: string }, session: AuthenticatedSession): Promise<UserWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_user')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_user')) {
       throw new Error("No tienes permisos para crear usuarios")
     }
 
@@ -155,6 +155,9 @@ export class UserService {
     if (userData.siteId) {
       createData.site = { connect: { id: userData.siteId } }
     }
+    if (userData.customRoleId) {
+      createData.customRole = { connect: { id: userData.customRoleId } }
+    }
 
     const newUser = await UserRepository.create(createData)
 
@@ -183,7 +186,7 @@ export class UserService {
    */
   static async update(id: string, userData: UpdateUserInput, session: AuthenticatedSession): Promise<UserWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_user')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_user')) {
       throw new Error("No tienes permisos para actualizar usuarios")
     }
 
@@ -248,6 +251,9 @@ export class UserService {
     if (userData.siteId !== undefined) {
       updateData.site = userData.siteId ? { connect: { id: userData.siteId } } : { disconnect: true }
     }
+    if (userData.customRoleId !== undefined) {
+      updateData.customRole = userData.customRoleId ? { connect: { id: userData.customRoleId } } : { disconnect: true }
+    }
 
     return await UserRepository.update(id, updateData)
   }
@@ -257,7 +263,7 @@ export class UserService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<UserWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_user')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_user')) {
       throw new Error("No tienes permisos para eliminar usuarios")
     }
 

@@ -458,4 +458,49 @@ export class PermissionHelper {
       throw new Error("No tienes permisos para realizar esta acción")
     }
   }
+
+  /**
+   * NEW RBAC METHODS - Support for custom roles
+   */
+
+  /**
+   * Check if user has permission (supports custom roles)
+   * @deprecated Use hasPermissionAsync for full custom role support
+   */
+  static async hasPermissionAsync(session: AuthenticatedSession, permission: string): Promise<boolean> {
+    const { hasPermission: checkPermission } = await import('./permission-utils');
+    return checkPermission(session, permission);
+  }
+
+  /**
+   * Check if user has any of the specified permissions
+   */
+  static async hasAnyPermission(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
+    const { hasAnyPermission: check } = await import('./permission-utils');
+    return check(session, permissions);
+  }
+
+  /**
+   * Check if user has all of the specified permissions
+   */
+  static async hasAllPermissions(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
+    const { hasAllPermissions: check } = await import('./permission-utils');
+    return check(session, permissions);
+  }
+
+  /**
+   * Require permission (throws if user doesn't have it) - supports custom roles
+   */
+  static async requirePermissionAsync(session: AuthenticatedSession, permission: string): Promise<void> {
+    const { requirePermission: require } = await import('./permission-utils');
+    return require(session, permission);
+  }
+
+  /**
+   * Get all permissions for a user (supports custom roles)
+   */
+  static async getUserPermissions(session: AuthenticatedSession): Promise<string[]> {
+    const { getUserPermissions } = await import('./permission-utils');
+    return getUserPermissions(session);
+  }
 }

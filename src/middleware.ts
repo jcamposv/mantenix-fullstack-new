@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Get user with company info
+    // Get user with company info and custom role
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -34,6 +34,11 @@ export async function middleware(request: NextRequest) {
                 companies: true
               }
             }
+          }
+        },
+        customRole: {
+          select: {
+            interfaceType: true
           }
         }
       }
@@ -71,13 +76,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(correctUrl))
     }
 
-    // Check if mobile-only user is trying to access dashboard routes
-    if (mobileOnlyRoles.includes(user.role) && !pathname.startsWith('/mobile')) {
+    // Check interface access based on custom role or base role
+    const effectiveInterfaceType = user.customRole?.interfaceType ||
+      (mobileOnlyRoles.includes(user.role) ? 'MOBILE' : 'BOTH')
+
+    // Enforce interface restrictions
+    if (effectiveInterfaceType === 'MOBILE' && !pathname.startsWith('/mobile')) {
+      // Mobile-only users must use /mobile
       return NextResponse.redirect(new URL("/mobile", request.url))
+    } else if (effectiveInterfaceType === 'DASHBOARD' && pathname.startsWith('/mobile')) {
+      // Dashboard-only users cannot access /mobile
+      return NextResponse.redirect(new URL("/", request.url))
     }
 
+    // BOTH: User can access any interface
     // Admin users can access both dashboard and mobile routes
-    // No restriction needed for admin users accessing mobile
+    // No restriction needed
 
     return NextResponse.next()
   } catch (error) {

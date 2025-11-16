@@ -106,7 +106,7 @@ export class AssetService {
    */
   static async getList(session: AuthenticatedSession, filters: AssetFilters, page: number, limit: number): Promise<PaginatedAssetsResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_assets')
 
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver activos")
@@ -129,7 +129,7 @@ export class AssetService {
    */
   static async getAll(session: AuthenticatedSession): Promise<AssetWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_assets')
 
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver activos")
@@ -145,7 +145,7 @@ export class AssetService {
    */
   static async create(assetData: CreateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_asset')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_asset')) {
       throw new Error("No tienes permisos para crear activos")
     }
 
@@ -211,7 +211,7 @@ export class AssetService {
    */
   static async update(id: string, assetData: UpdateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_asset')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_asset')) {
       throw new Error("No tienes permisos para actualizar activos")
     }
 
@@ -262,7 +262,7 @@ export class AssetService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_asset')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_asset')) {
       throw new Error("No tienes permisos para eliminar activos")
     }
 

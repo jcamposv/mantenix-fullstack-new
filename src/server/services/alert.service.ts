@@ -108,7 +108,7 @@ export class AlertService {
    */
   static async create(alertData: CreateAlertInput, session: AuthenticatedSession): Promise<AlertWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_alert')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_alert')) {
       throw new Error("No tienes permisos para crear alertas")
     }
 
@@ -154,7 +154,7 @@ export class AlertService {
    */
   static async update(id: string, validatedData: UpdateAlertInput, session: AuthenticatedSession): Promise<AlertWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_alert')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_alert')) {
       throw new Error("No tienes permisos para actualizar alertas")
     }
 
@@ -201,7 +201,7 @@ export class AlertService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<AlertWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_alert')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_alert')) {
       throw new Error("No tienes permisos para eliminar alertas")
     }
 

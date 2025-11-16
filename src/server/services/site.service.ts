@@ -84,7 +84,7 @@ export class SiteService {
    */
   static async getList(session: AuthenticatedSession, filters: SiteFilters, page: number, limit: number): Promise<PaginatedSitesResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_sites')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_sites')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver sedes")
@@ -107,7 +107,7 @@ export class SiteService {
    */
   static async getAll(session: AuthenticatedSession): Promise<SiteWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_sites')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_sites')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver sedes")
@@ -122,7 +122,7 @@ export class SiteService {
    */
   static async create(siteData: CreateSiteInput, session: AuthenticatedSession): Promise<SiteWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_site')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_site')) {
       throw new Error("No tienes permisos para crear sedes")
     }
 
@@ -152,7 +152,7 @@ export class SiteService {
    */
   static async update(id: string, siteData: UpdateSiteInput, session: AuthenticatedSession): Promise<SiteWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_site')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_site')) {
       throw new Error("No tienes permisos para actualizar sedes")
     }
 
@@ -184,7 +184,7 @@ export class SiteService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<SiteWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_site')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_site')) {
       throw new Error("No tienes permisos para eliminar sedes")
     }
 

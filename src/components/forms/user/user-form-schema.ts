@@ -8,6 +8,7 @@ export const createUserSchema = (mode: "create" | "invite" | "edit") => z.object
     ? z.string().min(8, "Password must be at least 8 characters")
     : z.string().optional(),
   role: roleSchema, // Centralized role validation
+  customRoleId: z.string().optional().nullable(), // Custom role assignment (overrides base role permissions)
   companyId: z.string().optional(),
   hourlyRate: z.number().positive("Hourly rate must be positive").optional().or(z.literal(null)),
   timezone: z.string(),

@@ -16,6 +16,7 @@ import { ChangeAssetStatusDialog } from "@/components/common/change-asset-status
 import { AssetStatusHistoryDialog } from "@/components/common/asset-status-history-dialog"
 import type { ChangeAssetStatusData } from "@/schemas/asset-status"
 import { useSession } from "@/lib/auth-client"
+import { usePermissions } from "@/hooks/usePermissions"
 
 interface Asset {
   id: string
@@ -53,11 +54,17 @@ export default function AssetsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
+  const { hasPermission } = usePermissions()
 
   const { data: allAssets, loading, refetch } = useTableData<Asset>({
     endpoint: '/api/admin/assets',
     transform: (data) => (data as AssetsResponse).assets || (data as AssetsResponse).items || (data as Asset[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('assets.create')
+  const canEdit = hasPermission('assets.edit')
+  const canDelete = hasPermission('assets.delete')
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null)
@@ -312,8 +319,8 @@ export default function AssetsPage() {
             icon: RefreshCw,
             onClick: () => handleChangeStatus(asset),
           }] : []),
-          createEditAction(() => handleEdit(asset.id)),
-          createDeleteAction(() => handleDelete(asset))
+          ...(canEdit ? [createEditAction(() => handleEdit(asset.id))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(asset))] : [])
         ]
 
         return <TableActions actions={actions} />
@@ -355,8 +362,7 @@ export default function AssetsPage() {
         searchPlaceholder="Buscar activos..."
         title={getTitle()}
         description={getDescription()}
-        onAdd={handleAddAsset}
-        addLabel="Agregar Activo"
+        {...(canCreate && { onAdd: handleAddAsset, addLabel: "Agregar Activo" })}
         loading={loading}
       />
 

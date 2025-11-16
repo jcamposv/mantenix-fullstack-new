@@ -163,6 +163,7 @@ model User {
 
   // Better Auth extension fields (following best practices)
   role            Role      @default(TECNICO)
+  customRoleId    String? // Custom role assignment (overrides base role permissions if set)
   companyId       String?
   companyGroupId  String? // For ADMIN_GRUPO users
   isExternalUser  Boolean   @default(false)
@@ -187,6 +188,7 @@ model User {
   sessions               Session[]
   company                Company?         @relation(fields: [companyId], references: [id])
   companyGroup           CompanyGroup?    @relation(fields: [companyGroupId], references: [id])
+  customRole             CustomRole?      @relation(fields: [customRoleId], references: [id])
   clientCompany          ClientCompany?   @relation(fields: [clientCompanyId], references: [id])
   site                   Site?            @relation(fields: [siteId], references: [id])
   auditLogs              AuditLog[]
@@ -344,6 +346,7 @@ model Company {
   inventoryMovementsFrom InventoryMovement[] @relation("InventoryMovementFromCompany")
   inventoryMovementsTo InventoryMovement[] @relation("InventoryMovementToCompany")
   productionLines ProductionLine[]
+  customRoles     CustomRole[] // Roles personalizados de la empresa
 
   @@index([subdomain])
   @@index([isActive])
@@ -1913,4 +1916,83 @@ model ProductionLineAsset {
   @@index([assetId])
   @@index([sequence])
   @@map("production_line_assets")
+}
+
+// ============================================================================
+// RBAC (Role-Based Access Control) SYSTEM
+// ============================================================================
+
+// Permisos del sistema - Master list de todos los permisos disponibles
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique // "work_orders.create", "inventory.approve_request"
+  name        String // "Crear Órdenes de Trabajo"
+  description String? // Descripción detallada del permiso
+  module      String // "work_orders", "inventory", "assets", "users", etc.
+
+  // Relations
+  customRolePermissions CustomRolePermission[]
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([module])
+  @@index([isActive])
+  @@map("permissions")
+}
+
+// Roles personalizados por empresa (ej: "Mecánico", "Fontanero", "Electricista")
+enum InterfaceType {
+  MOBILE    // Solo acceso a /mobile (app móvil)
+  DASHBOARD // Solo acceso a dashboard web
+  BOTH      // Puede usar ambas interfaces
+}
+
+model CustomRole {
+  id          String  @id @default(cuid())
+  name        String // "Mecánico", "Fontanero", "Electricista"
+  description String? // Descripción del rol
+  color       String  @default("#3b82f6") // Color para badges/UI
+
+  // Tipo de interfaz permitida
+  interfaceType InterfaceType @default(MOBILE) // Por defecto, roles de campo van a mobile
+
+  // Company ownership - CADA EMPRESA tiene sus propios roles custom
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Audit
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  permissions CustomRolePermission[] // Permisos asignados a este rol
+  users       User[] // Usuarios con este rol
+
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  @@unique([companyId, name]) // Nombre único por empresa
+  @@index([companyId])
+  @@index([isActive])
+  @@map("custom_roles")
+}
+
+// Tabla intermedia: Permisos asignados a roles personalizados
+model CustomRolePermission {
+  id           String   @id @default(cuid())
+  customRoleId String
+  permissionId String
+  assignedAt   DateTime @default(now())
+
+  // Relations
+  customRole CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([customRoleId, permissionId]) // Un permiso solo una vez por rol
+  @@index([customRoleId])
+  @@index([permissionId])
+  @@map("custom_role_permissions")
 }

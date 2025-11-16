@@ -65,7 +65,7 @@ export class ClientCompanyService {
    */
   static async getList(session: AuthenticatedSession, filters: ClientCompanyFilters, page: number, limit: number): Promise<PaginatedClientCompaniesResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_client_companies')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_client_companies')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver empresas cliente")
@@ -88,7 +88,7 @@ export class ClientCompanyService {
    */
   static async getAll(session: AuthenticatedSession): Promise<ClientCompanyWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_client_companies')
+    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_client_companies')
     
     if (!hasPermission) {
       throw new Error("No tienes permisos para ver empresas cliente")
@@ -103,7 +103,7 @@ export class ClientCompanyService {
    */
   static async create(clientCompanyData: CreateClientCompanyInput, session: AuthenticatedSession): Promise<ClientCompanyWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_client_company')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'create_client_company')) {
       throw new Error("No tienes permisos para crear empresas cliente")
     }
 
@@ -134,7 +134,7 @@ export class ClientCompanyService {
    */
   static async update(id: string, clientCompanyData: UpdateClientCompanyInput, session: AuthenticatedSession): Promise<ClientCompanyWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_client_company')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'update_client_company')) {
       throw new Error("No tienes permisos para actualizar empresas cliente")
     }
 
@@ -167,7 +167,7 @@ export class ClientCompanyService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<ClientCompanyWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_client_company')) {
+    if (!await AuthService.canUserPerformActionAsync(session, 'delete_client_company')) {
       throw new Error("No tienes permisos para eliminar empresas cliente")
     }
 

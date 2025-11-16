@@ -6,6 +6,7 @@
 import { useMemo } from "react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useUserRole } from "@/hooks/useUserRole"
+import { useFilteredNavigation } from "@/hooks/useFilteredNavigation"
 import { parseCompanyFeatures } from "@/lib/features"
 import type { CompanyBranding } from "@/types/branding"
 import type { ServerUser, UserPermissions, CompanyFeature } from "./sidebar-types"
@@ -178,10 +179,14 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
     plan: "Enterprise", // Can be made dynamic based on company tier
   }), [companyBranding, effectiveUser])
 
+  // Apply permission-based filtering to navigation items
+  const filteredNavItems = useFilteredNavigation(navItems)
+  const filteredAdminItems = useFilteredNavigation(adminItems)
+
   return {
     currentUser,
-    navItems,
-    adminItems,
+    navItems: filteredNavItems,
+    adminItems: filteredAdminItems,
     companyInfo,
     isSuperAdmin,
     isGroupAdmin,
