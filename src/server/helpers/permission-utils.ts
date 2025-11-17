@@ -180,7 +180,24 @@ export async function getUserPermissions(session: AuthenticatedSession): Promise
 export async function hasPermission(session: AuthenticatedSession, permission: string): Promise<boolean> {
   const normalizedKey = normalizePermissionKey(permission);
   const permissions = await getUserPermissions(session);
-  return permissions.includes(normalizedKey);
+
+  // Check for wildcard permission (SUPER_ADMIN has all permissions)
+  if (permissions.includes('*')) {
+    return true;
+  }
+
+  // Check for exact permission match
+  if (permissions.includes(normalizedKey)) {
+    return true;
+  }
+
+  // Check for module wildcard (e.g., 'work_orders.*' matches 'work_orders.create')
+  const [module] = normalizedKey.split('.');
+  if (module && permissions.includes(`${module}.*`)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -188,9 +205,24 @@ export async function hasPermission(session: AuthenticatedSession, permission: s
  */
 export async function hasAnyPermission(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
   const userPermissions = await getUserPermissions(session);
+
+  // Check for wildcard permission
+  if (userPermissions.includes('*')) {
+    return true;
+  }
+
   const normalizedPermissions = permissions.map(normalizePermissionKey);
 
-  return normalizedPermissions.some(p => userPermissions.includes(p));
+  return normalizedPermissions.some(p => {
+    // Check exact match
+    if (userPermissions.includes(p)) return true;
+
+    // Check module wildcard
+    const [module] = p.split('.');
+    if (module && userPermissions.includes(`${module}.*`)) return true;
+
+    return false;
+  });
 }
 
 /**
@@ -198,9 +230,24 @@ export async function hasAnyPermission(session: AuthenticatedSession, permission
  */
 export async function hasAllPermissions(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
   const userPermissions = await getUserPermissions(session);
+
+  // Check for wildcard permission
+  if (userPermissions.includes('*')) {
+    return true;
+  }
+
   const normalizedPermissions = permissions.map(normalizePermissionKey);
 
-  return normalizedPermissions.every(p => userPermissions.includes(p));
+  return normalizedPermissions.every(p => {
+    // Check exact match
+    if (userPermissions.includes(p)) return true;
+
+    // Check module wildcard
+    const [module] = p.split('.');
+    if (module && userPermissions.includes(`${module}.*`)) return true;
+
+    return false;
+  });
 }
 
 /**
