@@ -23,6 +23,7 @@ export function AppSidebar({
   serverUser,
   userPermissions,
   companyFeatures,
+  serverUserPermissions,
   ...props
 }: ExtendedAppSidebarProps) {
   const {
@@ -38,7 +39,8 @@ export function AppSidebar({
     companyBranding,
     serverUser,
     userPermissions,
-    companyFeatures
+    companyFeatures,
+    serverUserPermissions,
   })
 
   return (

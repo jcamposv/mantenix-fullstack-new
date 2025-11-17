@@ -18,9 +18,10 @@ interface UseSidebarDataProps {
   serverUser?: ServerUser | null
   userPermissions?: UserPermissions
   companyFeatures?: CompanyFeature[] | null
+  serverUserPermissions?: string[] | null
 }
 
-export function useSidebarData({ companyBranding, serverUser, userPermissions, companyFeatures }: UseSidebarDataProps) {
+export function useSidebarData({ companyBranding, serverUser, userPermissions, companyFeatures, serverUserPermissions }: UseSidebarDataProps) {
   const { user, loading } = useCurrentUser()
   const { isSuperAdmin: clientIsSuperAdmin, isGroupAdmin: clientIsGroupAdmin, isCompanyAdmin: clientIsCompanyAdmin } = useUserRole()
 
@@ -180,8 +181,9 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
   }), [companyBranding, effectiveUser])
 
   // Apply permission-based filtering to navigation items
-  const filteredNavItems = useFilteredNavigation(navItems)
-  const filteredAdminItems = useFilteredNavigation(adminItems)
+  // Pass server permissions to avoid client-side fetch delay
+  const filteredNavItems = useFilteredNavigation(navItems, serverUserPermissions)
+  const filteredAdminItems = useFilteredNavigation(adminItems, serverUserPermissions)
 
   return {
     currentUser,
