@@ -6,8 +6,8 @@
  * INITIAL_USER_PASSWORD="YourSecurePassword" npx tsx scripts/create-initial-user.ts
  */
 
-import { PrismaClient, Role } from '@prisma/client'
-import { auth } from '../src/lib/auth'
+import { PrismaClient } from '@prisma/client'
+import { hash } from '@node-rs/argon2'
 
 const prisma = new PrismaClient()
 
@@ -21,6 +21,17 @@ async function main() {
     console.log('⚠️  Users already exist. Skipping user creation.')
     console.log(`   Found ${existingUsers} user(s) in database.`)
     process.exit(0)
+  }
+
+  // Get SUPER_ADMIN role
+  const superAdminRole = await prisma.customRole.findUnique({
+    where: { key: 'SUPER_ADMIN' }
+  })
+
+  if (!superAdminRole) {
+    console.error('❌ Error: SUPER_ADMIN role not found')
+    console.error('   Run seed scripts first: npx tsx prisma/seed-system-roles.ts')
+    process.exit(1)
   }
 
   // Fixed credentials
@@ -41,29 +52,41 @@ async function main() {
   console.log(`🔑 Password: ${'*'.repeat(password.length)} characters`)
 
   try {
-    // Create user with Better Auth
-    const signUpResult = await auth.api.signUpEmail({
-      body: { email, password, name },
+    // Hash password using Better Auth's default hasher (argon2)
+    const hashedPassword = await hash(password, {
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1
     })
 
-    if (signUpResult.user) {
-      // Update to SUPER_ADMIN
-      await prisma.user.update({
-        where: { id: signUpResult.user.id },
-        data: {
-          emailVerified: true,
-          role: Role.SUPER_ADMIN,
-        },
-      })
+    // Create user directly with Prisma
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        emailVerified: true,
+        roleId: superAdminRole.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    })
 
-      console.log('✅ Initial user created successfully!')
-      console.log('\n🔑 Login Credentials:')
-      console.log(`   Email: ${email}`)
-      console.log(`   Role: SUPER_ADMIN`)
-      console.log('\n⚠️  IMPORTANT: Change this password after first login!')
-    } else {
-      throw new Error('User sign up failed')
-    }
+    // Create account with password hash
+    await prisma.account.create({
+      data: {
+        userId: user.id,
+        accountId: user.id,
+        providerId: 'credential',
+        password: hashedPassword,
+      }
+    })
+
+    console.log('✅ Initial user created successfully!')
+    console.log('\n🔑 Login Credentials:')
+    console.log(`   Email: ${email}`)
+    console.log(`   Role: SUPER_ADMIN`)
+    console.log('\n⚠️  IMPORTANT: Change this password after first login!')
   } catch (error) {
     console.error('❌ Error creating user:', error)
     process.exit(1)

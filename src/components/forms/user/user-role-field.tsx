@@ -20,7 +20,7 @@ import { ROLES } from "./user-form-constants"
 import { getRoleBadgeVariant } from "./user-form-utils"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { getRolesCreatableBy } from "@/lib/rbac/role-definitions"
-import { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 interface UserRoleFieldProps {
   control: Control<UserFormData>
@@ -33,7 +33,7 @@ export function UserRoleField({ control, selectedRole, restrictedMode = false }:
 
   // Use centralized system to determine available roles
   const availableRoles = restrictedMode && currentUser?.role
-    ? getRolesCreatableBy(currentUser.role as Role)
+    ? getRolesCreatableBy(currentUser.role as SystemRoleKey)
     : ROLES
 
   return (

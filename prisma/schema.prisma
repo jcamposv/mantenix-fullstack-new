@@ -13,20 +13,9 @@ datasource db {
 // ============================================================================
 // ENUMS
 // ============================================================================
-
-enum Role {
-  SUPER_ADMIN
-  ADMIN_GRUPO // Admin de grupo corporativo (ve todas las empresas del grupo)
-  ADMIN_EMPRESA
-  JEFE_MANTENIMIENTO // Jefe de mantenimiento (aprueba solicitudes de inventario)
-  ENCARGADO_BODEGA // Encargado de bodega (entrega repuestos)
-  SUPERVISOR
-  TECNICO
-  OPERARIO // Operario de planta que puede actualizar estado de activos/máquinas
-  CLIENTE_ADMIN_GENERAL // Admin general que puede ver todas las sedes del cliente y generar alertas
-  CLIENTE_ADMIN_SEDE // Admin de sede específica que puede ver progreso de órdenes de su sede
-  CLIENTE_OPERARIO // Operario que puede reportar errores/incidencias
-}
+// NOTA: El enum Role fue eliminado. Ahora todos los roles (base y custom) se gestionan
+// a través de la tabla CustomRole. Los roles base del sistema se crean mediante seed.
+// ============================================================================
 
 enum Tier {
   STARTER
@@ -162,8 +151,7 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // Better Auth extension fields (following best practices)
-  role            Role      @default(TECNICO)
-  customRoleId    String? // Custom role assignment (overrides base role permissions if set)
+  roleId          String // Reference to CustomRole (includes both system and custom roles)
   companyId       String?
   companyGroupId  String? // For ADMIN_GRUPO users
   isExternalUser  Boolean   @default(false)
@@ -186,9 +174,9 @@ model User {
   // Relations
   accounts               Account[]
   sessions               Session[]
+  role                   CustomRole       @relation(fields: [roleId], references: [id])
   company                Company?         @relation(fields: [companyId], references: [id])
   companyGroup           CompanyGroup?    @relation(fields: [companyGroupId], references: [id])
-  customRole             CustomRole?      @relation(fields: [customRoleId], references: [id])
   clientCompany          ClientCompany?   @relation(fields: [clientCompanyId], references: [id])
   site                   Site?            @relation(fields: [siteId], references: [id])
   auditLogs              AuditLog[]
@@ -539,7 +527,7 @@ model SecurityEvent {
 model UserInvitation {
   id              String    @id @default(cuid())
   email           String
-  role            Role
+  roleId          String    // Reference to CustomRole
   companyId       String?   // Optional for SUPER_ADMIN and ADMIN_GRUPO
   isExternalUser  Boolean   @default(false)
   clientCompanyId String?
@@ -554,6 +542,7 @@ model UserInvitation {
   createdAt       DateTime  @default(now())
 
   // Relations
+  role          CustomRole     @relation(fields: [roleId], references: [id])
   company       Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   creator       User           @relation("UserInvitationsCreated", fields: [createdBy], references: [id], onDelete: Cascade)
   clientCompany ClientCompany? @relation(fields: [clientCompanyId], references: [id], onDelete: SetNull)
@@ -1951,32 +1940,39 @@ enum InterfaceType {
 
 model CustomRole {
   id          String  @id @default(cuid())
-  name        String // "Mecánico", "Fontanero", "Electricista"
+  name        String // "Mecánico", "Fontanero", "Electricista", "SUPER_ADMIN", "TECNICO", etc.
+  key         String? @unique // "SUPER_ADMIN", "TECNICO", etc. (solo para roles del sistema)
   description String? // Descripción del rol
   color       String  @default("#3b82f6") // Color para badges/UI
 
   // Tipo de interfaz permitida
-  interfaceType InterfaceType @default(MOBILE) // Por defecto, roles de campo van a mobile
+  interfaceType InterfaceType @default(MOBILE) // MOBILE, DASHBOARD, o BOTH
 
-  // Company ownership - CADA EMPRESA tiene sus propios roles custom
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Sistema o Custom
+  isSystemRole Boolean @default(false) // true = rol base del sistema (creado por seed)
+
+  // Company ownership - NULL para roles del sistema, required para custom roles
+  companyId String? // NULL = rol del sistema (SUPER_ADMIN, TECNICO, etc.)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Audit
-  createdBy String
+  createdBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  permissions CustomRolePermission[] // Permisos asignados a este rol
-  users       User[] // Usuarios con este rol
+  permissions     CustomRolePermission[] // Permisos asignados a este rol
+  users           User[] // Usuarios con este rol
+  userInvitations UserInvitation[] // Invitaciones con este rol
 
   isActive  Boolean   @default(true)
   deletedAt DateTime?
 
-  @@unique([companyId, name]) // Nombre único por empresa
+  @@unique([companyId, name]) // Nombre único por empresa (ambos NULL para system roles está OK)
   @@index([companyId])
   @@index([isActive])
+  @@index([isSystemRole])
+  @@index([key])
   @@map("custom_roles")
 }
 

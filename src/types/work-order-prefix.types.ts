@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 // Base WorkOrderPrefix interface
 export interface WorkOrderPrefix {
@@ -29,7 +29,7 @@ export interface WorkOrderPrefixWithRelations extends WorkOrderPrefix {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   _count?: {
     workOrders?: number

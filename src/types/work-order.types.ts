@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 // Define JsonValue type since it's not exported from Prisma client
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
@@ -107,7 +107,7 @@ export interface WorkOrderWithRelations extends WorkOrder {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   assignments?: WorkOrderAssignmentWithUser[]
   _count?: {
@@ -130,7 +130,7 @@ export interface WorkOrderAssignmentWithUser extends WorkOrderAssignment {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
     image: string | null
   }
   assigner: {

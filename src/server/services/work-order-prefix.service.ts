@@ -4,15 +4,15 @@ import type {
   UpdateWorkOrderPrefixData,
   WorkOrderPrefixFilters,
 } from "@/types/work-order-prefix.types"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 export class WorkOrderPrefixService {
   /**
    * Validate if user has permission to manage prefixes
    * Only SUPER_ADMIN and ADMIN_EMPRESA can create/edit prefixes
    */
-  private static validateManagePermission(role: Role): void {
-    const allowedRoles: Role[] = ["SUPER_ADMIN", "ADMIN_EMPRESA"]
+  private static validateManagePermission(role: SystemRoleKey): void {
+    const allowedRoles: SystemRoleKey[] = ['SUPER_ADMIN', 'ADMIN_EMPRESA']
 
     if (!allowedRoles.includes(role)) {
       throw new Error("No tienes permisos para administrar prefijos de órdenes de trabajo")
@@ -23,7 +23,7 @@ export class WorkOrderPrefixService {
    * Validate if user can view prefixes
    * All authenticated users in the company can view prefixes
    */
-  private static validateViewPermission(_role: Role): void {
+  private static validateViewPermission(_role: SystemRoleKey): void {
     // All roles can view prefixes
     // This is just a placeholder for consistency
     return
@@ -34,7 +34,7 @@ export class WorkOrderPrefixService {
    */
   static async listPrefixes(
     companyId: string,
-    userRole: Role,
+    userRole: SystemRoleKey,
     filters?: WorkOrderPrefixFilters,
     page = 1,
     limit = 10
@@ -54,7 +54,7 @@ export class WorkOrderPrefixService {
    */
   static async getActivePrefixes(
     companyId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ) {
     this.validateViewPermission(userRole)
 
@@ -67,7 +67,7 @@ export class WorkOrderPrefixService {
   static async getPrefix(
     id: string,
     companyId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ) {
     this.validateViewPermission(userRole)
 
@@ -87,7 +87,7 @@ export class WorkOrderPrefixService {
     data: CreateWorkOrderPrefixData,
     companyId: string,
     userId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ) {
     this.validateManagePermission(userRole)
 
@@ -118,7 +118,7 @@ export class WorkOrderPrefixService {
     id: string,
     data: UpdateWorkOrderPrefixData,
     companyId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ) {
     this.validateManagePermission(userRole)
 
@@ -161,7 +161,7 @@ export class WorkOrderPrefixService {
   static async deletePrefix(
     id: string,
     companyId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ): Promise<void> {
     this.validateManagePermission(userRole)
 
@@ -186,7 +186,7 @@ export class WorkOrderPrefixService {
   static async hardDeletePrefix(
     id: string,
     companyId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ): Promise<void> {
     this.validateManagePermission(userRole)
 
@@ -210,7 +210,7 @@ export class WorkOrderPrefixService {
   static async toggleActive(
     id: string,
     companyId: string,
-    userRole: Role
+    userRole: SystemRoleKey
   ) {
     this.validateManagePermission(userRole)
 

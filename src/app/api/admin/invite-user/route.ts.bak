@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       const clientCompany = await prisma.clientCompany.findFirst({
         where: {
           id: clientCompanyId,
-          tenantCompanyId: session.user.companyId!,
+          tenantCompanyId: session.user.companyId,
           isActive: true
         }
       })

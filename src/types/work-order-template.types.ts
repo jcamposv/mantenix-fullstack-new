@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 // Enum types from Prisma
 export type WorkOrderTemplateStatus = "ACTIVE" | "INACTIVE"
@@ -99,7 +99,7 @@ export interface WorkOrderTemplateWithRelations extends WorkOrderTemplate {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   _count?: {
     workOrders?: number  // For future implementation

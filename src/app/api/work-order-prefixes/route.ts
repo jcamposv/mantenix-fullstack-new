@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { AuthService } from "@/server/services/auth.service"
 import { WorkOrderPrefixService } from "@/server/services/work-order-prefix.service"
 import {
   createWorkOrderPrefixSchema,
   workOrderPrefixFiltersSchema,
 } from "@/schemas/work-order-prefix"
 import { ZodError } from "zod"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 /**
  * GET /api/work-order-prefixes
@@ -15,14 +14,13 @@ import type { Role } from "@prisma/client"
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user || !session?.user.companyId || !session?.user.role) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
@@ -36,8 +34,8 @@ export async function GET(request: NextRequest) {
 
     // Get prefixes
     const result = await WorkOrderPrefixService.listPrefixes(
-      session.user.companyId,
-      session.user.role as Role,
+      session.user.companyId!,
+      session.user.role as SystemRoleKey,
       {
         search: filters.search,
         isActive: filters.isActive,
@@ -78,14 +76,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user || !session?.user.companyId || !session?.user.role) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     // Parse and validate request body
     const body = await request.json()
@@ -94,9 +91,9 @@ export async function POST(request: NextRequest) {
     // Create prefix
     const prefix = await WorkOrderPrefixService.createPrefix(
       data,
-      session.user.companyId,
+      session.user.companyId!,
       session.user.id,
-      session.user.role as Role
+      session.user.role as SystemRoleKey
     )
 
     return NextResponse.json(prefix, { status: 201 })

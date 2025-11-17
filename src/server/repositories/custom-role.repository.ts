@@ -1,6 +1,9 @@
 /**
  * Custom Role Repository
  * Data access layer for custom roles
+ *
+ * Note: This repository does NOT import Role from Prisma because the Role enum no longer exists.
+ * CustomRole is a database model that replaces the old enum-based system.
  */
 
 import { prisma } from '@/lib/prisma';
@@ -182,7 +185,7 @@ export class CustomRoleRepository {
    */
   async countUsers(roleId: string): Promise<number> {
     return prisma.user.count({
-      where: { customRoleId: roleId }
+      where: { roleId: roleId }
     });
   }
 

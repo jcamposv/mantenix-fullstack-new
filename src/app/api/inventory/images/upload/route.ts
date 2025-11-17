@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { AuthService } from "@/server/services/auth.service"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 
 export const dynamic = 'force-dynamic'
@@ -20,13 +19,13 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB for inventory images
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     // Check if user has permission to upload inventory images
     const allowedRoles = ["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "JEFE_MANTENIMIENTO"]

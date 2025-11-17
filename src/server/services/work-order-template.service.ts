@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { WorkOrderTemplateRepository } from "../repositories/work-order-template.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { 
   CreateWorkOrderTemplateInput, 
@@ -73,11 +73,7 @@ export class WorkOrderTemplateService {
    */
   static async getList(session: AuthenticatedSession, filters: WorkOrderTemplateFiltersInput) {
     // Verify permissions
-    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
-    }
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
 
     const { page, limit, ...filterParams } = filters
     const whereClause = this.buildWhereClause(session, undefined, filterParams)
@@ -97,11 +93,7 @@ export class WorkOrderTemplateService {
    */
   static async getAll(session: AuthenticatedSession) {
     // Verify permissions
-    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
-    }
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
 
     const whereClause = this.buildWhereClause(session)
     return await WorkOrderTemplateRepository.findAll(whereClause)
@@ -112,9 +104,7 @@ export class WorkOrderTemplateService {
    */
   static async create(templateData: CreateWorkOrderTemplateInput, session: AuthenticatedSession) {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'create_work_order_template')) {
-      throw new Error("No tienes permisos para crear templates de órdenes de trabajo")
-    }
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
 
     if (!session.user.companyId) {
       throw new Error("Usuario sin empresa asociada")
@@ -152,9 +142,7 @@ export class WorkOrderTemplateService {
     session: AuthenticatedSession
   ) {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'update_work_order_template')) {
-      throw new Error("No tienes permisos para actualizar templates de órdenes de trabajo")
-    }
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
 
     // Verify that template exists and user has access
     const existingTemplate = await this.getById(id, session)
@@ -192,9 +180,7 @@ export class WorkOrderTemplateService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'delete_work_order_template')) {
-      throw new Error("No tienes permisos para eliminar templates de órdenes de trabajo")
-    }
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
 
     // Verify that template exists and user has access
     const existingTemplate = await WorkOrderTemplateRepository.findMinimal(id)
@@ -223,11 +209,8 @@ export class WorkOrderTemplateService {
    */
   static async getCategories(session: AuthenticatedSession): Promise<string[]> {
     // Verify permissions
-    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
     
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
-    }
 
     if (!session.user.companyId) {
       throw new Error("Usuario sin empresa asociada")
@@ -241,11 +224,8 @@ export class WorkOrderTemplateService {
    */
   static async getStats(session: AuthenticatedSession) {
     // Verify permissions
-    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
     
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver estadísticas de templates")
-    }
 
     if (!session.user.companyId) {
       throw new Error("Usuario sin empresa asociada")
@@ -268,11 +248,8 @@ export class WorkOrderTemplateService {
    */
   static async getTemplatesForAsset(assetId: string, session: AuthenticatedSession) {
     // Verify permissions
-    const hasPermission = await AuthService.canUserPerformActionAsync(session, 'view_work_order_templates')
+    await PermissionGuard.require(session, 'work_orders.manage_templates')
     
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver templates de órdenes de trabajo")
-    }
 
     if (!session.user.companyId) {
       throw new Error("Usuario sin empresa asociada")

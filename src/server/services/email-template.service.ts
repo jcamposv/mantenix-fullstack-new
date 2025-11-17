@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { EmailTemplateRepository } from "../repositories/email-template.repository"
 import { EmailConfigurationRepository } from "../repositories/email-configuration.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type {
   EmailTemplateType,
@@ -113,9 +113,7 @@ export class EmailTemplateService {
     limit: number
   ) {
     // Verificar permisos
-    if (!await AuthService.canUserPerformActionAsync(session, 'view_email_templates')) {
-      throw new Error("No tienes permisos para ver templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
     const { templates, total } = await EmailTemplateRepository.findMany(whereClause, page, limit)
@@ -164,9 +162,7 @@ export class EmailTemplateService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!await AuthService.canUserPerformActionAsync(session, 'create_email_template')) {
-      throw new Error("No tienes permisos para crear templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar acceso a la configuración
     const config = await EmailConfigurationRepository.findById(templateData.emailConfigurationId)
@@ -217,9 +213,7 @@ export class EmailTemplateService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!await AuthService.canUserPerformActionAsync(session, 'update_email_template')) {
-      throw new Error("No tienes permisos para actualizar templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que el template existe y se tiene acceso
     const existingTemplate = await this.getById(id, session)
@@ -243,9 +237,7 @@ export class EmailTemplateService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verificar permisos
-    if (!await AuthService.canUserPerformActionAsync(session, 'delete_email_template')) {
-      throw new Error("No tienes permisos para eliminar templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que el template existe y se tiene acceso
     const existingTemplate = await this.getById(id, session)

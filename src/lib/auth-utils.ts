@@ -19,10 +19,18 @@ export async function getCurrentUserWithRole() {
       return null
     }
 
-    // Fetch user with company info, site, and client company
+    // Fetch user with company info, site, client company, and role
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
+        role: {
+          select: {
+            id: true,
+            key: true,
+            name: true,
+            interfaceType: true
+          }
+        },
         company: true,
         site: {
           select: {
@@ -45,10 +53,11 @@ export async function getCurrentUserWithRole() {
       }
     })
 
-    if (!user) {
+    if (!user || !user.role) {
       return {
         ...session.user,
         role: null,
+        roleId: null,
         companyId: null,
         companyGroupId: null,
         siteId: null,
@@ -61,7 +70,10 @@ export async function getCurrentUserWithRole() {
 
     return {
       ...session.user,
-      role: user.role,
+      role: user.role.key || '', // CustomRole.key as string (for backwards compatibility)
+      roleId: user.roleId, // CustomRole.id
+      roleName: user.role.name, // Full role name
+      roleInterfaceType: user.role.interfaceType, // MOBILE, DASHBOARD, BOTH
       companyId: user.companyId,
       companyGroupId: user.companyGroupId,
       siteId: user.siteId,
@@ -112,10 +124,15 @@ export async function validateSubdomainAccess(
   subdomain: string
 ): Promise<SubdomainValidationResult> {
   try {
-    // Fetch user with company group relationships
+    // Fetch user with company group relationships and role
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
+        role: {
+          select: {
+            key: true
+          }
+        },
         company: {
           include: {
             companyGroup: {
@@ -134,7 +151,7 @@ export async function validateSubdomainAccess(
       }
     })
 
-    if (!user) {
+    if (!user || !user.role) {
       return {
         canAccess: false,
         error: 'Usuario no encontrado'
@@ -142,7 +159,7 @@ export async function validateSubdomainAccess(
     }
 
     // SUPER_ADMIN has unrestricted access
-    if (user.role === 'SUPER_ADMIN') {
+    if (user.role.key === 'SUPER_ADMIN') {
       return { canAccess: true }
     }
 
@@ -167,7 +184,7 @@ export async function validateSubdomainAccess(
     }
 
     // ADMIN_GRUPO validation: must be in same corporate group
-    if (user.role === 'ADMIN_GRUPO') {
+    if (user.role.key === 'ADMIN_GRUPO') {
       if (!user.company?.companyGroup) {
         return {
           canAccess: false,

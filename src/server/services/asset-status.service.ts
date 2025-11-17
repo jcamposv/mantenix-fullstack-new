@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { AssetStatusHistoryRepository } from "../repositories/asset-status-history.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { ChangeAssetStatusData, AssetStatusHistoryFilters } from "@/schemas/asset-status"
 
@@ -23,9 +23,7 @@ export class AssetStatusService {
     session: AuthenticatedSession
   ) {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'change_asset_status')) {
-      throw new Error("No tienes permisos para cambiar el estado de activos")
-    }
+    await PermissionGuard.require(session, 'assets.change_status')
 
     // Verify asset exists and user has access
     const asset = await prisma.asset.findUnique({
@@ -122,9 +120,7 @@ export class AssetStatusService {
     session: AuthenticatedSession
   ) {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'view_asset_status_history')) {
-      throw new Error("No tienes permisos para ver el historial de estados")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     // Build where clause
     const whereClause: Prisma.AssetStatusHistoryWhereInput = {}
@@ -188,9 +184,7 @@ export class AssetStatusService {
    */
   static async getCurrentAssetStatus(assetId: string, session: AuthenticatedSession) {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'view_asset_status_history')) {
-      throw new Error("No tienes permisos para ver el estado de activos")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     // Verify asset exists and user has access
     const asset = await prisma.asset.findUnique({
@@ -229,9 +223,7 @@ export class AssetStatusService {
     session: AuthenticatedSession
   ): Promise<number> {
     // Verify permissions
-    if (!await AuthService.canUserPerformActionAsync(session, 'view_asset_status_history')) {
-      throw new Error("No tienes permisos para ver métricas de activos")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     // Verify asset exists and user has access
     const asset = await prisma.asset.findUnique({

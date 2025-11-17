@@ -1,4 +1,5 @@
-import type { User, Role } from "@prisma/client"
+import type { User } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 export interface UserWithRelations extends User {
   company?: {
@@ -23,7 +24,7 @@ export interface UserWithRelations extends User {
 export interface CreateUserData {
   name: string
   email: string
-  role: Role
+  role: SystemRoleKey
   companyId?: string
   clientCompanyId?: string
   siteId?: string
@@ -32,14 +33,14 @@ export interface CreateUserData {
 export interface UpdateUserData {
   name?: string
   email?: string
-  role?: Role
+  role?: SystemRoleKey
   companyId?: string
   clientCompanyId?: string
   siteId?: string
 }
 
 export interface UserFilters {
-  role?: Role
+  role?: SystemRoleKey
   companyId?: string
   clientCompanyId?: string
   siteId?: string

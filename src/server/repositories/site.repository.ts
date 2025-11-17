@@ -110,10 +110,19 @@ export class SiteRepository {
       include: {
         ...SiteRepository.includeRelations,
         siteUsers: {
-          select: { id: true, name: true, email: true, role: true }
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: {
+              select: {
+                key: true
+              }
+            }
+          }
         }
       }
-    })
+    }) as unknown as SiteWithRelations | null
   }
 
   static async countPendingInvitations(siteId: string): Promise<number> {

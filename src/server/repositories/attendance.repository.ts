@@ -218,7 +218,7 @@ export class AttendanceRepository {
         companyId,
         isLocked: false,
         role: {
-          in: ['TECNICO', 'SUPERVISOR', 'ADMIN_EMPRESA']
+          key: { in: ['TECNICO', 'SUPERVISOR', 'ADMIN_EMPRESA'] }
         }
       }
     })

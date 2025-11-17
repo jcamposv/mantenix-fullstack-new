@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
 import { PasswordResetService } from "@/server/services/password-reset.service"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
+import { AuthService } from "@/server/services/auth.service"
 
 export const dynamic = 'force-dynamic'
 
@@ -16,16 +15,13 @@ export async function POST(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user || !session?.user.role) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { userId } = await params
 
@@ -33,7 +29,7 @@ export async function POST(
     await PasswordResetService.sendResetLink(
       userId,
       session.user.id,
-      session.user.role as Role,
+      session.user.role as SystemRoleKey,
       session.user.companyId || null
     )
 

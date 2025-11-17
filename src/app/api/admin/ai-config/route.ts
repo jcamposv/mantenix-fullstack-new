@@ -29,10 +29,16 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true }
+      select: {
+        role: {
+          select: {
+            key: true
+          }
+        }
+      }
     })
 
-    if (user?.role !== 'SUPER_ADMIN') {
+    if (user?.role.key !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { error: "Forbidden - Super Admin only" },
         { status: 403 }

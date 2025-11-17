@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     const result = await CalendarService.rescheduleEvent(
       actualId,
       eventType,
-      session.user.companyId!,
+      session.user.companyId,
       new Date(newDate)
     )
 

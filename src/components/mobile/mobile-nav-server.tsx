@@ -1,9 +1,9 @@
 import { MobileNavLink } from "./mobile-nav-link"
-import type { Role } from "@prisma/client"
+import type { UserRole } from "@/types/auth.types"
 import type { FeatureFlags } from "@/lib/features"
 
 interface MobileNavigationProps {
-  userRole: Role
+  userRole: UserRole
   features?: FeatureFlags
 }
 

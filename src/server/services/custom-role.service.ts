@@ -101,7 +101,7 @@ export class CustomRoleService {
     // Validate name uniqueness if name is being updated
     if (data.name && data.name !== existingRole.name) {
       const nameExists = await this.repository.existsByName(
-        existingRole.companyId,
+        existingRole.companyId!,
         data.name,
         id
       );
@@ -209,6 +209,11 @@ export class CustomRoleService {
     const sourceRole = await this.repository.findById(roleId);
     if (!sourceRole) {
       throw new Error('Rol fuente no encontrado');
+    }
+
+    // Cannot duplicate system roles (they have companyId = null)
+    if (!sourceRole.companyId) {
+      throw new Error('No se pueden duplicar roles del sistema');
     }
 
     const permissionIds = sourceRole.permissions.map((p) => p.permission.id);

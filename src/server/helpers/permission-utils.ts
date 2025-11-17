@@ -1,10 +1,9 @@
 /**
  * Permission Utilities
- * Maps legacy permission keys to new database permission keys
+ * Provides permission checking functions for both system and custom roles
  */
 
 import { CustomRoleRepository } from '@/server/repositories/custom-role.repository';
-import type { Role } from '@prisma/client';
 import type { AuthenticatedSession } from '@/types/auth.types';
 import { prisma } from '@/lib/prisma';
 
@@ -134,149 +133,29 @@ export function normalizePermissionKey(legacyKey: string): string {
 }
 
 /**
- * Base role permissions (from legacy PermissionHelper)
- * Maps Role enum to new permission keys
- */
-const BASE_ROLE_PERMISSIONS: Record<Role, string[]> = {
-  SUPER_ADMIN: [
-    'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_all', 'alerts.comment',
-    'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
-    'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
-    'work_orders.manage_templates', 'work_orders.manage_prefixes',
-    'production_lines.create', 'production_lines.view', 'production_lines.update', 'production_lines.delete',
-    'analytics.view',
-    'users.create', 'users.update', 'users.delete', 'users.view_all', 'users.view',
-    'custom_roles.create', 'custom_roles.view', 'custom_roles.update', 'custom_roles.delete',
-    'client_companies.create', 'client_companies.update', 'client_companies.delete', 'client_companies.view',
-    'sites.create', 'sites.update', 'sites.delete', 'sites.view',
-    'companies.create', 'companies.update', 'companies.delete', 'companies.view',
-    'company_groups.create', 'company_groups.update', 'company_groups.delete', 'company_groups.view', 'company_groups.manage_companies',
-    'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.edit', 'assets.change_status', 'assets.view_status_history',
-    'work_order_templates.create', 'work_order_templates.update', 'work_order_templates.delete', 'work_order_templates.view',
-    'email_configuration.create', 'email_configuration.update', 'email_configuration.delete', 'email_configuration.view',
-    'email_templates.create', 'email_templates.update', 'email_templates.delete', 'email_templates.view',
-    'features.manage',
-    'attendance.view_all', 'attendance.view', 'attendance.view_reports', 'attendance.create', 'attendance.update', 'attendance.delete',
-    'locations.manage', 'locations.view',
-    'inventory.view', 'inventory.view_items', 'inventory.view_all', 'inventory.create_item', 'inventory.update_item', 'inventory.delete_item',
-    'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
-    'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
-    'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-    'inventory.delete_request', 'inventory.view_movements'
-  ],
-  ADMIN_GRUPO: [
-    'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
-    'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
-    'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
-    'work_orders.manage_templates', 'work_orders.manage_prefixes',
-    'production_lines.create', 'production_lines.view', 'production_lines.update', 'production_lines.delete',
-    'analytics.view',
-    'users.create', 'users.update', 'users.delete', 'users.view_company', 'users.view',
-    'custom_roles.create', 'custom_roles.view', 'custom_roles.update', 'custom_roles.delete',
-    'client_companies.create', 'client_companies.update', 'client_companies.delete', 'client_companies.view',
-    'sites.create', 'sites.update', 'sites.delete', 'sites.view',
-    'company_groups.create', 'company_groups.update', 'company_groups.delete', 'company_groups.view', 'company_groups.manage_companies',
-    'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.edit', 'assets.change_status', 'assets.view_status_history',
-    'work_order_templates.create', 'work_order_templates.update', 'work_order_templates.delete', 'work_order_templates.view',
-    'email_configuration.create', 'email_configuration.update', 'email_configuration.delete', 'email_configuration.view',
-    'email_templates.create', 'email_templates.update', 'email_templates.delete', 'email_templates.view',
-    'attendance.view_company', 'attendance.view', 'attendance.view_reports', 'attendance.create', 'attendance.update', 'attendance.delete',
-    'locations.manage', 'locations.view',
-    'inventory.view', 'inventory.view_items', 'inventory.view_all', 'inventory.create_item', 'inventory.update_item', 'inventory.delete_item',
-    'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
-    'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
-    'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-    'inventory.delete_request', 'inventory.view_movements'
-  ],
-  ADMIN_EMPRESA: [
-    'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
-    'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
-    'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
-    'work_orders.manage_templates', 'work_orders.manage_prefixes',
-    'production_lines.create', 'production_lines.view', 'production_lines.update', 'production_lines.delete',
-    'analytics.view',
-    'users.create', 'users.update', 'users.delete', 'users.view_company', 'users.view',
-    'custom_roles.create', 'custom_roles.view', 'custom_roles.update', 'custom_roles.delete',
-    'client_companies.create', 'client_companies.update', 'client_companies.delete', 'client_companies.view',
-    'sites.create', 'sites.update', 'sites.delete', 'sites.view',
-    'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.edit', 'assets.change_status', 'assets.view_status_history',
-    'work_order_templates.create', 'work_order_templates.update', 'work_order_templates.delete', 'work_order_templates.view',
-    'email_configuration.create', 'email_configuration.update', 'email_configuration.delete', 'email_configuration.view',
-    'email_templates.create', 'email_templates.update', 'email_templates.delete', 'email_templates.view',
-    'attendance.view_company', 'attendance.view', 'attendance.view_reports', 'attendance.create', 'attendance.update', 'attendance.delete',
-    'locations.manage', 'locations.view',
-    'inventory.view', 'inventory.view_items', 'inventory.view_all', 'inventory.create_item', 'inventory.update_item', 'inventory.delete_item',
-    'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
-    'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
-    'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-    'inventory.delete_request', 'inventory.view_movements'
-  ],
-  JEFE_MANTENIMIENTO: [
-    'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
-    'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
-    'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
-    'work_orders.manage_templates', 'work_orders.manage_prefixes',
-    'analytics.view',
-    'assets.view', 'assets.change_status', 'assets.view_status_history',
-    'work_order_templates.create', 'work_order_templates.update', 'work_order_templates.delete', 'work_order_templates.view',
-    'inventory.view_requests', 'inventory.approve_request', 'inventory.reject_request',
-    'inventory.view_items', 'inventory.view_stock'
-  ],
-  ENCARGADO_BODEGA: [
-    'inventory.view_items', 'inventory.view_all', 'inventory.create_item', 'inventory.update_item', 'inventory.delete_item',
-    'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
-    'inventory.view_requests', 'inventory.deliver_request', 'inventory.deliver_from_warehouse',
-    'inventory.confirm_receipt', 'inventory.view_movements'
-  ],
-  CLIENTE_ADMIN_GENERAL: [
-    'alerts.create', 'alerts.update', 'alerts.view_client', 'alerts.comment',
-    'users.view_client',
-    'sites.view',
-    'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.change_status', 'assets.view_status_history'
-  ],
-  CLIENTE_ADMIN_SEDE: [
-    'alerts.create', 'alerts.update', 'alerts.view_site', 'alerts.comment',
-    'sites.view',
-    'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.change_status', 'assets.view_status_history'
-  ],
-  CLIENTE_OPERARIO: [
-    'alerts.create', 'alerts.view_site', 'alerts.comment',
-    'assets.view', 'assets.change_status', 'assets.view_status_history'
-  ],
-  TECNICO: [
-    'alerts.create', 'alerts.update', 'alerts.view_assigned', 'alerts.comment',
-    'work_orders.view_assigned', 'work_orders.update', 'work_orders.complete',
-    'assets.view', 'assets.change_status', 'assets.view_status_history',
-    'attendance.view', 'attendance.create',
-    'inventory.view_requests', 'inventory.create_request', 'inventory.confirm_receipt',
-    'inventory.view_items', 'inventory.view_stock'
-  ],
-  SUPERVISOR: [
-    'alerts.create', 'alerts.update', 'alerts.view_company', 'alerts.comment',
-    'work_orders.create', 'work_orders.update', 'work_orders.view', 'work_orders.view_all',
-    'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
-    'analytics.view',
-    'assets.view', 'assets.change_status', 'assets.view_status_history',
-    'attendance.view_company', 'attendance.create', 'attendance.update',
-    'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request',
-    'inventory.reject_request', 'inventory.confirm_receipt',
-    'inventory.view_items', 'inventory.view_stock'
-  ],
-  OPERARIO: [
-    'assets.view', 'assets.change_status', 'assets.view_status_history',
-    'alerts.create', 'alerts.view_company', 'alerts.comment'
-  ]
-};
-
-/**
- * Get permissions for a user (handles both base roles and custom roles)
+ * Get permissions for a user
+ * All users now use CustomRole (includes both system and custom roles)
  */
 export async function getUserPermissions(session: AuthenticatedSession): Promise<string[]> {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      role: true,
-      customRoleId: true
+      roleId: true,
+      role: {
+        select: {
+          key: true,
+          isSystemRole: true,
+          permissions: {
+            select: {
+              permission: {
+                select: {
+                  key: true
+                }
+              }
+            }
+          }
+        }
+      }
     }
   });
 
@@ -284,14 +163,15 @@ export async function getUserPermissions(session: AuthenticatedSession): Promise
     return [];
   }
 
-  // If user has a custom role, use those permissions
-  if (user.customRoleId) {
-    const repository = new CustomRoleRepository();
-    return repository.getPermissionKeys(user.customRoleId);
+  // Get permission keys from role's permissions
+  const permissions = user.role.permissions.map(p => p.permission.key);
+
+  // SUPER_ADMIN has wildcard permission - check by key for performance
+  if (user.role.key === 'SUPER_ADMIN' || permissions.includes('*')) {
+    return ['*'];
   }
 
-  // Otherwise, use base role permissions
-  return BASE_ROLE_PERMISSIONS[user.role] || [];
+  return permissions;
 }
 
 /**

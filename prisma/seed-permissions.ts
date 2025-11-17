@@ -127,33 +127,11 @@ const PERMISSIONS: PermissionSeed[] = [
     description: 'Permite cancelar órdenes de trabajo',
     module: 'work_orders'
   },
-
-  // ============================================================================
-  // WORK ORDER TEMPLATES MODULE
-  // ============================================================================
   {
-    key: 'work_order_templates.create',
-    name: 'Crear Plantillas de OT',
-    description: 'Permite crear plantillas de órdenes de trabajo',
-    module: 'work_order_templates'
-  },
-  {
-    key: 'work_order_templates.update',
-    name: 'Actualizar Plantillas de OT',
-    description: 'Permite modificar plantillas existentes',
-    module: 'work_order_templates'
-  },
-  {
-    key: 'work_order_templates.delete',
-    name: 'Eliminar Plantillas de OT',
-    description: 'Permite eliminar plantillas',
-    module: 'work_order_templates'
-  },
-  {
-    key: 'work_order_templates.view',
-    name: 'Ver Plantillas de OT',
-    description: 'Permite ver plantillas de órdenes de trabajo',
-    module: 'work_order_templates'
+    key: 'work_orders.manage_templates',
+    name: 'Gestionar Plantillas de OT',
+    description: 'Permite gestionar (ver, crear, editar, eliminar) plantillas de órdenes de trabajo',
+    module: 'work_orders'
   },
 
   // ============================================================================
@@ -355,59 +333,13 @@ const PERMISSIONS: PermissionSeed[] = [
   },
 
   // ============================================================================
-  // EMAIL CONFIGURATION MODULE
+  // EMAIL SETTINGS MODULE
   // ============================================================================
   {
-    key: 'email_configuration.create',
-    name: 'Crear Configuración de Email',
-    description: 'Permite configurar email de la empresa',
-    module: 'email_configuration'
-  },
-  {
-    key: 'email_configuration.update',
-    name: 'Actualizar Configuración de Email',
-    description: 'Permite modificar configuración de email',
-    module: 'email_configuration'
-  },
-  {
-    key: 'email_configuration.delete',
-    name: 'Eliminar Configuración de Email',
-    description: 'Permite eliminar configuración de email',
-    module: 'email_configuration'
-  },
-  {
-    key: 'email_configuration.view',
-    name: 'Ver Configuración de Email',
-    description: 'Permite ver configuración de email',
-    module: 'email_configuration'
-  },
-
-  // ============================================================================
-  // EMAIL TEMPLATES MODULE
-  // ============================================================================
-  {
-    key: 'email_templates.create',
-    name: 'Crear Plantillas de Email',
-    description: 'Permite crear plantillas de email',
-    module: 'email_templates'
-  },
-  {
-    key: 'email_templates.update',
-    name: 'Actualizar Plantillas de Email',
-    description: 'Permite modificar plantillas de email',
-    module: 'email_templates'
-  },
-  {
-    key: 'email_templates.delete',
-    name: 'Eliminar Plantillas de Email',
-    description: 'Permite eliminar plantillas de email',
-    module: 'email_templates'
-  },
-  {
-    key: 'email_templates.view',
-    name: 'Ver Plantillas de Email',
-    description: 'Permite ver plantillas de email',
-    module: 'email_templates'
+    key: 'email_settings.manage',
+    name: 'Gestionar Configuración de Email',
+    description: 'Permite gestionar configuraciones y plantillas de email de la empresa',
+    module: 'email_settings'
   },
 
   // ============================================================================

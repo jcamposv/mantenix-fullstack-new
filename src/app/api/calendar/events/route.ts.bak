@@ -99,7 +99,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Get calendar events from service
     const events = await CalendarService.getCalendarEvents(
-      session.user.companyId!,
+      session.user.companyId,
       {
         start: new Date(startDate),
         end: new Date(endDate),
