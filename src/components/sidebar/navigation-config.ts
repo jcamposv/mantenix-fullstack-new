@@ -233,12 +233,6 @@ export const ADMIN_NAV_ITEMS = [
     icon: Mail,
     role: "SUPER_ADMIN" // Only super admins can manage email configurations
   },
-  {
-    name: "Configuración del Sistema",
-    url: "/admin/settings",
-    icon: Settings2,
-    role: "SUPER_ADMIN" // Only super admins can see system settings
-  },
 ]
 
 export const FALLBACK_USER = {

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useAlerts } from "@/hooks/useAlerts"
@@ -88,7 +89,7 @@ export function NavMain({
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton asChild>
-                              <a href={subItem.url} className="flex items-center justify-between w-full">
+                              <Link href={subItem.url} className="flex items-center justify-between w-full">
                                 <span>{subItem.title}</span>
                                 {badgeCount !== null && badgeCount > 0 && (
                                   <Badge
@@ -98,7 +99,7 @@ export function NavMain({
                                     {badgeCount > 99 ? '99+' : badgeCount}
                                   </Badge>
                                 )}
-                              </a>
+                              </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         )
@@ -114,18 +115,18 @@ export function NavMain({
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+                <Link href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                   {item.badge && unreadCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
+                    <Badge
+                      variant="destructive"
                       className="ml-auto h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
                     >
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </Badge>
                   )}
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )
