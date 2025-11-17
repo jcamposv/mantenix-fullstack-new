@@ -21,6 +21,7 @@ import {
   CreditCard,
   Factory,
   ShieldCheck,
+  Network,
 } from "lucide-react"
 
 // Navigation items for SUPER_ADMIN (SaaS administrator)
@@ -160,6 +161,12 @@ export const ADMIN_NAV_ITEMS = [
     url: "/super-admin/companies",
     icon: Building2,
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
+  },
+  {
+    name: "Grupos Corporativos",
+    url: "/admin/company-groups",
+    icon: Network,
+    role: "SUPER_ADMIN" // Only super admins can manage company groups
   },
   {
     name: "Gestión",

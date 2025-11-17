@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import {
@@ -32,29 +33,48 @@ export function NavProjects({
     }[]
   }[]
 }) {
+  const pathname = usePathname()
+
+  // Helper function to check if a URL is active
+  const isUrlActive = (url: string): boolean => {
+    if (url === '/') {
+      return pathname === '/'
+    }
+    return pathname === url || pathname.startsWith(url + '/')
+  }
+
+  // Helper function to check if any sub-item is active
+  const hasActiveChild = (subItems?: { url: string }[]): boolean => {
+    if (!subItems) return false
+    return subItems.some(subItem => isUrlActive(subItem.url))
+  }
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Administración</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {projects.map((item) => {
+          const itemActive = isUrlActive(item.url)
+          const childActive = hasActiveChild(item.items)
+
+          return (
           <Collapsible
             key={item.name}
             asChild
-            defaultOpen={false}
+            defaultOpen={childActive} // Open if any child is active
             className="group/collapsible"
           >
             <SidebarMenuItem>
               {item.items ? (
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.name}>
+                  <SidebarMenuButton tooltip={item.name} isActive={childActive}>
                     <item.icon />
                     <span>{item.name}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
               ) : (
-                <SidebarMenuButton asChild tooltip={item.name}>
+                <SidebarMenuButton asChild tooltip={item.name} isActive={itemActive}>
                   <Link href={item.url}>
                     <item.icon />
                     <span>{item.name}</span>
@@ -64,21 +84,26 @@ export function NavProjects({
               {item.items && (
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild>
-                          <Link href={subItem.url}>
-                            <span>{subItem.title}</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
+                    {item.items.map((subItem) => {
+                      const subItemActive = isUrlActive(subItem.url)
+
+                      return (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton asChild isActive={subItemActive}>
+                            <Link href={subItem.url}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )
+                    })}
                   </SidebarMenuSub>
                 </CollapsibleContent>
               )}
             </SidebarMenuItem>
           </Collapsible>
-        ))}
+          )
+        })}
       </SidebarMenu>
     </SidebarGroup>
   )
