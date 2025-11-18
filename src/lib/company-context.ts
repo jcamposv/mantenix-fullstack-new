@@ -94,7 +94,7 @@ export async function getCurrentCompanyId(
         where: { id: session.user.companyId },
         select: { companyGroupId: true }
       });
-      userCompanyGroupId = userCompany?.companyGroupId;
+      userCompanyGroupId = userCompany?.companyGroupId ?? undefined;
     }
 
     // Verify user has access to this company (must be in same group)
