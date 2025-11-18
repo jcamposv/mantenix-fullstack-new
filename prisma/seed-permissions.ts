@@ -156,6 +156,12 @@ const PERMISSIONS: PermissionSeed[] = [
     module: 'users'
   },
   {
+    key: 'users.view',
+    name: 'Ver Usuarios',
+    description: 'Permite ver usuarios',
+    module: 'users'
+  },
+  {
     key: 'users.view_all',
     name: 'Ver Todos los Usuarios',
     description: 'Permite ver usuarios de todo el sistema',
@@ -172,6 +178,34 @@ const PERMISSIONS: PermissionSeed[] = [
     name: 'Ver Usuarios de Cliente',
     description: 'Permite ver usuarios de clientes externos',
     module: 'users'
+  },
+
+  // ============================================================================
+  // CUSTOM ROLES MODULE
+  // ============================================================================
+  {
+    key: 'custom_roles.create',
+    name: 'Crear Roles Personalizados',
+    description: 'Permite crear nuevos roles personalizados',
+    module: 'custom_roles'
+  },
+  {
+    key: 'custom_roles.view',
+    name: 'Ver Roles Personalizados',
+    description: 'Permite ver roles personalizados',
+    module: 'custom_roles'
+  },
+  {
+    key: 'custom_roles.update',
+    name: 'Actualizar Roles Personalizados',
+    description: 'Permite modificar roles personalizados',
+    module: 'custom_roles'
+  },
+  {
+    key: 'custom_roles.delete',
+    name: 'Eliminar Roles Personalizados',
+    description: 'Permite eliminar roles personalizados',
+    module: 'custom_roles'
   },
 
   // ============================================================================

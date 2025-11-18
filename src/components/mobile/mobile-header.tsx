@@ -14,8 +14,19 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { Menu, AlertTriangle, LogOut, Building2, Monitor } from "lucide-react"
+import {
+  Menu,
+  AlertTriangle,
+  LogOut,
+  Building2,
+  Monitor,
+  Home,
+  ClipboardList,
+  Clock,
+  Settings
+} from "lucide-react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { usePermissions } from "@/hooks/usePermissions"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { usePlatformSwitch } from "@/hooks/usePlatformSwitch"
@@ -27,9 +38,12 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ companyBranding }: MobileHeaderProps) {
   const { user } = useCurrentUser()
+  const { hasPermission } = usePermissions()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const { isAdmin, switchToDesktop } = usePlatformSwitch()
+
+  const isExternalUser = !!user?.clientCompanyId
 
   const handleSignOut = async () => {
     try {
@@ -131,6 +145,7 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
               </div>
 
               <div className="space-y-1">
+                {/* Dashboard - Always show */}
                 <Button
                   variant="ghost"
                   className="w-full justify-start"
@@ -139,28 +154,101 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
                     router.push("/mobile")
                   }}
                 >
-                  <AlertTriangle className="w-4 h-4 mr-3" />
-                  Alertas
+                  <Home className="w-4 h-4 mr-3" />
+                  Dashboard
                 </Button>
 
-                {isAdmin && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        setIsOpen(false)
-                        switchToDesktop()
-                      }}
-                    >
-                      <Monitor className="w-4 h-4 mr-3" />
-                      Cambiar a Escritorio
-                    </Button>
-                  </>
+                {/* Assets - Para operarios */}
+                {hasPermission('assets.change_status') && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsOpen(false)
+                      router.push("/mobile/assets")
+                    }}
+                  >
+                    <Building2 className="w-4 h-4 mr-3" />
+                    Máquinas
+                  </Button>
                 )}
+
+                {/* Work Orders - Para técnicos/mecánicos */}
+                {(hasPermission('work_orders.view_assigned') || hasPermission('work_orders.complete')) && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsOpen(false)
+                      router.push("/mobile/work-orders")
+                    }}
+                  >
+                    <ClipboardList className="w-4 h-4 mr-3" />
+                    Órdenes de Trabajo
+                  </Button>
+                )}
+
+                {/* Attendance - Para usuarios con permiso de asistencia */}
+                {(hasPermission('attendance.create') || hasPermission('attendance.view')) && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsOpen(false)
+                      router.push("/mobile/attendance")
+                    }}
+                  >
+                    <Clock className="w-4 h-4 mr-3" />
+                    Asistencia
+                  </Button>
+                )}
+
+                {/* Alerts - Para clientes externos */}
+                {isExternalUser && hasPermission('alerts.create') && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsOpen(false)
+                      router.push("/mobile/alerts")
+                    }}
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-3" />
+                    Alertas
+                  </Button>
+                )}
+
+                {/* Settings - Always show */}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setIsOpen(false)
+                    router.push("/mobile/settings")
+                  }}
+                >
+                  <Settings className="w-4 h-4 mr-3" />
+                  Ajustes
+                </Button>
 
                 <Separator className="my-4" />
 
+                {/* Switch to Desktop - For admins */}
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsOpen(false)
+                      switchToDesktop()
+                    }}
+                  >
+                    <Monitor className="w-4 h-4 mr-3" />
+                    Cambiar a Escritorio
+                  </Button>
+                )}
+
+                {/* Sign Out */}
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
