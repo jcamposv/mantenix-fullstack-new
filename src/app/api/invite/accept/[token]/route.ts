@@ -69,12 +69,13 @@ export async function POST(
       )
     }
 
-    // Create user using Better Auth
+    // Create user using Better Auth with roleId
     const result = await auth.api.signUpEmail({
       body: {
         email: invitation.email,
         password: password,
         name: name,
+        roleId: invitation.roleId, // Required field
       },
     })
 
@@ -82,12 +83,11 @@ export async function POST(
       throw new Error("Failed to create user account")
     }
 
-    // Update user with role and company from invitation
+    // Update user with additional fields from invitation
     const updatedUser = await prisma.user.update({
       where: { id: result.user.id },
       data: {
         emailVerified: true,
-        roleId: invitation.roleId,
         companyId: invitation.companyId,
         isExternalUser: invitation.isExternalUser,
         clientCompanyId: invitation.clientCompanyId,

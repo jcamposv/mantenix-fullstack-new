@@ -169,6 +169,12 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can manage company groups
   },
   {
+    name: "Planes de Suscripción",
+    url: "/super-admin/subscription-plans",
+    icon: CreditCard,
+    role: "SUPER_ADMIN" // Only super admins can manage subscription plans
+  },
+  {
     name: "Gestión",
     url: "/admin/assets",
     icon: Package,
