@@ -113,7 +113,9 @@ export class PermissionService {
       company_groups: 'Grupos Corporativos',
       email_configuration: 'Configuración de Email',
       email_templates: 'Plantillas de Email',
+      email_settings: 'Configuración de Email',
       features: 'Funcionalidades',
+      custom_roles: 'Roles Personalizados',
       attendance: 'Asistencia',
       locations: 'Ubicaciones',
       inventory: 'Inventario'

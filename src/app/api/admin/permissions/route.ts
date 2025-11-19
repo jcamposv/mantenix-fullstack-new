@@ -37,12 +37,39 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Check if client wants grouped permissions
     const { searchParams } = new URL(request.url);
     const grouped = searchParams.get('grouped') === 'true';
+    const forCustomRole = searchParams.get('forCustomRole') === 'true';
+
+    // Modules that are only for SUPER_ADMIN and should not be available for custom roles
+    const superAdminOnlyModules = [
+      'companies',
+      'company_groups',
+      'email_configuration',
+      'email_templates',
+      'email_settings',
+      'features'
+    ];
 
     if (grouped) {
-      const permissionsByModule = await permissionService.getPermissionsByModule();
+      let permissionsByModule = await permissionService.getPermissionsByModule();
+
+      // Filter out super admin only modules if this is for a custom role
+      if (forCustomRole) {
+        permissionsByModule = permissionsByModule.filter(
+          (group) => !superAdminOnlyModules.includes(group.module)
+        );
+      }
+
       return NextResponse.json(permissionsByModule);
     } else {
-      const permissions = await permissionService.getAllPermissions();
+      let permissions = await permissionService.getAllPermissions();
+
+      // Filter out super admin only permissions if this is for a custom role
+      if (forCustomRole) {
+        permissions = permissions.filter(
+          (permission) => !superAdminOnlyModules.includes(permission.module)
+        );
+      }
+
       return NextResponse.json(permissions);
     }
   } catch (error) {

@@ -31,7 +31,7 @@ interface RolePermissionsSelectorProps {
   control: Control<CustomRoleFormData>;
 }
 
-// Module labels mapping
+// Module labels mapping (excluding super admin only modules)
 const MODULE_LABELS: Record<string, string> = {
   alerts: 'Alertas',
   work_orders: 'Órdenes de Trabajo',
@@ -40,11 +40,7 @@ const MODULE_LABELS: Record<string, string> = {
   assets: 'Activos',
   client_companies: 'Empresas Cliente',
   sites: 'Sedes',
-  companies: 'Empresas',
-  company_groups: 'Grupos Corporativos',
-  email_configuration: 'Configuración de Email',
-  email_templates: 'Plantillas de Email',
-  features: 'Funcionalidades',
+  custom_roles: 'Roles Personalizados',
   attendance: 'Asistencia',
   locations: 'Ubicaciones',
   inventory: 'Inventario'
@@ -63,7 +59,7 @@ export function RolePermissionsSelector({ control }: RolePermissionsSelectorProp
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const response = await fetch('/api/admin/permissions?grouped=true');
+        const response = await fetch('/api/admin/permissions?grouped=true&forCustomRole=true');
         if (response.ok) {
           const data: PermissionGroup[] = await response.json();
 
