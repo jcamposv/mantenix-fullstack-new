@@ -29,6 +29,7 @@ export async function POST(
     const invitation = await prisma.userInvitation.findUnique({
       where: { token },
       include: {
+        role: true,
         company: true,
         clientCompany: true,
         site: true
@@ -68,12 +69,13 @@ export async function POST(
       )
     }
 
-    // Create user using Better Auth
+    // Create user using Better Auth with roleId
     const result = await auth.api.signUpEmail({
       body: {
         email: invitation.email,
         password: password,
         name: name,
+        roleId: invitation.roleId, // Required field
       },
     })
 
@@ -81,12 +83,11 @@ export async function POST(
       throw new Error("Failed to create user account")
     }
 
-    // Update user with role and company from invitation
+    // Update user with additional fields from invitation
     const updatedUser = await prisma.user.update({
       where: { id: result.user.id },
       data: {
         emailVerified: true,
-        role: invitation.role,
         companyId: invitation.companyId,
         isExternalUser: invitation.isExternalUser,
         clientCompanyId: invitation.clientCompanyId,
@@ -94,6 +95,14 @@ export async function POST(
         image: invitation.image,
         hourlyRate: invitation.hourlyRate,
       },
+      include: {
+        role: {
+          select: {
+            key: true,
+            name: true
+          }
+        }
+      }
     })
 
     // Mark invitation as used
@@ -116,7 +125,7 @@ export async function POST(
           resourceId: updatedUser.id,
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent') || '',
-          details: `User accepted invitation for role ${invitation.role}${invitation.isExternalUser ? ` (external user for ${invitation.clientCompany?.name}${invitation.site ? ` - ${invitation.site.name}` : ''})` : ''}`,
+          details: `User accepted invitation for role ${invitation.role.name}${invitation.isExternalUser ? ` (external user for ${invitation.clientCompany?.name}${invitation.site ? ` - ${invitation.site.name}` : ''})` : ''}`,
         }
       })
     }
@@ -127,7 +136,8 @@ export async function POST(
         id: updatedUser.id,
         email: updatedUser.email,
         name: updatedUser.name,
-        role: updatedUser.role,
+        role: updatedUser.role.key,
+        roleName: updatedUser.role.name,
         company: invitation.company,
         isExternalUser: updatedUser.isExternalUser,
         clientCompany: invitation.clientCompany,

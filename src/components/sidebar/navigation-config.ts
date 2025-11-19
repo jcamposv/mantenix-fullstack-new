@@ -20,6 +20,8 @@ import {
   Package,
   CreditCard,
   Factory,
+  ShieldCheck,
+  Network,
 } from "lucide-react"
 
 // Navigation items for SUPER_ADMIN (SaaS administrator)
@@ -64,30 +66,37 @@ export const BASE_NAV_ITEMS = [
     title: "Órdenes de Trabajo",
     url: "/work-orders",
     icon: Bot,
+    permission: "work_orders.view",
     items: [
       {
         title: "Dashboard",
         url: "/work-orders",
+        permission: "work_orders.view",
       },
       {
         title: "Lista de Órdenes",
         url: "/work-orders/list",
+        permission: "work_orders.view",
       },
       {
         title: "Mis Órdenes",
         url: "/work-orders/my",
+        permission: "work_orders.view_assigned",
       },
       {
         title: "Crear Orden",
         url: "/work-orders/new/select-template",
+        permission: "work_orders.create",
       },
       {
         title: "Templates",
         url: "/admin/work-order-templates",
+        permission: "work_orders.manage_templates",
       },
       {
         title: "Prefijos de Numeración",
         url: "/admin/work-order-prefixes",
+        permission: "work_orders.manage_prefixes",
       },
     ],
   },
@@ -95,14 +104,17 @@ export const BASE_NAV_ITEMS = [
     title: "Líneas de Producción",
     url: "/production-lines",
     icon: Factory,
+    permission: "production_lines.view",
     items: [
       {
         title: "Dashboard",
         url: "/production-lines",
+        permission: "production_lines.view",
       },
       {
         title: "Nueva Línea",
         url: "/production-lines/new",
+        permission: "production_lines.create",
       },
     ],
   },
@@ -151,6 +163,18 @@ export const ADMIN_NAV_ITEMS = [
     role: "SUPER_ADMIN" // Only super admins can see tenant companies
   },
   {
+    name: "Grupos Corporativos",
+    url: "/admin/company-groups",
+    icon: Network,
+    role: "SUPER_ADMIN" // Only super admins can manage company groups
+  },
+  {
+    name: "Planes de Suscripción",
+    url: "/super-admin/subscription-plans",
+    icon: CreditCard,
+    role: "SUPER_ADMIN" // Only super admins can manage subscription plans
+  },
+  {
     name: "Gestión",
     url: "/admin/assets",
     icon: Package,
@@ -159,14 +183,17 @@ export const ADMIN_NAV_ITEMS = [
       {
         title: "Activos",
         url: "/admin/assets",
+        permission: "assets.view",
       },
       {
         title: "Templates OT",
         url: "/admin/work-order-templates",
+        permission: "work_orders.manage_templates",
       },
       {
         title: "Inventario",
         url: "/admin/inventory",
+        permission: "inventory.view",
       },
     ],
   },
@@ -197,7 +224,15 @@ export const ADMIN_NAV_ITEMS = [
     name: "Usuarios",
     url: "/admin/users", // Company admin uses admin route
     icon: Users,
-    role: "ADMIN_EMPRESA"
+    role: "ADMIN_EMPRESA",
+    permission: "users.view"
+  },
+  {
+    name: "Roles Personalizados",
+    url: "/admin/roles",
+    icon: ShieldCheck,
+    role: "ADMIN_EMPRESA", // Only company admins can manage custom roles
+    permission: "custom_roles.view"
   },
   {
     name: "Features Premium",
@@ -210,12 +245,6 @@ export const ADMIN_NAV_ITEMS = [
     url: "/super-admin/email-configurations",
     icon: Mail,
     role: "SUPER_ADMIN" // Only super admins can manage email configurations
-  },
-  {
-    name: "Configuración del Sistema",
-    url: "/admin/settings",
-    icon: Settings2,
-    role: "SUPER_ADMIN" // Only super admins can see system settings
   },
 ]
 
@@ -240,18 +269,22 @@ export const getFeatureNavItems = (enabledFeatures: {
       title: "Asistencia",
       url: "/admin/attendance",
       icon: Clock,
+      permission: "attendance.view",
       items: [
         {
           title: "Registros",
-          url: "/admin/attendance"
+          url: "/admin/attendance",
+          permission: "attendance.view"
         },
         {
           title: "Reportes",
-          url: "/admin/attendance/reports"
+          url: "/admin/attendance/reports",
+          permission: "attendance.view_reports"
         },
         {
           title: "Ubicaciones",
-          url: "/admin/locations"
+          url: "/admin/locations",
+          permission: "locations.view"
         }
       ]
     })

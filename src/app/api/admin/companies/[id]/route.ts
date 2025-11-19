@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
 import { CompanyService } from "@/server/services/company.service"
 import { updateCompanySchema } from "@/app/api/schemas/company-schemas"
+import { AuthService } from "@/server/services/auth.service"
 import type { AuthenticatedSession } from "@/types/auth.types"
 
 export const dynamic = 'force-dynamic'
@@ -12,13 +11,13 @@ export const GET = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    }) as AuthenticatedSession
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
     const company = await CompanyService.getById(session, id)
@@ -42,13 +41,13 @@ export const PATCH = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    }) as AuthenticatedSession
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
     const body = await request.json()
@@ -70,13 +69,13 @@ export const DELETE = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    }) as AuthenticatedSession
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
     const company = await CompanyService.delete(session, id)

@@ -83,6 +83,7 @@ interface ServerSideData {
     isEnabled: boolean;
   }> | null;
   userPermissions: UserPermissions;
+  userRolePermissions: string[] | null; // Actual permissions from the role
 }
 
 /**
@@ -105,6 +106,7 @@ async function getServerSideData(): Promise<ServerSideData> {
           isGroupAdmin: false,
           isCompanyAdmin: false,
         },
+        userRolePermissions: null,
       };
     }
 
@@ -113,6 +115,29 @@ async function getServerSideData(): Promise<ServerSideData> {
       isGroupAdmin: user.role === 'ADMIN_GRUPO',
       isCompanyAdmin: user.role === 'ADMIN_EMPRESA',
     };
+
+    // Fetch role permissions from database
+    let userRolePermissions: string[] | null = null;
+    if (user.roleId) {
+      const roleWithPermissions = await prisma.customRole.findUnique({
+        where: { id: user.roleId },
+        include: {
+          permissions: {
+            include: {
+              permission: {
+                select: {
+                  key: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (roleWithPermissions) {
+        userRolePermissions = roleWithPermissions.permissions.map(rp => rp.permission.key);
+      }
+    }
 
     // Fetch companies based on user role
     let availableCompanies = null;
@@ -179,6 +204,7 @@ async function getServerSideData(): Promise<ServerSideData> {
       availableCompanies,
       companyFeatures,
       userPermissions,
+      userRolePermissions,
     };
   } catch (error) {
     console.warn('Failed to fetch server side data:', error);
@@ -191,6 +217,7 @@ async function getServerSideData(): Promise<ServerSideData> {
         isGroupAdmin: false,
         isCompanyAdmin: false,
       },
+      userRolePermissions: null,
     };
   }
 }
@@ -208,7 +235,7 @@ export default async function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const companyBranding = await getCompanyBranding();
-  const { user, availableCompanies, companyFeatures, userPermissions } =
+  const { user, availableCompanies, companyFeatures, userPermissions, userRolePermissions } =
     await getServerSideData();
 
   return (
@@ -219,6 +246,7 @@ export default async function DashboardLayout({
         serverUser={user}
         userPermissions={userPermissions}
         companyFeatures={companyFeatures}
+        serverUserPermissions={userRolePermissions}
       />
       <SidebarInset>
         {/* Optimized header - reduced from h-16 to h-12 for space efficiency */}

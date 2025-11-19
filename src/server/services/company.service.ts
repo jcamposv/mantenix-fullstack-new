@@ -91,17 +91,17 @@ export class CompanyService {
   }
 
   static async getById(session: AuthenticatedSession, id: string): Promise<CompanyWithRelations | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
     return await CompanyRepository.findById(id)
   }
 
   static async getBasicInfoById(session: AuthenticatedSession, id: string): Promise<CompanyBasicInfo | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
     return await CompanyRepository.findBasicInfoById(id)
   }
 
   static async create(session: AuthenticatedSession, data: CreateCompanyData): Promise<CompanyWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.CREATE_COMPANY)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.CREATE_COMPANY)
 
     const existingCompany = await CompanyRepository.findFirst({
       subdomain: data.subdomain
@@ -140,7 +140,7 @@ export class CompanyService {
   }
 
   static async update(session: AuthenticatedSession, id: string, data: UpdateCompanyData): Promise<CompanyWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.UPDATE_COMPANY)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.UPDATE_COMPANY)
 
     if (data.subdomain) {
       const existingCompany = await CompanyRepository.findFirst({
@@ -202,7 +202,7 @@ export class CompanyService {
   }
 
   static async delete(session: AuthenticatedSession, id: string): Promise<CompanyWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELETE_COMPANY)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELETE_COMPANY)
     return await CompanyRepository.delete(id)
   }
 

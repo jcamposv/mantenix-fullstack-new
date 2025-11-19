@@ -3,11 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { Package, CheckCircle2, XCircle, Trash2 } from "lucide-react"
 import type { InventoryRequestStatus } from "@/types/inventory.types"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 interface InventoryRequestActionsProps {
   status: InventoryRequestStatus
-  userRole: Role
+  userRole: SystemRoleKey
   userCompanyId: string
   sourceCompanyId?: string | null
   destinationCompanyId?: string | null
@@ -23,16 +23,16 @@ interface InventoryRequestActionsProps {
   isLoading?: boolean
 }
 
-const canApprove = (role: Role): boolean => {
-  return ["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "JEFE_MANTENIMIENTO"].includes(role)
+const canApprove = (role: SystemRoleKey): boolean => {
+  return ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'JEFE_MANTENIMIENTO'].includes(role)
 }
 
-const canDeliverFromWarehouse = (role: Role): boolean => {
-  return ["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "ENCARGADO_BODEGA"].includes(role)
+const canDeliverFromWarehouse = (role: SystemRoleKey): boolean => {
+  return ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'ENCARGADO_BODEGA'].includes(role)
 }
 
-const canConfirmReceipt = (role: Role): boolean => {
-  return ["SUPER_ADMIN", "ADMIN_GRUPO", "ADMIN_EMPRESA", "TECNICO", "JEFE_MANTENIMIENTO"].includes(role)
+const canConfirmReceipt = (role: SystemRoleKey): boolean => {
+  return ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'TECNICO', 'JEFE_MANTENIMIENTO'].includes(role)
 }
 
 export function InventoryRequestActions({
@@ -41,8 +41,6 @@ export function InventoryRequestActions({
   userCompanyId,
   sourceCompanyId,
   destinationCompanyId,
-  warehouseDeliveredAt,
-  destinationWarehouseReceivedAt,
   receivedAt,
   onDeliverFromWarehouse,
   onReceiveAtDestination,

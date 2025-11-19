@@ -38,7 +38,7 @@ export class FeatureService {
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedFeaturesResponse> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
 
     const whereClause = this.buildWhereClause(filters)
     const { features, total } = await FeatureRepository.findMany(whereClause, page, limit)
@@ -55,7 +55,7 @@ export class FeatureService {
   }
 
   static async getById(session: AuthenticatedSession, id: string): Promise<CompanyFeatureWithRelations | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
     return await FeatureRepository.findById(id)
   }
 
@@ -116,7 +116,7 @@ export class FeatureService {
     session: AuthenticatedSession,
     data: FeatureToggleData
   ): Promise<CompanyFeatureWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
 
     const { companyId, module, isEnabled, changedBy } = data
 
@@ -162,7 +162,7 @@ export class FeatureService {
     session: AuthenticatedSession,
     data: CreateFeatureData
   ): Promise<CompanyFeatureWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
 
     const { companyId, module, isEnabled = true, enabledBy } = data
 
@@ -188,7 +188,7 @@ export class FeatureService {
     id: string,
     data: UpdateFeatureData
   ): Promise<CompanyFeatureWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
 
     const updateData: Prisma.CompanyFeatureUpdateInput = {
       ...(typeof data.isEnabled === 'boolean' && { isEnabled: data.isEnabled }),
@@ -203,7 +203,7 @@ export class FeatureService {
     session: AuthenticatedSession,
     id: string
   ): Promise<CompanyFeatureWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.MANAGE_FEATURES)
     return await FeatureRepository.delete(id)
   }
 }

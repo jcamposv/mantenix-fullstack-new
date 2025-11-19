@@ -13,6 +13,7 @@ export async function GET() {
 
     return NextResponse.json({
       role: user.role,
+      roleInterfaceType: 'roleInterfaceType' in user ? user.roleInterfaceType : undefined,
       isAuthenticated: true,
       isSuperAdmin: user.role === 'SUPER_ADMIN',
       isGroupAdmin: user.role === 'ADMIN_GRUPO',

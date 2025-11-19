@@ -8,8 +8,8 @@
 import { TimeTrackingRepository } from "@/server/repositories/time-tracking.repository"
 import { WorkOrderRepository } from "@/server/repositories/work-order.repository"
 import { validateTimeLogAction } from "@/schemas/time-tracking"
-import type { AuthenticatedSession } from "@/types/auth.types"
-import type { TimeLogAction, PauseReason, Role } from "@prisma/client"
+import type { AuthenticatedSession, UserRole } from "@/types/auth.types"
+import type { TimeLogAction, PauseReason } from "@prisma/client"
 import type {
   WorkOrderTimeLog,
   WorkOrderTimeLogWithUser,
@@ -29,7 +29,7 @@ export class TimeTrackingService {
    */
   private async canUserTrackTime(
     userId: string,
-    userRole: Role,
+    userRole: UserRole,
     workOrderId: string
   ): Promise<{ allowed: boolean; error?: string }> {
     // Get work order with assignments
@@ -41,17 +41,17 @@ export class TimeTrackingService {
 
     // Admins and supervisors can track time on any work order
     if (
-      userRole === "SUPER_ADMIN" ||
-      userRole === "ADMIN_EMPRESA" ||
-      userRole === "ADMIN_GRUPO" ||
-      userRole === "JEFE_MANTENIMIENTO" ||
-      userRole === "SUPERVISOR"
+      userRole === 'SUPER_ADMIN' ||
+      userRole === 'ADMIN_EMPRESA' ||
+      userRole === 'ADMIN_GRUPO' ||
+      userRole === 'JEFE_MANTENIMIENTO' ||
+      userRole === 'SUPERVISOR'
     ) {
       return { allowed: true }
     }
 
     // Technicians can only track time on their assigned work orders
-    if (userRole === "TECNICO") {
+    if (userRole === 'TECNICO') {
       const isAssigned = workOrder.assignments?.some((a) => a.userId === userId)
 
       if (!isAssigned) {
@@ -235,9 +235,9 @@ export class TimeTrackingService {
     // Check permissions - only the user who created it or admin can update
     if (
       timeLog.userId !== session.user.id &&
-      session.user.role !== "SUPER_ADMIN" &&
-      session.user.role !== "ADMIN_EMPRESA" &&
-      session.user.role !== "JEFE_MANTENIMIENTO"
+      session.user.role !== 'SUPER_ADMIN' &&
+      session.user.role !== 'ADMIN_EMPRESA' &&
+      session.user.role !== 'JEFE_MANTENIMIENTO'
     ) {
       return {
         success: false,
@@ -264,9 +264,9 @@ export class TimeTrackingService {
   ): Promise<{ success: boolean; error?: string }> {
     // Only admins can delete
     if (
-      session.user.role !== "SUPER_ADMIN" &&
-      session.user.role !== "ADMIN_EMPRESA" &&
-      session.user.role !== "JEFE_MANTENIMIENTO"
+      session.user.role !== 'SUPER_ADMIN' &&
+      session.user.role !== 'ADMIN_EMPRESA' &&
+      session.user.role !== 'JEFE_MANTENIMIENTO'
     ) {
       return {
         success: false,

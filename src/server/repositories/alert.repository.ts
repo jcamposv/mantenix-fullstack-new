@@ -29,7 +29,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -37,7 +37,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -45,7 +45,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         comments: {
@@ -55,7 +55,7 @@ export class AlertRepository {
                 id: true,
                 name: true,
                 email: true,
-                role: true
+                roleId: true
               }
             }
           },
@@ -89,7 +89,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -97,7 +97,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -105,7 +105,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         comments: {
@@ -115,7 +115,7 @@ export class AlertRepository {
                 id: true,
                 name: true,
                 email: true,
-                role: true
+                roleId: true
               }
             }
           },
@@ -152,7 +152,7 @@ export class AlertRepository {
               id: true,
               name: true,
               email: true,
-              role: true
+              roleId: true
             }
           },
           assignedTo: {
@@ -160,7 +160,7 @@ export class AlertRepository {
               id: true,
               name: true,
               email: true,
-              role: true
+              roleId: true
             }
           },
           _count: {
@@ -208,7 +208,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -216,7 +216,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -224,7 +224,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         }
       }
@@ -256,7 +256,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -264,7 +264,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -272,7 +272,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         }
       }
@@ -301,7 +301,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -309,7 +309,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -317,7 +317,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         }
       }

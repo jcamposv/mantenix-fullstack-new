@@ -41,15 +41,26 @@ export class SuperAdminRepository {
 
   static async getUsersByRole(): Promise<Array<{ role: string; _count: { role: number } }>> {
     const roles = await prisma.user.findMany({
-      distinct: ['role'],
-      select: { role: true },
-      orderBy: { role: 'asc' }
+      distinct: ['roleId'],
+      select: {
+        roleId: true,
+        role: {
+          select: {
+            key: true
+          }
+        }
+      },
+      orderBy: {
+        role: {
+          key: 'asc'
+        }
+      }
     })
 
     const results = await Promise.all(
-      roles.map(async ({ role }) => {
-        const count = await prisma.user.count({ where: { role } })
-        return { role, _count: { role: count } }
+      roles.map(async ({ roleId, role }) => {
+        const count = await prisma.user.count({ where: { roleId } })
+        return { role: role?.key || '', _count: { role: count } }
       })
     )
 

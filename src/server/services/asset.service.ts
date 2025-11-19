@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { AssetRepository } from "../repositories/asset.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import { getCurrentCompanyId } from "@/lib/company-context"
 import { getOrCreateInternalSite } from "@/lib/internal-site-helper"
 import { parseCompanyFeatures } from "@/lib/features"
@@ -106,11 +106,7 @@ export class AssetService {
    */
   static async getList(session: AuthenticatedSession, filters: AssetFilters, page: number, limit: number): Promise<PaginatedAssetsResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
-
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver activos")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
     const { assets, total } = await AssetRepository.findMany(whereClause, page, limit)
@@ -129,11 +125,7 @@ export class AssetService {
    */
   static async getAll(session: AuthenticatedSession): Promise<AssetWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
-
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver activos")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     const whereClause = await this.buildWhereClause(session)
     return await AssetRepository.findAll(whereClause)
@@ -145,9 +137,7 @@ export class AssetService {
    */
   static async create(assetData: CreateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_asset')) {
-      throw new Error("No tienes permisos para crear activos")
-    }
+    await PermissionGuard.require(session, 'assets.create')
 
     // Get company ID for context
     const companyId = await getCurrentCompanyId(session)
@@ -211,9 +201,7 @@ export class AssetService {
    */
   static async update(id: string, assetData: UpdateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_asset')) {
-      throw new Error("No tienes permisos para actualizar activos")
-    }
+    await PermissionGuard.require(session, 'assets.update')
 
     // Verificar que el activo existe y se tiene acceso
     const existingAsset = await this.getById(id, session)
@@ -262,9 +250,7 @@ export class AssetService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_asset')) {
-      throw new Error("No tienes permisos para eliminar activos")
-    }
+    await PermissionGuard.require(session, 'assets.delete')
 
     // Verificar que el activo existe y se tiene acceso
     const existingAsset = await AssetRepository.findWithRelatedData(id)

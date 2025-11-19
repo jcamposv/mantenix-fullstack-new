@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 /**
  * Service for password reset operations using Better Auth
@@ -10,8 +10,8 @@ export class PasswordResetService {
    * Validate if admin has permission to reset passwords
    * Only SUPER_ADMIN and ADMIN_EMPRESA can reset passwords
    */
-  private static validateResetPermission(role: Role): void {
-    const allowedRoles: Role[] = ["SUPER_ADMIN", "ADMIN_EMPRESA"]
+  private static validateResetPermission(role: SystemRoleKey): void {
+    const allowedRoles: SystemRoleKey[] = ['SUPER_ADMIN', 'ADMIN_EMPRESA']
 
     if (!allowedRoles.includes(role)) {
       throw new Error("No tienes permisos para resetear contraseñas")
@@ -24,7 +24,7 @@ export class PasswordResetService {
   static async sendResetLink(
     userId: string,
     adminId: string,
-    adminRole: Role,
+    adminRole: SystemRoleKey,
     adminCompanyId: string | null
   ): Promise<{ success: boolean }> {
     // Validate permissions
@@ -43,7 +43,7 @@ export class PasswordResetService {
     }
 
     // Company admins can only reset passwords for users in their company
-    if (adminRole === "ADMIN_EMPRESA") {
+    if (adminRole === 'ADMIN_EMPRESA') {
       if (!adminCompanyId) {
         throw new Error("El administrador no tiene empresa asociada")
       }

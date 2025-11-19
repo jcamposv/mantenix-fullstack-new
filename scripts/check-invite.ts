@@ -12,7 +12,13 @@ async function main() {
     },
     include: {
       company: true,
-      creator: true
+      creator: true,
+      role: {
+        select: {
+          key: true,
+          name: true
+        }
+      }
     },
     orderBy: {
       createdAt: 'desc'
@@ -27,7 +33,7 @@ async function main() {
   console.log('📧 Invitation found:')
   console.log('   ID:', invitation.id)
   console.log('   Email:', invitation.email)
-  console.log('   Role:', invitation.role)
+  console.log('   Role:', invitation.role?.name || 'N/A', `(${invitation.role?.key || 'N/A'})`)
   console.log('   Company ID:', invitation.companyId || 'NULL')
   console.log('   Company Name:', invitation.company?.name || 'N/A')
   console.log('   Created By:', invitation.creator?.email || 'N/A')

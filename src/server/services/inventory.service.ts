@@ -82,12 +82,12 @@ export class InventoryService {
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedInventoryItemsResponse> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
 
     // Determine company scope based on company group membership
     let whereClause: Prisma.InventoryItemWhereInput
 
-    if (PermissionHelper.hasPermission(session.user.role, PermissionHelper.PERMISSIONS.VIEW_ALL_INVENTORY)) {
+    if (await PermissionHelper.hasPermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_ALL_INVENTORY)) {
       // Super admin can see all inventory from all companies
       whereClause = this.buildItemWhereClause(filters, undefined)
     } else if (session.user.companyGroupId) {
@@ -121,7 +121,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     id: string
   ): Promise<InventoryItemWithRelations | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
     return await InventoryItemRepository.findById(id)
   }
 
@@ -140,7 +140,7 @@ export class InventoryService {
     availableQuantity: number
     reservedQuantity: number
   }>> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
 
     // Get all stock locations for this item
     const stockLocations = await InventoryStockRepository.findByItem(inventoryItemId)
@@ -163,7 +163,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     data: CreateInventoryItemData
   ): Promise<InventoryItemWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.CREATE_INVENTORY_ITEM)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.CREATE_INVENTORY_ITEM)
 
     const companyId = session.user.companyId
     if (!companyId) {
@@ -227,7 +227,7 @@ export class InventoryService {
     id: string,
     data: UpdateInventoryItemData
   ): Promise<InventoryItemWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.UPDATE_INVENTORY_ITEM)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.UPDATE_INVENTORY_ITEM)
 
     const companyId = session.user.companyId
     if (!companyId) {
@@ -269,19 +269,19 @@ export class InventoryService {
     session: AuthenticatedSession,
     id: string
   ): Promise<InventoryItemWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELETE_INVENTORY_ITEM)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELETE_INVENTORY_ITEM)
     return await InventoryItemRepository.delete(id)
   }
 
   static async getLowStockItems(session: AuthenticatedSession) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
     const companyId = session.user.companyId
     if (!companyId) return []
     return await InventoryItemRepository.findLowStock(companyId)
   }
 
   static async getBelowReorderPoint(session: AuthenticatedSession) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
     const companyId = session.user.companyId
     if (!companyId) return []
     return await InventoryItemRepository.findBelowReorderPoint(companyId)
@@ -295,7 +295,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     inventoryItemId: string
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_STOCK)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_STOCK)
     return await InventoryStockRepository.findByItem(inventoryItemId)
   }
 
@@ -304,7 +304,7 @@ export class InventoryService {
     locationId: string,
     locationType: LocationType
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_STOCK)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_STOCK)
     return await InventoryStockRepository.findByLocation(locationId, locationType)
   }
 
@@ -312,7 +312,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     data: StockAdjustmentData
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.ADJUST_INVENTORY_STOCK)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.ADJUST_INVENTORY_STOCK)
 
     // Get location name based on type
     let locationName = data.locationId
@@ -374,7 +374,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     data: TransferStockData
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.TRANSFER_INVENTORY)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.TRANSFER_INVENTORY)
 
     // Decrement from source
     await InventoryStockRepository.decrementQuantity(
@@ -496,7 +496,7 @@ export class InventoryService {
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedInventoryRequestsResponse> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_REQUESTS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_REQUESTS)
 
     // Apply role-based filters
     const roleBasedFilters = { ...filters }
@@ -544,7 +544,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderInventoryRequestWithRelations | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_REQUESTS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_REQUESTS)
     const request = await InventoryRequestRepository.findById(id)
 
     if (!request) return null
@@ -631,7 +631,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     data: CreateInventoryRequestData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.CREATE_INVENTORY_REQUEST)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.CREATE_INVENTORY_REQUEST)
 
     const createData: Prisma.WorkOrderInventoryRequestCreateInput = {
       workOrder: {
@@ -663,7 +663,7 @@ export class InventoryService {
     id: string,
     data: ReviewInventoryRequestData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.APPROVE_INVENTORY_REQUEST)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.APPROVE_INVENTORY_REQUEST)
 
     // Get the request
     const request = await InventoryRequestRepository.findById(id)
@@ -716,7 +716,7 @@ export class InventoryService {
     id: string,
     data: ReviewInventoryRequestData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.REJECT_INVENTORY_REQUEST)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.REJECT_INVENTORY_REQUEST)
 
     return await InventoryRequestRepository.reject(
       id,
@@ -730,7 +730,7 @@ export class InventoryService {
     id: string,
     data: DeliverInventoryRequestData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELIVER_INVENTORY_REQUEST)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELIVER_INVENTORY_REQUEST)
 
     return await InventoryRequestRepository.markDelivered(
       id,
@@ -744,7 +744,7 @@ export class InventoryService {
     id: string,
     data: DeliverFromWarehouseData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELIVER_FROM_WAREHOUSE)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELIVER_FROM_WAREHOUSE)
 
     // Get the request
     const request = await InventoryRequestRepository.findById(id)
@@ -823,7 +823,7 @@ export class InventoryService {
     id: string,
     data: DeliverFromWarehouseData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELIVER_FROM_WAREHOUSE)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELIVER_FROM_WAREHOUSE)
 
     // Get the request
     const request = await InventoryRequestRepository.findById(id)
@@ -937,7 +937,7 @@ export class InventoryService {
     id: string,
     data: ConfirmReceiptData
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.CONFIRM_RECEIPT)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.CONFIRM_RECEIPT)
 
     // Get the request
     const request = await InventoryRequestRepository.findById(id)
@@ -1026,7 +1026,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderInventoryRequestWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELETE_INVENTORY_REQUEST)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELETE_INVENTORY_REQUEST)
     return await InventoryRequestRepository.cancel(id)
   }
 
@@ -1072,7 +1072,7 @@ export class InventoryService {
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedInventoryMovementsResponse> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
 
     const whereClause = this.buildMovementWhereClause(filters)
     const { movements, total } = await InventoryMovementRepository.findMany(whereClause, page, limit)
@@ -1092,7 +1092,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     inventoryItemId: string
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
     return await InventoryMovementRepository.findByItem(inventoryItemId)
   }
 
@@ -1100,7 +1100,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     workOrderId: string
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
     return await InventoryMovementRepository.findByWorkOrder(workOrderId)
   }
 
@@ -1108,7 +1108,7 @@ export class InventoryService {
     session: AuthenticatedSession,
     id: string
   ): Promise<InventoryMovementWithRelations | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
     return await InventoryMovementRepository.findById(id)
   }
 
@@ -1119,7 +1119,7 @@ export class InventoryService {
   static async getDashboardMetrics(
     session: AuthenticatedSession
   ): Promise<InventoryDashboardMetrics> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_ITEMS)
 
     const companyId = session.user.companyId!
 

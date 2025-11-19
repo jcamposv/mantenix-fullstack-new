@@ -86,8 +86,19 @@ export async function getCurrentCompanyId(
       throw new Error(`Empresa no encontrada para subdominio: ${subdomain}`);
     }
 
+    // Get user's company group ID (from session or from their company)
+    let userCompanyGroupId = session.user.companyGroupId;
+
+    if (!userCompanyGroupId && session.user.companyId) {
+      const userCompany = await prisma.company.findUnique({
+        where: { id: session.user.companyId },
+        select: { companyGroupId: true }
+      });
+      userCompanyGroupId = userCompany?.companyGroupId ?? undefined;
+    }
+
     // Verify user has access to this company (must be in same group)
-    if (session.user.companyGroupId !== company.companyGroupId) {
+    if (userCompanyGroupId && company.companyGroupId && userCompanyGroupId !== company.companyGroupId) {
       throw new Error('No tienes acceso a esta empresa');
     }
 

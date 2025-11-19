@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 /**
  * Enum types from Prisma
@@ -243,13 +243,13 @@ export interface WorkOrderInventoryRequestWithRelations extends WorkOrderInvento
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   }
   reviewer?: {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   deliverer?: {
     id: string
@@ -260,19 +260,19 @@ export interface WorkOrderInventoryRequestWithRelations extends WorkOrderInvento
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   destinationWarehouseReceiver?: {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   receiver?: {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
 }
 

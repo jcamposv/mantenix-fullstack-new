@@ -11,6 +11,7 @@ import { RoleBadge } from "@/components/common/role-badge"
 import { TableActions, createEditAction, createDeleteAction, createResetPasswordAction } from "@/components/common/table-actions"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { useTableData } from "@/components/hooks/use-table-data"
+import { usePermissions } from "@/hooks/usePermissions"
 
 interface User {
   id: string
@@ -34,10 +35,16 @@ interface UsersResponse {
 
 export default function UsersPage() {
   const router = useRouter()
+  const { hasPermission } = usePermissions()
   const { data: users, loading, refetch } = useTableData<User>({
     endpoint: '/api/admin/users',
     transform: (data) => (data as UsersResponse).users || (data as UsersResponse).items || (data as User[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('users.create')
+  const canEdit = hasPermission('users.update')
+  const canDelete = hasPermission('users.delete')
 
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: User | null }>({
     open: false,
@@ -170,9 +177,9 @@ export default function UsersPage() {
       cell: ({ row }) => {
         const user = row.original
         const actions = [
-          createEditAction(() => handleEdit(user.id)),
-          createResetPasswordAction(() => handleResetPassword(user)),
-          createDeleteAction(() => handleDelete(user))
+          ...(canEdit ? [createEditAction(() => handleEdit(user.id))] : []),
+          ...(canEdit ? [createResetPasswordAction(() => handleResetPassword(user))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(user))] : [])
         ]
 
         return <TableActions actions={actions} />
@@ -189,8 +196,7 @@ export default function UsersPage() {
         searchPlaceholder="Buscar usuarios..."
         title="Usuarios"
         description="Gestionar todos los usuarios del sistema"
-        onAdd={handleAddUser}
-        addLabel="Agregar Usuario"
+        {...(canCreate && { onAdd: handleAddUser, addLabel: "Agregar Usuario" })}
         loading={loading}
       />
 

@@ -49,11 +49,11 @@ export class PermissionHelper {
     UPDATE_COMPANY: 'update_company',
     DELETE_COMPANY: 'delete_company',
     VIEW_COMPANIES: 'view_companies',
-    CREATE_COMPANY_GROUP: 'create_company_group',
-    UPDATE_COMPANY_GROUP: 'update_company_group',
-    DELETE_COMPANY_GROUP: 'delete_company_group',
-    VIEW_COMPANY_GROUPS: 'view_company_groups',
-    MANAGE_GROUP_COMPANIES: 'manage_group_companies',
+    CREATE_COMPANY_GROUP: 'company_groups.create',
+    UPDATE_COMPANY_GROUP: 'company_groups.update',
+    DELETE_COMPANY_GROUP: 'company_groups.delete',
+    VIEW_COMPANY_GROUPS: 'company_groups.view',
+    MANAGE_GROUP_COMPANIES: 'company_groups.manage_companies',
     CREATE_ASSET: 'create_asset',
     UPDATE_ASSET: 'update_asset',
     DELETE_ASSET: 'delete_asset',
@@ -457,5 +457,50 @@ export class PermissionHelper {
     if (!this.hasPermission(session.user.role, permission)) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
+  }
+
+  /**
+   * NEW RBAC METHODS - Support for custom roles
+   */
+
+  /**
+   * Check if user has permission (supports custom roles)
+   * @deprecated Use hasPermissionAsync for full custom role support
+   */
+  static async hasPermissionAsync(session: AuthenticatedSession, permission: string): Promise<boolean> {
+    const { hasPermission: checkPermission } = await import('./permission-utils');
+    return checkPermission(session, permission);
+  }
+
+  /**
+   * Check if user has any of the specified permissions
+   */
+  static async hasAnyPermission(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
+    const { hasAnyPermission: check } = await import('./permission-utils');
+    return check(session, permissions);
+  }
+
+  /**
+   * Check if user has all of the specified permissions
+   */
+  static async hasAllPermissions(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
+    const { hasAllPermissions: check } = await import('./permission-utils');
+    return check(session, permissions);
+  }
+
+  /**
+   * Require permission (throws if user doesn't have it) - supports custom roles
+   */
+  static async requirePermissionAsync(session: AuthenticatedSession, permission: string): Promise<void> {
+    const { requirePermission: require } = await import('./permission-utils');
+    return require(session, permission);
+  }
+
+  /**
+   * Get all permissions for a user (supports custom roles)
+   */
+  static async getUserPermissions(session: AuthenticatedSession): Promise<string[]> {
+    const { getUserPermissions } = await import('./permission-utils');
+    return getUserPermissions(session);
   }
 }

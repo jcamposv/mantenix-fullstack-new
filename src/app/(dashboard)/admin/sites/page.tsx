@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 
 interface Site {
   id: string
@@ -49,10 +50,16 @@ export default function SitesPage() {
   const [filteredClientCompany, setFilteredClientCompany] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { hasPermission } = usePermissions()
   const { data: allSites, loading, refetch } = useTableData<Site>({
     endpoint: '/api/admin/sites',
     transform: (data) => (data as SitesResponse).sites || (data as SitesResponse).items || (data as Site[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('sites.create')
+  const canEdit = hasPermission('sites.update')
+  const canDelete = hasPermission('sites.delete')
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [siteToDelete, setSiteToDelete] = useState<Site | null>(null)
@@ -202,10 +209,10 @@ export default function SitesPage() {
       cell: ({ row }) => {
         const site = row.original
         const actions = [
-          createEditAction(() => handleEdit(site.id)),
-          createDeleteAction(() => handleDelete(site))
+          ...(canEdit ? [createEditAction(() => handleEdit(site.id))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(site))] : [])
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
@@ -245,8 +252,7 @@ export default function SitesPage() {
         searchPlaceholder="Buscar sedes..."
         title={getTitle()}
         description={getDescription()}
-        onAdd={handleAddSite}
-        addLabel="Agregar Sede"
+        {...(canCreate && { onAdd: handleAddSite, addLabel: "Agregar Sede" })}
         loading={loading}
       />
 

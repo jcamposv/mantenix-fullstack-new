@@ -15,14 +15,18 @@ export class CommentRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            role: {
+              select: {
+                key: true
+              }
+            }
           }
         }
       },
       orderBy: {
         createdAt: 'asc'
       }
-    })
+    }) as unknown as CommentWithAuthor[]
   }
 
   static async create(data: CreateCommentData): Promise<CommentWithAuthor> {
@@ -38,10 +42,14 @@ export class CommentRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            role: {
+              select: {
+                key: true
+              }
+            }
           }
         }
       }
-    })
+    }) as unknown as CommentWithAuthor
   }
 }

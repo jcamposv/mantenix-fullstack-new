@@ -7,9 +7,10 @@ import { MobileNavigation } from "@/components/mobile/mobile-nav-server"
 import { MobileHeader } from "@/components/mobile/mobile-header"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
-import { parseCompanyFeatures } from "@/lib/features"
-import { FeatureService } from "@/server/services/feature.service"
 import type { CompanyBranding } from "@/types/branding"
+import type { AuthenticatedSession } from "@/types/auth.types"
+import { getUserPermissions } from "@/server/helpers/permission-utils"
+import { auth } from "@/lib/auth"
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,15 @@ export default async function FieldLayout({
   // Obtener branding de la empresa
   const companyBranding = await getCompanyBranding()
 
+  // Get session first
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    redirect('/auth/signin')
+  }
+
   // Verificar autenticación y roles permitidos para field
   const user = await getCurrentUserWithRole()
 
@@ -61,40 +71,17 @@ export default async function FieldLayout({
     redirect('/auth/signin')
   }
 
-  // Solo ciertos roles pueden acceder a la interfaz field (mobile)
-  const allowedRoles = [
-    'OPERARIO', // Operario interno de planta
-    'CLIENTE_OPERARIO',
-    'CLIENTE_ADMIN_SEDE',
-    'CLIENTE_ADMIN_GENERAL',
-    'TECNICO',
-    'SUPERVISOR',
-    'ADMIN_EMPRESA',
-    'JEFE_MANTENIMIENTO',
-    'SUPER_ADMIN'
-  ]
-
-  if (!allowedRoles.includes(user.role)) {
+  // Check if user has MOBILE interface type access
+  const interfaceType = (user as { roleInterfaceType?: 'MOBILE' | 'DASHBOARD' | 'BOTH' }).roleInterfaceType
+  if (interfaceType === 'DASHBOARD') {
     redirect('/dashboard')
   }
 
-  const externalUserRoles = ['CLIENTE_OPERARIO', 'CLIENTE_ADMIN_SEDE']
-  if (externalUserRoles.includes(user.role)) {
-    if (!user.siteId) {
-      redirect('/dashboard?error=no-site-assigned')
-    }
-  }
-
-  // Get company features for navigation using FeatureService
-  let companyFeatures = parseCompanyFeatures([])
-  if (user.companyId) {
-    try {
-      const features = await FeatureService.getCompanyFeaturesForLayout(user.companyId)
-      companyFeatures = parseCompanyFeatures(features)
-    } catch (error) {
-      console.error('Error fetching company features:', error)
-    }
-  }
+  // Get user permissions for navigation
+  // Construct AuthenticatedSession from user object
+  const authenticatedSession = { user: user as AuthenticatedSession['user'] }
+  const permissions = await getUserPermissions(authenticatedSession)
+  const isExternalUser = !!user.clientCompanyId
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -109,7 +96,7 @@ export default async function FieldLayout({
       {/* Navigation bottom bar sticky para móvil */}
       <MobileFooter>
         <MobileFooterContent>
-          <MobileNavigation userRole={user.role} features={companyFeatures} />
+          <MobileNavigation permissions={permissions} isExternalUser={isExternalUser} />
         </MobileFooterContent>
       </MobileFooter>
 

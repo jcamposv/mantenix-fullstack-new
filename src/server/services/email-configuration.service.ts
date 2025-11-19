@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { EmailConfigurationRepository } from "../repositories/email-configuration.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type {
   CreateEmailConfigurationData,
@@ -69,9 +69,7 @@ export class EmailConfigurationService {
     limit: number
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_email_configurations')) {
-      throw new Error("No tienes permisos para ver configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     const whereClause = this.buildWhereClause(session)
     const { configurations, total } = await EmailConfigurationRepository.findMany(whereClause, page, limit)
@@ -93,9 +91,7 @@ export class EmailConfigurationService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_email_configuration')) {
-      throw new Error("No tienes permisos para crear configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar acceso a la company
     this.validateCompanyAccess(configData.companyId, session)
@@ -130,9 +126,7 @@ export class EmailConfigurationService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_email_configuration')) {
-      throw new Error("No tienes permisos para actualizar configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que la configuración existe y se tiene acceso
     const existingConfig = await this.getById(id, session)
@@ -158,9 +152,7 @@ export class EmailConfigurationService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_email_configuration')) {
-      throw new Error("No tienes permisos para eliminar configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que la configuración existe y se tiene acceso
     const existingConfig = await this.getById(id, session)

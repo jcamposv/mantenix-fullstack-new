@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { NextResponse } from 'next/server'
+import { getUserPermissions } from '@/server/helpers/permission-utils'
 
 /**
  * Production Lines List Page
@@ -20,11 +21,15 @@ import { NextResponse } from 'next/server'
  */
 export default async function ProductionLinesPage() {
   const sessionResult = await AuthService.getAuthenticatedSession()
-  
+
   // Type guard: redirect if not authenticated
   if (sessionResult instanceof NextResponse) {
     redirect('/login')
   }
+
+  // Get user permissions
+  const permissions = await getUserPermissions(sessionResult)
+  const canCreate = permissions.includes('production_lines.create') || permissions.includes('*')
 
   // Fetch production lines and stats in parallel
   const [{ productionLines }, stats] = await Promise.all([
@@ -42,12 +47,14 @@ export default async function ProductionLinesPage() {
             Visualiza y gestiona tus líneas de producción
           </p>
         </div>
-        <Button asChild>
-          <Link href="/production-lines/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva Línea
-          </Link>
-        </Button>
+        {canCreate && (
+          <Button asChild>
+            <Link href="/production-lines/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Línea
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -122,15 +129,18 @@ export default async function ProductionLinesPage() {
               No hay líneas de producción
             </h3>
             <p className="text-muted-foreground text-center mb-4">
-              Crea tu primera línea de producción para comenzar a visualizar
-              tu proceso productivo
+              {canCreate
+                ? 'Crea tu primera línea de producción para comenzar a visualizar tu proceso productivo'
+                : 'No tienes permisos para crear líneas de producción'}
             </p>
-            <Button asChild>
-              <Link href="/production-lines/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Crear Línea
-              </Link>
-            </Button>
+            {canCreate && (
+              <Button asChild>
+                <Link href="/production-lines/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear Línea
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

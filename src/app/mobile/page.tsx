@@ -3,58 +3,68 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { usePermissions } from "@/hooks/usePermissions"
 import { Card, CardContent } from "@/components/ui/card"
 
 /**
- * Mobile Home - Router principal que redirige según rol
+ * Mobile Home - Router principal que redirige según permisos del usuario
  *
- * Flujo de redirección por rol:
- * - OPERARIO → /mobile/assets (dashboard de máquinas)
- * - TECNICO/SUPERVISOR/JEFE_MANTENIMIENTO → /mobile/work-orders
- * - CLIENTE_* → /mobile/alerts (el layout ya valida EXTERNAL_CLIENT_MANAGEMENT feature)
- * - ADMIN_EMPRESA → /mobile/work-orders
- * - Default → /mobile/profile
- *
- * Nota: La validación de features se hace en el layout (Server Component)
- * que muestra/oculta navegación según features habilitados
+ * Lógica de redirección basada en permisos (en orden de prioridad):
+ * 1. Operarios (assets.change_status) → /mobile/assets
+ *    - Pueden cambiar estado de máquinas y crear OT sin asignar
+ * 2. Técnicos/Mecánicos (work_orders.view_assigned) → /mobile/work-orders
+ *    - Pueden ver y completar sus OT asignadas
+ * 3. Clientes Externos (alerts.create + clientCompanyId) → /mobile/alerts
+ *    - Pueden crear y ver alertas de su empresa cliente
+ * 4. Fallback: Usar interfaceType para determinar destino
  */
 export default function MobilePage() {
   const { user: currentUser, loading: userLoading } = useCurrentUser()
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const router = useRouter()
 
   useEffect(() => {
-    if (userLoading || !currentUser) return
+    if (userLoading || permissionsLoading || !currentUser) return
 
-    const userRole = currentUser.role
+    const interfaceType = (currentUser as { roleInterfaceType?: 'MOBILE' | 'DASHBOARD' | 'BOTH' }).roleInterfaceType
+    const isExternalUser = !!currentUser.clientCompanyId
 
-    // OPERARIO INTERNO: Dashboard de máquinas
-    if (userRole === 'OPERARIO') {
+    // Priority 1: Operarios - Assets/Máquinas
+    // Pueden cambiar estado de assets y crear OT sin asignar
+    if (hasPermission('assets.change_status')) {
       router.push('/mobile/assets')
       return
     }
 
-    // TÉCNICO/SUPERVISOR/JEFE: Dashboard de órdenes de trabajo
-    if (['TECNICO', 'SUPERVISOR', 'JEFE_MANTENIMIENTO'].includes(userRole || '')) {
+    // Priority 2: Técnicos/Mecánicos - Órdenes de Trabajo
+    // Pueden ver sus OT asignadas y completarlas
+    if (hasPermission('work_orders.view_assigned') || hasPermission('work_orders.complete')) {
       router.push('/mobile/work-orders')
       return
     }
 
-    // USUARIOS EXTERNOS: Alertas (si tienen el feature, layout ya lo valida)
-    const isExternalUser = ['CLIENTE_ADMIN_GENERAL', 'CLIENTE_ADMIN_SEDE', 'CLIENTE_OPERARIO'].includes(userRole || '')
-    if (isExternalUser) {
+    // Priority 3: Clientes Externos - Alertas
+    // Pueden crear alertas de su empresa cliente
+    if (isExternalUser && hasPermission('alerts.create')) {
       router.push('/mobile/alerts')
       return
     }
 
-    // ADMIN_EMPRESA: Órdenes de trabajo
-    if (userRole === 'ADMIN_EMPRESA') {
+    // Priority 4: InterfaceType fallback
+    if (interfaceType === 'MOBILE' || interfaceType === 'BOTH') {
       router.push('/mobile/work-orders')
       return
     }
 
-    // Default: Perfil
-    router.push('/mobile/profile')
-  }, [currentUser, userLoading, router])
+    // Si solo tiene DASHBOARD, redirigir al dashboard principal
+    if (interfaceType === 'DASHBOARD') {
+      router.push('/')
+      return
+    }
+
+    // Fallback final: Órdenes de trabajo
+    router.push('/mobile/work-orders')
+  }, [currentUser, userLoading, permissionsLoading, hasPermission, router])
 
   // Loading state
   return (

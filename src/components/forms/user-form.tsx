@@ -14,7 +14,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { createUserSchema, type UserFormData } from "./user/user-form-schema"
 import { needsCompanyAssignment } from "./user/user-form-utils"
 import { getRolesCreatableBy } from "@/lib/rbac/role-definitions"
-import { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 interface UserFormProps {
   onSubmit: (data: UserFormData) => void
@@ -61,11 +61,11 @@ export function UserForm({
       data.companyId = currentUser?.company?.id
 
       // Validate role selection using centralized system
-      const creatableRoles = getRolesCreatableBy(currentUser.role as Role)
+      const creatableRoles = getRolesCreatableBy(currentUser.role as SystemRoleKey)
       const allowedRoleValues = creatableRoles.map(r => r.value)
 
-      if (!allowedRoleValues.includes(data.role as Role)) {
-        data.role = "TECNICO"
+      if (!allowedRoleValues.includes(data.role as SystemRoleKey)) {
+        data.role = 'TECNICO'
       }
     }
 

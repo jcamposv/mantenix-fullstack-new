@@ -9,6 +9,7 @@ import { WorkOrdersDashboard } from "@/components/dashboard/company/work-orders-
 import { AnalyticsDashboard } from "@/components/dashboard/analytics/analytics-dashboard"
 import { DashboardFilters, DatePeriod } from "@/components/dashboard/shared/dashboard-filters"
 import { DateRange } from "react-day-picker"
+import { PermissionGate } from "@/components/permissions/permission-gate"
 
 export default function WorkOrdersPage() {
   const router = useRouter()
@@ -44,14 +45,19 @@ export default function WorkOrdersPage() {
               onCustomDateRangeChange={setCustomDateRange}
             />
 
-            <Button variant="outline" onClick={handleViewList}>
-              <List className="h-4 w-4 mr-2" />
-              Ver Lista
-            </Button>
-            <Button onClick={handleAddWorkOrder}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Orden
-            </Button>
+            <PermissionGate permission="work_orders.view">
+              <Button variant="outline" onClick={handleViewList}>
+                <List className="h-4 w-4 mr-2" />
+                Ver Lista
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate permission="work_orders.create">
+              <Button onClick={handleAddWorkOrder}>
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Orden
+              </Button>
+            </PermissionGate>
           </div>
         </div>
       </div>
@@ -63,10 +69,12 @@ export default function WorkOrdersPage() {
             <LayoutDashboard className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics & KPIs
-          </TabsTrigger>
+          <PermissionGate permission="analytics.view">
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics & KPIs
+            </TabsTrigger>
+          </PermissionGate>
         </TabsList>
 
         {/* Overview Tab - Operational Dashboard */}
@@ -81,13 +89,15 @@ export default function WorkOrdersPage() {
         </TabsContent>
 
         {/* Analytics Tab - KPIs Dashboard */}
-        <TabsContent value="analytics" className="space-y-4">
-          <AnalyticsDashboard
-            period={period}
-            onPeriodChange={setPeriod}
-            hideFilters={true}
-          />
-        </TabsContent>
+        <PermissionGate permission="analytics.view">
+          <TabsContent value="analytics" className="space-y-4">
+            <AnalyticsDashboard
+              period={period}
+              onPeriodChange={setPeriod}
+              hideFilters={true}
+            />
+          </TabsContent>
+        </PermissionGate>
       </Tabs>
     </div>
   )

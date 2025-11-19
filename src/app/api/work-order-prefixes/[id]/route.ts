@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { AuthService } from "@/server/services/auth.service"
 import { WorkOrderPrefixService } from "@/server/services/work-order-prefix.service"
 import { updateWorkOrderPrefixSchema } from "@/schemas/work-order-prefix"
 import { ZodError } from "zod"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 /**
  * GET /api/work-order-prefixes/[id]
@@ -15,22 +14,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user || !session?.user.companyId || !session?.user.role) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
 
     // Get prefix
     const prefix = await WorkOrderPrefixService.getPrefix(
       id,
-      session.user.companyId,
-      session.user.role as Role
+      session.user.companyId!,
+      session.user.role as SystemRoleKey
     )
 
     return NextResponse.json(prefix, { status: 200 })
@@ -61,14 +59,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user || !session?.user.companyId || !session?.user.role) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
 
@@ -80,8 +77,8 @@ export async function PATCH(
     const prefix = await WorkOrderPrefixService.updatePrefix(
       id,
       data,
-      session.user.companyId,
-      session.user.role as Role
+      session.user.companyId!,
+      session.user.role as SystemRoleKey
     )
 
     return NextResponse.json(prefix, { status: 200 })
@@ -119,22 +116,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user || !session?.user.companyId || !session?.user.role) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
 
     // Delete prefix (soft delete by default)
     await WorkOrderPrefixService.deletePrefix(
       id,
-      session.user.companyId,
-      session.user.role as Role
+      session.user.companyId!,
+      session.user.role as SystemRoleKey
     )
 
     return NextResponse.json(

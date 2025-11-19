@@ -23,7 +23,7 @@ export class InventoryMovementService {
     limit: number = 20
   ): Promise<{ movements: InventoryMovementWithRelations[], total: number, page: number, limit: number }> {
     // Verificar permisos
-    if (!PermissionHelper.hasPermission(session.user.role, 'VIEW_INVENTORY_MOVEMENTS')) {
+    if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
@@ -101,7 +101,7 @@ export class InventoryMovementService {
     id: string
   ): Promise<InventoryMovementWithRelations | null> {
     // Verificar permisos
-    if (!PermissionHelper.hasPermission(session.user.role, 'VIEW_INVENTORY_MOVEMENTS')) {
+    if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
@@ -133,7 +133,7 @@ export class InventoryMovementService {
     inventoryItemId: string
   ): Promise<InventoryMovementWithRelations[]> {
     // Verificar permisos
-    if (!PermissionHelper.hasPermission(session.user.role, 'VIEW_INVENTORY_MOVEMENTS')) {
+    if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
@@ -158,7 +158,7 @@ export class InventoryMovementService {
     workOrderId: string
   ): Promise<InventoryMovementWithRelations[]> {
     // Verificar permisos
-    if (!PermissionHelper.hasPermission(session.user.role, 'VIEW_INVENTORY_MOVEMENTS')) {
+    if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
@@ -172,7 +172,7 @@ export class InventoryMovementService {
     session: AuthenticatedSession
   ): Promise<Record<string, number>> {
     // Verificar permisos
-    if (!PermissionHelper.hasPermission(session.user.role, 'VIEW_INVENTORY_MOVEMENTS')) {
+    if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 
@@ -190,7 +190,7 @@ export class InventoryMovementService {
     dateTo?: Date
   ): Promise<{ totalIn: number, totalOut: number }> {
     // Verificar permisos
-    if (!PermissionHelper.hasPermission(session.user.role, 'VIEW_INVENTORY_MOVEMENTS')) {
+    if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
 

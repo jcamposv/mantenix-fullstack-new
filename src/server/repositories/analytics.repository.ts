@@ -772,7 +772,9 @@ export class AnalyticsRepository {
     const technicians = await prisma.user.findMany({
       where: {
         companyId,
-        role: { in: ["TECNICO", "SUPERVISOR", "JEFE_MANTENIMIENTO"] },
+        role: {
+          key: { in: ["TECNICO", "SUPERVISOR", "JEFE_MANTENIMIENTO"] }
+        },
         isLocked: false,
       },
       select: {

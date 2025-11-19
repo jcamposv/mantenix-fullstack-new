@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { UserRepository } from "../repositories/user.repository"
 import { CompanyRepository } from "../repositories/company.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import { SubscriptionGuard } from "../middleware/subscription-guard"
 import { SubscriptionService } from "./subscription.service"
 import { getCurrentCompanyId } from "@/lib/company-context"
@@ -54,7 +54,9 @@ export class UserService {
 
     // Aplicar filtros adicionales
     if (filters) {
-      if (filters.role) whereClause.role = filters.role
+      if (filters.role) {
+        whereClause.role = { is: { key: filters.role } }
+      }
       if (filters.companyId) whereClause.companyId = filters.companyId
       if (filters.clientCompanyId) whereClause.clientCompanyId = filters.clientCompanyId
       if (filters.siteId) whereClause.siteId = filters.siteId
@@ -82,13 +84,7 @@ export class UserService {
    */
   static async getList(session: AuthenticatedSession, filters: UserFilters, page: number, limit: number): Promise<PaginatedUsersResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_all_users') ||
-                         AuthService.canUserPerformAction(session.user.role, 'view_company_users') ||
-                         AuthService.canUserPerformAction(session.user.role, 'view_client_users')
-
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver usuarios")
-    }
+    await PermissionGuard.require(session, 'users.view')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
     const { users, total } = await UserRepository.findMany(whereClause, page, limit)
@@ -107,9 +103,7 @@ export class UserService {
    */
   static async create(userData: CreateUserInput & { password?: string }, session: AuthenticatedSession): Promise<UserWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_user')) {
-      throw new Error("No tienes permisos para crear usuarios")
-    }
+    await PermissionGuard.require(session, 'users.create')
 
     // Verificar que no existe un usuario con el mismo email
     const existingUser = await UserRepository.findByEmail(userData.email)
@@ -135,7 +129,10 @@ export class UserService {
     const createData: Prisma.UserCreateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role,
+      // Connect to role by key (for system roles) or by ID (for custom roles)
+      role: userData.customRoleId 
+        ? { connect: { id: userData.customRoleId } }
+        : { connect: { key: userData.role } },
       hourlyRate: userData.hourlyRate,
       image: userData.image
     }
@@ -183,9 +180,7 @@ export class UserService {
    */
   static async update(id: string, userData: UpdateUserInput, session: AuthenticatedSession): Promise<UserWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_user')) {
-      throw new Error("No tienes permisos para actualizar usuarios")
-    }
+    await PermissionGuard.require(session, 'users.update')
 
     // Verificar que el usuario existe y se tiene acceso
     const existingUser = await this.getById(id, session)
@@ -220,8 +215,18 @@ export class UserService {
     const updateData: Prisma.UserUpdateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role,
       hourlyRate: userData.hourlyRate
+    }
+
+    // Update role if provided (either by customRoleId or role key)
+    if (userData.customRoleId !== undefined) {
+      updateData.role = userData.customRoleId 
+        ? { connect: { id: userData.customRoleId } }
+        : userData.role
+        ? { connect: { key: userData.role } }
+        : undefined
+    } else if (userData.role !== undefined) {
+      updateData.role = { connect: { key: userData.role } }
     }
 
     // Solo actualizar image si fue proporcionado explícitamente
@@ -257,9 +262,7 @@ export class UserService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<UserWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_user')) {
-      throw new Error("No tienes permisos para eliminar usuarios")
-    }
+    await PermissionGuard.require(session, 'users.delete')
 
     // Verificar que el usuario existe y se tiene acceso
     const existingUser = await this.getById(id, session)

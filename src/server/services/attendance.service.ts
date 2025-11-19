@@ -82,7 +82,7 @@ export class AttendanceService {
 
     if (!hasAllAccess && !hasCompanyAccess) {
       // Solo puede ver su propia asistencia
-      await PermissionHelper.requirePermission(
+      await PermissionHelper.requirePermissionAsync(
         session,
         PermissionHelper.PERMISSIONS.VIEW_ATTENDANCE
       )
@@ -155,7 +155,7 @@ export class AttendanceService {
     session: AuthenticatedSession,
     data: CheckInData
   ): Promise<AttendanceRecordWithRelations> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.CREATE_ATTENDANCE
     )
@@ -380,7 +380,7 @@ export class AttendanceService {
     session: AuthenticatedSession,
     date: Date
   ): Promise<DailyAttendanceSummary> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANY_ATTENDANCE
     )
