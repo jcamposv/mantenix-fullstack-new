@@ -36,8 +36,7 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
   const featureFlags = parseCompanyFeatures(companyFeatures)
   const {
     hasAttendance,
-    hasVacations,
-    hasPermissions,
+    hasTimeOff,
     hasExternalClientMgmt,
     hasInternalCorporateGroup
   } = featureFlags
@@ -84,14 +83,13 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
 
     const items = getFeatureNavItems({
       hasAttendance,
-      hasVacations,
-      hasPermissions,
+      hasTimeOff,
       hasExternalClientMgmt,
       hasInternalCorporateGroup
     })
 
     return items
-  }, [isExternalUser, hasAttendance, hasVacations, hasPermissions, hasExternalClientMgmt, hasInternalCorporateGroup])
+  }, [isExternalUser, hasAttendance, hasTimeOff, hasExternalClientMgmt, hasInternalCorporateGroup])
 
   // Navigation items - different items based on user role
   const navItems = useMemo(() => {

@@ -77,8 +77,7 @@ enum AssetStatus {
 enum FeatureModule {
   // HR Modules
   HR_ATTENDANCE // Módulo de asistencia y marcaje
-  HR_VACATIONS // Módulo de vacaciones
-  HR_PERMISSIONS // Módulo de permisos
+  HR_TIME_OFF // Módulo de ausencias (vacaciones, permisos, licencias)
 
   // AI & Analytics
   AI_ASSISTANT // Asistente de IA (add-on disponible bajo demanda)

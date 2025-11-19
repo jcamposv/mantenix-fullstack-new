@@ -254,8 +254,7 @@ export const FALLBACK_USER = {
 // Features habilitados dinámicamente
 export const getFeatureNavItems = (enabledFeatures: {
   hasAttendance?: boolean
-  hasVacations?: boolean
-  hasPermissions?: boolean
+  hasTimeOff?: boolean
   hasExternalClientMgmt?: boolean
   hasInternalCorporateGroup?: boolean
 }) => {
@@ -287,33 +286,23 @@ export const getFeatureNavItems = (enabledFeatures: {
     })
   }
 
-  if (enabledFeatures.hasVacations) {
+  if (enabledFeatures.hasTimeOff) {
     items.push({
       title: "Vacaciones",
-      url: "/admin/vacations",
+      url: "/admin/time-off",
       icon: Calendar,
       items: [
         {
           title: "Solicitudes",
-          url: "/admin/vacations"
+          url: "/admin/time-off"
         },
         {
-          title: "Balance",
-          url: "/admin/vacations/balance"
-        }
-      ]
-    })
-  }
-
-  if (enabledFeatures.hasPermissions) {
-    items.push({
-      title: "Permisos",
-      url: "/admin/permissions",
-      icon: FileText,
-      items: [
+          title: "Mi Balance",
+          url: "/admin/time-off/balance"
+        },
         {
-          title: "Solicitudes",
-          url: "/admin/permissions"
+          title: "Calendario",
+          url: "/admin/time-off/calendar"
         }
       ]
     })
