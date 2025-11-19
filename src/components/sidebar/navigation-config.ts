@@ -66,17 +66,14 @@ export const BASE_NAV_ITEMS = [
     title: "Órdenes de Trabajo",
     url: "/work-orders",
     icon: Bot,
-    permission: "work_orders.view",
     items: [
       {
         title: "Dashboard",
         url: "/work-orders",
-        permission: "work_orders.view",
       },
       {
         title: "Lista de Órdenes",
         url: "/work-orders/list",
-        permission: "work_orders.view",
       },
       {
         title: "Mis Órdenes",

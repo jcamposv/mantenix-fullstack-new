@@ -133,6 +133,12 @@ const PERMISSIONS: PermissionSeed[] = [
     description: 'Permite gestionar (ver, crear, editar, eliminar) plantillas de órdenes de trabajo',
     module: 'work_orders'
   },
+  {
+    key: 'work_orders.manage_prefixes',
+    name: 'Gestionar Prefijos de Numeración',
+    description: 'Permite gestionar (ver, crear, editar, eliminar) prefijos de numeración de órdenes de trabajo',
+    module: 'work_orders'
+  },
 
   // ============================================================================
   // USERS MODULE

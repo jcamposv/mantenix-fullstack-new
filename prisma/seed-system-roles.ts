@@ -35,7 +35,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     color: '#f97316', // orange
     permissions: [
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
-      'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
+      'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
       'work_orders.manage_templates', 'work_orders.manage_prefixes',
       'production_lines.create', 'production_lines.view', 'production_lines.update', 'production_lines.delete',
@@ -63,7 +63,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     color: '#f59e0b', // amber
     permissions: [
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
-      'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
+      'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
       'work_orders.manage_templates', 'work_orders.manage_prefixes',
       'production_lines.create', 'production_lines.view', 'production_lines.update', 'production_lines.delete',
@@ -90,7 +90,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     color: '#eab308', // yellow
     permissions: [
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
-      'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view', 'work_orders.view_all',
+      'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
       'work_orders.manage_templates', 'work_orders.manage_prefixes',
       'analytics.view',
