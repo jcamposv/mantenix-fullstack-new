@@ -227,16 +227,10 @@ export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
     description: "Control de asistencia de empleados con geolocalización",
     category: "HR"
   },
-  HR_VACATIONS: {
-    module: "HR_VACATIONS",
-    name: "Gestión de Vacaciones",
-    description: "Solicitudes y seguimiento de vacaciones",
-    category: "HR"
-  },
-  HR_PERMISSIONS: {
-    module: "HR_PERMISSIONS",
-    name: "Permisos y Ausencias",
-    description: "Gestión de permisos y justificaciones",
+  HR_TIME_OFF: {
+    module: "HR_TIME_OFF",
+    name: "Gestión de Ausencias",
+    description: "Vacaciones, permisos y licencias",
     category: "HR"
   },
 

@@ -76,8 +76,7 @@ export const locationFiltersSchema = z.object({
 
 export const featureModuleEnum = z.enum([
   "HR_ATTENDANCE",
-  "HR_VACATIONS",
-  "HR_PERMISSIONS",
+  "HR_TIME_OFF",
   "AI_ASSISTANT",
   "ADVANCED_ANALYTICS"
 ])
