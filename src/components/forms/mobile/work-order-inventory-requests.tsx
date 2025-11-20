@@ -52,7 +52,7 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     endpoint: `/api/admin/inventory/requests?workOrderId=${workOrderId}`,
     transform: (data: unknown) => {
       const response = data as PaginatedInventoryRequestsResponse
-      return (response.requests || [])
+      return (response.items || [])
         .filter((req): req is WorkOrderInventoryRequestWithRelations & { inventoryItem: NonNullable<WorkOrderInventoryRequestWithRelations['inventoryItem']> } =>
           req.inventoryItem !== undefined
         )

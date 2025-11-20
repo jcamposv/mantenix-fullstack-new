@@ -120,7 +120,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     color: '#22c55e', // green
     permissions: [
       'alerts.create', 'alerts.update', 'alerts.view_company', 'alerts.comment',
-      'work_orders.create', 'work_orders.update', 'work_orders.view', 'work_orders.view_all',
+      'work_orders.create', 'work_orders.update', 'work_orders.view_all',
       'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
       'analytics.view',
       'assets.view', 'assets.change_status', 'assets.view_status_history',

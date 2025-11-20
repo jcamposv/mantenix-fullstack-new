@@ -61,7 +61,7 @@ export function useWorkOrderPrefixes(options: UseWorkOrderPrefixesOptions = {}) 
 
       const data: PaginatedWorkOrderPrefixesResponse = await response.json()
 
-      setPrefixes(data.prefixes)
+      setPrefixes(data.items)
       setPagination({
         page: data.page || 1,
         limit: data.limit || 50,

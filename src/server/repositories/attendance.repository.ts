@@ -20,7 +20,12 @@ export class AttendanceRepository {
     location: {
       select: {
         id: true,
-        name: true
+        name: true,
+        timezone: true,
+        workStartTime: true,
+        workEndTime: true,
+        lateToleranceMinutes: true,
+        workDays: true
       }
     },
     company: {

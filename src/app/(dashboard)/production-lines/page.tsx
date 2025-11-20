@@ -32,7 +32,7 @@ export default async function ProductionLinesPage() {
   const canCreate = permissions.includes('production_lines.create') || permissions.includes('*')
 
   // Fetch production lines and stats in parallel
-  const [{ productionLines }, stats] = await Promise.all([
+  const [{ items: productionLines }, stats] = await Promise.all([
     ProductionLineService.getProductionLines(sessionResult, {}, { page: 1, limit: 100 }),
     ProductionLineService.getStats(sessionResult),
   ])

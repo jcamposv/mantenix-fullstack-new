@@ -62,7 +62,7 @@ export class ProductionLineService {
     filters: ProductionLineFilters = {},
     pagination: { page: number; limit: number } = { page: 1, limit: 20 }
   ): Promise<{
-    productionLines: ProductionLineWithRelations[]
+    items: ProductionLineWithRelations[]
     total: number
   }> {
     const companyId = await getCurrentCompanyId(session)

@@ -205,6 +205,7 @@ model User {
   workOrderAssignments        WorkOrderAssignment[] @relation("WorkOrderAssignments")
   workOrderAssignmentsCreated WorkOrderAssignment[] @relation("WorkOrderAssigner")
   workOrderSchedulesCreated   WorkOrderSchedule[]   @relation("WorkOrderScheduleCreator")
+  workOrderComments           WorkOrderComment[] // Comentarios en órdenes de trabajo
 
   // Password Reset relations
   passwordResetTokens        PasswordResetToken[] @relation("PasswordResetUser")
@@ -928,6 +929,9 @@ model WorkOrder {
   // Time tracking logs
   timeLogs WorkOrderTimeLog[]
 
+  // Comments
+  comments WorkOrderComment[]
+
   // Asset status history relations
   assetStatusHistory AssetStatusHistory[]
 
@@ -1220,8 +1224,9 @@ model AttendanceRecord {
   ipAddress     String?
 
   // Tiempos calculados
-  workDurationMinutes Int? // Duración en minutos (checkOut - checkIn)
-  lateMinutes         Int? // Minutos de retraso si llegó tarde
+  workDurationMinutes     Int? // Duración en minutos (checkOut - checkIn)
+  lateMinutes             Int? // Minutos de retraso si llegó tarde
+  earlyDepartureMinutes   Int? // Minutos de salida temprana
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1811,6 +1816,24 @@ model WorkOrderTimeLog {
   @@index([userId])
   @@index([action])
   @@map("work_order_time_logs")
+}
+
+// Comentarios en órdenes de trabajo
+model WorkOrderComment {
+  id         String   @id @default(cuid())
+  content    String // Contenido del comentario
+  isInternal Boolean  @default(false) // Si es un comentario interno (solo para técnicos) o público
+  createdAt  DateTime @default(now())
+
+  // Relations
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([workOrderId])
+  @@index([authorId])
+  @@map("work_order_comments")
 }
 
 // ============================================================================

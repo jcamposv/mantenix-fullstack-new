@@ -77,6 +77,7 @@ export class PermissionHelper {
     DELETE_ATTENDANCE: 'delete_attendance',
     VIEW_ALL_ATTENDANCE: 'view_all_attendance',
     VIEW_COMPANY_ATTENDANCE: 'view_company_attendance',
+    MANAGE_ATTENDANCE: 'manage_attendance',
     MANAGE_LOCATIONS: 'manage_locations',
     // Inventory permissions
     VIEW_INVENTORY_ITEMS: 'view_inventory_items',

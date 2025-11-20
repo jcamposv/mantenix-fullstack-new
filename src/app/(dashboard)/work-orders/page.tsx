@@ -45,7 +45,7 @@ export default function WorkOrdersPage() {
               onCustomDateRangeChange={setCustomDateRange}
             />
 
-            <PermissionGate permission="work_orders.view">
+            <PermissionGate permissions={['work_orders.view_all', 'work_orders.view_assigned']}>
               <Button variant="outline" onClick={handleViewList}>
                 <List className="h-4 w-4 mr-2" />
                 Ver Lista

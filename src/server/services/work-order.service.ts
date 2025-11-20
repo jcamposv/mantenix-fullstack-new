@@ -27,8 +27,8 @@ export class WorkOrderService {
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number }
   ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
-    // Verificar permisos
-    await PermissionGuard.require(session, 'work_orders.view')
+    // Verificar permisos - usuario debe tener permiso para ver todas las OT o solo las asignadas
+    await PermissionGuard.requireAny(session, ['work_orders.view_all', 'work_orders.view_assigned'])
 
     // Get company ID based on role and current subdomain
     const companyId = await getCurrentCompanyId(session)
@@ -59,8 +59,8 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderWithRelations | null> {
-    // Verificar permisos
-    await PermissionGuard.require(session, 'work_orders.view')
+    // Verificar permisos - usuario debe tener permiso para ver todas las OT o solo las asignadas
+    await PermissionGuard.requireAny(session, ['work_orders.view_all', 'work_orders.view_assigned'])
 
     // Get company ID based on role and current subdomain
     const companyId = await getCurrentCompanyId(session)

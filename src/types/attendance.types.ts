@@ -13,7 +13,7 @@ import type { PaginatedResponse } from "@/types/common.types"
 
 export interface AttendanceRecordWithRelations extends AttendanceRecord {
   user: Pick<User, "id" | "name" | "email" | "avatar">
-  location?: Pick<CompanyLocation, "id" | "name"> | null
+  location?: Pick<CompanyLocation, "id" | "name" | "timezone" | "workStartTime" | "workEndTime" | "lateToleranceMinutes" | "workDays"> | null
   company?: Pick<Company, "id" | "name"> | null
 }
 
