@@ -66,7 +66,7 @@ export class WorkOrderPrefixRepository {
     ])
 
     return {
-      prefixes,
+      items: prefixes,
       total,
       page,
       limit,

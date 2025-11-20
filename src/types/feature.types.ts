@@ -1,4 +1,5 @@
 import type { CompanyFeature, FeatureModule, Company, User } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 // ============================================================================
 // COMPANY FEATURE TYPES
@@ -39,10 +40,4 @@ export interface FeatureFilters {
   isEnabled?: boolean
 }
 
-export interface PaginatedFeaturesResponse {
-  features: CompanyFeatureWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedFeaturesResponse = PaginatedResponse<CompanyFeatureWithRelations>

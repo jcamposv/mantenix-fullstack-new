@@ -70,19 +70,20 @@ export default function AIConfigurationPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setCompanies(data.companies)
+        const companies = data.items || []
+        setCompanies(companies)
 
         // Auto-select first company or company from URL
-        if (data.companies.length > 0) {
+        if (companies.length > 0) {
           if (companyIdFromUrl) {
-            const urlCompany = data.companies.find((c: Company) => c.id === companyIdFromUrl)
+            const urlCompany = companies.find((c: Company) => c.id === companyIdFromUrl)
             if (urlCompany) {
               setSelectedCompanyId(companyIdFromUrl)
             } else {
-              setSelectedCompanyId(data.companies[0].id)
+              setSelectedCompanyId(companies[0].id)
             }
           } else if (!selectedCompanyId) {
-            setSelectedCompanyId(data.companies[0].id)
+            setSelectedCompanyId(companies[0].id)
           }
         }
       } else {

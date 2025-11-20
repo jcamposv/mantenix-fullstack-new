@@ -66,12 +66,12 @@ export class LocationService {
     }
 
     const whereClause = this.buildWhereClause(filters, companyId)
-    const { locations, total } = await LocationRepository.findMany(whereClause, page, limit)
+    const { items, total } = await LocationRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      locations,
+      items,
       total,
       page,
       limit,

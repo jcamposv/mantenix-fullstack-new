@@ -73,11 +73,13 @@ export class ProductionLineService {
 
     const whereClause = this.buildWhereClause(filters, companyId)
 
-    return await ProductionLineRepository.findMany(
+    const { items, total } = await ProductionLineRepository.findMany(
       whereClause,
       pagination.page,
       pagination.limit
     )
+
+    return { items, total }
   }
 
   /**

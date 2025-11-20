@@ -123,15 +123,16 @@ export class WorkOrderScheduleService {
     }
 
     if (pagination) {
-      return await WorkOrderScheduleRepository.findMany(
+      const { items, total } = await WorkOrderScheduleRepository.findMany(
         whereClause,
         pagination.page,
         pagination.limit
       )
+      return { items, total }
     }
 
     const schedules = await WorkOrderScheduleRepository.findAll(whereClause)
-    return { schedules, total: schedules.length }
+    return { items: schedules, total: schedules.length }
   }
 
   /**

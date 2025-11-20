@@ -97,12 +97,12 @@ export class AttendanceService {
     }
 
     const whereClause = this.buildWhereClause(filters, companyId)
-    const { records, total } = await AttendanceRepository.findMany(whereClause, page, limit)
+    const { items, total } = await AttendanceRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      records,
+      items,
       total,
       page,
       limit,
@@ -370,6 +370,7 @@ export class AttendanceService {
       daysLate: stats.late,
       daysAbsent: stats.absent,
       daysJustified: stats.justified,
+      daysEarlyDeparture: stats.earlyDeparture,
       totalWorkHours,
       averageLateMinutes,
       records
@@ -420,8 +421,8 @@ export class AttendanceService {
       onTime: stats.onTime,
       late: stats.late,
       absent: stats.absent,
-      justified: 0, // TODO: Calcular justificados
-      earlyDeparture: 0, // TODO: Calcular salidas tempranas
+      justified: stats.justified,
+      earlyDeparture: stats.earlyDeparture,
       averageWorkHours
     }
   }

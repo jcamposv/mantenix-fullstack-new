@@ -92,10 +92,10 @@ export class AlertService {
    */
   static async getList(session: AuthenticatedSession, filters: AlertFilters, page: number, limit: number): Promise<PaginatedAlertsResponse> {
     const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { alerts, total } = await AlertRepository.findMany(whereClause, page, limit)
+    const { items, total } = await AlertRepository.findMany(whereClause, page, limit)
 
     return {
-      alerts,
+      items,
       total,
       page,
       limit,

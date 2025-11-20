@@ -77,10 +77,10 @@ export class WorkOrderTemplateService {
 
     const { page, limit, ...filterParams } = filters
     const whereClause = this.buildWhereClause(session, undefined, filterParams)
-    const { templates, total } = await WorkOrderTemplateRepository.findMany(whereClause, page, limit)
+    const { items, total } = await WorkOrderTemplateRepository.findMany(whereClause, page, limit)
 
     return {
-      templates,
+      items,
       total,
       page,
       limit,

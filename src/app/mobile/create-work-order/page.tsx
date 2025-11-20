@@ -75,7 +75,7 @@ function MobileCreateWorkOrderPageContent() {
       const response = await fetch('/api/admin/assets')
       if (response.ok) {
         const data = await response.json()
-        const assetsData = data.assets || data.items || data
+        const assetsData = data.items || data
         setAssets(assetsData)
 
         // If preselected asset, find it and set it

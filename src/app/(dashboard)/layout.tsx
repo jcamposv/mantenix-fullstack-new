@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { PWABrandingUpdater } from '@/components/pwa-branding-updater';
+import { NotificationBellWrapper } from '@/components/notifications/notification-bell-wrapper';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserWithRole } from '@/lib/auth-utils';
@@ -251,13 +252,16 @@ export default async function DashboardLayout({
       <SidebarInset>
         {/* Optimized header - reduced from h-16 to h-12 for space efficiency */}
         <header className="flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-10">
-          <div className="flex items-center gap-2 px-3">
+          <div className="flex items-center gap-2 px-3 flex-1">
             <SidebarTrigger className="-ml-1 h-7 w-7" />
             <Separator
               orientation="vertical"
               className="mr-2 h-4 data-[orientation=vertical]:h-4"
             />
             <DynamicBreadcrumbs />
+          </div>
+          <div className="flex items-center gap-2 px-3">
+            <NotificationBellWrapper />
           </div>
         </header>
         {/* Optimized content container - reduced padding for more space */}

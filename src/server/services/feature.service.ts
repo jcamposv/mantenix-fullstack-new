@@ -41,12 +41,12 @@ export class FeatureService {
     await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
 
     const whereClause = this.buildWhereClause(filters)
-    const { features, total } = await FeatureRepository.findMany(whereClause, page, limit)
+    const { items, total } = await FeatureRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      features,
+      items,
       total,
       page,
       limit,

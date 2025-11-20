@@ -742,6 +742,7 @@ enum EmailTemplateType {
   ALERT_CREATED // Alerta creada
   ALERT_ASSIGNED // Alerta asignada
   ALERT_RESOLVED // Alerta resuelta
+  ALERT_ESCALATED // Alerta escalada a supervisor/admin
 }
 
 model WorkOrderTemplate {

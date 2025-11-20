@@ -1,4 +1,5 @@
 import type { SystemRoleKey } from "@/types/auth.types"
+import type { PaginatedResponse } from "@/types/common.types"
 
 /**
  * Enum types from Prisma
@@ -571,35 +572,17 @@ export interface InventoryMovementFilters {
 /**
  * Paginated inventory items response
  */
-export interface PaginatedInventoryItemsResponse {
-  items: InventoryItemWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedInventoryItemsResponse = PaginatedResponse<InventoryItemWithRelations>
 
 /**
  * Paginated inventory requests response
  */
-export interface PaginatedInventoryRequestsResponse {
-  requests: WorkOrderInventoryRequestWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedInventoryRequestsResponse = PaginatedResponse<WorkOrderInventoryRequestWithRelations>
 
 /**
  * Paginated inventory movements response
  */
-export interface PaginatedInventoryMovementsResponse {
-  movements: InventoryMovementWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedInventoryMovementsResponse = PaginatedResponse<InventoryMovementWithRelations>
 
 /**
  * Inventory statistics

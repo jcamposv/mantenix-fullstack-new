@@ -31,18 +31,18 @@ export const GET = async (request: Request) => {
     const page = parseInt(searchParams.get("page") ?? "1")
     const limit = parseInt(searchParams.get("limit") ?? "10")
 
-    const { subscriptions, total } = await SubscriptionRepository.findMany(
+    const { items, total } = await SubscriptionRepository.findMany(
       {},
       page,
       limit
     )
 
     return NextResponse.json({
-      subscriptions,
+      items,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit)
     })
   } catch (error) {
     console.error("[API] Error fetching subscriptions:", error)

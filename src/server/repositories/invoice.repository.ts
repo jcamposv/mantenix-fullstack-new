@@ -37,7 +37,7 @@ export class InvoiceRepository {
     filters: InvoiceFilters,
     page?: number,
     limit?: number
-  ): Promise<{ invoices: InvoiceWithRelations[]; total: number }> {
+  ): Promise<{ items: InvoiceWithRelations[]; total: number }> {
     const whereClause: Prisma.InvoiceWhereInput = {}
 
     if (filters.subscriptionId) {
@@ -81,7 +81,7 @@ export class InvoiceRepository {
       prisma.invoice.count({ where: whereClause }),
     ])
 
-    return { invoices, total }
+    return { items: invoices, total }
   }
 
   static async create(data: Prisma.InvoiceCreateInput): Promise<InvoiceWithRelations> {

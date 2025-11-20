@@ -1,4 +1,5 @@
 import type { SystemRoleKey } from "@/types/auth.types"
+import type { PaginatedResponse } from "@/types/common.types"
 
 // Enum types from Prisma
 export type WorkOrderTemplateStatus = "ACTIVE" | "INACTIVE"
@@ -134,13 +135,7 @@ export interface WorkOrderTemplateFilters {
 }
 
 // Paginated response for template lists
-export interface PaginatedWorkOrderTemplatesResponse {
-  templates: WorkOrderTemplateWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedWorkOrderTemplatesResponse = PaginatedResponse<WorkOrderTemplateWithRelations>
 
 // Form data when creating/editing a custom field
 export interface CustomFieldFormData {

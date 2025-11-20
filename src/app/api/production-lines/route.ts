@@ -43,14 +43,11 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({
-      success: true,
-      data: result.productionLines,
-      pagination: {
-        page,
-        limit,
-        total: result.total,
-        totalPages: Math.ceil(result.total / limit),
-      },
+      items: result.productionLines,
+      total: result.total,
+      page,
+      limit,
+      totalPages: Math.ceil(result.total / limit)
     })
   } catch (error) {
     console.error('Error fetching production lines:', error)

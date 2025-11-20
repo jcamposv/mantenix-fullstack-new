@@ -102,7 +102,7 @@ export class WorkOrderScheduleRepository {
       prisma.workOrderSchedule.count({ where: whereClause })
     ])
 
-    return { schedules, total }
+    return { items: schedules, total }
   }
 
   /**

@@ -158,14 +158,12 @@ export async function GET(request: NextRequest) {
     const unreadCount = notifications.filter(n => !n.read).length
 
     return NextResponse.json({
-      notifications,
+      items: notifications,
       unreadCount,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      }
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     })
 
   } catch (error) {

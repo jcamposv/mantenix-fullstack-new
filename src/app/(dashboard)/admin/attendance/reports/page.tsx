@@ -59,10 +59,11 @@ export default function AttendanceReportsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setUsers(data.users || [])
+        const users = data.items || []
+        setUsers(users)
 
-        if (data.users && data.users.length > 0) {
-          setSelectedUserId(data.users[0].id)
+        if (users && users.length > 0) {
+          setSelectedUserId(users[0].id)
         }
       } else {
         toast.error("Error al cargar usuarios")

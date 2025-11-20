@@ -51,7 +51,7 @@ export class SiteRepository {
     })
   }
 
-  static async findMany(whereClause: Prisma.SiteWhereInput, page: number, limit: number): Promise<{ sites: SiteWithRelations[], total: number }> {
+  static async findMany(whereClause: Prisma.SiteWhereInput, page: number, limit: number): Promise<{ items: SiteWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [sites, total] = await Promise.all([
@@ -67,7 +67,7 @@ export class SiteRepository {
       prisma.site.count({ where: whereClause })
     ])
 
-    return { sites, total }
+    return { items: sites, total }
   }
 
   static async findAll(whereClause: Prisma.SiteWhereInput): Promise<SiteWithRelations[]> {

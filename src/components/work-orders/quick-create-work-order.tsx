@@ -135,22 +135,22 @@ export function QuickCreateWorkOrder({
 
         if (templatesRes.ok) {
           const data = await templatesRes.json()
-          setTemplates(data.templates || [])
+          setTemplates(data.items || [])
         }
 
         if (usersRes.ok) {
           const data = await usersRes.json()
-          setUsers(data.users || [])
+          setUsers(data.items || [])
         }
 
         if (assetsRes.ok) {
           const data = await assetsRes.json()
-          setAssets(data.assets || [])
+          setAssets(data.items || [])
         }
 
         if (sitesRes && sitesRes.ok) {
           const data = await sitesRes.json()
-          setSites(data.sites || [])
+          setSites(data.items || [])
         }
       } catch (error) {
         console.error("Error fetching data:", error)

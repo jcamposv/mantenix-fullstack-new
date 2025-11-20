@@ -1,4 +1,5 @@
 import type { Node, Edge } from '@xyflow/react'
+import type { PaginatedResponse } from "@/types/common.types"
 
 /**
  * Production Line Types
@@ -156,13 +157,7 @@ export interface ProductionLineFilters {
   isActive?: boolean
 }
 
-export interface PaginatedProductionLinesResponse {
-  productionLines: ProductionLineWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedProductionLinesResponse = PaginatedResponse<ProductionLineWithRelations>
 
 /**
  * Monitoring and Stats Types

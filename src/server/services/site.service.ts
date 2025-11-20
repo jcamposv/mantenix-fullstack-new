@@ -87,10 +87,10 @@ export class SiteService {
     await PermissionGuard.require(session, 'sites.view')
 
     const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { sites, total } = await SiteRepository.findMany(whereClause, page, limit)
+    const { items, total } = await SiteRepository.findMany(whereClause, page, limit)
 
     return {
-      sites,
+      items,
       total,
       page,
       limit,

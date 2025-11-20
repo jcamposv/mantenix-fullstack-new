@@ -26,7 +26,7 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     // Verificar permisos
     await PermissionGuard.require(session, 'work_orders.view')
 
@@ -422,7 +422,7 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     filters?: Omit<WorkOrderFilters, 'assignedToMe'>,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     if (!session?.user?.id) {
       throw new Error("Usuario no autenticado")
     }

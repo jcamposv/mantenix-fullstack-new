@@ -113,7 +113,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       const response = await fetch('/api/admin/client-companies')
       if (response.ok) {
         const data = await response.json()
-        setClientCompanies(data.clientCompanies || data.companies || data.items || data || [])
+        setClientCompanies(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching client companies:', error)
@@ -128,7 +128,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       const response = await fetch(`/api/admin/client-companies/${clientCompanyId}/sites`)
       if (response.ok) {
         const data = await response.json()
-        setSites(data.sites || data.items || data || [])
+        setSites(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching sites:', error)

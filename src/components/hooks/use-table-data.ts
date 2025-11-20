@@ -29,11 +29,8 @@ export function useTableData<T>({ endpoint, transform, dependencies = [] }: UseT
         const transformedData = transform(result)
         setData(transformedData)
       } else {
-        // TODO: STANDARDIZE API RESPONSES - All paginated endpoints should return { items: [], total, page, limit }
-        // Currently endpoints use different property names (items, companies, users, sites, etc.)
-        // This causes inconsistency and requires this fallback logic
-        // Recommendation: Refactor all list endpoints to use 'items' consistently
-        const items = result.items || result.companies || result.users || result.sites || result
+        // Use standardized 'items' property from paginated responses
+        const items = result.items || result
         setData(items)
       }
     } catch (err) {

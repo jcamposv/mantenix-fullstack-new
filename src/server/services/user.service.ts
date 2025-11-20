@@ -87,10 +87,10 @@ export class UserService {
     await PermissionGuard.require(session, 'users.view')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
-    const { users, total } = await UserRepository.findMany(whereClause, page, limit)
+    const { items, total } = await UserRepository.findMany(whereClause, page, limit)
 
     return {
-      users,
+      items,
       total,
       page,
       limit,

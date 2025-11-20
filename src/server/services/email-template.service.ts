@@ -116,10 +116,10 @@ export class EmailTemplateService {
     await PermissionGuard.require(session, 'email_settings.manage')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
-    const { templates, total } = await EmailTemplateRepository.findMany(whereClause, page, limit)
+    const { items, total } = await EmailTemplateRepository.findMany(whereClause, page, limit)
 
     return {
-      templates,
+      items,
       total,
       page,
       limit,

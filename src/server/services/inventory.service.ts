@@ -527,12 +527,12 @@ export class InventoryService {
       }
     }
 
-    const { requests, total } = await InventoryRequestRepository.findMany(whereClause, page, limit)
+    const { items, total } = await InventoryRequestRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      requests,
+      items,
       total,
       page,
       limit,
@@ -1075,12 +1075,12 @@ export class InventoryService {
     await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS)
 
     const whereClause = this.buildMovementWhereClause(filters)
-    const { movements, total } = await InventoryMovementRepository.findMany(whereClause, page, limit)
+    const { items, total } = await InventoryMovementRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      movements,
+      items,
       total,
       page,
       limit,

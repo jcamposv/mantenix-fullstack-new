@@ -1,3 +1,5 @@
+import type { PaginatedResponse } from "@/types/common.types"
+
 export interface Asset {
   id: string
   name: string
@@ -77,10 +79,4 @@ export interface AssetFilters {
   isActive?: boolean
 }
 
-export interface PaginatedAssetsResponse {
-  assets: AssetWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedAssetsResponse = PaginatedResponse<AssetWithRelations>

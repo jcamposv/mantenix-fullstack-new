@@ -109,10 +109,10 @@ export class AssetService {
     await PermissionGuard.require(session, 'assets.view')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
-    const { assets, total } = await AssetRepository.findMany(whereClause, page, limit)
+    const { items, total } = await AssetRepository.findMany(whereClause, page, limit)
 
     return {
-      assets,
+      items,
       total,
       page,
       limit,

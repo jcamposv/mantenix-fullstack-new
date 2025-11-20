@@ -5,6 +5,7 @@ import type {
   User,
   Company
 } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 // ============================================================================
 // ATTENDANCE RECORD TYPES
@@ -69,13 +70,7 @@ export interface AttendanceFilters {
   year?: number
 }
 
-export interface PaginatedAttendanceResponse {
-  records: AttendanceRecordWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedAttendanceResponse = PaginatedResponse<AttendanceRecordWithRelations>
 
 // ============================================================================
 // ATTENDANCE REPORTS
@@ -105,6 +100,7 @@ export interface MonthlyAttendanceReport {
   daysLate: number
   daysAbsent: number
   daysJustified: number
+  daysEarlyDeparture: number
   totalWorkHours: number
   averageLateMinutes: number
   records: AttendanceRecordBasic[]
@@ -183,13 +179,7 @@ export interface LocationFilters {
   search?: string
 }
 
-export interface PaginatedLocationsResponse {
-  locations: CompanyLocationWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedLocationsResponse = PaginatedResponse<CompanyLocationWithRelations>
 
 // ============================================================================
 // GEOLOCATION TYPES

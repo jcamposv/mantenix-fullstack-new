@@ -77,12 +77,12 @@ export class CompanyService {
       }
     }
 
-    const { companies, total } = await CompanyRepository.findMany(whereClause, page, limit)
+    const { items, total } = await CompanyRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      companies,
+      items,
       total,
       page,
       limit,

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Get generated work orders within date range
-    const { workOrders: allWorkOrders } = await WorkOrderRepository.findMany(
+    const { items: allWorkOrders } = await WorkOrderRepository.findMany(
       {
         scheduledDateFrom: new Date(dateRange.startDate),
         scheduledDateTo: new Date(dateRange.endDate)

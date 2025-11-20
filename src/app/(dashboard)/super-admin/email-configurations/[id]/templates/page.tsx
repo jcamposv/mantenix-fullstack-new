@@ -60,7 +60,7 @@ export default function EmailTemplatesPage() {
       const templatesResponse = await fetch(`/api/admin/email-templates?emailConfigurationId=${configId}`)
       if (templatesResponse.ok) {
         const data = await templatesResponse.json()
-        setTemplates(data.templates || data.items || [])
+        setTemplates(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching data:', error)

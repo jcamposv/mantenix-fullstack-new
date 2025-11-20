@@ -1,4 +1,5 @@
 import type { Company, Tier } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 export interface CompanyWithRelations extends Company {
   _count?: {
@@ -69,10 +70,4 @@ export interface CompanyFilters {
   search?: string
 }
 
-export interface PaginatedCompaniesResponse {
-  companies: CompanyWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedCompaniesResponse = PaginatedResponse<CompanyWithRelations>

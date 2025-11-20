@@ -49,7 +49,7 @@ export class UserRepository {
     })
   }
 
-  static async findMany(whereClause: Prisma.UserWhereInput, page: number, limit: number): Promise<{ users: UserWithRelations[], total: number }> {
+  static async findMany(whereClause: Prisma.UserWhereInput, page: number, limit: number): Promise<{ items: UserWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [users, total] = await Promise.all([
@@ -65,7 +65,7 @@ export class UserRepository {
       prisma.user.count({ where: whereClause })
     ])
 
-    return { users, total }
+    return { items: users, total }
   }
 
   static async create(data: Prisma.UserCreateInput): Promise<UserWithRelations> {
@@ -114,6 +114,36 @@ export class UserRepository {
     return await prisma.user.update({
       where: { id: userId },
       data: { image: photoUrl },
+      include: UserRepository.includeRelations
+    })
+  }
+
+  /**
+   * Encuentra usuarios que tienen ciertos permisos en una compañía
+   * @param permissionKeys - Claves de permisos a buscar (ej: ['alerts.view_company', 'work_orders.assign'])
+   * @param companyId - ID de la compañía
+   * @returns Array de usuarios activos con esos permisos
+   */
+  static async findByPermissionsAndCompany(
+    permissionKeys: string[],
+    companyId: string
+  ): Promise<UserWithRelations[]> {
+    return await prisma.user.findMany({
+      where: {
+        companyId,
+        isLocked: false,
+        role: {
+          permissions: {
+            some: {
+              permission: {
+                key: {
+                  in: permissionKeys
+                }
+              }
+            }
+          }
+        }
+      },
       include: UserRepository.includeRelations
     })
   }

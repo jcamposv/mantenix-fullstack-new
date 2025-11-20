@@ -15,7 +15,7 @@ export class WorkOrderRepository {
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number },
     companyId?: string
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     const page = pagination?.page || 1
     const limit = pagination?.limit || 50
     const offset = (page - 1) * limit
@@ -190,7 +190,7 @@ export class WorkOrderRepository {
       }))
     }))
 
-    return { workOrders: serializedWorkOrders as unknown as WorkOrderWithRelations[], total }
+    return { items: serializedWorkOrders as unknown as WorkOrderWithRelations[], total }
   }
 
   /**
@@ -639,7 +639,7 @@ export class WorkOrderRepository {
     userId: string,
     filters?: Omit<WorkOrderFilters, 'assignedToMe'>,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     return await this.findMany(
       { ...filters, assignedToMe: userId },
       pagination,
