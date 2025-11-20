@@ -31,7 +31,12 @@ interface User {
   id: string
   name: string
   email: string
-  role: string
+  role: {
+    id: string
+    key: string | null
+    name: string
+    color: string
+  }
 }
 
 export default function EditWorkOrderPage() {

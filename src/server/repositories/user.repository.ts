@@ -9,6 +9,14 @@ import type { UserWithRelations } from "@/types/user.types"
 export class UserRepository {
   
   private static readonly includeRelations = {
+    role: {
+      select: {
+        id: true,
+        key: true,
+        name: true,
+        color: true
+      }
+    },
     company: {
       select: {
         id: true,

@@ -64,6 +64,16 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
       .slice(0, 2)
   }
 
+  const getRoleName = (role: unknown): string => {
+    if (typeof role === 'string') {
+      return role.replace('_', ' ')
+    }
+    if (role && typeof role === 'object' && 'name' in role) {
+      return (role as { name: string }).name
+    }
+    return ''
+  }
+
   if (!user) return null
 
   // Determine logo and company name from branding (like in dashboard)
@@ -130,7 +140,7 @@ export function MobileHeader({ companyBranding }: MobileHeaderProps) {
                   <div className="text-left">
                     <p className="font-semibold">{user.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {user.role?.replace('_', ' ')}
+                      {getRoleName(user.role)}
                     </p>
                   </div>
                 </SheetTitle>

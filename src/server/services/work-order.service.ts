@@ -295,6 +295,37 @@ export class WorkOrderService {
         updatePrismaData.startedAt = new Date()
       } else if (updateData.status === "COMPLETED" && !existingWorkOrder.completedAt) {
         updatePrismaData.completedAt = new Date()
+
+        // Auto-calculate costs when marking as completed
+        // This ensures costs are calculated even if completed manually (not via Time Tracker)
+        const { TimeTrackingRepository } = await import("@/server/repositories/time-tracking.repository")
+        const timeTrackingRepo = new TimeTrackingRepository()
+
+        // Check if there are time logs for this work order
+        const timeLogs = await prisma.workOrderTimeLog.findMany({
+          where: { workOrderId: id },
+          take: 1,
+        })
+
+        // Only calculate costs if there are time logs
+        if (timeLogs.length > 0) {
+          try {
+            const costs = await timeTrackingRepo.calculateActualCost(id)
+            const summary = await timeTrackingRepo.getTimeSummary(id)
+
+            updatePrismaData.actualDuration = summary.totalElapsedMinutes
+            updatePrismaData.activeWorkTime = summary.activeWorkMinutes
+            updatePrismaData.waitingTime = summary.pausedMinutes
+            updatePrismaData.laborCost = costs.laborCost
+            updatePrismaData.partsCost = costs.partsCost
+            updatePrismaData.downtimeCost = costs.downtimeCost
+            updatePrismaData.actualCost = costs.totalCost
+          } catch (error) {
+            console.error("Error calculating costs on work order completion:", error)
+            // Don't fail the update if cost calculation fails
+          }
+        }
+
         // Note: Asset status must be changed MANUALLY by technician/operator
         // Users can change status from the work order view or assets page
       }

@@ -10,6 +10,8 @@ import { WorkOrderConsolidatedInfo } from "./work-order-consolidated-info"
 import { WorkOrderCostBreakdownCard } from "./cost-breakdown-card"
 import { WorkOrderToolsMaterials } from "./work-order-tools-materials"
 import { WorkOrderCustomFieldsDisplay } from "./work-order-custom-fields-display"
+import { WorkOrderCommentsSection } from "./work-order-comments-section"
+import { TimeTrackerCard } from "./time-tracking/time-tracker-card"
 import { PrintableWorkOrder } from "./printable-work-order"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
@@ -74,78 +76,94 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
         </div>
       </div>
 
-      <div className="space-y-4 print:hidden">
-        {/* Consolidated Info Card */}
-        <WorkOrderConsolidatedInfo workOrder={workOrder} />
+      <div className="grid gap-4 lg:grid-cols-3 print:hidden">
+        <div className="lg:col-span-2 space-y-4">
+          {/* Consolidated Info Card */}
+          <WorkOrderConsolidatedInfo workOrder={workOrder} />
 
-        {/* Cost Breakdown - Only for completed work orders */}
-        <WorkOrderCostBreakdownCard
-          workOrderId={workOrder.id}
-          laborCost={workOrder.laborCost}
-          partsCost={workOrder.partsCost}
-          otherCosts={workOrder.otherCosts}
-          downtimeCost={workOrder.downtimeCost}
-          actualCost={workOrder.actualCost}
-          status={workOrder.status}
-          canEdit={canEditCosts}
-        />
-
-        <WorkOrderToolsMaterials workOrder={workOrder} />
-
-        {/* Custom Fields - Each field has its own card */}
-        {Object.keys(customFieldValues).length > 0 && (
-          <WorkOrderCustomFieldsDisplay
-            customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
-            customFieldValues={customFieldValues}
+          {/* Cost Breakdown - Only for completed work orders */}
+          <WorkOrderCostBreakdownCard
+            workOrderId={workOrder.id}
+            laborCost={workOrder.laborCost}
+            partsCost={workOrder.partsCost}
+            otherCosts={workOrder.otherCosts}
+            downtimeCost={workOrder.downtimeCost}
+            actualCost={workOrder.actualCost}
+            status={workOrder.status}
+            canEdit={canEditCosts}
           />
-        )}
 
-        {/* Metadata */}
-        <Card className="shadow-none">
-          <CardHeader className="pb-4 border-b">
-            <CardTitle className="text-lg font-semibold">Información del Sistema</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Creado por</label>
-                <p className="text-sm font-medium">{workOrder.creator?.name || 'N/A'}</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fecha de creación</label>
-                <p className="text-sm font-medium">
-                  {new Date(workOrder.createdAt).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Última actualización</label>
-                <p className="text-sm font-medium">
-                  {new Date(workOrder.updatedAt).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
-              {workOrder.completedAt && (
+          <WorkOrderToolsMaterials workOrder={workOrder} />
+
+          {/* Custom Fields - Each field has its own card */}
+          {Object.keys(customFieldValues).length > 0 && (
+            <WorkOrderCustomFieldsDisplay
+              customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
+              customFieldValues={customFieldValues}
+            />
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {/* Time Tracker - Only show if not completed */}
+          {workOrder.status !== "COMPLETED" && workOrder.status !== "CANCELLED" && (
+            <TimeTrackerCard
+              workOrderId={workOrder.id}
+              workOrderStatus={workOrder.status}
+              onActionComplete={() => router.refresh()}
+            />
+          )}
+
+          {/* Comments Section */}
+          <WorkOrderCommentsSection workOrderId={workOrder.id} />
+
+          {/* Metadata */}
+          <Card className="shadow-none">
+            <CardHeader className="pb-4 border-b">
+              <CardTitle className="text-lg font-semibold">Información del Sistema</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Completado</label>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Creado por</label>
+                  <p className="text-sm font-medium">{workOrder.creator?.name || 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fecha de creación</label>
                   <p className="text-sm font-medium">
-                    {new Date(workOrder.completedAt).toLocaleDateString('es-ES', {
+                    {new Date(workOrder.createdAt).toLocaleDateString('es-ES', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
                     })}
                   </p>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Última actualización</label>
+                  <p className="text-sm font-medium">
+                    {new Date(workOrder.updatedAt).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+                {workOrder.completedAt && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Completado</label>
+                    <p className="text-sm font-medium">
+                      {new Date(workOrder.completedAt).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Printable Version - Hidden on screen, shown when printing */}
