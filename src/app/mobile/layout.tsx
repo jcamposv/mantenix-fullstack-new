@@ -1,6 +1,7 @@
 import { getCurrentUserWithRole } from "@/lib/auth-utils"
 import { Toaster } from "@/components/ui/sonner"
 import { PWABrandingUpdater } from "@/components/pwa-branding-updater"
+import { PWAProvider } from "@/components/pwa/pwa-provider"
 import { redirect } from "next/navigation"
 import { MobileFooter, MobileFooterContent } from "@/components/mobile/mobile-footer"
 import { MobileNavigation } from "@/components/mobile/mobile-nav-server"
@@ -84,24 +85,26 @@ export default async function FieldLayout({
   const isExternalUser = !!user.clientCompanyId
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header móvil moderno */}
-      <MobileHeader companyBranding={companyBranding} />
+    <PWAProvider>
+      <div className="min-h-screen flex flex-col bg-background">
+        {/* Header móvil moderno */}
+        <MobileHeader companyBranding={companyBranding} />
 
-      {/* Contenido principal con padding bottom para el footer sticky */}
-      <main className="flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
-        {children}
-      </main>
+        {/* Contenido principal con padding bottom para el footer sticky */}
+        <main className="flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+          {children}
+        </main>
 
-      {/* Navigation bottom bar sticky para móvil */}
-      <MobileFooter>
-        <MobileFooterContent>
-          <MobileNavigation permissions={permissions} isExternalUser={isExternalUser} />
-        </MobileFooterContent>
-      </MobileFooter>
+        {/* Navigation bottom bar sticky para móvil */}
+        <MobileFooter>
+          <MobileFooterContent>
+            <MobileNavigation permissions={permissions} isExternalUser={isExternalUser} />
+          </MobileFooterContent>
+        </MobileFooter>
 
-      <PWABrandingUpdater />
-      <Toaster />
-    </div>
+        <PWABrandingUpdater />
+        <Toaster />
+      </div>
+    </PWAProvider>
   )
 }

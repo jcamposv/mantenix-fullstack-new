@@ -1,4 +1,13 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  // Serwist config
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development", // Disable in dev for easier debugging
+  cacheOnNavigation: true,
+});
 
 const nextConfig: NextConfig = {
   // Specify the root directory for Turbopack to avoid ambiguity with multiple lockfiles
@@ -84,4 +93,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
