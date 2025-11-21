@@ -1,4 +1,5 @@
 import type { SystemRoleKey } from "@/types/auth.types"
+import type { PaginatedResponse } from "@/types/common.types"
 
 // Base WorkOrderPrefix interface
 export interface WorkOrderPrefix {
@@ -58,13 +59,7 @@ export interface WorkOrderPrefixFilters {
 }
 
 // Paginated response for work order prefix lists
-export interface PaginatedWorkOrderPrefixesResponse {
-  prefixes: WorkOrderPrefixWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedWorkOrderPrefixesResponse = PaginatedResponse<WorkOrderPrefixWithRelations>
 
 // Response interface for API calls
 export interface WorkOrderPrefixesResponse {

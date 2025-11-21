@@ -10,26 +10,14 @@ import { WorkOrderConsolidatedInfo } from "@/components/work-orders/work-order-c
 import { WorkOrderToolsMaterials } from "@/components/work-orders/work-order-tools-materials"
 import { WorkOrderTemplateInfo } from "@/components/work-orders/work-order-template-info"
 import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
-import { WorkOrderComments } from "@/components/client/work-order-comments"
+import { WorkOrderCommentsSection } from "@/components/work-orders/work-order-comments-section"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
-
-interface WorkOrderComment {
-  id: string
-  content: string
-  createdAt: string
-  author: {
-    id: string
-    name: string
-    email: string
-  }
-}
 
 export default function ClientWorkOrderDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [workOrder, setWorkOrder] = useState<WorkOrderWithRelations | null>(null)
-  const [comments, setComments] = useState<WorkOrderComment[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -44,8 +32,6 @@ export default function ClientWorkOrderDetailPage() {
         const orderData = await orderRes.json()
 
         setWorkOrder(orderData.workOrder)
-        // Comments will be supported when WorkOrderComment model is added
-        setComments([])
       } catch (error) {
         console.error("Error fetching work order:", error)
         toast.error("Error al cargar la orden de trabajo")
@@ -59,13 +45,6 @@ export default function ClientWorkOrderDetailPage() {
       fetchWorkOrder()
     }
   }, [params.id, router])
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleAddComment = async (_content: string) => {
-    // TODO: Implement when WorkOrderComment model is added to schema
-    toast.info("Funcionalidad de comentarios próximamente disponible")
-    throw new Error("Not implemented yet")
-  }
 
   const handleCreateAlert = () => {
     router.push(`/client/alerts/new?workOrderId=${params.id}`)
@@ -122,11 +101,8 @@ export default function ClientWorkOrderDetailPage() {
         </div>
 
         <div className="space-y-4">
-          <WorkOrderComments
+          <WorkOrderCommentsSection
             workOrderId={params.id as string}
-            comments={comments}
-            onAddComment={handleAddComment}
-            loading={loading}
           />
 
           <Card>

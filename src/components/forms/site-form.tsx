@@ -54,7 +54,7 @@ export function SiteForm({ onSubmit, onCancel, loading, initialData }: SiteFormP
       const response = await fetch('/api/admin/client-companies')
       if (response.ok) {
         const data = await response.json()
-        setClientCompanies(data.clientCompanies || [])
+        setClientCompanies(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching client companies:', error)

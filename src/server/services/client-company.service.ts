@@ -68,10 +68,10 @@ export class ClientCompanyService {
     await PermissionGuard.require(session, 'client_companies.view')
 
     const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { clientCompanies, total } = await ClientCompanyRepository.findMany(whereClause, page, limit)
+    const { items, total } = await ClientCompanyRepository.findMany(whereClause, page, limit)
 
     return {
-      clientCompanies,
+      items,
       total,
       page,
       limit,

@@ -71,7 +71,7 @@ export default function MobileAssetsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setAssets(data.assets || data.items || data)
+        setAssets(data.items || data)
       } else {
         const error = await response.json()
         toast.error(error.error || 'Error al cargar los activos')

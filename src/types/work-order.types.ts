@@ -1,4 +1,5 @@
 import type { SystemRoleKey } from "@/types/auth.types"
+import type { PaginatedResponse } from "@/types/common.types"
 
 // Define JsonValue type since it's not exported from Prisma client
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
@@ -45,6 +46,12 @@ export interface WorkOrder {
   partsCost: number | null
   otherCosts: number | null
   downtimeCost: number | null
+
+  // Time tracking detailed
+  activeWorkTime: number | null
+  waitingTime: number | null
+  diagnosticTime: number | null
+  travelTime: number | null
   
   // Instructions and resources
   instructions: string | null
@@ -215,7 +222,13 @@ export interface WorkOrderFilters {
 }
 
 // Paginated response for work order lists
-export interface PaginatedWorkOrdersResponse {
+export type PaginatedWorkOrdersResponse = PaginatedResponse<WorkOrderWithRelations>
+
+/**
+ * @deprecated Use PaginatedWorkOrdersResponse instead. This type is kept for backward compatibility.
+ * Will be removed in a future version.
+ */
+export interface LegacyWorkOrdersResponse {
   workOrders: WorkOrderWithRelations[]
   total: number
   page: number
@@ -263,7 +276,11 @@ export interface WorkOrderFromTemplateData {
   materials?: string[]
 }
 
-// Response interface for API calls
+/**
+ * @deprecated Use PaginatedWorkOrdersResponse for paginated responses.
+ * This inconsistent type is kept for backward compatibility only.
+ * Will be removed in a future version.
+ */
 export interface WorkOrdersResponse {
   workOrders?: WorkOrderWithRelations[]
   items?: WorkOrderWithRelations[]

@@ -5,6 +5,7 @@ import type {
   User,
   Company
 } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 // ============================================================================
 // ATTENDANCE RECORD TYPES
@@ -12,7 +13,7 @@ import type {
 
 export interface AttendanceRecordWithRelations extends AttendanceRecord {
   user: Pick<User, "id" | "name" | "email" | "avatar">
-  location?: Pick<CompanyLocation, "id" | "name"> | null
+  location?: Pick<CompanyLocation, "id" | "name" | "timezone" | "workStartTime" | "workEndTime" | "lateToleranceMinutes" | "workDays"> | null
   company?: Pick<Company, "id" | "name"> | null
 }
 
@@ -69,13 +70,7 @@ export interface AttendanceFilters {
   year?: number
 }
 
-export interface PaginatedAttendanceResponse {
-  records: AttendanceRecordWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedAttendanceResponse = PaginatedResponse<AttendanceRecordWithRelations>
 
 // ============================================================================
 // ATTENDANCE REPORTS
@@ -105,6 +100,7 @@ export interface MonthlyAttendanceReport {
   daysLate: number
   daysAbsent: number
   daysJustified: number
+  daysEarlyDeparture: number
   totalWorkHours: number
   averageLateMinutes: number
   records: AttendanceRecordBasic[]
@@ -183,13 +179,7 @@ export interface LocationFilters {
   search?: string
 }
 
-export interface PaginatedLocationsResponse {
-  locations: CompanyLocationWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedLocationsResponse = PaginatedResponse<CompanyLocationWithRelations>
 
 // ============================================================================
 // GEOLOCATION TYPES
@@ -227,16 +217,10 @@ export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
     description: "Control de asistencia de empleados con geolocalización",
     category: "HR"
   },
-  HR_VACATIONS: {
-    module: "HR_VACATIONS",
-    name: "Gestión de Vacaciones",
-    description: "Solicitudes y seguimiento de vacaciones",
-    category: "HR"
-  },
-  HR_PERMISSIONS: {
-    module: "HR_PERMISSIONS",
-    name: "Permisos y Ausencias",
-    description: "Gestión de permisos y justificaciones",
+  HR_TIME_OFF: {
+    module: "HR_TIME_OFF",
+    name: "Gestión de Ausencias",
+    description: "Vacaciones, permisos y licencias",
     category: "HR"
   },
 

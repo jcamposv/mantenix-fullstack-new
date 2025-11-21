@@ -19,7 +19,12 @@ interface User {
   id: string
   name: string
   email: string
-  role?: string
+  role?: string | {
+    id: string
+    key: string | null
+    name: string
+    color: string
+  }
 }
 
 interface UserMultiSelectProps {
@@ -100,7 +105,10 @@ export function UserMultiSelect({
                     </div>
                     {user.role && (
                       <Badge variant="outline" className="ml-2 text-xs">
-                        {user.role.replace("_", " ")}
+                        {typeof user.role === 'string'
+                          ? user.role.replace("_", " ")
+                          : user.role.name
+                        }
                       </Badge>
                     )}
                   </CommandItem>

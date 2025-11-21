@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get work orders using findMany with proper filters
-    const { workOrders } = await WorkOrderRepository.findMany(
+    const { items: workOrders } = await WorkOrderRepository.findMany(
       {
         scheduledDateFrom: new Date(startDate),
         scheduledDateTo: new Date(endDate)

@@ -46,11 +46,6 @@ export function WorkOrderCostBreakdownCard({
   )
   const [isSaving, setIsSaving] = useState(false)
 
-  // Only show if work order is completed
-  if (status !== "COMPLETED") {
-    return null
-  }
-
   const formatCurrency = (amount: number | null): string => {
     if (amount === null || amount === undefined) return "₡0.00"
     return new Intl.NumberFormat("es-CR", {
@@ -121,7 +116,10 @@ export function WorkOrderCostBreakdownCard({
             <div>
               <CardTitle>Desglose de Costos</CardTitle>
               <CardDescription>
-                Costos calculados automáticamente al completar la orden
+                {status === "COMPLETED"
+                  ? "Costos finales calculados automáticamente"
+                  : "Costos estimados en tiempo real"
+                }
               </CardDescription>
             </div>
           </div>
@@ -273,7 +271,12 @@ export function WorkOrderCostBreakdownCard({
 
         {/* Total Cost */}
         <div className="flex items-center justify-between bg-primary/5 rounded-lg p-3">
-          <p className="text-base font-bold">Total</p>
+          <div>
+            <p className="text-base font-bold">Total</p>
+            {status !== "COMPLETED" && (
+              <p className="text-xs text-muted-foreground">Estimado</p>
+            )}
+          </div>
           <p className="text-2xl font-bold text-primary">
             {formatCurrency(totalCost)}
           </p>

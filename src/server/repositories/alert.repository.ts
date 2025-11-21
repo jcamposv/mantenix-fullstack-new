@@ -127,7 +127,7 @@ export class AlertRepository {
     })
   }
 
-  static async findMany(whereClause: Prisma.AlertWhereInput, page: number, limit: number): Promise<{ alerts: AlertWithRelations[], total: number }> {
+  static async findMany(whereClause: Prisma.AlertWhereInput, page: number, limit: number): Promise<{ items: AlertWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [alerts, total] = await Promise.all([
@@ -179,7 +179,7 @@ export class AlertRepository {
       prisma.alert.count({ where: whereClause })
     ])
 
-    return { alerts, total }
+    return { items: alerts, total }
   }
 
   static async create(data: Prisma.AlertCreateInput): Promise<AlertWithRelations> {

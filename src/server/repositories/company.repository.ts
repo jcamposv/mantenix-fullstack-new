@@ -44,7 +44,7 @@ export class CompanyRepository {
     })
   }
 
-  static async findMany(whereClause: Prisma.CompanyWhereInput, page: number, limit: number): Promise<{ companies: CompanyWithRelations[], total: number }> {
+  static async findMany(whereClause: Prisma.CompanyWhereInput, page: number, limit: number): Promise<{ items: CompanyWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [companies, total] = await Promise.all([
@@ -60,7 +60,7 @@ export class CompanyRepository {
       prisma.company.count({ where: whereClause })
     ])
 
-    return { companies, total }
+    return { items: companies, total }
   }
 
   static async findAll(whereClause: Prisma.CompanyWhereInput): Promise<CompanyWithRelations[]> {

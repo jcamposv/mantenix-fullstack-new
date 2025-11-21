@@ -26,9 +26,9 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
-    // Verificar permisos
-    await PermissionGuard.require(session, 'work_orders.view')
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
+    // Verificar permisos - usuario debe tener permiso para ver todas las OT o solo las asignadas
+    await PermissionGuard.requireAny(session, ['work_orders.view_all', 'work_orders.view_assigned'])
 
     // Get company ID based on role and current subdomain
     const companyId = await getCurrentCompanyId(session)
@@ -59,8 +59,8 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderWithRelations | null> {
-    // Verificar permisos
-    await PermissionGuard.require(session, 'work_orders.view')
+    // Verificar permisos - usuario debe tener permiso para ver todas las OT o solo las asignadas
+    await PermissionGuard.requireAny(session, ['work_orders.view_all', 'work_orders.view_assigned'])
 
     // Get company ID based on role and current subdomain
     const companyId = await getCurrentCompanyId(session)
@@ -295,6 +295,37 @@ export class WorkOrderService {
         updatePrismaData.startedAt = new Date()
       } else if (updateData.status === "COMPLETED" && !existingWorkOrder.completedAt) {
         updatePrismaData.completedAt = new Date()
+
+        // Auto-calculate costs when marking as completed
+        // This ensures costs are calculated even if completed manually (not via Time Tracker)
+        const { TimeTrackingRepository } = await import("@/server/repositories/time-tracking.repository")
+        const timeTrackingRepo = new TimeTrackingRepository()
+
+        // Check if there are time logs for this work order
+        const timeLogs = await prisma.workOrderTimeLog.findMany({
+          where: { workOrderId: id },
+          take: 1,
+        })
+
+        // Only calculate costs if there are time logs
+        if (timeLogs.length > 0) {
+          try {
+            const costs = await timeTrackingRepo.calculateActualCost(id)
+            const summary = await timeTrackingRepo.getTimeSummary(id)
+
+            updatePrismaData.actualDuration = summary.totalElapsedMinutes
+            updatePrismaData.activeWorkTime = summary.activeWorkMinutes
+            updatePrismaData.waitingTime = summary.pausedMinutes
+            updatePrismaData.laborCost = costs.laborCost
+            updatePrismaData.partsCost = costs.partsCost
+            updatePrismaData.downtimeCost = costs.downtimeCost
+            updatePrismaData.actualCost = costs.totalCost
+          } catch (error) {
+            console.error("Error calculating costs on work order completion:", error)
+            // Don't fail the update if cost calculation fails
+          }
+        }
+
         // Note: Asset status must be changed MANUALLY by technician/operator
         // Users can change status from the work order view or assets page
       }
@@ -318,6 +349,36 @@ export class WorkOrderService {
     const existingWorkOrder = await this.getWorkOrderById(session, id)
     if (!existingWorkOrder) {
       throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Check if there are any time logs for this work order
+    const { TimeTrackingRepository } = await import("@/server/repositories/time-tracking.repository")
+    const timeTrackingRepo = new TimeTrackingRepository()
+    const hasTimeLogs = await timeTrackingRepo.hasTimeLogs(id)
+
+    // If there are time logs but no COMPLETE log, create one
+    if (hasTimeLogs) {
+      const lastLog = await timeTrackingRepo.getLastTimeLog(id)
+
+      // Only create COMPLETE log if the last action wasn't already COMPLETE
+      if (lastLog && lastLog.action !== "COMPLETE") {
+        try {
+          // Create COMPLETE time log
+          await timeTrackingRepo.createTimeLog({
+            workOrderId: id,
+            userId: session.user.id,
+            action: "COMPLETE",
+            notes: completionData.completionNotes,
+            timestamp: new Date(),
+          })
+
+          // updateWorkOrderTimeMetrics is automatically called by createTimeLog
+          // when action is COMPLETE, so we don't need to call it here
+        } catch (error) {
+          console.error("Error creating COMPLETE time log:", error)
+          // Continue with completion even if time log creation fails
+        }
+      }
     }
 
     // Prepare completion data
@@ -422,7 +483,7 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     filters?: Omit<WorkOrderFilters, 'assignedToMe'>,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     if (!session?.user?.id) {
       throw new Error("Usuario no autenticado")
     }

@@ -1,4 +1,5 @@
 import type { CompanyGroup } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 /**
  * CompanyGroup with basic relations
@@ -90,13 +91,7 @@ export interface CompanyGroupFilters {
 /**
  * Paginated company groups response
  */
-export interface PaginatedCompanyGroupsResponse {
-  companyGroups: CompanyGroupWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedCompanyGroupsResponse = PaginatedResponse<CompanyGroupWithRelations>
 
 /**
  * Add companies to group data

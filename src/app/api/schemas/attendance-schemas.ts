@@ -40,6 +40,16 @@ export const dailySummaryParamsSchema = z.object({
   date: z.string().transform((val) => new Date(val))
 })
 
+export const justifyAttendanceSchema = z.object({
+  justificationNotes: z.string().min(1, "La justificación es requerida").max(500, "La justificación no puede exceder 500 caracteres")
+})
+
+export const markAbsentSchema = z.object({
+  userId: z.string().min(1, "ID de usuario requerido"),
+  date: z.string().transform((val) => new Date(val)),
+  notes: z.string().optional()
+})
+
 // ============================================================================
 // LOCATION SCHEMAS
 // ============================================================================
@@ -76,8 +86,7 @@ export const locationFiltersSchema = z.object({
 
 export const featureModuleEnum = z.enum([
   "HR_ATTENDANCE",
-  "HR_VACATIONS",
-  "HR_PERMISSIONS",
+  "HR_TIME_OFF",
   "AI_ASSISTANT",
   "ADVANCED_ANALYTICS"
 ])
@@ -108,6 +117,8 @@ export type CheckOutData = z.infer<typeof checkOutSchema>
 export type AttendanceFilters = z.infer<typeof attendanceFiltersSchema>
 export type MonthlyReportParams = z.infer<typeof monthlyReportParamsSchema>
 export type DailySummaryParams = z.infer<typeof dailySummaryParamsSchema>
+export type JustifyAttendanceData = z.infer<typeof justifyAttendanceSchema>
+export type MarkAbsentData = z.infer<typeof markAbsentSchema>
 
 export type CreateLocationData = z.infer<typeof createLocationSchema>
 export type UpdateLocationData = z.infer<typeof updateLocationSchema>

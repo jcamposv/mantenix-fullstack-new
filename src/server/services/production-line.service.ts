@@ -62,7 +62,7 @@ export class ProductionLineService {
     filters: ProductionLineFilters = {},
     pagination: { page: number; limit: number } = { page: 1, limit: 20 }
   ): Promise<{
-    productionLines: ProductionLineWithRelations[]
+    items: ProductionLineWithRelations[]
     total: number
   }> {
     const companyId = await getCurrentCompanyId(session)
@@ -73,11 +73,13 @@ export class ProductionLineService {
 
     const whereClause = this.buildWhereClause(filters, companyId)
 
-    return await ProductionLineRepository.findMany(
+    const { items, total } = await ProductionLineRepository.findMany(
       whereClause,
       pagination.page,
       pagination.limit
     )
+
+    return { items, total }
   }
 
   /**

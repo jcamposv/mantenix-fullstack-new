@@ -65,7 +65,7 @@ export function CompanyGroupForm({
       const response = await fetch('/api/admin/companies?limit=1000')
       if (response.ok) {
         const data = await response.json()
-        setCompanies(data.companies || [])
+        setCompanies(data.items || [])
       }
     } catch (error) {
       console.error('Error loading companies:', error)

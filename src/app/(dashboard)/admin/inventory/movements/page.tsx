@@ -36,17 +36,12 @@ interface InventoryMovement {
   }
 }
 
-interface InventoryMovementsResponse {
-  movements: InventoryMovement[]
-  total: number
-}
-
 export default function InventoryMovementsPage() {
   const router = useRouter()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const { data: movements, loading, refetch } = useTableData<InventoryMovement>({
     endpoint: '/api/admin/inventory/movements',
-    transform: (data) => (data as InventoryMovementsResponse).movements || []
+    transform: (data) => (data as { items: InventoryMovement[]; total: number }).items || []
   })
 
   const handleSuccess = () => {

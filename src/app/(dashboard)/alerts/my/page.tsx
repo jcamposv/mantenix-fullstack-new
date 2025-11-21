@@ -47,7 +47,7 @@ interface Alert {
 }
 
 interface AlertsResponse {
-  alerts: Alert[]
+  items: Alert[]
   pagination: {
     page: number
     limit: number
@@ -74,11 +74,11 @@ export default function MyAlertsPage() {
       if (!response.ok) throw new Error('Error fetching alerts')
       
       const data: AlertsResponse = await response.json()
-      
+
       if (tab === 'reported') {
-        setReportedAlerts(data.alerts  || data || [])
+        setReportedAlerts(data.items || [])
       } else {
-        setAssignedAlerts(data.alerts  || data || [])
+        setAssignedAlerts(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching my alerts:', error)

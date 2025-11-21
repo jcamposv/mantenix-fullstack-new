@@ -65,12 +65,12 @@ export class CompanyGroupService {
     }
     // SUPER_ADMIN sees all groups (no filter needed)
 
-    const { companyGroups, total } = await CompanyGroupRepository.findMany(whereClause, page, limit)
+    const { items, total } = await CompanyGroupRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      companyGroups,
+      items,
       total,
       page,
       limit,

@@ -5,8 +5,11 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DataTable } from "@/components/ui/data-table"
-import { Clock, MapPin, LogIn, LogOut } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, MapPin, LogIn, LogOut, CheckCircle } from "lucide-react"
 import { AttendanceListFilters } from "@/components/attendance/attendance-list-filters"
+import { JustifyAttendanceDialog } from "@/components/attendance/justify-attendance-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 import type { AttendanceRecordWithRelations } from "@/types/attendance.types"
 import { AttendanceStatus } from "@prisma/client"
 
@@ -67,6 +70,14 @@ export default function AttendanceListPage() {
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+
+  // Justify dialog
+  const [justifyDialogOpen, setJustifyDialogOpen] = useState(false)
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecordWithRelations | null>(null)
+
+  // Permissions
+  const { hasPermission } = usePermissions()
+  const canManageAttendance = hasPermission("attendance.manage")
 
   // Build query params
   const queryParams = useMemo(() => {
@@ -133,6 +144,33 @@ export default function AttendanceListPage() {
     setSelectedStatus("all")
     setStartDate("")
     setEndDate("")
+  }
+
+  const handleJustifyClick = (record: AttendanceRecordWithRelations) => {
+    setSelectedRecord(record)
+    setJustifyDialogOpen(true)
+  }
+
+  const handleJustifySuccess = () => {
+    // Refetch records to show updated status
+    const fetchRecords = async () => {
+      try {
+        setLoading(true)
+        const url = `/api/attendance${queryParams ? `?${queryParams}` : ""}`
+        const response = await fetch(url)
+
+        if (response.ok) {
+          const data = await response.json()
+          setRecords(data.records || data)
+        }
+      } catch (error) {
+        console.error("Error fetching attendance records:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRecords()
   }
 
   const columns: ColumnDef<AttendanceRecordWithRelations>[] = [
@@ -232,6 +270,35 @@ export default function AttendanceListPage() {
         )
       },
     },
+    {
+      id: "actions",
+      header: "Acciones",
+      cell: ({ row }) => {
+        const record = row.original
+        const canJustify = canManageAttendance && record.status !== "JUSTIFIED"
+
+        return (
+          <div className="flex items-center gap-2">
+            {canJustify && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleJustifyClick(record)}
+                className="h-8 px-2"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Justificar
+              </Button>
+            )}
+            {record.status === "JUSTIFIED" && (
+              <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                Justificado
+              </Badge>
+            )}
+          </div>
+        )
+      },
+    },
   ]
 
   return (
@@ -260,6 +327,13 @@ export default function AttendanceListPage() {
         title="Registros de Asistencia"
         description="Visualiza y gestiona todos los registros de asistencia de tu equipo"
         loading={loading}
+      />
+
+      <JustifyAttendanceDialog
+        record={selectedRecord}
+        open={justifyDialogOpen}
+        onOpenChange={setJustifyDialogOpen}
+        onSuccess={handleJustifySuccess}
       />
     </div>
   )

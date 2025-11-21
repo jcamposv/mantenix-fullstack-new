@@ -97,12 +97,12 @@ export class AttendanceService {
     }
 
     const whereClause = this.buildWhereClause(filters, companyId)
-    const { records, total } = await AttendanceRepository.findMany(whereClause, page, limit)
+    const { items, total } = await AttendanceRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      records,
+      items,
       total,
       page,
       limit,
@@ -300,6 +300,44 @@ export class AttendanceService {
       notes: data.notes ? `${record.notes || ""}\n${data.notes}`.trim() : record.notes
     }
 
+    // Verificar si es salida temprana (EARLY_DEPARTURE)
+    if (record.location) {
+      const timezone = record.location.timezone || "America/Costa_Rica"
+      const workEndTime = record.location.workEndTime || "17:00"
+      const earlyDepartureToleranceMinutes = 15 // Tolerancia para salida temprana
+
+      // Obtener fecha/hora actual en el timezone de la ubicación
+      const locationTime = new Date(
+        now.toLocaleString("en-US", { timeZone: timezone })
+      )
+
+      // Parsear horario de salida de la ubicación (formato "HH:mm")
+      const [workEndHour, workEndMinute] = workEndTime.split(":").map(Number)
+
+      // Calcular hora esperada de salida
+      const workEndTimeDate = new Date(locationTime)
+      workEndTimeDate.setHours(workEndHour, workEndMinute, 0, 0)
+
+      // Calcular umbral de salida temprana (hora de salida - tolerancia)
+      const earlyDepartureThresholdTime = new Date(workEndTimeDate)
+      earlyDepartureThresholdTime.setMinutes(
+        earlyDepartureThresholdTime.getMinutes() - earlyDepartureToleranceMinutes
+      )
+
+      // Si sale antes del umbral, marcar como EARLY_DEPARTURE (solo si no está LATE o JUSTIFIED)
+      if (
+        locationTime < earlyDepartureThresholdTime &&
+        record.status !== "LATE" &&
+        record.status !== "JUSTIFIED"
+      ) {
+        const earlyMinutes = Math.floor(
+          (workEndTimeDate.getTime() - locationTime.getTime()) / 60000
+        )
+        updateData.status = "EARLY_DEPARTURE"
+        ;(updateData as { earlyDepartureMinutes?: number }).earlyDepartureMinutes = earlyMinutes
+      }
+    }
+
     return await AttendanceRepository.update(record.id, updateData)
   }
 
@@ -370,6 +408,7 @@ export class AttendanceService {
       daysLate: stats.late,
       daysAbsent: stats.absent,
       daysJustified: stats.justified,
+      daysEarlyDeparture: stats.earlyDeparture,
       totalWorkHours,
       averageLateMinutes,
       records
@@ -420,9 +459,117 @@ export class AttendanceService {
       onTime: stats.onTime,
       late: stats.late,
       absent: stats.absent,
-      justified: 0, // TODO: Calcular justificados
-      earlyDeparture: 0, // TODO: Calcular salidas tempranas
+      justified: stats.justified,
+      earlyDeparture: stats.earlyDeparture,
       averageWorkHours
     }
+  }
+
+  /**
+   * Mark an attendance record as justified
+   * Only supervisors and admins can justify attendance
+   */
+  static async markAsJustified(
+    session: AuthenticatedSession,
+    attendanceId: string,
+    justificationNotes: string
+  ): Promise<AttendanceRecordWithRelations> {
+    // Verificar permisos - solo supervisores y admins pueden justificar
+    await PermissionHelper.requirePermissionAsync(
+      session,
+      PermissionHelper.PERMISSIONS.MANAGE_ATTENDANCE
+    )
+
+    const record = await AttendanceRepository.findById(attendanceId)
+
+    if (!record) {
+      throw new Error("Registro de asistencia no encontrado")
+    }
+
+    // Verificar que pertenece a la misma empresa
+    if (record.companyId !== session.user.companyId) {
+      throw new Error("No tienes permisos para modificar este registro")
+    }
+
+    // Actualizar estado a JUSTIFIED
+    const updateData: Prisma.AttendanceRecordUpdateInput = {
+      status: "JUSTIFIED",
+      notes: justificationNotes
+        ? `${record.notes || ""}\nJustificación: ${justificationNotes}`.trim()
+        : record.notes
+    }
+
+    return await AttendanceRepository.update(attendanceId, updateData)
+  }
+
+  /**
+   * Create a manual absence record marked as ABSENT
+   * Used for employees who didn't check in
+   */
+  static async markAsAbsent(
+    session: AuthenticatedSession,
+    userId: string,
+    date: Date,
+    notes?: string
+  ): Promise<AttendanceRecordWithRelations> {
+    // Verificar permisos
+    await PermissionHelper.requirePermissionAsync(
+      session,
+      PermissionHelper.PERMISSIONS.MANAGE_ATTENDANCE
+    )
+
+    const companyId = session.user.companyId
+
+    if (!companyId) {
+      throw new Error("Usuario sin empresa asignada")
+    }
+
+    // Verificar que el módulo está habilitado
+    await FeatureService.requireModuleEnabled(companyId, "HR_ATTENDANCE")
+
+    // Verificar que no exista ya un registro para ese día
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(date)
+    endOfDay.setHours(23, 59, 59, 999)
+
+    const existingRecords = await AttendanceRepository.findByUserAndDateRange(
+      userId,
+      companyId,
+      startOfDay,
+      endOfDay
+    )
+
+    if (existingRecords.length > 0) {
+      throw new Error("Ya existe un registro de asistencia para este día")
+    }
+
+    // Obtener ubicaciones de la empresa para tener una ubicación por defecto
+    const locations = await LocationRepository.findActiveByCompany(companyId)
+    const defaultLocation = locations[0]
+
+    const createData: Prisma.AttendanceRecordCreateInput = {
+      company: {
+        connect: { id: companyId }
+      },
+      user: {
+        connect: { id: userId }
+      },
+      location: defaultLocation
+        ? {
+            connect: { id: defaultLocation.id }
+          }
+        : undefined,
+      latitude: defaultLocation?.latitude || 0,
+      longitude: defaultLocation?.longitude || 0,
+      checkInAt: startOfDay,
+      status: "ABSENT",
+      notes,
+      isManualEntry: true,
+      manualEntryBy: session.user.id
+    }
+
+    return await AttendanceRepository.create(createData)
   }
 }

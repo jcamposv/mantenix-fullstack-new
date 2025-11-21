@@ -1,7 +1,14 @@
 import type { User } from "@prisma/client"
 import type { SystemRoleKey } from "@/types/auth.types"
+import type { PaginatedResponse } from "@/types/common.types"
 
 export interface UserWithRelations extends User {
+  role: {
+    id: string
+    key: string | null
+    name: string
+    color: string
+  }
   company?: {
     id: string
     name: string
@@ -47,10 +54,4 @@ export interface UserFilters {
   search?: string
 }
 
-export interface PaginatedUsersResponse {
-  users: UserWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedUsersResponse = PaginatedResponse<UserWithRelations>

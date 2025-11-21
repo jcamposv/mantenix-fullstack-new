@@ -84,7 +84,7 @@ export class ProductionLineRepository {
     page: number,
     limit: number
   ): Promise<{
-    productionLines: ProductionLineWithRelations[]
+    items: ProductionLineWithRelations[]
     total: number
   }> {
     const skip = (page - 1) * limit
@@ -101,7 +101,7 @@ export class ProductionLineRepository {
     ])
 
     return {
-      productionLines:
+      items:
         productionLines as unknown as ProductionLineWithRelations[],
       total,
     }

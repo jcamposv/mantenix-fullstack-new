@@ -1,4 +1,5 @@
 import type { Alert, AlertPriority, AlertType, AlertStatus, Site, User } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 export interface AlertWithRelations extends Alert {
   site: Pick<Site, 'id' | 'name' | 'address'> & {
@@ -29,13 +30,7 @@ export interface AlertFilters {
   my?: 'reported' | 'assigned'
 }
 
-export interface PaginatedAlertsResponse {
-  alerts: AlertWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedAlertsResponse = PaginatedResponse<AlertWithRelations>
 
 export interface CreateAlertData {
   title: string

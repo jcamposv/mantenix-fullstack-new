@@ -3,7 +3,8 @@ import { PermissionHelper } from "@/server/helpers/permission.helper"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type {
   InventoryMovementWithRelations,
-  InventoryMovementFilters
+  InventoryMovementFilters,
+  PaginatedInventoryMovementsResponse
 } from "@/types/inventory.types"
 
 /**
@@ -21,7 +22,7 @@ export class InventoryMovementService {
     filters: InventoryMovementFilters,
     page: number = 1,
     limit: number = 20
-  ): Promise<{ movements: InventoryMovementWithRelations[], total: number, page: number, limit: number }> {
+  ): Promise<PaginatedInventoryMovementsResponse> {
     // Verificar permisos
     if (!await PermissionHelper.hasPermissionAsync(session, 'VIEW_INVENTORY_MOVEMENTS')) {
       throw new Error("No tienes permisos para realizar esta acción")
@@ -86,10 +87,11 @@ export class InventoryMovementService {
     const result = await InventoryMovementRepository.findMany(whereClause, page, limit)
 
     return {
-      movements: result.movements,
+      items: result.items,
       total: result.total,
       page,
-      limit
+      limit,
+      totalPages: Math.ceil(result.total / limit)
     }
   }
 

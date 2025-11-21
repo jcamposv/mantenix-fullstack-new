@@ -74,17 +74,17 @@ export function ScheduleForm({ onSuccess, onCancel, initialDate }: ScheduleFormP
 
         if (templatesRes.ok) {
           const data = await templatesRes.json()
-          setTemplates(data.templates || [])
+          setTemplates(data.items || [])
         }
 
         if (assetsRes.ok) {
           const data = await assetsRes.json()
-          setAssets(data.assets || [])
+          setAssets(data.items || [])
         }
 
         if (sitesRes.ok) {
           const data = await sitesRes.json()
-          setSites(data.sites || [])
+          setSites(data.items || [])
         }
       } catch (error) {
         console.error("Error fetching data:", error)

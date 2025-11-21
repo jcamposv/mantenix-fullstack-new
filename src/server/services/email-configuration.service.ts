@@ -72,10 +72,10 @@ export class EmailConfigurationService {
     await PermissionGuard.require(session, 'email_settings.manage')
 
     const whereClause = this.buildWhereClause(session)
-    const { configurations, total } = await EmailConfigurationRepository.findMany(whereClause, page, limit)
+    const { items, total } = await EmailConfigurationRepository.findMany(whereClause, page, limit)
 
     return {
-      configurations,
+      items,
       total,
       page,
       limit,

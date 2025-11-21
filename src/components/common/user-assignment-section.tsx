@@ -43,7 +43,7 @@ export function UserAssignmentSection({
       if (!response.ok) throw new Error("Error al cargar usuarios")
 
       const data = await response.json()
-      setUsers(data.users || data.items || [])
+      setUsers(data.items || [])
     } catch (error) {
       console.error("Error loading users:", error)
       toast.error("Error al cargar usuarios")

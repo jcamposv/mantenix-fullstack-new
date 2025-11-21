@@ -57,8 +57,8 @@ export function useWorkOrders(options: UseWorkOrdersOptions = {}) {
       }
 
       const data: PaginatedWorkOrdersResponse = await response.json()
-      
-      setWorkOrders(data.workOrders)
+
+      setWorkOrders(data.items)
       setPagination({
         page: data.page || 1,
         limit: data.limit || 50,
@@ -126,7 +126,7 @@ export function useMyWorkOrders(options: UseWorkOrdersOptions = {}) {
       }
 
       const data: PaginatedWorkOrdersResponse = await response.json()
-      setWorkOrders(data.workOrders)
+      setWorkOrders(data.items)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {

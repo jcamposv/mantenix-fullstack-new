@@ -133,6 +133,12 @@ const PERMISSIONS: PermissionSeed[] = [
     description: 'Permite gestionar (ver, crear, editar, eliminar) plantillas de órdenes de trabajo',
     module: 'work_orders'
   },
+  {
+    key: 'work_orders.manage_prefixes',
+    name: 'Gestionar Prefijos de Numeración',
+    description: 'Permite gestionar (ver, crear, editar, eliminar) prefijos de numeración de órdenes de trabajo',
+    module: 'work_orders'
+  },
 
   // ============================================================================
   // USERS MODULE
@@ -245,6 +251,12 @@ const PERMISSIONS: PermissionSeed[] = [
     key: 'assets.view_status_history',
     name: 'Ver Historial de Estado',
     description: 'Permite ver el historial de cambios de estado de activos',
+    module: 'assets'
+  },
+  {
+    key: 'assets.edit',
+    name: 'Editar Activos',
+    description: 'Permite editar activos (alias de assets.update)',
     module: 'assets'
   },
 
@@ -425,6 +437,12 @@ const PERMISSIONS: PermissionSeed[] = [
     description: 'Permite ver asistencia de usuarios de la empresa',
     module: 'attendance'
   },
+  {
+    key: 'attendance.view_reports',
+    name: 'Ver Reportes de Asistencia',
+    description: 'Permite ver reportes y estadísticas de asistencia',
+    module: 'attendance'
+  },
 
   // ============================================================================
   // LOCATIONS MODULE
@@ -435,10 +453,22 @@ const PERMISSIONS: PermissionSeed[] = [
     description: 'Permite crear, modificar y eliminar ubicaciones de la empresa',
     module: 'locations'
   },
+  {
+    key: 'locations.view',
+    name: 'Ver Ubicaciones',
+    description: 'Permite ver ubicaciones de la empresa',
+    module: 'locations'
+  },
 
   // ============================================================================
   // INVENTORY MODULE
   // ============================================================================
+  {
+    key: 'inventory.view',
+    name: 'Ver Inventario',
+    description: 'Permite ver el inventario',
+    module: 'inventory'
+  },
   {
     key: 'inventory.view_items',
     name: 'Ver Artículos de Inventario',
@@ -540,6 +570,44 @@ const PERMISSIONS: PermissionSeed[] = [
     name: 'Ver Movimientos de Inventario',
     description: 'Permite ver historial de movimientos',
     module: 'inventory'
+  },
+
+  // ============================================================================
+  // PRODUCTION LINES MODULE
+  // ============================================================================
+  {
+    key: 'production_lines.create',
+    name: 'Crear Líneas de Producción',
+    description: 'Permite crear nuevas líneas de producción',
+    module: 'production_lines'
+  },
+  {
+    key: 'production_lines.view',
+    name: 'Ver Líneas de Producción',
+    description: 'Permite ver líneas de producción',
+    module: 'production_lines'
+  },
+  {
+    key: 'production_lines.update',
+    name: 'Actualizar Líneas de Producción',
+    description: 'Permite modificar líneas de producción existentes',
+    module: 'production_lines'
+  },
+  {
+    key: 'production_lines.delete',
+    name: 'Eliminar Líneas de Producción',
+    description: 'Permite eliminar líneas de producción',
+    module: 'production_lines'
+  },
+
+  // ============================================================================
+  // ANALYTICS MODULE
+  // ============================================================================
+  {
+    key: 'analytics.view',
+    name: 'Ver Analytics',
+    description: 'Permite ver reportes y análisis del sistema',
+    module: 'analytics'
   }
 ];
 

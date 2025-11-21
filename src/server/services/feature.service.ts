@@ -1,6 +1,7 @@
 import { Prisma, FeatureModule } from "@prisma/client"
 import { FeatureRepository } from "@/server/repositories/feature.repository"
 import { PermissionHelper } from "@/server/helpers/permission.helper"
+import { createAuditLog, AUDIT_ACTIONS, AUDIT_RESOURCES } from "@/lib/audit"
 import type {
   CompanyFeatureWithRelations,
   CreateFeatureData,
@@ -41,12 +42,12 @@ export class FeatureService {
     await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)
 
     const whereClause = this.buildWhereClause(filters)
-    const { features, total } = await FeatureRepository.findMany(whereClause, page, limit)
+    const { items, total } = await FeatureRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      features,
+      items,
       total,
       page,
       limit,
@@ -155,7 +156,25 @@ export class FeatureService {
       })
     }
 
-    return await FeatureRepository.upsert(companyId, module, createData, updateData)
+    const result = await FeatureRepository.upsert(companyId, module, createData, updateData)
+
+    // Create audit log for feature toggle
+    await createAuditLog({
+      companyId,
+      userId: changedBy || session.user.id,
+      action: isEnabled ? AUDIT_ACTIONS.FEATURE_ENABLED : AUDIT_ACTIONS.FEATURE_DISABLED,
+      resource: AUDIT_RESOURCES.FEATURE,
+      resourceId: result.id,
+      details: JSON.stringify({
+        module,
+        isEnabled,
+        changedBy: changedBy || session.user.id
+      }),
+      ipAddress: "unknown", // Will be set by middleware if available
+      userAgent: undefined
+    })
+
+    return result
   }
 
   static async create(

@@ -205,7 +205,15 @@ export class TimeTrackingService {
     }
 
     try {
-      const summary = await this.timeTrackingRepo.getTimeSummary(workOrderId)
+      // Pass completedAt to handle cases where order is completed but has no COMPLETE log
+      // Convert string to Date if it exists
+      const completedAtDate = workOrder.completedAt 
+        ? new Date(workOrder.completedAt) 
+        : null
+      const summary = await this.timeTrackingRepo.getTimeSummary(
+        workOrderId,
+        completedAtDate
+      )
 
       return { success: true, data: summary }
     } catch (error) {
