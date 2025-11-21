@@ -46,6 +46,12 @@ export interface WorkOrder {
   partsCost: number | null
   otherCosts: number | null
   downtimeCost: number | null
+
+  // Time tracking detailed
+  activeWorkTime: number | null
+  waitingTime: number | null
+  diagnosticTime: number | null
+  travelTime: number | null
   
   // Instructions and resources
   instructions: string | null

@@ -1,11 +1,23 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Edit, Printer } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Edit,
+  Printer,
+  ChevronRight,
+  Home,
+  Clock,
+  DollarSign,
+  Activity,
+  Package,
+  MessageSquare,
+  Info
+} from "lucide-react"
 import { WorkOrderConsolidatedInfo } from "./work-order-consolidated-info"
 import { WorkOrderCostBreakdownCard } from "./cost-breakdown-card"
 import { WorkOrderToolsMaterials } from "./work-order-tools-materials"
@@ -14,6 +26,9 @@ import { WorkOrderCommentsSection } from "./work-order-comments-section"
 import { TimeTrackerCard } from "./time-tracking/time-tracker-card"
 import { TimeSummaryCard } from "./time-tracking/time-summary-card"
 import { PrintableWorkOrder } from "./printable-work-order"
+import { WorkOrderStatusBadge } from "./work-order-status-badge"
+import { WorkOrderPriorityBadge } from "./work-order-priority-badge"
+import { useTimeTracker } from "@/hooks/use-time-tracker"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 
@@ -31,6 +46,10 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
   const printRef = useRef<HTMLDivElement>(null)
   const shouldPrint = searchParams.get('print') === 'true'
   const { data: session } = useSession()
+  const [activeTab, setActiveTab] = useState("general")
+
+  // Get time summary for dynamic metrics
+  const { summary } = useTimeTracker({ workOrderId: workOrder.id })
 
   // Check if user can edit costs (JEFE_MANTENIMIENTO, ADMIN_EMPRESA, ADMIN_GRUPO, SUPER_ADMIN)
   const user = session?.user as { role?: string } | undefined
@@ -55,21 +74,129 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
   }
 
   const customFieldValues = workOrder.customFieldValues as Record<string, unknown> || {}
+  const isCompleted = workOrder.status === "COMPLETED"
+  const isActive = workOrder.status !== "COMPLETED" && workOrder.status !== "CANCELLED"
+
+  // Calculate dynamic values from time summary
+  // Use summary if available and has valid data, otherwise fall back to work order fields
+  const displayTime = (summary && summary.totalElapsedMinutes > 0)
+    ? summary.totalElapsedMinutes
+    : (workOrder.actualDuration || 0)
+
+  const displayActiveTime = (summary && summary.activeWorkMinutes > 0)
+    ? summary.activeWorkMinutes
+    : (workOrder.activeWorkTime || 0)
+
+  // Calculate dynamic cost - if actualCost is 0 but we have time, estimate it
+  const calculateEstimatedCost = () => {
+    if (workOrder.actualCost && workOrder.actualCost > 0) {
+      return workOrder.actualCost
+    }
+
+    // If completed but cost is 0, estimate based on time
+    if (displayActiveTime > 0) {
+      // Use a more realistic hourly rate for Costa Rica (₡8000/hora ≈ $13/hora)
+      const DEFAULT_HOURLY_RATE = 8000
+      const hours = displayActiveTime / 60
+      const laborCost = hours * DEFAULT_HOURLY_RATE
+      const partsCost = workOrder.partsCost || 0
+      const otherCosts = workOrder.otherCosts || 0
+      const totalEstimated = laborCost + partsCost + otherCosts
+
+      return totalEstimated
+    }
+
+    return workOrder.estimatedCost || 0
+  }
+
+  const displayCost = calculateEstimatedCost()
+
+  // Format currency
+  const formatCurrency = (amount: number | null): string => {
+    if (amount === null || amount === undefined) return "₡0"
+
+    // For small amounts (less than 1), show with decimals
+    if (amount > 0 && amount < 1) {
+      return new Intl.NumberFormat("es-CR", {
+        style: "currency",
+        currency: "CRC",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)
+    }
+
+    return new Intl.NumberFormat("es-CR", {
+      style: "currency",
+      currency: "CRC",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  // Format time
+  const formatTime = (minutes: number | null): string => {
+    if (!minutes || minutes === 0) return "0m"
+
+    const hours = Math.floor(minutes / 60)
+    const mins = Math.floor(minutes % 60)
+    const secs = Math.round((minutes % 1) * 60)
+
+    if (hours > 0) {
+      return `${hours}h ${mins}m`
+    }
+
+    if (mins > 0) {
+      return `${mins}m`
+    }
+
+    // Less than 1 minute - show seconds
+    return `${secs}s`
+  }
 
   return (
-    <div className="py-6">
+    <div className="pb-6">
+      {/* Breadcrumbs */}
+      <div className="mb-4 print:hidden">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => router.push('/')}
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+          <ChevronRight className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => router.push('/work-orders')}
+          >
+            Órdenes de Trabajo
+          </Button>
+          <ChevronRight className="h-4 w-4" />
+          <span className="font-medium text-foreground">{workOrder.number}</span>
+        </nav>
+      </div>
+
+      {/* Header with Title and Actions */}
       <div className="mb-6 print:hidden">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{workOrder.number}</h1>
-            <p className="text-muted-foreground">{workOrder.title}</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold tracking-tight">{workOrder.number}</h1>
+              <WorkOrderStatusBadge status={workOrder.status} />
+              <WorkOrderPriorityBadge priority={workOrder.priority} showIcon />
+            </div>
+            <p className="text-lg text-muted-foreground">{workOrder.title}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handlePrint}>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
               Imprimir
             </Button>
-            <Button onClick={() => router.push(`/work-orders/${workOrder.id}/edit`)}>
+            <Button size="sm" onClick={() => router.push(`/work-orders/${workOrder.id}/edit`)}>
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </Button>
@@ -77,98 +204,255 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3 print:hidden">
-        <div className="lg:col-span-2 space-y-4">
-          {/* Consolidated Info Card */}
-          <WorkOrderConsolidatedInfo workOrder={workOrder} />
+      {/* Sticky Metrics Bar */}
+      <div className="sticky top-16 z-10 mb-6 print:hidden">
+        <Card className="shadow-none bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <CardContent className="py-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Status */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Estado</p>
+                  <p className="text-sm font-semibold">{workOrder.status}</p>
+                </div>
+              </div>
 
-          {/* Cost Breakdown - Only for completed work orders */}
-          <WorkOrderCostBreakdownCard
-            workOrderId={workOrder.id}
-            laborCost={workOrder.laborCost}
-            partsCost={workOrder.partsCost}
-            otherCosts={workOrder.otherCosts}
-            downtimeCost={workOrder.downtimeCost}
-            actualCost={workOrder.actualCost}
-            status={workOrder.status}
-            canEdit={canEditCosts}
-          />
+              {/* Time */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-500/10">
+                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {isCompleted ? 'Duración Total' : 'Tiempo Activo'}
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatTime(isCompleted ? displayTime : displayActiveTime)}
+                  </p>
+                </div>
+              </div>
 
-          <WorkOrderToolsMaterials workOrder={workOrder} />
+              {/* Cost */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-500/10">
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {isCompleted && workOrder.actualCost && workOrder.actualCost > 0 ? 'Costo Total' : 'Costo Estimado'}
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatCurrency(displayCost)}
+                  </p>
+                </div>
+              </div>
 
-          {/* Custom Fields - Each field has its own card */}
-          {Object.keys(customFieldValues).length > 0 && (
-            <WorkOrderCustomFieldsDisplay
-              customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
-              customFieldValues={customFieldValues}
-            />
-          )}
+              {/* Asset/Site */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-500/10">
+                  <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {workOrder.asset ? 'Activo' : 'Sede'}
+                  </p>
+                  <p className="text-sm font-semibold truncate">
+                    {workOrder.asset?.name || workOrder.site?.name || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_380px] print:hidden">
+        {/* Left Column - Main Content with Tabs */}
+        <div className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="general" className="gap-2">
+                <Info className="h-4 w-4" />
+                <span className="hidden sm:inline">General</span>
+              </TabsTrigger>
+              <TabsTrigger value="time-costs" className="gap-2">
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline">Tiempo & Costos</span>
+              </TabsTrigger>
+              <TabsTrigger value="materials" className="gap-2">
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">Materiales</span>
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Actividad</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* General Tab */}
+            <TabsContent value="general" className="space-y-4 mt-6">
+              <WorkOrderConsolidatedInfo workOrder={workOrder} />
+
+              {/* Custom Fields */}
+              {Object.keys(customFieldValues).length > 0 && (
+                <WorkOrderCustomFieldsDisplay
+                  customFields={workOrder.template?.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
+                  customFieldValues={customFieldValues}
+                />
+              )}
+            </TabsContent>
+
+            {/* Time & Costs Tab */}
+            <TabsContent value="time-costs" className="space-y-4 mt-6">
+              {/* Time Summary - Always show */}
+              <TimeSummaryCard workOrderId={workOrder.id} />
+
+              {/* Cost Breakdown */}
+              <WorkOrderCostBreakdownCard
+                workOrderId={workOrder.id}
+                laborCost={workOrder.laborCost}
+                partsCost={workOrder.partsCost}
+                otherCosts={workOrder.otherCosts}
+                downtimeCost={workOrder.downtimeCost}
+                actualCost={workOrder.actualCost}
+                status={workOrder.status}
+                canEdit={canEditCosts}
+              />
+            </TabsContent>
+
+            {/* Materials Tab */}
+            <TabsContent value="materials" className="space-y-4 mt-6">
+              <WorkOrderToolsMaterials workOrder={workOrder} />
+            </TabsContent>
+
+            {/* Activity Tab */}
+            <TabsContent value="activity" className="space-y-4 mt-6">
+              <WorkOrderCommentsSection workOrderId={workOrder.id} />
+
+              {/* System Metadata */}
+              <Card className="shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-lg">Información del Sistema</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Creado por
+                      </label>
+                      <p className="text-sm font-medium">{workOrder.creator?.name || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Fecha de creación
+                      </label>
+                      <p className="text-sm font-medium">
+                        {new Date(workOrder.createdAt).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Última actualización
+                      </label>
+                      <p className="text-sm font-medium">
+                        {new Date(workOrder.updatedAt).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    {workOrder.completedAt && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Completado
+                        </label>
+                        <p className="text-sm font-medium">
+                          {new Date(workOrder.completedAt).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
+        {/* Right Column - Sticky Sidebar */}
         <div className="space-y-4">
-          {/* Time Tracker - Only show if not completed */}
-          {workOrder.status !== "COMPLETED" && workOrder.status !== "CANCELLED" && (
-            <TimeTrackerCard
-              workOrderId={workOrder.id}
-              workOrderStatus={workOrder.status}
-              onActionComplete={() => router.refresh()}
-            />
-          )}
-
-          {/* Time Summary - Show when completed */}
-          {workOrder.status === "COMPLETED" && (
-            <TimeSummaryCard workOrderId={workOrder.id} />
-          )}
-
-          {/* Comments Section */}
-          <WorkOrderCommentsSection workOrderId={workOrder.id} />
-
-          {/* Metadata */}
-          <Card className="shadow-none">
-            <CardHeader className="pb-4 border-b">
-              <CardTitle className="text-lg font-semibold">Información del Sistema</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Creado por</label>
-                  <p className="text-sm font-medium">{workOrder.creator?.name || 'N/A'}</p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fecha de creación</label>
-                  <p className="text-sm font-medium">
-                    {new Date(workOrder.createdAt).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Última actualización</label>
-                  <p className="text-sm font-medium">
-                    {new Date(workOrder.updatedAt).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
-                </div>
-                {workOrder.completedAt && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Completado</label>
-                    <p className="text-sm font-medium">
-                      {new Date(workOrder.completedAt).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+          {/* Time Tracker - Always visible and sticky */}
+          <div className="sticky top-48">
+            <div className="space-y-4">
+              {isActive ? (
+                <TimeTrackerCard
+                  workOrderId={workOrder.id}
+                  workOrderStatus={workOrder.status}
+                  onActionComplete={() => router.refresh()}
+                />
+              ) : (
+                <Card className="shadow-none border-dashed">
+                  <CardContent className="py-8 text-center">
+                    <Clock className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Orden de trabajo {isCompleted ? 'completada' : 'no activa'}
                     </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {isCompleted ? 'Ver pestaña Tiempo & Costos para detalles' : 'No se puede realizar seguimiento de tiempo'}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quick Actions */}
+              <Card className="shadow-none">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Acciones Rápidas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("activity")}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Ver Comentarios
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("time-costs")}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    Ver Tiempo & Costos
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("materials")}
+                  >
+                    <Package className="mr-2 h-4 w-4" />
+                    Ver Materiales
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
 
