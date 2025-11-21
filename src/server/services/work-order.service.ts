@@ -351,6 +351,36 @@ export class WorkOrderService {
       throw new Error("Orden de trabajo no encontrada")
     }
 
+    // Check if there are any time logs for this work order
+    const { TimeTrackingRepository } = await import("@/server/repositories/time-tracking.repository")
+    const timeTrackingRepo = new TimeTrackingRepository()
+    const hasTimeLogs = await timeTrackingRepo.hasTimeLogs(id)
+
+    // If there are time logs but no COMPLETE log, create one
+    if (hasTimeLogs) {
+      const lastLog = await timeTrackingRepo.getLastTimeLog(id)
+
+      // Only create COMPLETE log if the last action wasn't already COMPLETE
+      if (lastLog && lastLog.action !== "COMPLETE") {
+        try {
+          // Create COMPLETE time log
+          await timeTrackingRepo.createTimeLog({
+            workOrderId: id,
+            userId: session.user.id,
+            action: "COMPLETE",
+            notes: completionData.completionNotes,
+            timestamp: new Date(),
+          })
+
+          // updateWorkOrderTimeMetrics is automatically called by createTimeLog
+          // when action is COMPLETE, so we don't need to call it here
+        } catch (error) {
+          console.error("Error creating COMPLETE time log:", error)
+          // Continue with completion even if time log creation fails
+        }
+      }
+    }
+
     // Prepare completion data
     const updateData: UpdateWorkOrderData = {
       status: "COMPLETED",

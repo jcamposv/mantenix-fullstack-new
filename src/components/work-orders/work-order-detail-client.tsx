@@ -12,6 +12,7 @@ import { WorkOrderToolsMaterials } from "./work-order-tools-materials"
 import { WorkOrderCustomFieldsDisplay } from "./work-order-custom-fields-display"
 import { WorkOrderCommentsSection } from "./work-order-comments-section"
 import { TimeTrackerCard } from "./time-tracking/time-tracker-card"
+import { TimeSummaryCard } from "./time-tracking/time-summary-card"
 import { PrintableWorkOrder } from "./printable-work-order"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
@@ -112,6 +113,11 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
               workOrderStatus={workOrder.status}
               onActionComplete={() => router.refresh()}
             />
+          )}
+
+          {/* Time Summary - Show when completed */}
+          {workOrder.status === "COMPLETED" && (
+            <TimeSummaryCard workOrderId={workOrder.id} />
           )}
 
           {/* Comments Section */}
