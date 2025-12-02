@@ -18,7 +18,12 @@ interface User {
   name: string
   email: string
   emailVerified: boolean
-  role: string
+  role: {
+    id: string
+    key: string | null
+    name: string
+    color: string
+  }
   image: string | null
   createdAt: string
   company: {
@@ -134,7 +139,8 @@ export default function UsersPage() {
       accessorKey: "role",
       header: "Rol",
       cell: ({ row }) => {
-        return <RoleBadge role={row.getValue("role")} />
+        const role = row.original.role
+        return <RoleBadge role={role.key || ''} />
       },
     },
   {

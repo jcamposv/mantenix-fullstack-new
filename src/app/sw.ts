@@ -39,7 +39,7 @@ const serwist = new Serwist({
   navigationPreload: true,
 
   runtimeCaching: [
-    // Cache mobile pages - NetworkFirst strategy
+    // Cache mobile pages - NetworkFirst strategy with offline fallback
     {
       matcher: ({ request, url }) => {
         return (
@@ -54,6 +54,65 @@ const serwist = new Serwist({
           {
             cacheWillUpdate: async ({ response }) => {
               return response?.ok ? response : null;
+            },
+            handlerDidError: async ({ request }) => {
+              // If page not in cache and network failed, show offline page
+              const cache = await caches.open("mobile-pages");
+              const offlinePage = await cache.match("/offline");
+
+              if (offlinePage) {
+                return offlinePage;
+              }
+
+              // Fallback if /offline not cached (shouldn't happen)
+              return new Response(
+                `
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Sin Conexión</title>
+                  <style>
+                    body {
+                      font-family: system-ui, sans-serif;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      min-height: 100vh;
+                      margin: 0;
+                      background: #f3f4f6;
+                    }
+                    .container {
+                      text-align: center;
+                      padding: 2rem;
+                    }
+                    h1 { color: #1f2937; margin-bottom: 1rem; }
+                    p { color: #6b7280; }
+                    button {
+                      margin-top: 1rem;
+                      padding: 0.75rem 1.5rem;
+                      background: #3b82f6;
+                      color: white;
+                      border: none;
+                      border-radius: 0.5rem;
+                      cursor: pointer;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <h1>📡 Sin Conexión</h1>
+                    <p>Esta página no está disponible offline</p>
+                    <button onclick="history.back()">Volver</button>
+                  </div>
+                </body>
+                </html>
+                `,
+                {
+                  headers: { "Content-Type": "text/html" },
+                }
+              );
             },
           },
         ],
