@@ -922,7 +922,7 @@ export class InventoryService {
     await InventoryMovementRepository.create(movementData)
 
     // Mark as received at destination and ready for pickup
-    const updated = await InventoryRequestRepository.receiveAtDestinationWarehouse(
+    await InventoryRequestRepository.receiveAtDestinationWarehouse(
       id,
       session.user.id,
       data.notes

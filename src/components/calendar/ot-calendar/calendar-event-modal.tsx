@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, MapPin, Package, Users, Clock, TrendingUp } from "lucide-react"
+import { Calendar, MapPin, Package, Users, TrendingUp } from "lucide-react"
 import type { CalendarEvent } from "@/types/calendar.types"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"

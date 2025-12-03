@@ -65,6 +65,7 @@ export function WorkOrderInventoryRequests({ workOrderId }: WorkOrderInventoryRe
 
   useEffect(() => {
     fetchRequests()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workOrderId])
 
   const handleRequestCreated = () => {

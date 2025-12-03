@@ -55,7 +55,7 @@ const serwist = new Serwist({
             cacheWillUpdate: async ({ response }) => {
               return response?.ok ? response : null;
             },
-            handlerDidError: async ({ request }) => {
+            handlerDidError: async () => {
               // If page not in cache and network failed, show offline page
               const cache = await caches.open("mobile-pages");
               const offlinePage = await cache.match("/offline");

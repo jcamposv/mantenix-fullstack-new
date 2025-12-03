@@ -69,7 +69,8 @@ export default function EditWorkOrderPage() {
       instructions: "",
       safetyNotes: "",
       tools: [],
-      materials: []
+      materials: [],
+      assignedUserIds: []
     }
   })
 
@@ -133,7 +134,8 @@ export default function EditWorkOrderPage() {
           instructions: workOrder.instructions || "",
           safetyNotes: workOrder.safetyNotes || "",
           tools: workOrder.tools || [],
-          materials: workOrder.materials || []
+          materials: workOrder.materials || [],
+          assignedUserIds: workOrder.assignments?.map(a => a.userId) || []
         })
 
       } catch (error) {

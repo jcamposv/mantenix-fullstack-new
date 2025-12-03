@@ -138,7 +138,12 @@ export class ClientWorkOrderService {
             id: true,
             name: true,
             address: true,
-            clientCompanyId: true,
+            clientCompany: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         asset: {
@@ -146,12 +151,17 @@ export class ClientWorkOrderService {
             id: true,
             name: true,
             code: true,
+            manufacturer: true,
+            model: true,
+            location: true,
+            status: true,
           },
         },
         template: {
           select: {
             id: true,
             name: true,
+            category: true,
             customFields: true,
           },
         },
@@ -163,6 +173,7 @@ export class ClientWorkOrderService {
                 name: true,
                 email: true,
                 role: true,
+                image: true,
               },
             },
             assigner: {
@@ -170,9 +181,23 @@ export class ClientWorkOrderService {
                 id: true,
                 name: true,
                 email: true,
-                role: true,
               },
             },
+          },
+        },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
           },
         },
       },

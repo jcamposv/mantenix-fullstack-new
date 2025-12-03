@@ -16,10 +16,6 @@ export function useInventoryItems(companyId?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchItems()
-  }, [companyId])
-
   const fetchItems = async () => {
     try {
       setLoading(true)
@@ -47,6 +43,11 @@ export function useInventoryItems(companyId?: string) {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchItems()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId])
 
   return { items, loading, error, refetch: fetchItems }
 }

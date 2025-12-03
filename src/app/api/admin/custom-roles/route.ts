@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/admin/custom-roles
  * List all custom roles for the user's company
  */
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     // Authenticate
     const sessionResult = await AuthService.getAuthenticatedSession();

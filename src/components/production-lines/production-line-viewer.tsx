@@ -8,7 +8,6 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
-  type Edge,
   type Connection,
   addEdge,
   Panel,
@@ -16,14 +15,13 @@ import {
 } from '@xyflow/react'
 import { MachineNode } from './machine-node'
 import type { FlowConfiguration, NodeData } from '@/types/production-line.types'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
   Activity,
   AlertTriangle,
-  XCircle,
   TrendingDown,
   Clock,
   Gauge,
@@ -218,6 +216,7 @@ export function ProductionLineViewer({
       downtimeCostPerHour,
       isLineBlocked: failedCriticalNodes.length > 0,
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, unitPrice, targetThroughput])
 
   // Handle node click
@@ -238,6 +237,7 @@ export function ProductionLineViewer({
         }))
       )
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [metrics.bottleneck?.id, setNodes])
 
   return (

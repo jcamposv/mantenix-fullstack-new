@@ -2,7 +2,6 @@ import { Prisma } from '@prisma/client'
 import { WorkOrderRepository } from '@/server/repositories/work-order.repository'
 import { WorkOrderTemplateRepository } from '@/server/repositories/work-order-template.repository'
 import { EmailSenderService } from './email-sender.service'
-import { AssetStatusService } from './asset-status.service'
 import { PermissionGuard } from '../helpers/permission-guard'
 import { prisma } from '@/lib/prisma'
 import { getCurrentCompanyId } from '@/lib/company-context'
@@ -354,6 +353,33 @@ export class WorkOrderService {
 
         // Note: Asset status must be changed MANUALLY by technician/operator
         // Users can change status from the work order view or assets page
+      }
+    }
+
+    // Handle assignment updates
+    if (updateData.assignedUserIds !== undefined) {
+      if (updateData.assignedUserIds.length > 0) {
+        // Create/update assignments
+        await WorkOrderRepository.createAssignments(
+          id,
+          updateData.assignedUserIds,
+          session.user.id
+        )
+
+        // If status is DRAFT and we're adding assignments, change to ASSIGNED
+        if (existingWorkOrder.status === "DRAFT" && !updateData.status) {
+          updatePrismaData.status = "ASSIGNED"
+        }
+      } else {
+        // If empty array is provided, remove all assignments
+        await prisma.workOrderAssignment.deleteMany({
+          where: { workOrderId: id }
+        })
+
+        // If removing all assignments and status was ASSIGNED, revert to DRAFT
+        if (existingWorkOrder.status === "ASSIGNED" && !updateData.status) {
+          updatePrismaData.status = "DRAFT"
+        }
       }
     }
 

@@ -5,7 +5,7 @@ const withSerwist = withSerwistInit({
   // Serwist config
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development", // Disable in dev for easier debugging
+  disable: process.env.NODE_ENV !== "production", // Disable in dev and build due to Turbopack incompatibility
   cacheOnNavigation: true,
 
   // Pre-cache critical mobile pages for offline navigation

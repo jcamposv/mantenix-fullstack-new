@@ -23,7 +23,7 @@ export class WorkOrderPrefixService {
    * Validate if user can view prefixes
    * All authenticated users in the company can view prefixes
    */
-  private static validateViewPermission(_role: SystemRoleKey): void {
+  private static validateViewPermission(): void {
     // All roles can view prefixes
     // This is just a placeholder for consistency
     return
@@ -39,7 +39,7 @@ export class WorkOrderPrefixService {
     page = 1,
     limit = 10
   ) {
-    this.validateViewPermission(userRole)
+    this.validateViewPermission()
 
     return await WorkOrderPrefixRepository.findMany(
       companyId,
@@ -54,9 +54,8 @@ export class WorkOrderPrefixService {
    */
   static async getActivePrefixes(
     companyId: string,
-    userRole: SystemRoleKey
   ) {
-    this.validateViewPermission(userRole)
+    this.validateViewPermission()
 
     return await WorkOrderPrefixRepository.findAllActive(companyId)
   }
@@ -67,9 +66,8 @@ export class WorkOrderPrefixService {
   static async getPrefix(
     id: string,
     companyId: string,
-    userRole: SystemRoleKey
   ) {
-    this.validateViewPermission(userRole)
+    this.validateViewPermission()
 
     const prefix = await WorkOrderPrefixRepository.findById(id, companyId)
 

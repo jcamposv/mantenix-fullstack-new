@@ -4,7 +4,7 @@
  * Called after successful better-auth signIn
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { validateSubdomainAccess } from '@/lib/auth-utils';
@@ -12,7 +12,7 @@ import { validateSubdomainAccess } from '@/lib/auth-utils';
 export const dynamic = 'force-dynamic';
 
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(): Promise<NextResponse> {
   try {
     // Get current subdomain from headers
     const headersList = await headers();

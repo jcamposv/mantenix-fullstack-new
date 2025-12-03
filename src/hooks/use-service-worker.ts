@@ -26,49 +26,8 @@ export function useServiceWorker(pathname: string | null) {
     )
   }, [pathname])
 
-  // Register service worker
-  useEffect(() => {
-    if (!shouldRegister()) {
-      return
-    }
-
-    const registerSW = async () => {
-      try {
-        const reg = await navigator.serviceWorker.register("/sw.js", {
-          scope: "/mobile",
-        })
-
-        console.log("[PWA] Service Worker registered successfully:", reg.scope)
-        setRegistration(reg)
-        setIsRegistered(true)
-
-        // Setup update polling - check every hour
-        const updateInterval = setInterval(() => {
-          reg.update()
-        }, 60 * 60 * 1000)
-
-        // Setup update listener
-        reg.addEventListener("updatefound", () => {
-          handleUpdateFound(reg)
-        })
-
-        // Cleanup interval on unmount
-        return () => {
-          clearInterval(updateInterval)
-        }
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error("Service Worker registration failed")
-        console.error("[PWA] Service Worker registration failed:", error)
-        setError(error)
-        setIsRegistered(false)
-      }
-    }
-
-    registerSW()
-  }, [pathname, shouldRegister])
-
-  // Handle service worker updates
-  const handleUpdateFound = useCallback((reg: ServiceWorkerRegistration) => {
+   // Handle service worker updates
+   const handleUpdateFound = useCallback((reg: ServiceWorkerRegistration) => {
     const newWorker = reg.installing
 
     if (!newWorker) return
@@ -93,6 +52,50 @@ export function useServiceWorker(pathname: string | null) {
       }
     })
   }, [])
+
+  // Register service worker
+  useEffect(() => {
+    if (!shouldRegister()) {
+      return
+    }
+
+    const registerSW = async () => {
+      try {
+        const reg = await navigator.serviceWorker.register("/sw.js", {
+          scope: "/mobile",
+        })
+
+        console.log("[PWA] Service Worker registered successfully:", reg.scope)
+        setRegistration(reg)
+        setIsRegistered(true)
+
+        // Setup update polling - check every hour
+        const updateInterval = setInterval(() => {
+          reg.update()
+        }, 60 * 60 * 1000)
+
+        // Setup update listener
+        const updateHandler = () => {
+          handleUpdateFound(reg)
+        }
+        reg.addEventListener("updatefound", updateHandler)
+
+        // Cleanup interval on unmount
+        return () => {
+          clearInterval(updateInterval)
+        }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Service Worker registration failed")
+        console.error("[PWA] Service Worker registration failed:", error)
+        setError(error)
+        setIsRegistered(false)
+      }
+    }
+
+    registerSW()
+  }, [pathname, shouldRegister, handleUpdateFound])
+
+ 
 
   // Manual update check
   const checkForUpdates = useCallback(async () => {

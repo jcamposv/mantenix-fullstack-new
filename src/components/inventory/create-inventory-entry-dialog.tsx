@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { InventoryItemSelect } from "@/components/inventory/inventory-item-select"
-import { LocationSelect, LocationType } from "@/components/inventory/location-select"
+import { LocationSelect } from "@/components/inventory/location-select"
 import { toast } from "sonner"
 import { adjustInventoryStockSchema } from "@/app/api/schemas/inventory-schemas"
 

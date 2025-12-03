@@ -49,6 +49,7 @@ export function LocationSelect({
       setLocations([])
       onLocationIdChange("")
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationTypeValue])
 
   const fetchLocations = async (type: LocationType) => {

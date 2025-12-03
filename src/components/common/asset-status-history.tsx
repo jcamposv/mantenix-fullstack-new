@@ -40,10 +40,6 @@ export function AssetStatusHistory({ assetId, className }: AssetStatusHistoryPro
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
 
-  useEffect(() => {
-    fetchHistory()
-  }, [assetId])
-
   const fetchHistory = async () => {
     try {
       setLoading(true)
@@ -64,6 +60,11 @@ export function AssetStatusHistory({ assetId, className }: AssetStatusHistoryPro
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchHistory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetId])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

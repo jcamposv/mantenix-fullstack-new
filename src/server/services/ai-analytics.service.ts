@@ -49,7 +49,7 @@ export class AIAnalyticsService {
       WorkOrderAnalyticsRepository.getCompanyAnalytics(companyId, dateRange),
       WorkOrderAnalyticsRepository.getSitePerformance(companyId, dateRange),
       dateRange
-        ? WorkOrderAnalyticsRepository.getTimeseriesData(companyId, dateRange, 'day')
+        ? WorkOrderAnalyticsRepository.getTimeseriesData(companyId, dateRange)
         : Promise.resolve([])
     ])
 

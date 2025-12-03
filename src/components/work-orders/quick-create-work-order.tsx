@@ -161,7 +161,8 @@ export function QuickCreateWorkOrder({
     }
 
     fetchData()
-  }, [open])
+     
+  }, [open, hasExternalClientMgmt])
 
   // Auto-populate title when template is selected
   useEffect(() => {

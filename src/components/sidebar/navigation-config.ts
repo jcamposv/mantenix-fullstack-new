@@ -6,7 +6,6 @@
 import {
   Bot,
   Building2,
-  Settings2,
   SquareTerminal,
   Users,
   Bell,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   Clock,
   Calendar,
-  FileText,
   Package,
   CreditCard,
   Factory,

@@ -55,6 +55,7 @@ export function ApproveRequestDialog({
     if (open) {
       form.setValue('approvedQuantity', defaultQuantity)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultQuantity])
 
   const handleSubmit = async (data: ApproveRequestFormData) => {

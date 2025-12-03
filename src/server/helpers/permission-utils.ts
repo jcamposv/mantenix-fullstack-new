@@ -3,7 +3,6 @@
  * Provides permission checking functions for both system and custom roles
  */
 
-import { CustomRoleRepository } from '@/server/repositories/custom-role.repository';
 import type { AuthenticatedSession } from '@/types/auth.types';
 import { prisma } from '@/lib/prisma';
 

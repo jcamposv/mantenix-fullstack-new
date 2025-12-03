@@ -4,7 +4,7 @@
  * Generates a dynamic manifest.json based on company branding
  */
 
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { PWAManifestService } from "@/server/services/pwa-manifest.service"
 
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/manifest
  * Returns dynamic PWA manifest.json based on subdomain/branding
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Extract subdomain using the SAME logic as dashboard/mobile layouts
     const headersList = await headers()

@@ -1,9 +1,3 @@
-/**
- * Work Order Cost Breakdown Card
- *
- * Displays automatic cost calculation and allows authorized users to adjust other costs
- * Following CMMS best practices for cost tracking
- */
 
 "use client"
 
@@ -12,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { DollarSign, Edit2, Save, X, Calculator } from "lucide-react"
@@ -35,7 +28,6 @@ export function WorkOrderCostBreakdownCard({
   partsCost,
   otherCosts,
   downtimeCost,
-  actualCost,
   status,
   canEdit = false,
 }: WorkOrderCostBreakdownProps) {

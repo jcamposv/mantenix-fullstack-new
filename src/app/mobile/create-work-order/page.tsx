@@ -66,10 +66,6 @@ function MobileCreateWorkOrderPageContent() {
     },
   })
 
-  useEffect(() => {
-    fetchAssets()
-  }, [])
-
   const fetchAssets = async () => {
     try {
       const response = await fetch('/api/admin/assets')
@@ -96,6 +92,11 @@ function MobileCreateWorkOrderPageContent() {
     }
   }
 
+  useEffect(() => {
+    fetchAssets()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const onSubmit = async (data: WorkOrderMobileFormData) => {
     try {
       setSubmitting(true)
@@ -113,7 +114,6 @@ function MobileCreateWorkOrderPageContent() {
       })
 
       if (response.ok) {
-        const result = await response.json()
         toast.success('Orden de trabajo creada exitosamente')
         router.push('/mobile/assets')
       } else {
