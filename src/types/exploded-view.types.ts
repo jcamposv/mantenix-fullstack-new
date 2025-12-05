@@ -163,8 +163,14 @@ export interface ExplodedViewComponentWithRelations extends ExplodedViewComponen
     id: string;
     code: string;
     name: string;
-    unitCost: number | null;
+    description: string | null;
     unit: string;
+    unitCost: number | null;
+    lastPurchasePrice: number | null;
+    averageCost: number | null;
+    category: string | null;
+    manufacturer: string | null;
+    model: string | null;
   };
   company?: {
     id: string;
@@ -175,6 +181,17 @@ export interface ExplodedViewComponentWithRelations extends ExplodedViewComponen
     name: string;
     email: string;
   };
+  hotspots?: Array<{
+    id: string;
+    label: string;
+    viewId: string;
+    isActive: boolean;
+    view?: {
+      id: string;
+      name: string;
+    };
+    customLabel?: string;
+  }>;
   _count?: {
     hotspots: number;
   };
