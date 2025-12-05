@@ -66,14 +66,6 @@ export default function AssetStatusHistoryPage() {
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
 
-  useEffect(() => {
-    fetchAsset()
-  }, [assetId])
-
-  useEffect(() => {
-    fetchHistory()
-  }, [assetId, dateRange, statusFilter, page])
-
   const fetchAsset = async () => {
     try {
       const response = await fetch(`/api/admin/assets/${assetId}`)
@@ -124,6 +116,16 @@ export default function AssetStatusHistoryPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchAsset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetId])
+
+  useEffect(() => {
+    fetchHistory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetId, dateRange, statusFilter, page])
 
   const calculateDuration = (startedAt: string, endedAt: string | null): string => {
     const start = new Date(startedAt)

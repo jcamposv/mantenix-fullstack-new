@@ -28,8 +28,18 @@ export const workOrderSchema = z.object({
   
   // Scheduling
   scheduledDate: z.preprocess(
-    (val) => (typeof val === "string" ? new Date(val) : val),
-    z.date()
+    (val) => {
+      if (!val || val === "") return undefined
+      if (typeof val === "string") {
+        const date = new Date(val)
+        return isNaN(date.getTime()) ? undefined : date
+      }
+      if (val instanceof Date) {
+        return isNaN(val.getTime()) ? undefined : val
+      }
+      return val
+    },
+    z.date().optional()
   ).optional(),
   
   // Estimations

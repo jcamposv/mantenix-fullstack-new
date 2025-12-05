@@ -3,13 +3,13 @@
  * Get current user's permissions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { AuthService } from '@/server';
 import { getUserPermissions } from '@/server/helpers/permission-utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     // Authenticate user
     const sessionResult = await AuthService.getAuthenticatedSession();

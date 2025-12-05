@@ -69,7 +69,8 @@ export default function EditWorkOrderPage() {
       instructions: "",
       safetyNotes: "",
       tools: [],
-      materials: []
+      materials: [],
+      assignedUserIds: []
     }
   })
 
@@ -99,22 +100,22 @@ export default function EditWorkOrderPage() {
         // Load other data if responses are successful
         if (sitesRes.ok) {
           const sitesData = await sitesRes.json()
-          setSites(sitesData.sites || [])
+          setSites(sitesData.items || [])
         }
 
         if (assetsRes.ok) {
           const assetsData = await assetsRes.json()
-          setAssets(assetsData.assets || [])
+          setAssets(assetsData.items || [])
         }
 
         if (usersRes.ok) {
           const usersData = await usersRes.json()
-          setUsers(usersData.users || [])
+          setUsers(usersData.items || [])
         }
 
         if (templatesRes.ok) {
           const templatesData = await templatesRes.json()
-          setTemplates(templatesData.templates || [])
+          setTemplates(templatesData.items || [])
         }
 
         // Set form values with work order data
@@ -133,7 +134,8 @@ export default function EditWorkOrderPage() {
           instructions: workOrder.instructions || "",
           safetyNotes: workOrder.safetyNotes || "",
           tools: workOrder.tools || [],
-          materials: workOrder.materials || []
+          materials: workOrder.materials || [],
+          assignedUserIds: workOrder.assignments?.map(a => a.userId) || []
         })
 
       } catch (error) {

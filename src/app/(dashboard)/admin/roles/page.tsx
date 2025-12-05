@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { toast } from 'sonner';
 import {

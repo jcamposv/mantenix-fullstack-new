@@ -2,7 +2,6 @@ import { Prisma } from '@prisma/client'
 import { WorkOrderRepository } from '@/server/repositories/work-order.repository'
 import { WorkOrderTemplateRepository } from '@/server/repositories/work-order-template.repository'
 import { EmailSenderService } from './email-sender.service'
-import { AssetStatusService } from './asset-status.service'
 import { PermissionGuard } from '../helpers/permission-guard'
 import { prisma } from '@/lib/prisma'
 import { getCurrentCompanyId } from '@/lib/company-context'
@@ -59,18 +58,44 @@ export class WorkOrderService {
     session: AuthenticatedSession,
     id: string
   ): Promise<WorkOrderWithRelations | null> {
-    // Verificar permisos - usuario debe tener permiso para ver todas las OT o solo las asignadas
-    await PermissionGuard.requireAny(session, ['work_orders.view_all', 'work_orders.view_assigned'])
+    // Verificar permisos - usuario debe tener permiso para ver todas las OT, las asignadas, o las de su cliente
+    await PermissionGuard.requireAny(session, [
+      'work_orders.view_all',
+      'work_orders.view_assigned',
+      'work_orders.view_client'
+    ])
 
     // Get company ID based on role and current subdomain
     const companyId = await getCurrentCompanyId(session)
 
     const workOrder = await WorkOrderRepository.findById(id, companyId)
 
-    // Additional permission check for external users
-    if (workOrder && session.user.role.startsWith("CLIENTE") && session.user.siteId) {
-      if (workOrder.siteId !== session.user.siteId) {
-        throw new Error("No tienes permisos para ver esta orden de trabajo")
+    if (!workOrder) {
+      return null
+    }
+
+    // Additional permission check for external users (client users)
+    if (session.user.role.startsWith("CLIENTE")) {
+      // CLIENTE_ADMIN_GENERAL: can view work orders from their client company
+      if (session.user.role === "CLIENTE_ADMIN_GENERAL") {
+        if (!session.user.clientCompanyId) {
+          throw new Error("Usuario CLIENTE_ADMIN_GENERAL no tiene clientCompanyId asignado")
+        }
+
+        // Verify work order belongs to a site of their client company
+        if (workOrder.site?.clientCompany?.id !== session.user.clientCompanyId) {
+          throw new Error("No tienes permisos para ver esta orden de trabajo")
+        }
+      }
+      // CLIENTE_ADMIN_SEDE and CLIENTE_OPERARIO: can only view work orders from their site
+      else if (session.user.role === "CLIENTE_ADMIN_SEDE" || session.user.role === "CLIENTE_OPERARIO") {
+        if (!session.user.siteId) {
+          throw new Error(`Usuario ${session.user.role} no tiene siteId asignado`)
+        }
+
+        if (workOrder.siteId !== session.user.siteId) {
+          throw new Error("No tienes permisos para ver esta orden de trabajo")
+        }
       }
     }
 
@@ -328,6 +353,33 @@ export class WorkOrderService {
 
         // Note: Asset status must be changed MANUALLY by technician/operator
         // Users can change status from the work order view or assets page
+      }
+    }
+
+    // Handle assignment updates
+    if (updateData.assignedUserIds !== undefined) {
+      if (updateData.assignedUserIds.length > 0) {
+        // Create/update assignments
+        await WorkOrderRepository.createAssignments(
+          id,
+          updateData.assignedUserIds,
+          session.user.id
+        )
+
+        // If status is DRAFT and we're adding assignments, change to ASSIGNED
+        if (existingWorkOrder.status === "DRAFT" && !updateData.status) {
+          updatePrismaData.status = "ASSIGNED"
+        }
+      } else {
+        // If empty array is provided, remove all assignments
+        await prisma.workOrderAssignment.deleteMany({
+          where: { workOrderId: id }
+        })
+
+        // If removing all assignments and status was ASSIGNED, revert to DRAFT
+        if (existingWorkOrder.status === "ASSIGNED" && !updateData.status) {
+          updatePrismaData.status = "DRAFT"
+        }
       }
     }
 

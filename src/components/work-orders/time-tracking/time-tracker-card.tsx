@@ -18,6 +18,7 @@ import { PauseReasonDialog } from "./pause-reason-dialog"
 import { CompleteWorkDialog } from "./complete-work-dialog"
 import type { PauseReason } from "@prisma/client"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface TimeTrackerCardProps {
   workOrderId: string
@@ -70,6 +71,7 @@ export function TimeTrackerCard({
       }
       // Then start time tracking
       await start()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // Error is handled by hook
     } finally {
@@ -82,7 +84,7 @@ export function TimeTrackerCard({
       await pause(reason, notes)
       setShowPauseDialog(false)
     } catch (error) {
-      // Error is handled by hook
+      toast.error(error instanceof Error ? error.message : "Error al pausar el trabajo")
     }
   }
 
@@ -90,7 +92,7 @@ export function TimeTrackerCard({
     try {
       await resume()
     } catch (error) {
-      // Error is handled by hook
+      toast.error(error instanceof Error ? error.message : "Error al reanudar el trabajo")
     }
   }
 
@@ -99,7 +101,7 @@ export function TimeTrackerCard({
       await complete(notes)
       setShowCompleteDialog(false)
     } catch (error) {
-      // Error is handled by hook
+      toast.error(error instanceof Error ? error.message : "Error al completar el trabajo")
     }
   }
 

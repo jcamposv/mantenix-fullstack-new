@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { AuthService } from '@/server/services/auth.service'
 import { ProductionLineService } from '@/server/services/production-line.service'
 
@@ -6,7 +6,7 @@ import { ProductionLineService } from '@/server/services/production-line.service
  * GET /api/production-lines/stats
  * Get production line statistics
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()
     

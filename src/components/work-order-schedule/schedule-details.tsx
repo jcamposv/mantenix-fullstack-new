@@ -60,10 +60,6 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
   const [generating, setGenerating] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  useEffect(() => {
-    fetchSchedule()
-  }, [scheduleId])
-
   const fetchSchedule = async () => {
     try {
       setLoading(true)
@@ -78,6 +74,11 @@ export function ScheduleDetails({ scheduleId, onDelete, onClose }: ScheduleDetai
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchSchedule()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleId])
 
   const handleDelete = async () => {
     try {

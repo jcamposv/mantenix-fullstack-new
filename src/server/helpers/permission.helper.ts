@@ -358,7 +358,9 @@ export class PermissionHelper {
       this.PERMISSIONS.VIEW_ASSETS,
       // Asset Status permissions
       this.PERMISSIONS.CHANGE_ASSET_STATUS,
-      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      // Work Orders - can view work orders for their client company
+      'work_orders.view_client'
     ],
     [this.ROLES.CLIENTE_ADMIN_SEDE]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -372,7 +374,9 @@ export class PermissionHelper {
       this.PERMISSIONS.VIEW_ASSETS,
       // Asset Status permissions
       this.PERMISSIONS.CHANGE_ASSET_STATUS,
-      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      // Work Orders - can view work orders for their site
+      'work_orders.view_client'
     ],
     [this.ROLES.CLIENTE_OPERARIO]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -381,7 +385,9 @@ export class PermissionHelper {
       this.PERMISSIONS.VIEW_ASSETS,
       // Asset Status permissions
       this.PERMISSIONS.CHANGE_ASSET_STATUS,
-      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      // Work Orders - can view work orders for their site
+      'work_orders.view_client'
     ],
     [this.ROLES.TECNICO]: [
       this.PERMISSIONS.CREATE_ALERT,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
@@ -28,10 +28,10 @@ export function ProductionLinesTable({
   const [lineToDelete, setLineToDelete] = useState<ProductionLineWithRelations | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const handleDeleteClick = (line: ProductionLineWithRelations): void => {
+  const handleDeleteClick = useCallback((line: ProductionLineWithRelations): void => {
     setLineToDelete(line)
     setDeleteDialogOpen(true)
-  }
+  }, [])
 
   const handleDeleteConfirm = async (): Promise<void> => {
     if (!lineToDelete) return

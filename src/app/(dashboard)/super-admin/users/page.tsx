@@ -18,7 +18,12 @@ interface User {
   name: string
   email: string
   emailVerified: boolean
-  role: string
+  role: {
+    id: string
+    key: string | null
+    name: string
+    color: string
+  }
   image: string | null
   isExternalUser: boolean
   createdAt: string
@@ -114,7 +119,7 @@ export default function SuperAdminUsersPage() {
         const user = row.original
         return (
           <div className="space-y-1">
-            <RoleBadge role={row.getValue("role")} />
+            <RoleBadge role={user.role.key || ''} />
             {user.isExternalUser && (
               <Badge variant="outline" className="text-xs">
                 <Users className="mr-1 h-3 w-3" />

@@ -17,31 +17,6 @@ export function useNetworkStatus(
   const [isOnline, setIsOnline] = useState(true)
   const [wasOffline, setWasOffline] = useState(false)
 
-  // Handle online event
-  const handleOnline = useCallback(() => {
-    console.log("[PWA] Back online!")
-    setIsOnline(true)
-
-    // Track that we were offline to show reconnection message if needed
-    if (!isOnline) {
-      setWasOffline(true)
-
-      // Trigger background sync if available
-      triggerBackgroundSync()
-
-      // Reset wasOffline after 3 seconds
-      setTimeout(() => {
-        setWasOffline(false)
-      }, 3000)
-    }
-  }, [isOnline, registration])
-
-  // Handle offline event
-  const handleOffline = useCallback(() => {
-    console.log("[PWA] Gone offline!")
-    setIsOnline(false)
-  }, [])
-
   // Trigger background sync for offline actions
   const triggerBackgroundSync = useCallback(() => {
     if (!registration) {
@@ -64,21 +39,53 @@ export function useNetworkStatus(
       })
   }, [registration])
 
+  // Handle online event
+  const handleOnline = useCallback(() => {
+    console.log("[PWA] Back online!")
+    setIsOnline(true)
+
+    // Track that we were offline to show reconnection message if needed
+    if (!isOnline) {
+      setWasOffline(true)
+
+      // Trigger background sync if available
+      triggerBackgroundSync()
+
+      // Reset wasOffline after 3 seconds
+      setTimeout(() => {
+        setWasOffline(false)
+      }, 3000)
+    }
+  }, [isOnline, triggerBackgroundSync])
+
+  // Handle offline event
+  const handleOffline = useCallback(() => {
+    console.log("[PWA] Gone offline!")
+    setIsOnline(false)
+  }, [])
+
+  
+
+  // Handle online event
+  const handleOnlineWithSync = useCallback(() => {
+    handleOnline()
+  }, [handleOnline])
+
   // Setup online/offline listeners
   useEffect(() => {
     // Set initial state
     setIsOnline(navigator.onLine)
 
     // Add event listeners
-    window.addEventListener("online", handleOnline)
+    window.addEventListener("online", handleOnlineWithSync)
     window.addEventListener("offline", handleOffline)
 
     // Cleanup
     return () => {
-      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("online", handleOnlineWithSync)
       window.removeEventListener("offline", handleOffline)
     }
-  }, [handleOnline, handleOffline])
+  }, [handleOnlineWithSync, handleOffline])
 
   return {
     isOnline,

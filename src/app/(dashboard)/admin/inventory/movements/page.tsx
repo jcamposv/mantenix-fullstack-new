@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -37,7 +36,6 @@ interface InventoryMovement {
 }
 
 export default function InventoryMovementsPage() {
-  const router = useRouter()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const { data: movements, loading, refetch } = useTableData<InventoryMovement>({
     endpoint: '/api/admin/inventory/movements',

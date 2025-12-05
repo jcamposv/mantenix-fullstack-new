@@ -44,6 +44,7 @@ interface CurrentUser {
   emailVerified: boolean
   image: string | null
   role?: string
+  roleInterfaceType?: string
   siteId?: string | null
   clientCompanyId?: string | null
   company?: UserProfile['company']
@@ -82,13 +83,25 @@ export function useCurrentUser() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const response = await fetch(`/api/user/profile?userId=${userId}`)
-      if (response.ok) {
-        const profile = await response.json()
+      const [profileResponse, roleResponse] = await Promise.all([
+        fetch(`/api/user/profile?userId=${userId}`),
+        fetch('/api/auth/user-role')
+      ])
+      
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json()
+        let roleInterfaceType: string | undefined
+        
+        if (roleResponse.ok) {
+          const roleData = await roleResponse.json()
+          roleInterfaceType = roleData.roleInterfaceType
+        }
+        
         setUser(prev => prev ? { 
           ...prev, 
           profile,
           role: profile.role || prev.role,
+          roleInterfaceType,
           siteId: profile.siteId,
           clientCompanyId: profile.clientCompanyId,
           company: profile.company,

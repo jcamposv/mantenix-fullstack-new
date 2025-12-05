@@ -117,6 +117,17 @@ export interface WorkOrderWithRelations extends WorkOrder {
     role: SystemRoleKey
   } | null
   assignments?: WorkOrderAssignmentWithUser[]
+  comments?: Array<{
+    id: string
+    content: string
+    createdAt: string
+    author: {
+      id: string
+      name: string
+      email: string
+      avatar?: string | null
+    }
+  }>
   _count?: {
     assignments?: number
   }
@@ -187,6 +198,7 @@ export interface UpdateWorkOrderData {
   safetyNotes?: string
   tools?: string[]
   materials?: string[]
+  assignedUserIds?: string[]
   observations?: string
   completionNotes?: string
   actualDuration?: number

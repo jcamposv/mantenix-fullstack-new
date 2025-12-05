@@ -28,7 +28,7 @@ export class NotificationService {
         alert: alert
       })
 
-      await this.createNotificationsForAlert(alert, "reporter")
+      await this.createNotificationsForAlert(alert)
 
       console.log('Real-time notification sent for new alert:', alert.id)
     } catch (error) {
@@ -48,7 +48,7 @@ export class NotificationService {
         alert: alert
       })
 
-      await this.createNotificationsForAlert(alert, "status_change")
+      await this.createNotificationsForAlert(alert)
 
       console.log('Real-time notification sent for alert update:', alert.id)
     } catch (error) {
@@ -127,8 +127,7 @@ export class NotificationService {
    * Crea notificaciones persistentes para una alerta
    */
   static async createNotificationsForAlert(
-    alert: AlertWithRelations,
-    reason: NotificationReason
+    alert: AlertWithRelations
   ): Promise<number> {
     try {
       const recipients = await this.getUsersToNotify(alert)

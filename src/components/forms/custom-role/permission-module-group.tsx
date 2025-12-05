@@ -13,8 +13,7 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
-  FormMessage
+  FormLabel
 } from '@/components/ui/form';
 import { CustomRoleFormData } from '@/schemas/custom-role';
 
@@ -35,7 +34,6 @@ interface PermissionModuleGroupProps {
 }
 
 export function PermissionModuleGroup({
-  module,
   label,
   permissions,
   control,

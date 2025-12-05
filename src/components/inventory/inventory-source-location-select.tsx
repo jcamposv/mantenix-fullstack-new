@@ -48,6 +48,7 @@ export function InventorySourceLocationSelect({
       onLocationIdChange("")
       onLocationTypeChange("")
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inventoryItemId])
 
   const fetchStockLocations = async () => {

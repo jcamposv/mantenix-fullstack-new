@@ -26,13 +26,6 @@ interface NotificationBellProps {
   onClear: () => void
 }
 
-const priorityColors = {
-  CRITICAL: "text-red-600 dark:text-red-400",
-  HIGH: "text-orange-600 dark:text-orange-400",
-  MEDIUM: "text-yellow-600 dark:text-yellow-400",
-  LOW: "text-green-600 dark:text-green-400"
-}
-
 const priorityEmojis = {
   CRITICAL: "🔴",
   HIGH: "🟠",

@@ -24,7 +24,6 @@ interface AdminUserRoleSettingsProps {
 export function AdminUserRoleSettings({ control, setValue, isExternalUser, selectedRole, currentUserRole }: AdminUserRoleSettingsProps) {
   const { user: currentUser } = useCurrentUser()
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([])
-  const [loading, setLoading] = useState(true)
 
   // Watch the customRoleId value
   const customRoleId = useWatch({ control, name: 'customRoleId' })
@@ -46,7 +45,6 @@ export function AdminUserRoleSettings({ control, setValue, isExternalUser, selec
   useEffect(() => {
     const fetchCustomRoles = async () => {
       if (isExternalUser || !currentUser?.company?.id) {
-        setLoading(false)
         return
       }
 
@@ -58,8 +56,6 @@ export function AdminUserRoleSettings({ control, setValue, isExternalUser, selec
         }
       } catch (error) {
         console.error('Error fetching custom roles:', error)
-      } finally {
-        setLoading(false)
       }
     }
 

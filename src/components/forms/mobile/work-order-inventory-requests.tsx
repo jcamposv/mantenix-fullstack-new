@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Package, Loader2, ChevronRight, CheckCircle2, PackageOpen, AlertCircle } from "lucide-react"
 import { CreateInventoryRequestMobileDialog } from "./create-inventory-request-mobile-dialog"
 import { ConfirmReceiptDialog } from "@/components/inventory/confirm-receipt-dialog"
-import { REQUEST_STATUS_OPTIONS, REQUEST_URGENCY_OPTIONS } from "@/schemas/inventory"
+import { REQUEST_STATUS_OPTIONS } from "@/schemas/inventory"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useTableData } from "@/components/hooks/use-table-data"
@@ -120,14 +120,6 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     )
   }
 
-  const getUrgencyBadge = (urgency: string) => {
-    const urgencyOption = REQUEST_URGENCY_OPTIONS.find(opt => opt.value === urgency)
-    return (
-      <Badge variant="outline" className={`${urgencyOption?.color || "text-gray-500"} text-xs`}>
-        {urgencyOption?.label || urgency}
-      </Badge>
-    )
-  }
 
   const pendingConfirmationCount = requests.filter(r => canConfirmReceipt(r)).length
 

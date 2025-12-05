@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { CompanyService } from "@/server/services/company.service"
 import { updateCompanySchema } from "@/app/api/schemas/company-schemas"
 import { AuthService } from "@/server/services/auth.service"
-import type { AuthenticatedSession } from "@/types/auth.types"
 
 export const dynamic = 'force-dynamic'
 

@@ -27,8 +27,7 @@ export async function GET(
     // Get prefix
     const prefix = await WorkOrderPrefixService.getPrefix(
       id,
-      session.user.companyId!,
-      session.user.role as SystemRoleKey
+      session.user.companyId!
     )
 
     return NextResponse.json(prefix, { status: 200 })

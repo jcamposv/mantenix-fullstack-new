@@ -34,6 +34,9 @@ interface CreateProductionLineFormProps {
   sites: Array<{
     id: string
     name: string
+    clientCompany: {
+      name: string
+    }
   }>
 }
 
@@ -179,7 +182,7 @@ export function CreateProductionLineForm({
                 <SelectContent>
                   {sites.map((site) => (
                     <SelectItem key={site.id} value={site.id}>
-                      {site.name}
+                      {site.clientCompany.name} - {site.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

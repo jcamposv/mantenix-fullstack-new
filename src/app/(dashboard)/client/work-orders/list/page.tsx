@@ -12,14 +12,14 @@ import { TableActions } from "@/components/common/table-actions"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 
 interface WorkOrdersResponse {
-  workOrders: WorkOrderWithRelations[]
+  items: WorkOrderWithRelations[]
 }
 
 export default function ClientWorkOrdersListPage() {
   const router = useRouter()
   const { data: workOrders, loading } = useTableData<WorkOrderWithRelations>({
     endpoint: "/api/client/work-orders",
-    transform: (data) => (data as WorkOrdersResponse).workOrders || [],
+    transform: (data) => (data as WorkOrdersResponse).items || [],
   })
 
   const columns: ColumnDef<WorkOrderWithRelations>[] = [

@@ -68,6 +68,7 @@ export function AssignTechniciansDialog({
       setValue("technicianIds", currentTechnicianIds)
       fetchTechnicians()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, workOrderId, currentTechnicianIds])
 
   const fetchTechnicians = async (): Promise<void> => {

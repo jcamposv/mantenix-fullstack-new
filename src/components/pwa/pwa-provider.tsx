@@ -24,7 +24,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
   const pathname = usePathname()
 
   // Register and manage service worker
-  const { registration, isRegistered, error } = useServiceWorker(pathname)
+  const { registration, error } = useServiceWorker(pathname)
 
   // Monitor network status
   const { isOnline } = useNetworkStatus(registration)

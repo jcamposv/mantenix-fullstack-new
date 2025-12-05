@@ -3,7 +3,6 @@
  * Provides permission checking functions for both system and custom roles
  */
 
-import { CustomRoleRepository } from '@/server/repositories/custom-role.repository';
 import type { AuthenticatedSession } from '@/types/auth.types';
 import { prisma } from '@/lib/prisma';
 
@@ -28,6 +27,7 @@ export const PERMISSION_KEY_MAP: Record<string, string> = {
   delete_work_order: 'work_orders.delete',
   view_all_work_orders: 'work_orders.view_all',
   view_assigned_work_orders: 'work_orders.view_assigned',
+  view_client_work_orders: 'work_orders.view_client',
   assign_work_order: 'work_orders.assign',
   complete_work_order: 'work_orders.complete',
   cancel_work_order: 'work_orders.cancel',
