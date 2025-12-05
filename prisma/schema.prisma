@@ -236,6 +236,10 @@ model User {
   // Asset status history relations
   assetStatusChanges AssetStatusHistory[] @relation("AssetStatusChanges")
 
+  // Exploded view relations
+  explodedViewsCreated AssetExplodedView[] @relation("ExplodedViewCreator")
+  explodedViewComponentsCreated ExplodedViewComponent[] @relation("ExplodedViewComponentCreator")
+
   @@map("user")
 }
 
@@ -335,6 +339,7 @@ model Company {
   inventoryMovementsTo InventoryMovement[] @relation("InventoryMovementToCompany")
   productionLines ProductionLine[]
   customRoles     CustomRole[] // Roles personalizados de la empresa
+  explodedViewComponents ExplodedViewComponent[] // Componentes de vistas explosionadas
 
   @@index([subdomain])
   @@index([isActive])
@@ -463,6 +468,9 @@ model Asset {
   // Production line relationships
   productionLineAssets ProductionLineAsset[]
   isStandalone         Boolean              @default(true) // true = no está en línea de producción
+
+  // Exploded views
+  explodedViews        AssetExplodedView[]
 
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -1379,6 +1387,7 @@ model InventoryItem {
   stockLocations    InventoryStock[]
   movements         InventoryMovement[]
   workOrderRequests WorkOrderInventoryRequest[]
+  explodedViewComponents ExplodedViewComponent[] // Componentes que apuntan a este item
 
   isActive  Boolean   @default(true)
   deletedAt DateTime?
@@ -2014,4 +2023,131 @@ model CustomRolePermission {
   @@index([customRoleId])
   @@index([permissionId])
   @@map("custom_role_permissions")
+}
+
+// ============================================================================
+// EXPLODED VIEW MODELS
+// ============================================================================
+// Sistema de vistas explosionadas para activos
+// Permite visualizar componentes/partes de un activo de forma interactiva
+// ============================================================================
+
+// Vista explosionada de un activo
+// Un activo puede tener múltiples vistas (frontal, trasera, interna, etc.)
+model AssetExplodedView {
+  id          String  @id @default(cuid())
+  name        String // "Vista Frontal", "Vista Interna", "Sistema Hidráulico"
+  description String? // Descripción de la vista
+  imageUrl    String // URL de la imagen de la vista explosionada
+
+  // Dimensiones de la imagen original (para cálculo de coordenadas)
+  imageWidth  Int // Ancho de la imagen en píxeles
+  imageHeight Int // Alto de la imagen en píxeles
+
+  // Orden de visualización (para múltiples vistas)
+  order       Int     @default(0)
+
+  // Estado
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+
+  // Audit
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assetId  String
+  asset    Asset                  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  hotspots ExplodedViewHotspot[] // Hotspots clickeables en esta vista
+  creator  User                   @relation("ExplodedViewCreator", fields: [createdBy], references: [id])
+
+  @@index([assetId])
+  @@index([isActive])
+  @@map("asset_exploded_views")
+}
+
+// Componente/Parte de un activo
+// Representa una pieza física que puede ser identificada en una vista explosionada
+model ExplodedViewComponent {
+  id           String  @id @default(cuid())
+  name         String // "Rodamiento", "Filtro de Aceite", "Válvula Principal"
+  partNumber   String? // Número de parte del fabricante (PN-12345)
+  description  String? // Descripción técnica del componente
+  manufacturer String? // Fabricante de la pieza
+
+  // Especificaciones técnicas (JSON flexible)
+  specifications Json? // { "material": "Acero inoxidable", "peso": "2.5kg", "diametro": "50mm" }
+
+  // Documentación
+  manualUrl       String? // URL del manual técnico
+  installationUrl String? // URL de guía de instalación
+  imageUrl        String? // Imagen del componente individual
+
+  // Relación con inventario (opcional)
+  inventoryItemId String? // Si existe en el inventario
+
+  // Estado
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  // Audit
+  companyId String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  inventoryItem InventoryItem?        @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  company       Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator       User                  @relation("ExplodedViewComponentCreator", fields: [createdBy], references: [id])
+  hotspots      ExplodedViewHotspot[] // Hotspots que apuntan a este componente
+
+  @@unique([companyId, partNumber]) // Part number único por empresa
+  @@index([companyId])
+  @@index([inventoryItemId])
+  @@index([isActive])
+  @@map("exploded_view_components")
+}
+
+// Hotspot clickeable en una vista explosionada
+// Define un área interactiva que al hacer click muestra información del componente
+model ExplodedViewHotspot {
+  id          String @id @default(cuid())
+  label       String // Label visible en el hotspot (ej: "1", "A", "Motor Principal")
+
+  // Tipo de hotspot
+  type        String @default("polygon") // "polygon", "circle", "rectangle"
+
+  // Coordenadas del hotspot (JSON)
+  // Para polygon: [{ x: 100, y: 200 }, { x: 150, y: 200 }, ...]
+  // Para circle: { x: 100, y: 200, radius: 50 }
+  // Para rectangle: { x: 100, y: 200, width: 50, height: 30 }
+  coordinates Json
+
+  // Estilo visual del hotspot
+  color       String  @default("#3B82F6") // Color del hotspot (hex)
+  opacity     Float   @default(0.3) // Opacidad 0-1
+
+  // Orden de visualización (z-index)
+  order       Int     @default(0)
+
+  // Estado
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  viewId      String
+  componentId String
+  view        AssetExplodedView      @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  component   ExplodedViewComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@index([viewId])
+  @@index([componentId])
+  @@index([isActive])
+  @@map("exploded_view_hotspots")
 }
