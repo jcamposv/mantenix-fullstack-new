@@ -209,7 +209,10 @@ export const createComponentSchema = z.object({
     .nullable()
     .optional(),
 
-  // Datos técnicos
+  // Datos técnicos de mantenimiento (ISO 14224)
+  // IMPORTANTE: Vida Útil = tiempo total antes de reemplazo (ej: 100,000 hrs)
+  //             MTBF = tiempo entre fallas reparables (ej: 5,000 hrs)
+  //             Relación correcta: Vida Útil >> MTBF
   lifeExpectancy: z
     .number()
     .int('La vida útil debe ser un número entero')
@@ -262,7 +265,19 @@ export const createComponentSchema = z.object({
     .cuid('ID de item de inventario inválido')
     .nullable()
     .optional(),
-});
+}).refine(
+  (data) => {
+    // Validar que Vida Útil > MTBF cuando ambos están definidos
+    if (data.mtbf != null && data.lifeExpectancy != null) {
+      return data.lifeExpectancy > data.mtbf;
+    }
+    return true; // Si alguno falta, no validar esta regla
+  },
+  {
+    message: 'La vida útil debe ser mayor que el MTBF (el equipo debe vivir más de lo que tarda en fallar)',
+    path: ['lifeExpectancy'],
+  }
+);
 
 export type CreateComponentInput = z.infer<typeof createComponentSchema>;
 
@@ -316,7 +331,10 @@ export const updateComponentSchema = z.object({
     .nullable()
     .optional(),
 
-  // Datos técnicos
+  // Datos técnicos de mantenimiento (ISO 14224)
+  // IMPORTANTE: Vida Útil = tiempo total antes de reemplazo (ej: 100,000 hrs)
+  //             MTBF = tiempo entre fallas reparables (ej: 5,000 hrs)
+  //             Relación correcta: Vida Útil >> MTBF
   lifeExpectancy: z
     .number()
     .int('La vida útil debe ser un número entero')
@@ -371,7 +389,19 @@ export const updateComponentSchema = z.object({
     .optional(),
 
   isActive: z.boolean().optional(),
-});
+}).refine(
+  (data) => {
+    // Validar que Vida Útil > MTBF cuando ambos están definidos
+    if (data.mtbf != null && data.lifeExpectancy != null) {
+      return data.lifeExpectancy > data.mtbf;
+    }
+    return true; // Si alguno falta, no validar esta regla
+  },
+  {
+    message: 'La vida útil debe ser mayor que el MTBF (el equipo debe vivir más de lo que tarda en fallar)',
+    path: ['lifeExpectancy'],
+  }
+);
 
 export type UpdateComponentInput = z.infer<typeof updateComponentSchema>;
 

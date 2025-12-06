@@ -13,6 +13,7 @@ export const assetSchema = z.object({
   serialNumber: z.string().optional(),
   purchaseDate: z.string().optional(),
   estimatedLifespan: z.number().optional(),
+  operatingHours: z.number().int().min(0, "Las horas de operación deben ser mayor o igual a 0").optional(),
   category: z.string().optional(),
 })
 

@@ -188,6 +188,7 @@ export class AssetService {
       serialNumber: assetData.serialNumber,
       purchaseDate: assetData.purchaseDate,
       estimatedLifespan: assetData.estimatedLifespan,
+      operatingHours: assetData.operatingHours,
       category: assetData.category,
       customFields: (assetData.customFields ?? undefined) as Prisma.InputJsonValue | undefined,
       site: { connect: { id: siteId } }
@@ -236,6 +237,7 @@ export class AssetService {
       serialNumber: assetData.serialNumber,
       purchaseDate: assetData.purchaseDate,
       estimatedLifespan: assetData.estimatedLifespan,
+      operatingHours: assetData.operatingHours,
       category: assetData.category,
       customFields: (assetData.customFields ?? undefined) as Prisma.InputJsonValue | undefined,
       updatedAt: new Date(),

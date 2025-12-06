@@ -31,6 +31,14 @@ export default function NewComponentPage() {
       const result = await response.json()
 
       if (!response.ok) {
+        // Extract detailed validation error messages
+        if (result.details && Array.isArray(result.details) && result.details.length > 0) {
+          // Show each validation error
+          result.details.forEach((detail: { message: string }) => {
+            toast.error(detail.message)
+          })
+          return
+        }
         throw new Error(result.error || 'Error al crear componente')
       }
 

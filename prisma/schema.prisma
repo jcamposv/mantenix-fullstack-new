@@ -469,6 +469,7 @@ model Asset {
   serialNumber      String? // Physical serial number
   purchaseDate      DateTime? // Acquisition date
   estimatedLifespan Int? // Estimated lifespan in years
+  operatingHours    Int? // Current operating hours (manually updated or from sensors)
   // lastRevision         DateTime?   // Last maintenance performed - Moved to WorkOrder
   // nextMaintenance      DateTime?   // Next suggested preventive maintenance date - Moved to WorkOrder
   category          String? // Asset type (vehicle, machinery, tool, etc.)
@@ -1398,6 +1399,7 @@ model InventoryItem {
   minStock     Int    @default(0) // Stock mínimo
   maxStock     Int? // Stock máximo
   reorderPoint Int    @default(0) // Punto de reorden
+  leadTime     Int    @default(7) // Tiempo de entrega en días
 
   // Costs
   unitCost          Float?

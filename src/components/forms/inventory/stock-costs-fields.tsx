@@ -67,7 +67,7 @@ export function StockCostsFields({ form }: StockCostsFieldsProps) {
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
             name="minStock"
@@ -103,6 +103,28 @@ export function StockCostsFields({ form }: StockCostsFieldsProps) {
                   />
                 </FormControl>
                 <FormDescription>Nivel para reabastecer</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="leadTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tiempo de Entrega (días) *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="7"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 7)}
+                  />
+                </FormControl>
+                <FormDescription>Días de espera del proveedor</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

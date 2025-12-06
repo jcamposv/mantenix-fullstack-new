@@ -35,6 +35,7 @@ interface ComponentFormProps {
   onCancel: () => void
   loading?: boolean
   initialData?: Partial<ComponentFormData>
+  componentId?: string
 }
 
 export function ComponentForm({
@@ -42,6 +43,7 @@ export function ComponentForm({
   onCancel,
   loading,
   initialData,
+  componentId,
 }: ComponentFormProps) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [loadingInventory, setLoadingInventory] = useState(true)
@@ -144,6 +146,7 @@ export function ComponentForm({
               form={form}
               components={components}
               loadingComponents={loadingComponents}
+              componentId={componentId}
             />
           </CardContent>
         </Card>

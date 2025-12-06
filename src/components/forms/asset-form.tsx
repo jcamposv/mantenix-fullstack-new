@@ -51,6 +51,7 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
       serialNumber: initialData?.serialNumber || "",
       purchaseDate: initialData?.purchaseDate || "",
       estimatedLifespan: initialData?.estimatedLifespan,
+      operatingHours: initialData?.operatingHours,
       category: initialData?.category || "",
     },
   })

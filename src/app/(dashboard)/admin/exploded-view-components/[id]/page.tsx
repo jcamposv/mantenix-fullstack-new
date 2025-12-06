@@ -15,7 +15,11 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Edit, Loader2, Package, FileText, Image as ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import type { ExplodedViewComponentWithRelations } from "@/types/exploded-view.types"
+import type { MaintenanceAlert } from "@/types/maintenance-alert.types"
 import Link from "next/link"
+import { MTBFAlertCard } from "@/components/maintenance/mtbf-alert-card"
+import { ComponentTechnicalSpecs } from "@/components/exploded-view/component-technical-specs"
+import { ComponentHierarchy } from "@/components/exploded-view/component-hierarchy"
 
 export default function ComponentDetailPage() {
   const router = useRouter()
@@ -24,9 +28,12 @@ export default function ComponentDetailPage() {
 
   const [component, setComponent] = useState<ExplodedViewComponentWithRelations | null>(null)
   const [loading, setLoading] = useState(true)
+  const [alert, setAlert] = useState<MaintenanceAlert | null>(null)
+  const [loadingAlert, setLoadingAlert] = useState(false)
 
   useEffect(() => {
     fetchComponentData()
+    fetchComponentAlert()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -43,6 +50,21 @@ export default function ComponentDetailPage() {
       router.push('/admin/exploded-view-components')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchComponentAlert = async () => {
+    try {
+      setLoadingAlert(true)
+      const response = await fetch(`/api/maintenance/alerts/${id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAlert(data)
+      }
+    } catch (error) {
+      console.error('Error fetching alert:', error)
+    } finally {
+      setLoadingAlert(false)
     }
   }
 
@@ -126,6 +148,26 @@ export default function ComponentDetailPage() {
             <p className="text-xs text-muted-foreground mt-1">Documentos adjuntos</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* MTBF Alert */}
+      {alert && !loadingAlert && (
+        <MTBFAlertCard alert={alert} />
+      )}
+
+      {/* Technical Specifications & Hierarchy */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <ComponentTechnicalSpecs
+          mtbf={component.mtbf}
+          mttr={component.mttr}
+          criticality={component.criticality}
+          lifeExpectancy={component.lifeExpectancy}
+        />
+        <ComponentHierarchy
+          hierarchyLevel={component.hierarchyLevel}
+          parentComponent={component.parentComponent}
+          childComponents={component.childComponents}
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

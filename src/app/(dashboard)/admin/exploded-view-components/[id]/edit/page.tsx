@@ -86,7 +86,17 @@ export default function EditComponentPage() {
         router.push(`/admin/exploded-view-components/${id}`)
       } else {
         console.error('Error updating component:', result)
-        toast.error(result.error || 'Error al actualizar el componente')
+
+        // Extract detailed validation error messages
+        if (result.details && Array.isArray(result.details) && result.details.length > 0) {
+          // Show each validation error
+          result.details.forEach((detail: { message: string }) => {
+            toast.error(detail.message)
+          })
+        } else {
+          // Fallback to generic error message
+          toast.error(result.error || 'Error al actualizar el componente')
+        }
       }
     } catch (error) {
       console.error('Error updating component:', error)
@@ -132,6 +142,7 @@ export default function EditComponentPage() {
         onCancel={handleCancel}
         loading={loading}
         initialData={initialData}
+        componentId={id}
       />
     </div>
   )

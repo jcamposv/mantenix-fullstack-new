@@ -10,6 +10,7 @@ import { KPICard } from "@/components/dashboard/shared/kpi-card"
 import { PerformanceMetrics } from "@/components/dashboard/company/performance-metrics"
 import { RecentActivity } from "@/components/dashboard/shared/recent-activity"
 import { UpcomingWorkOrders } from "@/components/dashboard/shared/upcoming-work-orders"
+import { MTBFAlerts } from "@/components/maintenance/mtbf-alerts"
 import { getDateRangeFromPeriod } from "@/lib/date-utils"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -311,6 +312,9 @@ export default function Home() {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
+            {/* MTBF Maintenance Alerts */}
+            <MTBFAlerts limit={5} criticalOnly={true} autoRefresh={true} />
+
             {/* Upcoming Work Orders */}
             <UpcomingWorkOrders
               workOrders={(stats?.upcomingWorkOrders || []).map(wo => ({

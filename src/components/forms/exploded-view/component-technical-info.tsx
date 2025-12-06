@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { UseFormReturn } from "react-hook-form"
 import type { ComponentFormData } from "@/schemas/exploded-view-form"
+import { CalculateStockButton } from "@/components/maintenance/calculate-stock-button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Info } from "lucide-react"
 
 interface ExplodedViewComponent {
   id: string
@@ -20,13 +23,17 @@ interface ComponentTechnicalInfoProps {
   form: UseFormReturn<ComponentFormData>
   components: ExplodedViewComponent[]
   loadingComponents: boolean
+  componentId?: string
 }
 
 export function ComponentTechnicalInfo({
   form,
   components,
   loadingComponents,
+  componentId,
 }: ComponentTechnicalInfoProps) {
+  const hasInventoryItem = !!form.watch('inventoryItemId')
+  const canCalculateStock = componentId && hasInventoryItem
   return (
     <div className="space-y-4">
       {/* Hierarchy Section */}
@@ -213,6 +220,33 @@ export function ComponentTechnicalInfo({
             )}
           />
         </div>
+
+        {/* Auto-Calculate Stock Section */}
+        {canCalculateStock && (
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium">Cálculo Automático de Stock</h4>
+                <p className="text-sm text-muted-foreground">
+                  Calcula el stock mínimo óptimo basado en criticidad, MTBF y tiempo de entrega
+                </p>
+              </div>
+              <CalculateStockButton
+                componentId={componentId}
+                onSuccess={() => {
+                  // Could refetch or update form here if needed
+                }}
+              />
+            </div>
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                El cálculo actualiza automáticamente el stock mínimo del ítem de inventario vinculado
+                según estándares ISO 14224.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -24,6 +24,7 @@ import {
 } from '@/lib/maintenance/mtbf-alerts'
 import type { AuthenticatedSession } from '@/types/auth.types'
 import { getCurrentCompanyId } from '@/lib/company-context'
+import { getComponentOperatingHours } from '@/lib/maintenance/operating-hours'
 
 export class MaintenanceAlertService {
   /**
@@ -58,8 +59,14 @@ export class MaintenanceAlertService {
       },
     })
 
+    // Get operating hours for all components in parallel
+    const operatingHoursPromises = components.map((component) =>
+      getComponentOperatingHours(component.id)
+    )
+    const operatingHoursArray = await Promise.all(operatingHoursPromises)
+
     // Generate alert parameters for each component
-    const alertParams: MTBFAlertParams[] = components.map((component) => {
+    const alertParams: MTBFAlertParams[] = components.map((component, index) => {
       // Calculate total stock across all locations
       const totalStock =
         component.inventoryItem?.stockLocations?.reduce(
@@ -73,12 +80,12 @@ export class MaintenanceAlertService {
         partNumber: component.partNumber,
         criticality: component.criticality,
         mtbf: component.mtbf,
-        currentOperatingHours: 0, // TODO: Get from asset operating hours
+        currentOperatingHours: operatingHoursArray[index],
         inventoryItemId: component.inventoryItemId,
         currentStock: totalStock,
         minimumStock: component.inventoryItem?.minStock || 0,
         reorderPoint: component.inventoryItem?.reorderPoint || 0,
-        leadTime: 7, // Default lead time in days (leadTime field doesn't exist in InventoryItem schema)
+        leadTime: component.inventoryItem?.leadTime || 7,
       }
     })
 
@@ -205,18 +212,21 @@ export class MaintenanceAlertService {
         0
       ) || 0
 
+    // Get operating hours for this component
+    const currentOperatingHours = await getComponentOperatingHours(componentId)
+
     const params: MTBFAlertParams = {
       componentId: component.id,
       componentName: component.name,
       partNumber: component.partNumber,
       criticality: component.criticality,
       mtbf: component.mtbf,
-      currentOperatingHours: 0, // TODO: Get from asset
+      currentOperatingHours,
       inventoryItemId: component.inventoryItemId,
       currentStock: totalStock,
       minimumStock: component.inventoryItem.minStock || 0,
       reorderPoint: component.inventoryItem.reorderPoint || 0,
-      leadTime: 7, // Default lead time in days (leadTime field doesn't exist in InventoryItem schema)
+      leadTime: component.inventoryItem.leadTime || 7,
     }
 
     return generateMTBFAlert(params)
@@ -256,7 +266,7 @@ export class MaintenanceAlertService {
       criticality: component.criticality,
       mtbf: component.mtbf,
       mttr: component.mttr,
-      leadTime: 7, // Default lead time in days (leadTime field doesn't exist in InventoryItem schema)
+      leadTime: component.inventoryItem.leadTime || 7,
       currentStock: 0, // Not used in calculation
     })
 
