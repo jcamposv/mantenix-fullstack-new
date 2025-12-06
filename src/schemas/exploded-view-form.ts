@@ -37,6 +37,19 @@ export const componentFormSchema = z.object({
   partNumber: z.string().max(100).optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
   manufacturer: z.string().max(200).optional().nullable(),
+
+  // Jerarquía ISO 14224
+  parentComponentId: z.string().cuid().optional().nullable(),
+  hierarchyLevel: z.number().int().min(4).max(6),
+
+  // Criticidad
+  criticality: z.enum(["A", "B", "C"]).optional().nullable(),
+
+  // Datos técnicos
+  lifeExpectancy: z.number().int().min(1).max(1000000).optional().nullable(),
+  mtbf: z.number().int().min(1).max(1000000).optional().nullable(),
+  mttr: z.number().int().min(1).max(10000).optional().nullable(),
+
   specifications: z.record(z.string(), z.unknown()).optional().nullable(),
   manualUrl: z.string().url("Debe ser una URL válida").optional().nullable(),
   installationUrl: z.string().url("Debe ser una URL válida").optional().nullable(),

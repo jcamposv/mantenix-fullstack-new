@@ -49,6 +49,34 @@ enum AlertPriority {
   CRITICAL // Crítica - Requiere acción inmediata
 }
 
+// ============================================================================
+// MAINTENANCE ENUMS (ISO 14224)
+// ============================================================================
+
+// Criticidad de componentes según ISO 14224
+enum ComponentCriticality {
+  A // Crítico - Falla causa paro total de producción
+  B // Importante - Falla causa degradación de rendimiento
+  C // Menor - Falla no afecta operación inmediata
+}
+
+// Tipos de mantenimiento
+enum MaintenanceType {
+  PREVENTIVE // Preventivo - Basado en tiempo/horas
+  PREDICTIVE // Predictivo - Basado en condición
+  CORRECTIVE // Correctivo - Por falla
+  ROUTINE // Rutina - Inspección/limpieza
+}
+
+// Unidades de frecuencia
+enum FrequencyUnit {
+  HOURS // Por horas de operación
+  DAYS // Por días calendario
+  WEEKS // Por semanas
+  MONTHS // Por meses
+  YEARS // Por años
+}
+
 enum AlertType {
   EQUIPMENT_FAILURE // Falla de equipo/maquinaria
   MAINTENANCE_REQUIRED // Mantenimiento correctivo requerido
@@ -2076,6 +2104,18 @@ model ExplodedViewComponent {
   description  String? // Descripción técnica del componente
   manufacturer String? // Fabricante de la pieza
 
+  // Jerarquía ISO 14224 (Nivel 4, 5, 6)
+  parentComponentId String? // ID del componente padre (para jerarquía)
+  hierarchyLevel    Int     @default(4) // 4 = Sistema, 5 = Subsistema, 6 = Componente
+
+  // Criticidad según ISO 14224
+  criticality ComponentCriticality? // A = Crítico, B = Importante, C = Menor
+
+  // Datos técnicos para mantenimiento predictivo
+  lifeExpectancy Int? // Vida útil esperada en horas de operación
+  mtbf           Int? // Mean Time Between Failures (horas)
+  mttr           Int? // Mean Time To Repair (horas)
+
   // Especificaciones técnicas (JSON flexible)
   specifications Json? // { "material": "Acero inoxidable", "peso": "2.5kg", "diametro": "50mm" }
 
@@ -2098,14 +2138,22 @@ model ExplodedViewComponent {
   updatedAt DateTime @updatedAt
 
   // Relations
-  inventoryItem InventoryItem?        @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
-  company       Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  creator       User                  @relation("ExplodedViewComponentCreator", fields: [createdBy], references: [id])
-  hotspots      ExplodedViewHotspot[] // Hotspots que apuntan a este componente
+  inventoryItem    InventoryItem?          @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  company          Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator          User                    @relation("ExplodedViewComponentCreator", fields: [createdBy], references: [id])
+  hotspots         ExplodedViewHotspot[]   // Hotspots que apuntan a este componente
+  maintenancePlans MaintenancePlan[]       // Planes de mantenimiento para este componente
+
+  // Jerarquía padre-hijo (auto-relación)
+  parentComponent  ExplodedViewComponent?  @relation("ComponentHierarchy", fields: [parentComponentId], references: [id], onDelete: SetNull)
+  childComponents  ExplodedViewComponent[] @relation("ComponentHierarchy") // Componentes hijos
 
   @@unique([companyId, partNumber]) // Part number único por empresa
   @@index([companyId])
   @@index([inventoryItemId])
+  @@index([parentComponentId])
+  @@index([hierarchyLevel])
+  @@index([criticality])
   @@index([isActive])
   @@map("exploded_view_components")
 }
@@ -2150,4 +2198,106 @@ model ExplodedViewHotspot {
   @@index([componentId])
   @@index([isActive])
   @@map("exploded_view_hotspots")
+}
+
+// ============================================================================
+// MAINTENANCE PLANS (ISO 14224)
+// ============================================================================
+// Plan de mantenimiento para componentes específicos
+// Permite definir mantenimiento preventivo/predictivo por componente
+
+model MaintenancePlan {
+  id          String  @id @default(cuid())
+  name        String // "Cambio de Rodamiento Principal"
+  description String? // Descripción detallada del plan
+
+  // Tipo de mantenimiento
+  type MaintenanceType // PREVENTIVE, PREDICTIVE, CORRECTIVE, ROUTINE
+
+  // Frecuencia de ejecución
+  frequencyValue Int          // Cada cuánto (ej: 100, 30, 6)
+  frequencyUnit  FrequencyUnit // HOURS, DAYS, WEEKS, MONTHS, YEARS
+
+  // Programación
+  lastPerformedAt    DateTime? // Última vez que se ejecutó
+  nextScheduledAt    DateTime? // Próxima fecha programada
+  currentMeterReading Float @default(0) // Lectura actual del medidor (para HOURS)
+
+  // Estimaciones
+  estimatedDuration Int? // Duración estimada en minutos
+  estimatedCost     Float? // Costo estimado del mantenimiento
+
+  // Herramientas y materiales necesarios
+  requiredTools     String[] @default([]) // ["Llave inglesa 12mm", "Torquímetro"]
+  requiredMaterials String[] @default([]) // ["Grasa especial", "Rodamiento SKF-123"]
+
+  // Instrucciones de seguridad
+  safetyNotes String? // Notas de seguridad específicas
+
+  // Estado
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  // Audit
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  componentId String
+  component   ExplodedViewComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  // Tareas del plan
+  tasks MaintenanceTask[]
+
+  // Estadísticas
+  totalExecutions Int @default(0) // Total de veces ejecutado
+  totalFailures   Int @default(0) // Total de fallas encontradas
+
+  @@index([componentId])
+  @@index([type])
+  @@index([nextScheduledAt])
+  @@index([isActive])
+  @@map("maintenance_plans")
+}
+
+// Tarea específica dentro de un plan de mantenimiento
+// Representa un paso individual del procedimiento de mantenimiento
+model MaintenanceTask {
+  id          String  @id @default(cuid())
+  title       String // "Inspeccionar desgaste del rodamiento"
+  description String? // Descripción detallada de la tarea
+  instructions String? // Instrucciones paso a paso
+
+  // Orden de ejecución
+  order Int @default(0) // Secuencia de la tarea (1, 2, 3...)
+
+  // Estimación
+  estimatedDuration Int? // Duración estimada en minutos
+
+  // Tipo de verificación
+  requiresPhotoBefore Boolean @default(false) // Requiere foto antes
+  requiresPhotoAfter  Boolean @default(false) // Requiere foto después
+  requiresMeasurement Boolean @default(false) // Requiere medición
+  measurementUnit     String? // Unidad de medición (mm, psi, etc.)
+
+  // Criterios de aceptación
+  acceptanceCriteria String? // Criterios para considerar la tarea completada
+
+  // Estado
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  planId String
+  plan   MaintenancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([order])
+  @@index([isActive])
+  @@map("maintenance_tasks")
 }

@@ -249,8 +249,6 @@ export function HotspotEditor({
     }
   }
 
-  const scaledWidth = imageWidth * scale
-  const scaledHeight = imageHeight * scale
   const selectedHotspot = selectedHotspotIndex !== null ? hotspots[selectedHotspotIndex] : null
   const selectedComponent = components.find(c => c.id === selectedHotspot?.componentId)
 
@@ -281,9 +279,8 @@ export function HotspotEditor({
                 alt="Exploded view"
                 width={imageWidth}
                 height={imageHeight}
-                className="w-full h-full object-contain pointer-events-none"
+                className="w-full h-full object-contain pointer-events-none select-none"
                 onLoad={() => setImageLoaded(true)}
-                draggable={false}
               />
 
               {/* Hotspots */}

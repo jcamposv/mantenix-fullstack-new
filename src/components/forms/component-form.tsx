@@ -15,11 +15,19 @@ import { Form } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { componentFormSchema, type ComponentFormData } from "@/schemas/exploded-view-form"
 import { ComponentBasicInfo } from "./exploded-view/component-basic-info"
+import { ComponentTechnicalInfo } from "./exploded-view/component-technical-info"
 
 interface InventoryItem {
   id: string
   name: string
   code: string
+}
+
+interface ExplodedViewComponent {
+  id: string
+  name: string
+  partNumber: string | null
+  hierarchyLevel: number
 }
 
 interface ComponentFormProps {
@@ -37,6 +45,8 @@ export function ComponentForm({
 }: ComponentFormProps) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [loadingInventory, setLoadingInventory] = useState(true)
+  const [components, setComponents] = useState<ExplodedViewComponent[]>([])
+  const [loadingComponents, setLoadingComponents] = useState(true)
 
   const form = useForm<ComponentFormData>({
     resolver: zodResolver(componentFormSchema),
@@ -45,6 +55,12 @@ export function ComponentForm({
       partNumber: initialData?.partNumber || null,
       description: initialData?.description || null,
       manufacturer: initialData?.manufacturer || null,
+      parentComponentId: initialData?.parentComponentId || null,
+      hierarchyLevel: initialData?.hierarchyLevel || 4,
+      criticality: initialData?.criticality || null,
+      lifeExpectancy: initialData?.lifeExpectancy || null,
+      mtbf: initialData?.mtbf || null,
+      mttr: initialData?.mttr || null,
       specifications: initialData?.specifications || null,
       manualUrl: initialData?.manualUrl || null,
       installationUrl: initialData?.installationUrl || null,
@@ -55,6 +71,7 @@ export function ComponentForm({
 
   useEffect(() => {
     fetchInventoryItems()
+    fetchComponents()
   }, [])
 
   const fetchInventoryItems = async () => {
@@ -72,6 +89,21 @@ export function ComponentForm({
     }
   }
 
+  const fetchComponents = async () => {
+    try {
+      setLoadingComponents(true)
+      const response = await fetch("/api/exploded-view-components?limit=1000")
+      if (response.ok) {
+        const data = await response.json()
+        setComponents(data.items || [])
+      }
+    } catch (error) {
+      console.error("Error fetching components:", error)
+    } finally {
+      setLoadingComponents(false)
+    }
+  }
+
   const handleSubmit = (data: ComponentFormData) => {
     // Clean up null/empty values before submitting
     const cleanedData = {
@@ -79,6 +111,11 @@ export function ComponentForm({
       partNumber: data.partNumber || undefined,
       description: data.description || undefined,
       manufacturer: data.manufacturer || undefined,
+      parentComponentId: data.parentComponentId || undefined,
+      criticality: data.criticality || undefined,
+      lifeExpectancy: data.lifeExpectancy || undefined,
+      mtbf: data.mtbf || undefined,
+      mttr: data.mttr || undefined,
       manualUrl: data.manualUrl || undefined,
       installationUrl: data.installationUrl || undefined,
       imageUrl: data.imageUrl || undefined,
@@ -96,11 +133,17 @@ export function ComponentForm({
               {initialData ? "Editar Componente" : "Nuevo Componente"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <ComponentBasicInfo
               form={form}
               inventoryItems={inventoryItems}
               loadingInventory={loadingInventory}
+            />
+
+            <ComponentTechnicalInfo
+              form={form}
+              components={components}
+              loadingComponents={loadingComponents}
             />
           </CardContent>
         </Card>

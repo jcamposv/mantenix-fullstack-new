@@ -187,6 +187,53 @@ export const createComponentSchema = z.object({
     .nullable()
     .optional(),
 
+  // Jerarquía ISO 14224
+  parentComponentId: z
+    .string()
+    .cuid('ID de componente padre inválido')
+    .nullable()
+    .optional(),
+
+  hierarchyLevel: z
+    .number()
+    .int('El nivel jerárquico debe ser un número entero')
+    .min(4, 'El nivel mínimo es 4 (Sistema)')
+    .max(6, 'El nivel máximo es 6 (Componente)')
+    .default(4),
+
+  // Criticidad
+  criticality: z
+    .enum(['A', 'B', 'C'], {
+      message: 'Criticidad inválida (A, B, o C)',
+    })
+    .nullable()
+    .optional(),
+
+  // Datos técnicos
+  lifeExpectancy: z
+    .number()
+    .int('La vida útil debe ser un número entero')
+    .min(1, 'La vida útil debe ser mayor a 0')
+    .max(1000000, 'La vida útil es demasiado grande')
+    .nullable()
+    .optional(),
+
+  mtbf: z
+    .number()
+    .int('El MTBF debe ser un número entero')
+    .min(1, 'El MTBF debe ser mayor a 0')
+    .max(1000000, 'El MTBF es demasiado grande')
+    .nullable()
+    .optional(),
+
+  mttr: z
+    .number()
+    .int('El MTTR debe ser un número entero')
+    .min(1, 'El MTTR debe ser mayor a 0')
+    .max(10000, 'El MTTR es demasiado grande')
+    .nullable()
+    .optional(),
+
   specifications: z
     .record(z.string(), z.unknown())
     .nullable()
@@ -244,6 +291,53 @@ export const updateComponentSchema = z.object({
   manufacturer: z
     .string()
     .max(200, 'El fabricante no puede exceder 200 caracteres')
+    .nullable()
+    .optional(),
+
+  // Jerarquía ISO 14224
+  parentComponentId: z
+    .string()
+    .cuid('ID de componente padre inválido')
+    .nullable()
+    .optional(),
+
+  hierarchyLevel: z
+    .number()
+    .int('El nivel jerárquico debe ser un número entero')
+    .min(4, 'El nivel mínimo es 4 (Sistema)')
+    .max(6, 'El nivel máximo es 6 (Componente)')
+    .optional(),
+
+  // Criticidad
+  criticality: z
+    .enum(['A', 'B', 'C'], {
+      message: 'Criticidad inválida (A, B, o C)',
+    })
+    .nullable()
+    .optional(),
+
+  // Datos técnicos
+  lifeExpectancy: z
+    .number()
+    .int('La vida útil debe ser un número entero')
+    .min(1, 'La vida útil debe ser mayor a 0')
+    .max(1000000, 'La vida útil es demasiado grande')
+    .nullable()
+    .optional(),
+
+  mtbf: z
+    .number()
+    .int('El MTBF debe ser un número entero')
+    .min(1, 'El MTBF debe ser mayor a 0')
+    .max(1000000, 'El MTBF es demasiado grande')
+    .nullable()
+    .optional(),
+
+  mttr: z
+    .number()
+    .int('El MTTR debe ser un número entero')
+    .min(1, 'El MTTR debe ser mayor a 0')
+    .max(10000, 'El MTTR es demasiado grande')
     .nullable()
     .optional(),
 

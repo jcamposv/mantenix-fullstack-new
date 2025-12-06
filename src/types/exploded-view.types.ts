@@ -238,7 +238,7 @@ export interface ExplodedViewHotspotWithComponent extends ExplodedViewHotspot {
  */
 export interface CreateExplodedViewData {
   name: string;
-  description?: string;
+  description?: string | null;
   imageUrl: string;
   imageWidth: number;
   imageHeight: number;
@@ -264,14 +264,20 @@ export interface UpdateExplodedViewData {
  */
 export interface CreateComponentData {
   name: string;
-  partNumber?: string;
-  description?: string;
-  manufacturer?: string;
-  specifications?: Record<string, unknown>;
-  manualUrl?: string;
-  installationUrl?: string;
-  imageUrl?: string;
-  inventoryItemId?: string;
+  partNumber?: string | null;
+  description?: string | null;
+  manufacturer?: string | null;
+  parentComponentId?: string | null;
+  hierarchyLevel?: number;
+  criticality?: 'A' | 'B' | 'C' | null;
+  lifeExpectancy?: number | null;
+  mtbf?: number | null;
+  mttr?: number | null;
+  specifications?: Record<string, unknown> | null;
+  manualUrl?: string | null;
+  installationUrl?: string | null;
+  imageUrl?: string | null;
+  inventoryItemId?: string | null;
 }
 
 /**
