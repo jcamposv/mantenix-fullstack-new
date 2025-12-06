@@ -13,6 +13,7 @@ export const createAssetSchema = z.object({
   serialNumber: z.string().optional().nullable(),
   purchaseDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null),
   estimatedLifespan: z.number().positive("La vida útil debe ser un número positivo").optional().nullable(),
+  operatingHours: z.number().int().min(0, "Las horas de operación deben ser mayor o igual a 0").optional().nullable(),
   category: z.string().optional().nullable(),
   customFields: z.record(z.string(), z.unknown()).optional().nullable()
 })
@@ -30,6 +31,7 @@ export const updateAssetSchema = z.object({
   serialNumber: z.string().optional().nullable(),
   purchaseDate: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null),
   estimatedLifespan: z.number().positive("La vida útil debe ser un número positivo").optional().nullable(),
+  operatingHours: z.number().int().min(0, "Las horas de operación deben ser mayor o igual a 0").optional().nullable(),
   category: z.string().optional().nullable(),
   customFields: z.record(z.string(), z.unknown()).optional().nullable()
 })
