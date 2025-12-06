@@ -6,6 +6,7 @@ import { StatsCard } from "@/components/inventory/dashboard/stats-card"
 import { LowStockAlerts } from "@/components/inventory/dashboard/low-stock-alerts"
 import { RecentActivity } from "@/components/inventory/dashboard/recent-activity"
 import { TopRequestedItems } from "@/components/inventory/dashboard/top-requested-items"
+import { MTBFAlerts } from "@/components/maintenance/mtbf-alerts"
 import type { InventoryDashboardMetrics } from "@/types/inventory.types"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -131,6 +132,9 @@ export default function InventoryDashboardPage() {
           variant="default"
         />
       </div>
+
+      {/* MTBF Maintenance Alerts */}
+      <MTBFAlerts limit={5} criticalOnly={true} autoRefresh={true} />
 
       {/* Charts and Alerts */}
       <div className="grid gap-4 md:grid-cols-2">

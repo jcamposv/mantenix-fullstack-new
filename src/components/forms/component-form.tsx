@@ -77,7 +77,7 @@ export function ComponentForm({
   const fetchInventoryItems = async () => {
     try {
       setLoadingInventory(true)
-      const response = await fetch("/api/inventory?limit=1000")
+      const response = await fetch("/api/admin/inventory/items?limit=1000")
       if (response.ok) {
         const data = await response.json()
         setInventoryItems(data.items || [])
