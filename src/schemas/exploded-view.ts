@@ -76,6 +76,7 @@ export const createExplodedViewSchema = z.object({
   description: z
     .string()
     .max(500, 'La descripción no puede exceder 500 caracteres')
+    .nullable()
     .optional(),
 
   imageUrl: z
@@ -103,7 +104,7 @@ export const createExplodedViewSchema = z.object({
 
   assetId: z
     .string()
-    .uuid('ID de activo inválido')
+    .cuid('ID de activo inválido')
     .min(1, 'El ID del activo es requerido'),
 });
 
@@ -171,40 +172,48 @@ export const createComponentSchema = z.object({
   partNumber: z
     .string()
     .max(100, 'El número de parte no puede exceder 100 caracteres')
+    .nullable()
     .optional(),
 
   description: z
     .string()
     .max(1000, 'La descripción no puede exceder 1000 caracteres')
+    .nullable()
     .optional(),
 
   manufacturer: z
     .string()
     .max(200, 'El fabricante no puede exceder 200 caracteres')
+    .nullable()
     .optional(),
 
   specifications: z
     .record(z.string(), z.unknown())
+    .nullable()
     .optional(),
 
   manualUrl: z
     .string()
     .url('Debe ser una URL válida')
+    .nullable()
     .optional(),
 
   installationUrl: z
     .string()
     .url('Debe ser una URL válida')
+    .nullable()
     .optional(),
 
   imageUrl: z
     .string()
     .url('Debe ser una URL válida')
+    .nullable()
     .optional(),
 
   inventoryItemId: z
     .string()
-    .uuid('ID de item de inventario inválido')
+    .cuid('ID de item de inventario inválido')
+    .nullable()
     .optional(),
 });
 
@@ -263,7 +272,7 @@ export const updateComponentSchema = z.object({
 
   inventoryItemId: z
     .string()
-    .uuid('ID de item de inventario inválido')
+    .cuid('ID de item de inventario inválido')
     .nullable()
     .optional(),
 
@@ -314,12 +323,12 @@ export const createHotspotSchema = z.object({
 
   viewId: z
     .string()
-    .uuid('ID de vista inválido')
+    .cuid('ID de vista inválido')
     .min(1, 'El ID de la vista es requerido'),
 
   componentId: z
     .string()
-    .uuid('ID de componente inválido')
+    .cuid('ID de componente inválido')
     .min(1, 'El ID del componente es requerido'),
 });
 
@@ -368,7 +377,7 @@ export const updateHotspotSchema = z.object({
 
   componentId: z
     .string()
-    .uuid('ID de componente inválido')
+    .cuid('ID de componente inválido')
     .optional(),
 
   isActive: z.boolean().optional(),
@@ -384,7 +393,7 @@ export type UpdateHotspotInput = z.infer<typeof updateHotspotSchema>;
  * Schema para filtros de vistas explosionadas
  */
 export const explodedViewFiltersSchema = z.object({
-  assetId: z.string().uuid('ID de activo inválido').optional(),
+  assetId: z.string().cuid('ID de activo inválido').optional(),
   search: z.string().max(100).optional(),
   isActive: z.boolean().optional(),
   page: z.number().int().min(1).default(1),
@@ -455,7 +464,7 @@ export type BulkImportComponentsInput = z.infer<typeof bulkImportComponentsSchem
  * Schema para duplicar una vista explosionada
  */
 export const duplicateExplodedViewSchema = z.object({
-  sourceViewId: z.string().uuid('ID de vista origen inválido'),
+  sourceViewId: z.string().cuid('ID de vista origen inválido'),
   newName: z.string().min(1, 'El nuevo nombre es requerido').max(100),
   includeHotspots: z.boolean().default(true),
 });

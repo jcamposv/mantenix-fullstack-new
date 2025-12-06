@@ -12,7 +12,7 @@ import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Edit, Loader2, Image as ImageIcon, Settings } from "lucide-react"
+import { ArrowLeft, Edit, Loader2, Image as ImageIcon, Settings, Package } from "lucide-react"
 import { toast } from "sonner"
 import type { AssetExplodedViewWithRelations } from "@/types/exploded-view.types"
 import { ExplodedViewViewer } from "@/components/exploded-views/exploded-view-viewer"
@@ -80,6 +80,13 @@ export default function ExplodedViewDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/admin/exploded-view-components')}
+          >
+            <Package className="mr-2 h-4 w-4" />
+            Gestionar Componentes
+          </Button>
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/exploded-views/${id}/hotspots`)}

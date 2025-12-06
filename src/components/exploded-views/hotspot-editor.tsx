@@ -8,7 +8,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Image from 'next/image'
+import { SignedImage } from '@/components/signed-image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -28,7 +28,8 @@ import {
   X,
   Move,
   MapPinned,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ExplodedViewComponentWithRelations } from '@/types/exploded-view.types'
@@ -102,10 +103,12 @@ export function HotspotEditor({
 
   const fetchComponents = async () => {
     try {
+      setLoadingComponents(true)
       const response = await fetch('/api/exploded-view-components?limit=1000&isActive=true')
       if (response.ok) {
         const data = await response.json()
         setComponents(data.items || [])
+        toast.success(`${data.items?.length || 0} componentes cargados`)
       }
     } catch (error) {
       console.error('Error fetching components:', error)
@@ -212,12 +215,19 @@ export function HotspotEditor({
 
       // Create new hotspots
       const createPromises = hotspots.map(hotspot =>
-        fetch('/api/exploded-views/hotspots', {
+        fetch(`/api/exploded-views/${viewId}/hotspots`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            viewId,
-            ...hotspot,
+            componentId: hotspot.componentId,
+            label: hotspot.customLabel || `Hotspot ${hotspot.order}`,
+            coordinates: {
+              x: hotspot.x,
+              y: hotspot.y,
+              radius: 12, // Default radius for circle hotspots
+            },
+            type: 'circle',
+            order: hotspot.order,
           }),
         })
       )
@@ -258,26 +268,22 @@ export function HotspotEditor({
           <CardContent>
             <div
               ref={containerRef}
-              className="relative border rounded-lg overflow-hidden bg-muted/20 cursor-crosshair"
-              style={{
-                width: `${scaledWidth}px`,
-                height: `${scaledHeight}px`,
-              }}
+              className="relative border rounded-lg overflow-hidden bg-muted/20 cursor-crosshair w-full"
+              style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
               onClick={handleImageClick}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
               {/* Image */}
-              <Image
+              <SignedImage
                 src={imageUrl}
                 alt="Exploded view"
                 width={imageWidth}
                 height={imageHeight}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                className="w-full h-full object-contain pointer-events-none"
                 onLoad={() => setImageLoaded(true)}
                 draggable={false}
-                unoptimized
               />
 
               {/* Hotspots */}
@@ -412,7 +418,19 @@ export function HotspotEditor({
             <CardContent className="space-y-4">
               {/* Component Selection */}
               <div className="space-y-2">
-                <Label>Componente *</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Componente *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchComponents}
+                    disabled={loadingComponents}
+                    className="h-6 px-2"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${loadingComponents ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
                 <Select
                   value={selectedHotspot.componentId}
                   onValueChange={(value) =>

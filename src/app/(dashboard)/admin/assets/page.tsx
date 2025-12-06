@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { Package, MapPin, Building2, Calendar, RefreshCw, History, List } from "lucide-react"
+import { Package, MapPin, Building2, Calendar, RefreshCw, History, List, Boxes } from "lucide-react"
 import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
@@ -304,6 +304,11 @@ export default function AssetsPage() {
       cell: ({ row }) => {
         const asset = row.original
         const actions = [
+          {
+            label: "Vista Explosionada",
+            icon: Boxes,
+            onClick: () => router.push(`/admin/exploded-views?assetId=${asset.id}`),
+          },
           {
             label: "Ver Historial Rápido",
             icon: History,

@@ -10,7 +10,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, Package } from "lucide-react"
 import { toast } from "sonner"
 import { HotspotEditor } from "@/components/exploded-views/hotspot-editor"
 import type { AssetExplodedViewWithRelations } from "@/types/exploded-view.types"
@@ -64,16 +64,25 @@ export default function HotspotsEditorPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Editar Hotspots</h1>
-          <p className="text-muted-foreground mt-2">
-            {view.name} - Configura los puntos interactivos
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Editar Hotspots</h1>
+            <p className="text-muted-foreground mt-2">
+              {view.name} - Configura los puntos interactivos
+            </p>
+          </div>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => window.open('/admin/exploded-view-components/new', '_blank')}
+        >
+          <Package className="mr-2 h-4 w-4" />
+          Crear Componente
+        </Button>
       </div>
 
       {/* Editor */}

@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
 import { explodedViewFormSchema } from "@/schemas/exploded-view-form"
+import { AssetImageUpload } from "../asset/asset-image-upload"
+import { useSession } from "@/lib/auth-client"
 
 interface Asset {
   id: string
@@ -28,6 +30,10 @@ interface ExplodedViewBasicInfoProps {
 }
 
 export function ExplodedViewBasicInfo({ form, assets, loadingAssets }: ExplodedViewBasicInfoProps) {
+  const { data: session } = useSession()
+  const clientCompanyId = (session?.user as { clientCompanyId?: string })?.clientCompanyId || "temp"
+  const assetId = form.watch("assetId") || "new"
+
   return (
     <div className="space-y-4">
       <FormField
@@ -111,16 +117,14 @@ export function ExplodedViewBasicInfo({ form, assets, loadingAssets }: ExplodedV
         name="imageUrl"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>URL de la Imagen</FormLabel>
             <FormControl>
-              <Input
-                placeholder="https://ejemplo.com/imagen.jpg"
-                {...field}
+              <AssetImageUpload
+                value={field.value ? [field.value] : []}
+                onChange={(images) => field.onChange(images[0] || "")}
+                clientCompanyId={clientCompanyId}
+                assetId={assetId}
               />
             </FormControl>
-            <FormDescription>
-              URL de la imagen de la vista explosionada (debe estar subida previamente)
-            </FormDescription>
             <FormMessage />
           </FormItem>
         )}

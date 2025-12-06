@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { UseFormReturn } from "react-hook-form"
 import type { ComponentFormData } from "@/schemas/exploded-view-form"
+import { AssetImageUpload } from "../asset/asset-image-upload"
+import { useSession } from "@/lib/auth-client"
 
 interface InventoryItem {
   id: string
@@ -28,6 +30,9 @@ export function ComponentBasicInfo({
   inventoryItems,
   loadingInventory,
 }: ComponentBasicInfoProps) {
+  const { data: session } = useSession()
+  const clientCompanyId = (session?.user as { clientCompanyId?: string })?.clientCompanyId || "temp"
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -108,8 +113,11 @@ export function ComponentBasicInfo({
             <FormItem>
               <FormLabel>Vincular con Inventario (Opcional)</FormLabel>
               <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value || undefined}
+                onValueChange={(value) => {
+                  // Convert "none" to null for the form
+                  field.onChange(value === "none" ? null : value)
+                }}
+                value={field.value || "none"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -117,7 +125,7 @@ export function ComponentBasicInfo({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Sin vincular</SelectItem>
+                  <SelectItem value="none">Sin vincular</SelectItem>
                   {loadingInventory ? (
                     <SelectItem value="loading" disabled>
                       Cargando items...
@@ -143,7 +151,7 @@ export function ComponentBasicInfo({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="manualUrl"
@@ -152,11 +160,14 @@ export function ComponentBasicInfo({
               <FormLabel>URL Manual (Opcional)</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="https://..."
+                  placeholder="https://ejemplo.com/manual.pdf"
                   {...field}
                   value={field.value || ""}
                 />
               </FormControl>
+              <FormDescription>
+                URL al manual del componente
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -167,37 +178,40 @@ export function ComponentBasicInfo({
           name="installationUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>URL Instalación (Opcional)</FormLabel>
+              <FormLabel>URL Guía de Instalación (Opcional)</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="https://..."
+                  placeholder="https://ejemplo.com/instalacion.pdf"
                   {...field}
                   value={field.value || ""}
                 />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL Imagen (Opcional)</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="https://..."
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
+              <FormDescription>
+                URL a la guía de instalación
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
+
+      <FormField
+        control={form.control}
+        name="imageUrl"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <AssetImageUpload
+                value={field.value ? [field.value] : []}
+                onChange={(images) => field.onChange(images[0] || null)}
+                clientCompanyId={clientCompanyId}
+                assetId="components"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   )
 }

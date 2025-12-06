@@ -323,7 +323,7 @@ export class ExplodedViewService {
     data: CreateComponentData,
     session: AuthenticatedSession
   ): Promise<ExplodedViewComponentWithRelations> {
-    await PermissionGuard.require(session, 'inventory.create')
+    await PermissionGuard.require(session, 'assets.create')
 
     const companyId = await getCurrentCompanyId(session)
     if (!companyId) {

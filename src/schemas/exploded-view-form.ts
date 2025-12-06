@@ -41,7 +41,7 @@ export const componentFormSchema = z.object({
   manualUrl: z.string().url("Debe ser una URL válida").optional().nullable(),
   installationUrl: z.string().url("Debe ser una URL válida").optional().nullable(),
   imageUrl: z.string().url("Debe ser una URL válida").optional().nullable(),
-  inventoryItemId: z.string().uuid().optional().nullable(),
+  inventoryItemId: z.string().cuid().optional().nullable(),
   isActive: z.boolean().optional(),
 })
 

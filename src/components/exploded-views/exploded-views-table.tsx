@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { ArrowUpDown, Eye, Settings, Trash2 } from 'lucide-react'
+import { ArrowUpDown, Eye, Settings, Trash2, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useTableData } from '@/components/hooks/use-table-data'
@@ -194,6 +194,11 @@ export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
             <Button asChild variant="ghost" size="sm">
               <Link href={`/admin/exploded-views/${row.original.id}`}>
                 <Eye className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/admin/exploded-views/${row.original.id}/hotspots`}>
+                <MapPin className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">

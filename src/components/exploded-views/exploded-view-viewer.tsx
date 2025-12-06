@@ -7,8 +7,8 @@
 
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import Image from 'next/image'
+import { useState, useRef } from 'react'
+import { SignedImage } from '@/components/signed-image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,27 +36,6 @@ export function ExplodedViewViewer({ view, className = '' }: ExplodedViewViewerP
   const [hoveredHotspot, setHoveredHotspot] = useState<string | null>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
-
-  // Calculate scale based on container size
-  useEffect(() => {
-    const updateScale = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.clientWidth
-        const imageWidth = view.imageWidth
-        // Scale down if image is larger than container
-        if (imageWidth > containerWidth) {
-          setScale(containerWidth / imageWidth)
-        } else {
-          setScale(1)
-        }
-      }
-    }
-
-    updateScale()
-    window.addEventListener('resize', updateScale)
-    return () => window.removeEventListener('resize', updateScale)
-  }, [view.imageWidth])
 
   const handleHotspotClick = (hotspot: ExplodedViewHotspotWithComponent) => {
     setSelectedHotspot(hotspot)
@@ -74,30 +53,28 @@ export function ExplodedViewViewer({ view, className = '' }: ExplodedViewViewerP
     return { x: 0, y: 0 }
   }
 
-  const scaledWidth = view.imageWidth * scale
-  const scaledHeight = view.imageHeight * scale
-
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Viewer Container */}
-      <div ref={containerRef} className="relative border rounded-lg overflow-hidden bg-muted/20">
-        {/* Image */}
-        <div
-          className="relative"
-          style={{
-            width: `${scaledWidth}px`,
-            height: `${scaledHeight}px`,
-          }}
-        >
-          <Image
-            src={view.imageUrl}
-            alt={view.name}
-            width={view.imageWidth}
-            height={view.imageHeight}
-            className="absolute inset-0 w-full h-full object-contain"
-            onLoad={() => setImageLoaded(true)}
-            unoptimized
-          />
+      <Card className="w-full shadow-none">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            Vista Interactiva
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div ref={containerRef} className="relative border rounded-lg overflow-hidden bg-muted/20">
+            {/* Image */}
+            <div className="relative w-full" style={{ aspectRatio: `${view.imageWidth} / ${view.imageHeight}` }}>
+              <SignedImage
+                src={view.imageUrl}
+                alt={view.name}
+                width={view.imageWidth}
+                height={view.imageHeight}
+                className="w-full h-full object-contain"
+                onLoad={() => setImageLoaded(true)}
+              />
 
           {/* SVG Overlay with Hotspots */}
           {imageLoaded && (
@@ -177,15 +154,17 @@ export function ExplodedViewViewer({ view, className = '' }: ExplodedViewViewerP
               })}
             </svg>
           )}
-        </div>
 
-        {/* Loading State */}
-        {!imageLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-            <div className="text-muted-foreground">Cargando vista...</div>
+          {/* Loading State */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+              <div className="text-muted-foreground">Cargando vista...</div>
+            </div>
+          )}
           </div>
-        )}
-      </div>
+        </div>
+        </CardContent>
+      </Card>
 
       {/* Hotspot Legend */}
       {view.hotspots && view.hotspots.length > 0 && (

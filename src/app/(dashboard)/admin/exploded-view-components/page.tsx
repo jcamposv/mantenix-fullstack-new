@@ -15,10 +15,10 @@ import { ComponentsTable } from "@/components/exploded-views/components-table"
 import { usePermissions } from "@/hooks/usePermissions"
 
 export default function ExplodedViewComponentsPage() {
-  const { hasPermission } = usePermissions()
+  const { hasPermission, loading } = usePermissions()
 
-  // Check permissions (using inventory permissions since components can be linked to inventory)
-  const canCreate = hasPermission('inventory.create')
+  // Check permissions - components are created by anyone with asset or inventory permissions
+  const canCreate = hasPermission('assets.create') || hasPermission('inventory.create_item')
 
   return (
     <div className="space-y-6">
@@ -29,7 +29,7 @@ export default function ExplodedViewComponentsPage() {
             Gestiona los componentes reutilizables para vistas explosionadas
           </p>
         </div>
-        {canCreate && (
+        {!loading && canCreate && (
           <Button asChild>
             <Link href="/admin/exploded-view-components/new">
               <Plus className="mr-2 h-4 w-4" />

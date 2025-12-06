@@ -7,6 +7,8 @@ import { AssetForm } from "@/components/forms/asset-form"
 import { toast } from "sonner"
 import { AssetFormData } from "@/schemas/asset"
 import { FormSkeleton } from "@/components/skeletons"
+import { Button } from "@/components/ui/button"
+import { Boxes } from "lucide-react"
 
 interface EditAssetPageProps {
   params: Promise<{
@@ -18,6 +20,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
   const [loading, setLoading] = useState(false)
   const [initialData, setInitialData] = useState<Partial<AssetFormData> | null>(null)
   const [fetchLoading, setFetchLoading] = useState(true)
+  const [assetId, setAssetId] = useState<string>("")
   const router = useRouter()
   const { data: session } = useSession()
 
@@ -32,6 +35,7 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
     try {
       setFetchLoading(true)
       const { id } = await params
+      setAssetId(id)
       const response = await fetch(`/api/admin/assets/${id}`)
       
       if (response.ok) {
@@ -119,6 +123,15 @@ export default function EditAssetPage({ params }: EditAssetPageProps) {
 
   return (
     <div className="container mx-auto py-0">
+      <div className="mb-6">
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/admin/exploded-views?assetId=${assetId}`)}
+        >
+          <Boxes className="mr-2 h-4 w-4" />
+          Vista Explosionada
+        </Button>
+      </div>
       <AssetForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

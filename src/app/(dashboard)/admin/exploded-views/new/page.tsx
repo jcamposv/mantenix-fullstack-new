@@ -7,13 +7,15 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ExplodedViewForm } from "@/components/forms/exploded-view-form"
 import type { ExplodedViewFormData } from "@/schemas/exploded-view-form"
 
 export default function NewExplodedViewPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const assetId = searchParams.get('assetId')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (data: ExplodedViewFormData) => {
@@ -63,6 +65,7 @@ export default function NewExplodedViewPage() {
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         loading={loading}
+        initialData={assetId ? { assetId } : undefined}
       />
     </div>
   )
