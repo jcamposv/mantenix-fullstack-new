@@ -133,6 +133,16 @@ export interface ExplodedViewComponent {
   description: string | null;
   manufacturer: string | null;
 
+  // Jerarquía ISO 14224
+  parentComponentId: string | null;
+  hierarchyLevel: number; // 4 = Sistema, 5 = Subsistema, 6 = Componente
+  criticality: 'A' | 'B' | 'C' | null; // A = Crítico, B = Importante, C = Menor
+
+  // Datos técnicos de mantenimiento
+  lifeExpectancy: number | null; // Horas de vida útil esperada
+  mtbf: number | null; // Mean Time Between Failures (horas)
+  mttr: number | null; // Mean Time To Repair (horas)
+
   // Technical specs (stored as JSON)
   specifications: Record<string, unknown> | null;
 
@@ -181,6 +191,14 @@ export interface ExplodedViewComponentWithRelations extends ExplodedViewComponen
     name: string;
     email: string;
   };
+  // Jerarquía padre-hijo
+  parentComponent?: ExplodedViewComponent | null;
+  childComponents?: ExplodedViewComponent[];
+  maintenancePlans?: Array<{
+    id: string;
+    name: string;
+    type: string;
+  }>;
   hotspots?: Array<{
     id: string;
     label: string;
@@ -194,6 +212,8 @@ export interface ExplodedViewComponentWithRelations extends ExplodedViewComponen
   }>;
   _count?: {
     hotspots: number;
+    childComponents?: number;
+    maintenancePlans?: number;
   };
 }
 
@@ -288,6 +308,12 @@ export interface UpdateComponentData {
   partNumber?: string | null;
   description?: string | null;
   manufacturer?: string | null;
+  parentComponentId?: string | null;
+  hierarchyLevel?: number;
+  criticality?: 'A' | 'B' | 'C' | null;
+  lifeExpectancy?: number | null;
+  mtbf?: number | null;
+  mttr?: number | null;
   specifications?: Record<string, unknown> | null;
   manualUrl?: string | null;
   installationUrl?: string | null;

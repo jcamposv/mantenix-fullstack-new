@@ -49,9 +49,44 @@ export class ExplodedViewComponentRepository {
           email: true,
         },
       },
+      // Jerarquía padre-hijo
+      parentComponent: {
+        select: {
+          id: true,
+          name: true,
+          partNumber: true,
+          hierarchyLevel: true,
+          criticality: true,
+        },
+      },
+      childComponents: {
+        select: {
+          id: true,
+          name: true,
+          partNumber: true,
+          hierarchyLevel: true,
+          criticality: true,
+        },
+        where: {
+          isActive: true,
+        },
+      },
+      // Planes de mantenimiento
+      maintenancePlans: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+        where: {
+          isActive: true,
+        },
+      },
       _count: {
         select: {
           hotspots: true,
+          childComponents: true,
+          maintenancePlans: true,
         },
       },
     }

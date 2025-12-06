@@ -346,6 +346,16 @@ export class ExplodedViewService {
       partNumber: data.partNumber || null,
       description: data.description || null,
       manufacturer: data.manufacturer || null,
+
+      // Jerarquía ISO 14224
+      hierarchyLevel: data.hierarchyLevel || 4,
+      criticality: data.criticality || null,
+
+      // Datos técnicos
+      lifeExpectancy: data.lifeExpectancy || null,
+      mtbf: data.mtbf || null,
+      mttr: data.mttr || null,
+
       specifications: data.specifications !== undefined
         ? (data.specifications === null
             ? Prisma.JsonNull
@@ -356,6 +366,10 @@ export class ExplodedViewService {
       imageUrl: data.imageUrl || null,
       company: { connect: { id: companyId } },
       creator: { connect: { id: session.user.id } },
+    }
+
+    if (data.parentComponentId) {
+      createData.parentComponent = { connect: { id: data.parentComponentId } }
     }
 
     if (data.inventoryItemId) {
@@ -373,7 +387,7 @@ export class ExplodedViewService {
     data: UpdateComponentData,
     session: AuthenticatedSession
   ): Promise<ExplodedViewComponentWithRelations> {
-    await PermissionGuard.require(session, 'inventory.edit')
+    await PermissionGuard.require(session, 'assets.edit')
 
     // Verify access
     const component = await this.getComponentById(componentId, session)
@@ -397,6 +411,21 @@ export class ExplodedViewService {
     if (data.partNumber !== undefined) updateData.partNumber = data.partNumber
     if (data.description !== undefined) updateData.description = data.description
     if (data.manufacturer !== undefined) updateData.manufacturer = data.manufacturer
+
+    // Jerarquía ISO 14224
+    if (data.parentComponentId !== undefined) {
+      updateData.parentComponent = data.parentComponentId
+        ? { connect: { id: data.parentComponentId } }
+        : { disconnect: true }
+    }
+    if (data.hierarchyLevel !== undefined) updateData.hierarchyLevel = data.hierarchyLevel
+    if (data.criticality !== undefined) updateData.criticality = data.criticality
+
+    // Datos técnicos
+    if (data.lifeExpectancy !== undefined) updateData.lifeExpectancy = data.lifeExpectancy
+    if (data.mtbf !== undefined) updateData.mtbf = data.mtbf
+    if (data.mttr !== undefined) updateData.mttr = data.mttr
+
     if (data.specifications !== undefined) {
       updateData.specifications = data.specifications as Prisma.InputJsonValue
     }
@@ -420,7 +449,7 @@ export class ExplodedViewService {
     componentId: string,
     session: AuthenticatedSession
   ): Promise<ExplodedViewComponentWithRelations> {
-    await PermissionGuard.require(session, 'inventory.delete')
+    await PermissionGuard.require(session, 'assets.delete')
 
     // Verify access
     const component = await this.getComponentById(componentId, session)

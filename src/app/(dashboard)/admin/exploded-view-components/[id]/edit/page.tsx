@@ -45,6 +45,14 @@ export default function EditComponentPage() {
           installationUrl: component.installationUrl,
           imageUrl: component.imageUrl,
           isActive: component.isActive,
+          // Jerarquía ISO 14224
+          parentComponentId: component.parentComponentId,
+          hierarchyLevel: component.hierarchyLevel,
+          criticality: component.criticality,
+          // Datos técnicos
+          lifeExpectancy: component.lifeExpectancy,
+          mtbf: component.mtbf,
+          mttr: component.mttr,
         }
         setInitialData(formData)
       } else {
