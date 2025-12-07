@@ -136,6 +136,21 @@ export class MaintenanceAlertService {
       })
     }
 
+    if (filters?.stockStatus) {
+      filteredAlerts = filteredAlerts.filter((alert) => {
+        // Determine stock status
+        let status: 'CRITICAL' | 'LOW' | 'SUFFICIENT'
+        if (alert.currentStock === 0) {
+          status = 'CRITICAL'
+        } else if (alert.currentStock < alert.reorderPoint) {
+          status = 'LOW'
+        } else {
+          status = 'SUFFICIENT'
+        }
+        return filters.stockStatus!.includes(status)
+      })
+    }
+
     // Calculate pagination
     const total = filteredAlerts.length
     const totalPages = Math.ceil(total / limit)

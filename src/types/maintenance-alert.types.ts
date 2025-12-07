@@ -90,6 +90,11 @@ export interface MTBFAlertParams {
 }
 
 /**
+ * Stock status derived from inventory levels
+ */
+export type StockStatus = 'CRITICAL' | 'LOW' | 'SUFFICIENT'
+
+/**
  * Alert filter options
  */
 export interface AlertFilters {
@@ -100,6 +105,7 @@ export interface AlertFilters {
     min?: number
     max?: number
   }
+  stockStatus?: StockStatus[]
 }
 
 /**

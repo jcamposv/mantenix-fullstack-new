@@ -20,6 +20,7 @@ import {
   Factory,
   ShieldCheck,
   Network,
+  Wrench,
 } from "lucide-react"
 
 // Navigation items for SUPER_ADMIN (SaaS administrator)
@@ -255,8 +256,30 @@ export const getFeatureNavItems = (enabledFeatures: {
   hasTimeOff?: boolean
   hasExternalClientMgmt?: boolean
   hasInternalCorporateGroup?: boolean
+  hasPredictiveMaintenance?: boolean
 }) => {
   const items = []
+
+  if (enabledFeatures.hasPredictiveMaintenance) {
+    items.push({
+      title: "Mantenimiento",
+      url: "/maintenance",
+      icon: Wrench,
+      permission: "assets.view",
+      items: [
+        {
+          title: "Alertas de Mantenimiento",
+          url: "/maintenance/alerts",
+          permission: "assets.view",
+        },
+        {
+          title: "Componentes",
+          url: "/admin/exploded-view-components",
+          permission: "assets.view",
+        },
+      ]
+    })
+  }
 
   if (enabledFeatures.hasAttendance) {
     items.push({

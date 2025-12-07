@@ -36,7 +36,8 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
     hasAttendance,
     hasTimeOff,
     hasExternalClientMgmt,
-    hasInternalCorporateGroup
+    hasInternalCorporateGroup,
+    hasPredictiveMaintenance
   } = featureFlags
 
   // Debug logs
@@ -83,11 +84,12 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
       hasAttendance,
       hasTimeOff,
       hasExternalClientMgmt,
-      hasInternalCorporateGroup
+      hasInternalCorporateGroup,
+      hasPredictiveMaintenance
     })
 
     return items
-  }, [isExternalUser, hasAttendance, hasTimeOff, hasExternalClientMgmt, hasInternalCorporateGroup])
+  }, [isExternalUser, hasAttendance, hasTimeOff, hasExternalClientMgmt, hasInternalCorporateGroup, hasPredictiveMaintenance])
 
   // Navigation items - different items based on user role
   const navItems = useMemo(() => {

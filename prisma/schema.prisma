@@ -115,6 +115,9 @@ enum FeatureModule {
   EXTERNAL_CLIENT_MANAGEMENT // Gestión de clientes externos (ClientCompany, Sites)
   INTERNAL_CORPORATE_GROUP // Grupo corporativo con inventario compartido
 
+  // Maintenance Modules
+  PREDICTIVE_MAINTENANCE // Mantenimiento predictivo basado en MTBF/ISO 14224
+
   // Platform Features (nuevos)
   API_ACCESS // Acceso a API REST
   PRIORITY_SUPPORT // Soporte prioritario

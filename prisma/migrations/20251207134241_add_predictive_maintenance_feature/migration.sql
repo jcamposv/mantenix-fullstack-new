@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "FeatureModule" ADD VALUE 'PREDICTIVE_MAINTENANCE';

@@ -19,6 +19,7 @@ import { MaintenanceAlertService } from '@/server/services/maintenance-alert.ser
 import type {
   AlertSeverity,
   AlertFilters,
+  StockStatus,
 } from '@/types/maintenance-alert.types'
 import type { ComponentCriticality } from '@prisma/client'
 
@@ -86,6 +87,12 @@ export async function GET(request: NextRequest) {
         min: minDays ? parseInt(minDays) : undefined,
         max: maxDays ? parseInt(maxDays) : undefined,
       }
+    }
+
+    // Stock status filter (can have multiple)
+    const stockStatuses = searchParams.getAll('stock_status')
+    if (stockStatuses.length > 0) {
+      filters.stockStatus = stockStatuses as StockStatus[]
     }
 
     // Get alerts with filters
