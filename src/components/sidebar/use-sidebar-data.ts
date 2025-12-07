@@ -5,7 +5,6 @@
 
 import { useMemo } from "react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
-import { useUserRole } from "@/hooks/useUserRole"
 import { useFilteredNavigation } from "@/hooks/useFilteredNavigation"
 import { parseCompanyFeatures } from "@/lib/features"
 import type { CompanyBranding } from "@/types/branding"
@@ -23,12 +22,11 @@ interface UseSidebarDataProps {
 
 export function useSidebarData({ companyBranding, serverUser, userPermissions, companyFeatures, serverUserPermissions }: UseSidebarDataProps) {
   const { user, loading } = useCurrentUser()
-  const { isSuperAdmin: clientIsSuperAdmin, isGroupAdmin: clientIsGroupAdmin, isCompanyAdmin: clientIsCompanyAdmin } = useUserRole()
 
-  // Use server-side data when available, fallback to client-side
-  const isSuperAdmin = userPermissions?.isSuperAdmin ?? clientIsSuperAdmin
-  const isGroupAdmin = userPermissions?.isGroupAdmin ?? clientIsGroupAdmin
-  const isCompanyAdmin = userPermissions?.isCompanyAdmin ?? clientIsCompanyAdmin
+  // Use server-side data when available, fallback to client-side (from useCurrentUser)
+  const isSuperAdmin = userPermissions?.isSuperAdmin ?? user?.isSuperAdmin ?? false
+  const isGroupAdmin = userPermissions?.isGroupAdmin ?? user?.isGroupAdmin ?? false
+  const isCompanyAdmin = userPermissions?.isCompanyAdmin ?? user?.isCompanyAdmin ?? false
   const effectiveUser = serverUser ?? user
   const effectiveLoading = serverUser ? false : loading
 

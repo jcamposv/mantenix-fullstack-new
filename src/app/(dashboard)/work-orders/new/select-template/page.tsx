@@ -65,13 +65,13 @@ export default function SelectTemplatePage() {
   }
 
   // Filter templates based on search term
-  const filteredTemplates = templates.filter(template =>
+  const filteredTemplates = templates.filter((template: WorkOrderTemplateWithRelations) =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.category?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const activeTemplates = filteredTemplates.filter(template => template.status === "ACTIVE")
+  const activeTemplates = filteredTemplates.filter((template: WorkOrderTemplateWithRelations) => template.status === "ACTIVE")
 
   return (
     <div className="container mx-auto py-0 max-w-7xl">
@@ -157,7 +157,7 @@ export default function SelectTemplatePage() {
                     </CardFooter>
                   </Card>
 
-                  {activeTemplates.map((template) => {
+                  {activeTemplates.map((template: WorkOrderTemplateWithRelations) => {
                     const fieldsCount = (template.customFields as { fields?: unknown[] })?.fields?.length || 0
                     
                     return (

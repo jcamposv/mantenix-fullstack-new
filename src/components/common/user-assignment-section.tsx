@@ -1,17 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Users, Loader2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
 import { UserMultiSelect } from "./user-multi-select"
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role?: string
-}
+import { useUsers } from "@/hooks/useUsers"
+import { useEffect } from "react"
+import { toast } from "sonner"
 
 interface UserAssignmentSectionProps {
   selectedUserIds: string[]
@@ -23,6 +17,7 @@ interface UserAssignmentSectionProps {
  * UserAssignmentSection
  * Wrapper for UserMultiSelect with data fetching
  * Uses the same endpoint and UX as work order creation
+ * Optimized with SWR caching via useUsers hook
  * Max 200 lines per nextjs-expert standards
  */
 export function UserAssignmentSection({
@@ -30,27 +25,15 @@ export function UserAssignmentSection({
   onUserIdsChange,
   title = "Asignación de Personal",
 }: UserAssignmentSectionProps) {
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use the new useUsers hook with SWR
+  const { users, loading, error } = useUsers()
 
+  // Handle error state
   useEffect(() => {
-    loadUsers()
-  }, [])
-
-  const loadUsers = async () => {
-    try {
-      const response = await fetch("/api/admin/users")
-      if (!response.ok) throw new Error("Error al cargar usuarios")
-
-      const data = await response.json()
-      setUsers(data.items || [])
-    } catch (error) {
-      console.error("Error loading users:", error)
+    if (error) {
       toast.error("Error al cargar usuarios")
-    } finally {
-      setLoading(false)
     }
-  }
+  }, [error])
 
   return (
     <div className="space-y-3">

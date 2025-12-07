@@ -22,6 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { ASSET_STATUS_OPTIONS } from "@/schemas/asset-status"
+import { useAsset } from "@/hooks/useAsset"
 
 interface StatusHistoryRecord {
   id: string
@@ -44,18 +45,14 @@ interface StatusHistoryRecord {
   } | null
 }
 
-interface Asset {
-  id: string
-  name: string
-  code: string
-}
-
 export default function AssetStatusHistoryPage() {
   const params = useParams()
   const router = useRouter()
   const assetId = params.id as string
 
-  const [asset, setAsset] = useState<Asset | null>(null)
+  // Use the new useAsset hook with SWR
+  const { asset, error: assetError } = useAsset(assetId)
+
   const [history, setHistory] = useState<StatusHistoryRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -66,20 +63,12 @@ export default function AssetStatusHistoryPage() {
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
 
-  const fetchAsset = async () => {
-    try {
-      const response = await fetch(`/api/admin/assets/${assetId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAsset(data.asset || data)
-      } else {
-        toast.error("Error al cargar el activo")
-      }
-    } catch (error) {
-      console.error("Error fetching asset:", error)
+  // Handle asset fetch error
+  useEffect(() => {
+    if (assetError) {
       toast.error("Error al cargar el activo")
     }
-  }
+  }, [assetError])
 
   const fetchHistory = async () => {
     try {
@@ -116,11 +105,6 @@ export default function AssetStatusHistoryPage() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    fetchAsset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId])
 
   useEffect(() => {
     fetchHistory()

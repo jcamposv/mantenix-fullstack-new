@@ -9,23 +9,9 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { toast } from 'sonner';
 import { CustomRoleFormData } from '@/schemas/custom-role';
 import { PermissionModuleGroup } from './permission-module-group';
-
-interface Permission {
-  id: string;
-  key: string;
-  name: string;
-  description: string | null;
-  module: string;
-}
-
-interface PermissionGroup {
-  module: string;
-  label: string;
-  permissions: Permission[];
-}
+import { useAdminPermissions } from '@/hooks/useAdminPermissions';
 
 interface RolePermissionsSelectorProps {
   control: Control<CustomRoleFormData>;
@@ -47,8 +33,12 @@ const MODULE_LABELS: Record<string, string> = {
 };
 
 export function RolePermissionsSelector({ control }: RolePermissionsSelectorProps) {
-  const [loading, setLoading] = useState(true);
-  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
+  // Use SWR hook for admin permissions
+  const { permissionGroups: rawPermissionGroups, loading } = useAdminPermissions({
+    grouped: true,
+    forCustomRole: true
+  });
+
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   const selectedPermissions = useWatch({
@@ -56,37 +46,19 @@ export function RolePermissionsSelector({ control }: RolePermissionsSelectorProp
     name: 'permissionIds'
   }) || [];
 
+  // Map module names to labels
+  const permissionGroups = rawPermissionGroups.map((group) => ({
+    ...group,
+    label: MODULE_LABELS[group.module] || group.module
+  }));
+
+  // Expand all modules by default when data loads
   useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        const response = await fetch('/api/admin/permissions?grouped=true&forCustomRole=true');
-        if (response.ok) {
-          const data: PermissionGroup[] = await response.json();
-
-          // Map module names to labels
-          const groupsWithLabels = data.map((group) => ({
-            ...group,
-            label: MODULE_LABELS[group.module] || group.module
-          }));
-
-          setPermissionGroups(groupsWithLabels);
-
-          // Expand all modules by default
-          const allModules = new Set(groupsWithLabels.map((g) => g.module));
-          setExpandedModules(allModules);
-        } else {
-          toast.error('Error al cargar permisos');
-        }
-      } catch (error) {
-        console.error('Error fetching permissions:', error);
-        toast.error('Error al cargar permisos');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPermissions();
-  }, []);
+    if (permissionGroups.length > 0 && expandedModules.size === 0) {
+      const allModules = new Set(permissionGroups.map((g) => g.module));
+      setExpandedModules(allModules);
+    }
+  }, [permissionGroups, expandedModules.size]);
 
   const toggleModule = (module: string) => {
     const newExpanded = new Set(expandedModules);

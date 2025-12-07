@@ -13,7 +13,7 @@ import { companyGroupSchema, type CompanyGroupFormData } from "@/schemas/invento
 import { LogoUpload } from "@/components/forms/logo-upload"
 import { Loader2, Building2 } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useUserRole } from "@/hooks/useUserRole"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -36,7 +36,8 @@ export function CompanyGroupForm({
   isLoading = false,
   mode = "create"
 }: CompanyGroupFormProps) {
-  const { isSuperAdmin } = useUserRole()
+  const { user } = useCurrentUser()
+  const isSuperAdmin = user?.isSuperAdmin ?? false
   const [companies, setCompanies] = useState<Company[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(false)
 

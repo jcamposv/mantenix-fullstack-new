@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic'
 /**
  * POST - Update minimum stock for ALL components with inventory
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(request: NextRequest) {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()

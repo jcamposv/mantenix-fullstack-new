@@ -137,7 +137,7 @@ export type StockStatus = 'HEALTHY' | 'LOW' | 'CRITICAL' | 'OUT_OF_STOCK'
 export function getStockStatus(
   currentStock: number,
   minimumStock: number,
-  reorderPoint: number
+
 ): StockStatus {
   if (currentStock === 0) return 'OUT_OF_STOCK'
   if (currentStock < minimumStock * 0.25) return 'CRITICAL'

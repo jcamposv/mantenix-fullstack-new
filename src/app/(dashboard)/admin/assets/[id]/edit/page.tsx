@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { AssetForm } from "@/components/forms/asset-form"
@@ -9,6 +9,7 @@ import { AssetFormData } from "@/schemas/asset"
 import { FormSkeleton } from "@/components/skeletons"
 import { Button } from "@/components/ui/button"
 import { Boxes } from "lucide-react"
+import { useAsset } from "@/hooks/useAsset"
 
 interface EditAssetPageProps {
   params: Promise<{
@@ -18,57 +19,48 @@ interface EditAssetPageProps {
 
 export default function EditAssetPage({ params }: EditAssetPageProps) {
   const [loading, setLoading] = useState(false)
-  const [initialData, setInitialData] = useState<Partial<AssetFormData> | null>(null)
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [assetId, setAssetId] = useState<string>("")
+  const [assetId, setAssetId] = useState<string | null>(null)
   const router = useRouter()
   const { data: session } = useSession()
 
   const clientCompanyId = (session?.user as { clientCompanyId?: string })?.clientCompanyId || "temp"
 
+  // Extract assetId from params
   useEffect(() => {
-    fetchAsset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    params.then(({ id }) => setAssetId(id))
+  }, [params])
 
-  const fetchAsset = async () => {
-    try {
-      setFetchLoading(true)
-      const { id } = await params
-      setAssetId(id)
-      const response = await fetch(`/api/admin/assets/${id}`)
-      
-      if (response.ok) {
-        const asset = await response.json()
-        // Transform the data to match form format
-        const formData: Partial<AssetFormData> = {
-          name: asset.name,
-          code: asset.code,
-          description: asset.description,
-          location: asset.location,
-          siteId: asset.siteId,
-          images: asset.images || [],
-          status: asset.status,
-          manufacturer: asset.manufacturer,
-          model: asset.model,
-          serialNumber: asset.serialNumber,
-          purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString().split('T')[0] : "",
-          estimatedLifespan: asset.estimatedLifespan?.toString() || "",
-          category: asset.category,
-        }
-        setInitialData(formData)
-      } else {
-        toast.error('Error al cargar el activo')
-        router.push('/admin/assets')
-      }
-    } catch (error) {
-      console.error('Error fetching asset:', error)
+  // Use the new useAsset hook with SWR
+  const { asset, loading: fetchLoading, error } = useAsset(assetId)
+
+  // Handle error state
+  useEffect(() => {
+    if (error) {
       toast.error('Error al cargar el activo')
       router.push('/admin/assets')
-    } finally {
-      setFetchLoading(false)
     }
-  }
+  }, [error, router])
+
+  // Transform asset data to form format
+  const initialData = useMemo<Partial<AssetFormData> | null>(() => {
+    if (!asset) return null
+
+    return {
+      name: asset.name,
+      code: asset.code,
+      description: asset.description ?? undefined,
+      location: asset.location,
+      siteId: asset.siteId,
+      images: asset.images || [],
+      status: asset.status,
+      manufacturer: asset.manufacturer ?? undefined,
+      model: asset.model ?? undefined,
+      serialNumber: asset.serialNumber ?? undefined,
+      purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString().split('T')[0] : undefined,
+      estimatedLifespan: asset.estimatedLifespan ?? undefined,
+      category: asset.category ?? undefined,
+    }
+  }, [asset])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = async (data: any) => {

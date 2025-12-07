@@ -1,6 +1,14 @@
+/**
+ * useWorkOrderPrefixes Hook
+ *
+ * Custom hook for fetching and managing work order prefixes.
+ * Optimized with SWR for caching, deduplication, and automatic revalidation.
+ */
+
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import useSWR from 'swr'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import type {
   WorkOrderPrefixWithRelations,
   WorkOrderPrefixFilters,
@@ -9,85 +17,78 @@ import type {
   UpdateWorkOrderPrefixData,
 } from '@/types/work-order-prefix.types'
 
+const fetcher = async (url: string): Promise<PaginatedWorkOrderPrefixesResponse> => {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error('Error al cargar los prefijos de órdenes de trabajo')
+  }
+  return response.json()
+}
+
 interface UseWorkOrderPrefixesOptions {
   filters?: WorkOrderPrefixFilters
   pagination?: {
     page: number
     limit: number
   }
-  autoFetch?: boolean
+  revalidateOnFocus?: boolean
+  refreshInterval?: number
 }
 
 export function useWorkOrderPrefixes(options: UseWorkOrderPrefixesOptions = {}) {
-  const [prefixes, setPrefixes] = useState<WorkOrderPrefixWithRelations[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 0
-  })
+  const { filters, pagination, revalidateOnFocus = false, refreshInterval = 0 } = options
 
-  const fetchPrefixes = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  // Build query params
+  const endpoint = useMemo(() => {
+    const searchParams = new URLSearchParams()
 
-      const searchParams = new URLSearchParams()
+    // Add pagination
+    if (pagination?.page) {
+      searchParams.append('page', pagination.page.toString())
+    }
+    if (pagination?.limit) {
+      searchParams.append('limit', pagination.limit.toString())
+    }
 
-      // Add pagination
-      if (options.pagination?.page) {
-        searchParams.append('page', options.pagination.page.toString())
-      }
-      if (options.pagination?.limit) {
-        searchParams.append('limit', options.pagination.limit.toString())
-      }
-
-      // Add filters
-      if (options.filters) {
-        Object.entries(options.filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            searchParams.append(key, value.toString())
-          }
-        })
-      }
-
-      const response = await fetch(`/api/work-order-prefixes?${searchParams.toString()}`)
-
-      if (!response.ok) {
-        throw new Error('Error al cargar los prefijos de órdenes de trabajo')
-      }
-
-      const data: PaginatedWorkOrderPrefixesResponse = await response.json()
-
-      setPrefixes(data.items)
-      setPagination({
-        page: data.page || 1,
-        limit: data.limit || 50,
-        total: data.total || 0,
-        totalPages: data.totalPages || 0
+    // Add filters
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, value.toString())
+        }
       })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.pagination?.page, options.pagination?.limit, JSON.stringify(options.filters)])
 
-  useEffect(() => {
-    if (options.autoFetch !== false) {
-      fetchPrefixes()
+    return `/api/work-order-prefixes?${searchParams.toString()}`
+  }, [pagination?.page, pagination?.limit, filters])
+
+  const { data, error, isLoading, mutate, isValidating } = useSWR<PaginatedWorkOrderPrefixesResponse>(
+    endpoint,
+    fetcher,
+    {
+      revalidateOnFocus,
+      refreshInterval,
+      dedupingInterval: 10000, // Dedupe requests within 10 seconds
+      // Prefixes rarely change, cache for 2 minutes
+      focusThrottleInterval: 120000,
+      onError: (err) => {
+        console.error('Error fetching work order prefixes:', err)
+      }
     }
-  }, [fetchPrefixes, options.autoFetch])
+  )
 
   return {
-    prefixes,
-    loading,
-    error,
-    pagination,
-    refetch: fetchPrefixes,
+    prefixes: data?.items || [],
+    loading: isLoading,
+    error: error?.message || null,
+    pagination: {
+      page: data?.page || 1,
+      limit: data?.limit || 50,
+      total: data?.total || 0,
+      totalPages: data?.totalPages || 0
+    },
+    refetch: mutate,
+    isValidating,
   }
 }
 
@@ -234,12 +235,12 @@ export function useWorkOrderPrefixMutations() {
 
 /**
  * Hook to fetch all active prefixes (for dropdowns/selectors)
+ * Optimized with longer cache since active prefixes rarely change
  */
 export function useActivePrefixes() {
   const { prefixes, loading, error, refetch } = useWorkOrderPrefixes({
     filters: { isActive: true },
     pagination: { page: 1, limit: 100 },
-    autoFetch: true,
   })
 
   return {

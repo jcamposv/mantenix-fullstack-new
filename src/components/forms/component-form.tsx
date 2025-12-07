@@ -7,7 +7,6 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -16,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { componentFormSchema, type ComponentFormData } from "@/schemas/exploded-view-form"
 import { ComponentBasicInfo } from "./exploded-view/component-basic-info"
 import { ComponentTechnicalInfo } from "./exploded-view/component-technical-info"
+import useSWR from "swr"
 
 interface InventoryItem {
   id: string
@@ -38,6 +38,12 @@ interface ComponentFormProps {
   componentId?: string
 }
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch')
+  return res.json()
+}
+
 export function ComponentForm({
   onSubmit,
   onCancel,
@@ -45,10 +51,28 @@ export function ComponentForm({
   initialData,
   componentId,
 }: ComponentFormProps) {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
-  const [loadingInventory, setLoadingInventory] = useState(true)
-  const [components, setComponents] = useState<ExplodedViewComponent[]>([])
-  const [loadingComponents, setLoadingComponents] = useState(true)
+  // Use SWR for inventory items with caching and deduplication
+  const { data: inventoryData, isLoading: loadingInventory } = useSWR<{ items: InventoryItem[] }>(
+    '/api/admin/inventory/items?limit=1000',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // Dedupe requests within 30 seconds
+    }
+  )
+
+  // Use SWR for components with caching and deduplication
+  const { data: componentsData, isLoading: loadingComponents } = useSWR<{ items: ExplodedViewComponent[] }>(
+    '/api/exploded-view-components?limit=1000',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // Dedupe requests within 30 seconds
+    }
+  )
+
+  const inventoryItems = inventoryData?.items || []
+  const components = componentsData?.items || []
 
   const form = useForm<ComponentFormData>({
     resolver: zodResolver(componentFormSchema),
@@ -70,41 +94,6 @@ export function ComponentForm({
       inventoryItemId: initialData?.inventoryItemId || null,
     },
   })
-
-  useEffect(() => {
-    fetchInventoryItems()
-    fetchComponents()
-  }, [])
-
-  const fetchInventoryItems = async () => {
-    try {
-      setLoadingInventory(true)
-      const response = await fetch("/api/admin/inventory/items?limit=1000")
-      if (response.ok) {
-        const data = await response.json()
-        setInventoryItems(data.items || [])
-      }
-    } catch (error) {
-      console.error("Error fetching inventory items:", error)
-    } finally {
-      setLoadingInventory(false)
-    }
-  }
-
-  const fetchComponents = async () => {
-    try {
-      setLoadingComponents(true)
-      const response = await fetch("/api/exploded-view-components?limit=1000")
-      if (response.ok) {
-        const data = await response.json()
-        setComponents(data.items || [])
-      }
-    } catch (error) {
-      console.error("Error fetching components:", error)
-    } finally {
-      setLoadingComponents(false)
-    }
-  }
 
   const handleSubmit = (data: ComponentFormData) => {
     // Clean up null/empty values before submitting
