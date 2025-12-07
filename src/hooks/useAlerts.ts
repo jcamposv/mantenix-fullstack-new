@@ -50,7 +50,8 @@ export function useAlerts(): UseAlertsReturn {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Only depend on user ID, not the entire user object
 
   // Server-Sent Events connection for real-time updates
   useEffect(() => {
