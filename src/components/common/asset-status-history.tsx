@@ -1,34 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AssetStatusBadge, getAssetStatusIcon } from "./asset-status-badge"
 import { Loader2, Clock, User, FileText, Link as LinkIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-
-interface StatusHistoryRecord {
-  id: string
-  status: string
-  startedAt: string
-  endedAt: string | null
-  reason: string | null
-  notes: string | null
-  user: {
-    id: string
-    name: string
-    email: string
-    role: string
-  }
-  workOrder: {
-    id: string
-    number: string
-    title: string
-    status: string
-  } | null
-}
+import { useAssetStatusHistory } from "@/hooks/useAssetStatusHistory"
 
 interface AssetStatusHistoryProps {
   assetId: string
@@ -36,35 +14,10 @@ interface AssetStatusHistoryProps {
 }
 
 export function AssetStatusHistory({ assetId, className }: AssetStatusHistoryProps) {
-  const [history, setHistory] = useState<StatusHistoryRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
-
-  const fetchHistory = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/assets/${assetId}/status-history?limit=50`)
-
-      if (response.ok) {
-        const data = await response.json()
-        setHistory(data.history || [])
-        setTotal(data.total || 0)
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "Error al cargar el historial")
-      }
-    } catch (error) {
-      console.error("Error fetching status history:", error)
-      toast.error("Error al cargar el historial de estados")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchHistory()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId])
+  // Use SWR hook for status history
+  const { history, total, loading } = useAssetStatusHistory(assetId, {
+    limit: 50
+  })
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

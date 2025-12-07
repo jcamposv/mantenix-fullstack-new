@@ -22,17 +22,7 @@ import { AssetStatusBadge } from "@/components/common/asset-status-badge"
 import { ChangeAssetStatusDialog } from "@/components/common/change-asset-status-dialog"
 import type { ChangeAssetStatusData } from "@/schemas/asset-status"
 import { useAsset } from "@/hooks/useAsset"
-
-interface StatusHistoryRecord {
-  id: string
-  status: string
-  startedAt: string
-  endedAt: string | null
-  reason: string | null
-  user: {
-    name: string
-  }
-}
+import { useAssetStatusHistory } from "@/hooks/useAssetStatusHistory"
 
 const statusConfig = {
   OPERATIVO: {
@@ -63,8 +53,11 @@ export default function MobileAssetDetailPage() {
   // Use the new useAsset hook with SWR
   const { asset, loading: assetLoading, error: assetError, mutate } = useAsset(assetId)
 
-  const [history, setHistory] = useState<StatusHistoryRecord[]>([])
-  const [historyLoading, setHistoryLoading] = useState(true)
+  // Use SWR hook for status history
+  const { history, loading: historyLoading, mutate: mutateHistory } = useAssetStatusHistory(assetId, {
+    limit: 5
+  })
+
   const [changeStatusDialogOpen, setChangeStatusDialogOpen] = useState(false)
   const [isChangingStatus, setIsChangingStatus] = useState(false)
 
@@ -75,28 +68,6 @@ export default function MobileAssetDetailPage() {
       router.push('/mobile/assets')
     }
   }, [assetError, router])
-
-  // Fetch status history
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setHistoryLoading(true)
-        const historyResponse = await fetch(`/api/assets/${assetId}/status-history?limit=5`)
-        if (historyResponse.ok) {
-          const historyData = await historyResponse.json()
-          setHistory(historyData.history || [])
-        }
-      } catch (error) {
-        console.error('Error fetching status history:', error)
-      } finally {
-        setHistoryLoading(false)
-      }
-    }
-
-    if (assetId) {
-      fetchHistory()
-    }
-  }, [assetId])
 
   const handleChangeStatus = async (data: ChangeAssetStatusData) => {
     if (!asset) return
@@ -114,8 +85,9 @@ export default function MobileAssetDetailPage() {
       if (response.ok) {
         toast.success('Estado actualizado exitosamente')
         setChangeStatusDialogOpen(false)
-        // Refresh asset data using SWR mutate
+        // Refresh asset data and history using SWR mutate
         mutate()
+        mutateHistory()
       } else {
         const error = await response.json()
         toast.error(error.error || 'Error al cambiar el estado')
