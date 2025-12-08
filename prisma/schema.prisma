@@ -842,6 +842,9 @@ model WorkOrderTemplate {
   workOrders WorkOrder[] @relation("WorkOrderFromTemplate")
   schedules  WorkOrderSchedule[]
 
+  // Componentes que usan este template (mantenimiento programado híbrido)
+  components ExplodedViewComponent[] @relation("ComponentTemplate")
+
   @@index([companyId])
   @@index([status])
   @@index([category])
@@ -899,6 +902,9 @@ model WorkOrder {
   siteId  String? // Sede donde se ejecuta (opcional)
   assetId String? // Activo relacionado (opcional)
 
+  // Mantenimiento predictivo (PREDICTIVE_MAINTENANCE feature)
+  maintenanceComponentId String? // Componente que generó la alerta de mantenimiento
+
   // Template relacionado (opcional)
   templateId        String? // Template base usado
   customFieldValues Json? // Valores de campos personalizados del template
@@ -950,12 +956,13 @@ model WorkOrder {
   updatedAt DateTime  @updatedAt
 
   // Relations
-  company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  site     Site?              @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  asset    Asset?             @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  template WorkOrderTemplate? @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
-  prefix   WorkOrderPrefix?   @relation(fields: [prefixId], references: [id], onDelete: SetNull)
-  creator  User               @relation("WorkOrderCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  company              Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site                 Site?                  @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  asset                Asset?                 @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  maintenanceComponent ExplodedViewComponent? @relation("WorkOrderMaintenanceComponent", fields: [maintenanceComponentId], references: [id], onDelete: SetNull)
+  template             WorkOrderTemplate?     @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
+  prefix               WorkOrderPrefix?       @relation(fields: [prefixId], references: [id], onDelete: SetNull)
+  creator              User                   @relation("WorkOrderCreator", fields: [createdBy], references: [id], onDelete: Restrict)
 
   // Assignments (many-to-many relationship for multiple users)
   assignments WorkOrderAssignment[]
@@ -979,6 +986,7 @@ model WorkOrder {
   @@index([companyId])
   @@index([siteId])
   @@index([assetId])
+  @@index([maintenanceComponentId])
   @@index([templateId])
   @@index([scheduleId])
   @@index([prefixId])
@@ -1083,6 +1091,9 @@ model WorkOrderSchedule {
 
   // Órdenes generadas por esta programación
   generatedWorkOrders WorkOrder[] @relation("GeneratedFromSchedule")
+
+  // Componentes que usan este schedule (mantenimiento programado híbrido)
+  components ExplodedViewComponent[] @relation("ComponentSchedule")
 
   @@index([companyId])
   @@index([templateId])
@@ -2121,6 +2132,15 @@ model ExplodedViewComponent {
   mtbf           Int? // Mean Time Between Failures (horas)
   mttr           Int? // Mean Time To Repair (horas)
 
+  // Mantenimiento programado híbrido (fabricante + predictivo)
+  manufacturerMaintenanceInterval     Int?          // Intervalo recomendado por fabricante (ej: 90, 2000)
+  manufacturerMaintenanceIntervalUnit FrequencyUnit? // Unidad del intervalo (DAYS, HOURS, MONTHS, etc.)
+  mtbfAlertThreshold                  Decimal?      @default(0.8) @db.Decimal(3, 2) // Umbral de alerta MTBF (0.8 = 80%)
+  maintenanceStrategy                 MaintenanceType? // PREVENTIVE (time-based), PREDICTIVE (condition-based), etc.
+  autoCreateSchedule                  Boolean       @default(false) // Crear schedule automáticamente
+  workOrderScheduleId                 String?       // ID del schedule creado automáticamente
+  workOrderTemplateId                 String?       // Template a usar para las OTs programadas
+
   // Especificaciones técnicas (JSON flexible)
   specifications Json? // { "material": "Acero inoxidable", "peso": "2.5kg", "diametro": "50mm" }
 
@@ -2143,15 +2163,18 @@ model ExplodedViewComponent {
   updatedAt DateTime @updatedAt
 
   // Relations
-  inventoryItem    InventoryItem?          @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
-  company          Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  creator          User                    @relation("ExplodedViewComponentCreator", fields: [createdBy], references: [id])
-  hotspots         ExplodedViewHotspot[]   // Hotspots que apuntan a este componente
-  maintenancePlans MaintenancePlan[]       // Planes de mantenimiento para este componente
+  inventoryItem        InventoryItem?          @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  company              Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator              User                    @relation("ExplodedViewComponentCreator", fields: [createdBy], references: [id])
+  workOrderSchedule    WorkOrderSchedule?      @relation("ComponentSchedule", fields: [workOrderScheduleId], references: [id], onDelete: SetNull)
+  workOrderTemplate    WorkOrderTemplate?      @relation("ComponentTemplate", fields: [workOrderTemplateId], references: [id], onDelete: SetNull)
+  hotspots             ExplodedViewHotspot[]   // Hotspots que apuntan a este componente
+  maintenancePlans     MaintenancePlan[]       // Planes de mantenimiento para este componente
+  workOrders           WorkOrder[]             @relation("WorkOrderMaintenanceComponent") // Órdenes de trabajo generadas por alertas de este componente
 
   // Jerarquía padre-hijo (auto-relación)
-  parentComponent  ExplodedViewComponent?  @relation("ComponentHierarchy", fields: [parentComponentId], references: [id], onDelete: SetNull)
-  childComponents  ExplodedViewComponent[] @relation("ComponentHierarchy") // Componentes hijos
+  parentComponent      ExplodedViewComponent?  @relation("ComponentHierarchy", fields: [parentComponentId], references: [id], onDelete: SetNull)
+  childComponents      ExplodedViewComponent[] @relation("ComponentHierarchy") // Componentes hijos
 
   @@unique([companyId, partNumber]) // Part number único por empresa
   @@index([companyId])
@@ -2159,6 +2182,10 @@ model ExplodedViewComponent {
   @@index([parentComponentId])
   @@index([hierarchyLevel])
   @@index([criticality])
+  @@index([workOrderScheduleId])
+  @@index([workOrderTemplateId])
+  @@index([maintenanceStrategy])
+  @@index([autoCreateSchedule])
   @@index([isActive])
   @@map("exploded_view_components")
 }

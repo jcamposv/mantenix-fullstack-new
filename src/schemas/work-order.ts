@@ -21,7 +21,10 @@ export const workOrderSchema = z.object({
   // Location and asset (optional if EXTERNAL_CLIENT_MANAGEMENT feature is disabled)
   siteId: z.string().optional(),
   assetId: z.string().optional(),
-  
+
+  // Predictive maintenance (PREDICTIVE_MAINTENANCE feature)
+  maintenanceComponentId: z.string().optional(),
+
   // Template integration
   templateId: z.string().optional(),
   customFieldValues: z.record(z.string(), z.unknown()).optional(),

@@ -18,6 +18,12 @@ import { useSites } from "@/hooks/useSites"
 import { useAssets } from "@/hooks/useAssets"
 import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates"
 import { useActivePrefixes } from "@/hooks/useWorkOrderPrefixes"
+import {
+  useMaintenanceComponent,
+  generateMaintenanceWorkOrderTitle,
+  generateMaintenanceWorkOrderDescription,
+  getMaintenancePriority,
+} from "@/hooks/use-maintenance-component"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 
@@ -25,11 +31,17 @@ export function NewWorkOrderContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const templateId = searchParams.get('templateId')
+  const componentId = searchParams.get('componentId')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("basic")
 
-  // Get company features to determine if external client management is enabled
+  // Get company features
   const { hasExternalClientMgmt } = useCompanyFeatures()
+
+  // Fetch maintenance component data if componentId is provided
+  const { component, isLoading: isLoadingComponent, isFeatureEnabled } = useMaintenanceComponent({
+    componentId,
+  })
 
   // Use all optimized hooks with SWR
   const { users } = useUsers()
@@ -48,6 +60,7 @@ export function NewWorkOrderContent() {
       priority: "MEDIUM",
       siteId: "",
       assetId: "",
+      maintenanceComponentId: componentId || undefined,
       templateId: templateId || "",
       customFieldValues: {},
       instructions: "",
@@ -69,6 +82,16 @@ export function NewWorkOrderContent() {
       }
     }
   }, [templateId, templates, form])
+
+  // Auto-populate from maintenance component if available (PREDICTIVE_MAINTENANCE feature)
+  useEffect(() => {
+    if (component && isFeatureEnabled && !form.getValues("title")) {
+      form.setValue("title", generateMaintenanceWorkOrderTitle(component))
+      form.setValue("description", generateMaintenanceWorkOrderDescription(component))
+      form.setValue("priority", getMaintenancePriority(component.criticality))
+      form.setValue("type", "PREVENTIVO")
+    }
+  }, [component, isFeatureEnabled, form])
 
   const handleSubmit = async (data: CreateWorkOrderData): Promise<void> => {
     try {
@@ -163,11 +186,18 @@ export function NewWorkOrderContent() {
         <div>
           <h1 className="text-2xl font-bold">Nueva Orden de Trabajo</h1>
           <p className="text-muted-foreground">
-            {templateId 
-              ? "Crear orden de trabajo usando template seleccionado"
-              : "Crear una nueva orden de trabajo para mantenimiento"
+            {component && isFeatureEnabled
+              ? `Orden de mantenimiento preventivo para: ${component.name}`
+              : templateId
+                ? "Crear orden de trabajo usando template seleccionado"
+                : "Crear una nueva orden de trabajo para mantenimiento"
             }
           </p>
+          {isLoadingComponent && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Cargando información del componente...
+            </p>
+          )}
         </div>
       </div>
 

@@ -11,10 +11,11 @@
  * - Transaction support for complex operations
  */
 
-import { Prisma } from "@prisma/client"
+import { Prisma, FrequencyUnit, RecurrenceType, RecurrenceEndType } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { ExplodedViewRepository, ExplodedViewHotspotRepository } from "../repositories/exploded-view.repository"
 import { ExplodedViewComponentRepository } from "../repositories/exploded-view-component.repository"
+import { WorkOrderScheduleRepository } from "../repositories/work-order-schedule.repository"
 import { PermissionGuard } from "../helpers/permission-guard"
 import { getCurrentCompanyId } from "@/lib/company-context"
 import type { AuthenticatedSession } from "@/types/auth.types"
@@ -34,7 +35,99 @@ import type {
   UpdateHotspotData,
 } from "@/types/exploded-view.types"
 
+// ============================================================================
+// HELPER FUNCTIONS FOR HYBRID MAINTENANCE SCHEDULING
+// ============================================================================
+
+/**
+ * Calculate next generation date based on frequency interval and unit
+ */
+function calculateNextGenerationDate(
+  interval: number,
+  unit: FrequencyUnit,
+  startFrom?: Date
+): Date {
+  const baseDate = startFrom || new Date()
+  const nextDate = new Date(baseDate)
+
+  switch (unit) {
+    case 'HOURS':
+      nextDate.setHours(nextDate.getHours() + interval)
+      break
+    case 'DAYS':
+      nextDate.setDate(nextDate.getDate() + interval)
+      break
+    case 'WEEKS':
+      nextDate.setDate(nextDate.getDate() + interval * 7)
+      break
+    case 'MONTHS':
+      nextDate.setMonth(nextDate.getMonth() + interval)
+      break
+    case 'YEARS':
+      nextDate.setFullYear(nextDate.getFullYear() + interval)
+      break
+  }
+
+  return nextDate
+}
+
+/**
+ * Map FrequencyUnit to RecurrenceType for WorkOrderSchedule
+ */
+function mapFrequencyToRecurrence(unit: FrequencyUnit): RecurrenceType {
+  switch (unit) {
+    case 'HOURS':
+      return 'METER_BASED' // Hours are meter-based
+    case 'DAYS':
+      return 'DAILY'
+    case 'WEEKS':
+      return 'WEEKLY'
+    case 'MONTHS':
+      return 'MONTHLY'
+    case 'YEARS':
+      return 'YEARLY'
+  }
+}
+
 export class ExplodedViewService {
+  // ============================================================================
+  // PRIVATE HELPER METHODS - HYBRID MAINTENANCE SCHEDULING
+  // ============================================================================
+
+  /**
+   * Create maintenance schedule for a component
+   * Uses WorkOrderScheduleRepository (following Repository pattern)
+   */
+  private static async createComponentSchedule(
+    componentName: string,
+    interval: number,
+    intervalUnit: FrequencyUnit,
+    templateId: string,
+    companyId: string,
+    userId: string
+  ): Promise<string> {
+    const recurrenceType = mapFrequencyToRecurrence(intervalUnit)
+    const nextGenerationDate = calculateNextGenerationDate(interval, intervalUnit)
+
+    const scheduleData: Prisma.WorkOrderScheduleCreateInput = {
+      name: `Mantenimiento Programado: ${componentName}`,
+      description: `Schedule automático generado para componente ${componentName}`,
+      recurrenceType,
+      recurrenceInterval: interval,
+      recurrenceEndType: RecurrenceEndType.NEVER,
+      meterType: intervalUnit === 'HOURS' ? 'HOURS_RUN' : null,
+      meterThreshold: intervalUnit === 'HOURS' ? interval : null,
+      template: { connect: { id: templateId } },
+      company: { connect: { id: companyId } },
+      creator: { connect: { id: userId } },
+      nextGenerationDate,
+      isActive: true,
+    }
+
+    const schedule = await WorkOrderScheduleRepository.create(scheduleData)
+    return schedule.id
+  }
+
   // ============================================================================
   // EXPLODED VIEWS
   // ============================================================================
@@ -376,7 +469,58 @@ export class ExplodedViewService {
       createData.inventoryItem = { connect: { id: data.inventoryItemId } }
     }
 
-    return await ExplodedViewComponentRepository.create(createData)
+    // Mantenimiento programado híbrido - agregar campos
+    if (data.manufacturerMaintenanceInterval !== undefined) {
+      createData.manufacturerMaintenanceInterval = data.manufacturerMaintenanceInterval
+    }
+    if (data.manufacturerMaintenanceIntervalUnit !== undefined) {
+      createData.manufacturerMaintenanceIntervalUnit = data.manufacturerMaintenanceIntervalUnit
+    }
+    if (data.mtbfAlertThreshold !== undefined) {
+      createData.mtbfAlertThreshold = data.mtbfAlertThreshold
+    }
+    if (data.maintenanceStrategy !== undefined) {
+      createData.maintenanceStrategy = data.maintenanceStrategy
+    }
+    if (data.autoCreateSchedule !== undefined) {
+      createData.autoCreateSchedule = data.autoCreateSchedule
+    }
+    if (data.workOrderTemplateId) {
+      createData.workOrderTemplate = { connect: { id: data.workOrderTemplateId } }
+    }
+
+    // Create component first
+    const component = await ExplodedViewComponentRepository.create(createData)
+
+    // Auto-create schedule if requested
+    if (
+      data.autoCreateSchedule &&
+      data.manufacturerMaintenanceInterval &&
+      data.manufacturerMaintenanceIntervalUnit &&
+      data.workOrderTemplateId
+    ) {
+      // Use helper method following DRY principle
+      const scheduleId = await this.createComponentSchedule(
+        data.name,
+        data.manufacturerMaintenanceInterval,
+        data.manufacturerMaintenanceIntervalUnit,
+        data.workOrderTemplateId,
+        companyId,
+        session.user.id
+      )
+
+      // Link schedule to component using Repository
+      await ExplodedViewComponentRepository.update(component.id, {
+        workOrderSchedule: { connect: { id: scheduleId } },
+      })
+
+      // Return updated component with schedule relation
+      return (await ExplodedViewComponentRepository.findById(
+        component.id
+      )) as ExplodedViewComponentWithRelations
+    }
+
+    return component
   }
 
   /**
@@ -438,6 +582,84 @@ export class ExplodedViewService {
         : { disconnect: true }
     }
     if (data.isActive !== undefined) updateData.isActive = data.isActive
+
+    // Mantenimiento programado híbrido - actualizar campos
+    if (data.manufacturerMaintenanceInterval !== undefined) {
+      updateData.manufacturerMaintenanceInterval = data.manufacturerMaintenanceInterval
+    }
+    if (data.manufacturerMaintenanceIntervalUnit !== undefined) {
+      updateData.manufacturerMaintenanceIntervalUnit = data.manufacturerMaintenanceIntervalUnit
+    }
+    if (data.mtbfAlertThreshold !== undefined) {
+      updateData.mtbfAlertThreshold = data.mtbfAlertThreshold
+    }
+    if (data.maintenanceStrategy !== undefined) {
+      updateData.maintenanceStrategy = data.maintenanceStrategy
+    }
+    if (data.autoCreateSchedule !== undefined) {
+      updateData.autoCreateSchedule = data.autoCreateSchedule
+    }
+    if (data.workOrderTemplateId !== undefined) {
+      updateData.workOrderTemplate = data.workOrderTemplateId
+        ? { connect: { id: data.workOrderTemplateId } }
+        : { disconnect: true }
+    }
+
+    // Handle schedule auto-creation/update/deletion
+    const shouldHaveSchedule = data.autoCreateSchedule ?? component.autoCreateSchedule
+    const oldScheduleId = component.workOrderScheduleId
+
+    // Case 1: Disable schedule (autoCreateSchedule changed to false)
+    if (shouldHaveSchedule === false && oldScheduleId) {
+      await WorkOrderScheduleRepository.delete(oldScheduleId)
+      updateData.workOrderSchedule = { disconnect: true }
+    }
+
+    // Case 2: Enable or update schedule
+    if (shouldHaveSchedule === true) {
+      const interval =
+        data.manufacturerMaintenanceInterval ?? component.manufacturerMaintenanceInterval
+      const intervalUnit =
+        data.manufacturerMaintenanceIntervalUnit ?? component.manufacturerMaintenanceIntervalUnit
+      const templateId = data.workOrderTemplateId ?? component.workOrderTemplateId
+
+      if (!interval || !intervalUnit || !templateId) {
+        throw new Error(
+          'Para activar el schedule automático se requiere intervalo, unidad y template'
+        )
+      }
+
+      // Check if schedule configuration changed
+      const configChanged =
+        (data.manufacturerMaintenanceInterval !== undefined &&
+          data.manufacturerMaintenanceInterval !== component.manufacturerMaintenanceInterval) ||
+        (data.manufacturerMaintenanceIntervalUnit !== undefined &&
+          data.manufacturerMaintenanceIntervalUnit !==
+            component.manufacturerMaintenanceIntervalUnit) ||
+        (data.workOrderTemplateId !== undefined &&
+          data.workOrderTemplateId !== component.workOrderTemplateId)
+
+      // Create new schedule if config changed or no schedule exists
+      if (configChanged || !oldScheduleId) {
+        // Deactivate old schedule if exists and config changed
+        if (oldScheduleId && configChanged) {
+          await WorkOrderScheduleRepository.delete(oldScheduleId)
+        }
+
+        // Create new schedule using helper method
+        const componentName = data.name ?? component.name
+        const newScheduleId = await this.createComponentSchedule(
+          componentName,
+          interval,
+          intervalUnit,
+          templateId,
+          component.companyId,
+          session.user.id
+        )
+
+        updateData.workOrderSchedule = { connect: { id: newScheduleId } }
+      }
+    }
 
     return await ExplodedViewComponentRepository.update(componentId, updateData)
   }

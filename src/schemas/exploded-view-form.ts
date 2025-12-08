@@ -50,6 +50,36 @@ export const componentFormSchema = z.object({
   mtbf: z.number().int().min(1).max(1000000).optional().nullable(),
   mttr: z.number().int().min(1).max(10000).optional().nullable(),
 
+  // Mantenimiento programado híbrido (fabricante + predictivo)
+  manufacturerMaintenanceInterval: z
+    .number()
+    .int("El intervalo debe ser un número entero")
+    .min(1, "El intervalo debe ser mayor a 0")
+    .max(100000, "El intervalo es demasiado grande")
+    .optional()
+    .nullable(),
+
+  manufacturerMaintenanceIntervalUnit: z
+    .enum(["HOURS", "DAYS", "WEEKS", "MONTHS", "YEARS"])
+    .optional()
+    .nullable(),
+
+  mtbfAlertThreshold: z
+    .number()
+    .min(0.1, "El umbral mínimo es 0.1 (10%)")
+    .max(1, "El umbral máximo es 1 (100%)")
+    .optional()
+    .nullable(),
+
+  maintenanceStrategy: z
+    .enum(["PREVENTIVE", "PREDICTIVE", "CORRECTIVE", "ROUTINE"])
+    .optional()
+    .nullable(),
+
+  autoCreateSchedule: z.boolean().optional(),
+
+  workOrderTemplateId: z.string().cuid().optional().nullable(),
+
   specifications: z.record(z.string(), z.unknown()).optional().nullable(),
   manualUrl: z.string().url("Debe ser una URL válida").optional().nullable(),
   installationUrl: z.string().url("Debe ser una URL válida").optional().nullable(),

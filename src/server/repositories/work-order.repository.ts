@@ -124,6 +124,28 @@ export class WorkOrderRepository {
               model: true
             }
           },
+          maintenanceComponent: {
+            select: {
+              id: true,
+              name: true,
+              partNumber: true,
+              criticality: true,
+              mtbf: true,
+              lifeExpectancy: true,
+              // Hybrid maintenance scheduling
+              manufacturerMaintenanceInterval: true,
+              manufacturerMaintenanceIntervalUnit: true,
+              workOrderSchedule: {
+                select: {
+                  id: true,
+                  name: true,
+                  recurrenceType: true,
+                  nextGenerationDate: true,
+                  isActive: true,
+                },
+              },
+            }
+          },
           template: {
             select: {
               id: true,
@@ -236,6 +258,16 @@ export class WorkOrderRepository {
             status: true
           }
         },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
+          }
+        },
         template: {
           select: {
             id: true,
@@ -336,6 +368,16 @@ export class WorkOrderRepository {
             status: true
           }
         },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
+          }
+        },
         template: {
           select: {
             id: true,
@@ -433,6 +475,16 @@ export class WorkOrderRepository {
             model: true,
             location: true,
             status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {

@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { componentFormSchema, type ComponentFormData } from "@/schemas/exploded-view-form"
 import { ComponentBasicInfo } from "./exploded-view/component-basic-info"
 import { ComponentTechnicalInfo } from "./exploded-view/component-technical-info"
+import { ComponentMaintenanceSchedule } from "./exploded-view/component-maintenance-schedule"
+import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 import useSWR from "swr"
 
 interface InventoryItem {
@@ -28,6 +30,12 @@ interface ExplodedViewComponent {
   name: string
   partNumber: string | null
   hierarchyLevel: number
+}
+
+interface WorkOrderTemplate {
+  id: string
+  name: string
+  category: string | null
 }
 
 interface ComponentFormProps {
@@ -51,6 +59,9 @@ export function ComponentForm({
   initialData,
   componentId,
 }: ComponentFormProps) {
+  // Check if PREDICTIVE_MAINTENANCE feature is enabled
+  const { hasPredictiveMaintenance } = useCompanyFeatures()
+
   // Use SWR for inventory items with caching and deduplication
   const { data: inventoryData, isLoading: loadingInventory } = useSWR<{ items: InventoryItem[] }>(
     '/api/admin/inventory/items?limit=1000',
@@ -71,8 +82,19 @@ export function ComponentForm({
     }
   )
 
+  // Use SWR for work order templates (only if feature enabled)
+  const { data: templatesData, isLoading: loadingTemplates } = useSWR<{ templates: WorkOrderTemplate[] }>(
+    hasPredictiveMaintenance ? '/api/work-order-templates?limit=1000' : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  )
+
   const inventoryItems = inventoryData?.items || []
   const components = componentsData?.items || []
+  const templates = templatesData?.templates || []
 
   const form = useForm<ComponentFormData>({
     resolver: zodResolver(componentFormSchema),
@@ -87,6 +109,13 @@ export function ComponentForm({
       lifeExpectancy: initialData?.lifeExpectancy || null,
       mtbf: initialData?.mtbf || null,
       mttr: initialData?.mttr || null,
+      // Maintenance scheduling fields
+      manufacturerMaintenanceInterval: initialData?.manufacturerMaintenanceInterval || null,
+      manufacturerMaintenanceIntervalUnit: initialData?.manufacturerMaintenanceIntervalUnit || null,
+      mtbfAlertThreshold: initialData?.mtbfAlertThreshold || 0.8,
+      maintenanceStrategy: initialData?.maintenanceStrategy || null,
+      autoCreateSchedule: initialData?.autoCreateSchedule || false,
+      workOrderTemplateId: initialData?.workOrderTemplateId || null,
       specifications: initialData?.specifications || null,
       manualUrl: initialData?.manualUrl || null,
       installationUrl: initialData?.installationUrl || null,
@@ -107,6 +136,12 @@ export function ComponentForm({
       lifeExpectancy: data.lifeExpectancy || undefined,
       mtbf: data.mtbf || undefined,
       mttr: data.mttr || undefined,
+      // Maintenance scheduling
+      manufacturerMaintenanceInterval: data.manufacturerMaintenanceInterval || undefined,
+      manufacturerMaintenanceIntervalUnit: data.manufacturerMaintenanceIntervalUnit || undefined,
+      mtbfAlertThreshold: data.mtbfAlertThreshold || undefined,
+      maintenanceStrategy: data.maintenanceStrategy || undefined,
+      workOrderTemplateId: data.workOrderTemplateId || undefined,
       manualUrl: data.manualUrl || undefined,
       installationUrl: data.installationUrl || undefined,
       imageUrl: data.imageUrl || undefined,
@@ -137,6 +172,15 @@ export function ComponentForm({
               loadingComponents={loadingComponents}
               componentId={componentId}
             />
+
+            {/* Maintenance Scheduling (only if feature enabled) */}
+            {hasPredictiveMaintenance && (
+              <ComponentMaintenanceSchedule
+                form={form}
+                templates={templates}
+                loadingTemplates={loadingTemplates}
+              />
+            )}
           </CardContent>
         </Card>
 

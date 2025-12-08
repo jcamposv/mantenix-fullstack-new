@@ -26,6 +26,24 @@ const CRITICALITY_PRIORITY: Record<string, number> = {
 }
 
 /**
+ * Format days until maintenance with proper messaging
+ * Returns positive days as "en X días" and negative as "vencido hace X días"
+ */
+function formatDaysUntilMaintenance(days: number): string {
+  const absDays = Math.abs(Math.ceil(days))
+
+  if (days < 0) {
+    return `vencido hace ${absDays} días`
+  } else if (days === 0) {
+    return 'hoy'
+  } else if (absDays === 1) {
+    return 'mañana'
+  } else {
+    return `en ${absDays} días`
+  }
+}
+
+/**
  * Generate MTBF-based maintenance alert
  *
  * Logic:
@@ -83,7 +101,7 @@ export function generateMTBFAlert(
   if (currentStock === 0 && daysUntilMaintenance <= leadTime) {
     alertType = 'STOCK_OUT_CRITICAL'
     severity = 'CRITICAL'
-    message = `⚠️ CRÍTICO: Sin stock de ${componentName} y mantenimiento en ${Math.ceil(daysUntilMaintenance)} días`
+    message = `⚠️ CRÍTICO: Sin stock de ${componentName} y mantenimiento ${formatDaysUntilMaintenance(daysUntilMaintenance)}`
     recommendation = `Pedir URGENTE con proveedor alternativo o express. Lead time normal: ${leadTime} días`
     priority = basePriority
   }
@@ -95,7 +113,7 @@ export function generateMTBFAlert(
     alertType = 'URGENT_MTBF'
     severity = 'CRITICAL'
     message = `🚨 URGENTE: Pedir ${componentName} AHORA`
-    recommendation = `Mantenimiento en ${Math.ceil(daysUntilMaintenance)} días, lead time ${leadTime} días, stock actual: ${currentStock}`
+    recommendation = `Mantenimiento ${formatDaysUntilMaintenance(daysUntilMaintenance)}, lead time ${leadTime} días, stock actual: ${currentStock}`
     priority = basePriority
   }
   // WARNING: Stock below reorder point
@@ -106,7 +124,7 @@ export function generateMTBFAlert(
     alertType = 'WARNING_MTBF'
     severity = 'WARNING'
     message = `⚠️ Stock bajo de ${componentName}`
-    recommendation = `Considerar pedir pronto. Mantenimiento en ${Math.ceil(daysUntilMaintenance)} días, stock: ${currentStock}/${minimumStock}`
+    recommendation = `Considerar pedir pronto. Mantenimiento ${formatDaysUntilMaintenance(daysUntilMaintenance)}, stock: ${currentStock}/${minimumStock}`
     priority = basePriority + 1
   }
   // INFO: Approaching reorder point

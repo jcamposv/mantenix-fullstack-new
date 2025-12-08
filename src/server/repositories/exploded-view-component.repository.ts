@@ -49,6 +49,23 @@ export class ExplodedViewComponentRepository {
           email: true,
         },
       },
+      // Mantenimiento programado híbrido - relaciones
+      workOrderSchedule: {
+        select: {
+          id: true,
+          name: true,
+          recurrenceType: true,
+          nextGenerationDate: true,
+          isActive: true,
+        },
+      },
+      workOrderTemplate: {
+        select: {
+          id: true,
+          name: true,
+          category: true,
+        },
+      },
       // Jerarquía padre-hijo
       parentComponent: {
         select: {

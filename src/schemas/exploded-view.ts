@@ -237,6 +237,48 @@ export const createComponentSchema = z.object({
     .nullable()
     .optional(),
 
+  // Mantenimiento programado híbrido (fabricante + predictivo)
+  manufacturerMaintenanceInterval: z
+    .number()
+    .int('El intervalo debe ser un número entero')
+    .min(1, 'El intervalo debe ser mayor a 0')
+    .max(100000, 'El intervalo es demasiado grande')
+    .nullable()
+    .optional(),
+
+  manufacturerMaintenanceIntervalUnit: z
+    .enum(['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS'], {
+      message: 'Unidad de intervalo inválida',
+    })
+    .nullable()
+    .optional(),
+
+  mtbfAlertThreshold: z
+    .number()
+    .min(0.1, 'El umbral mínimo es 0.1 (10%)')
+    .max(1, 'El umbral máximo es 1 (100%)')
+    .default(0.8)
+    .nullable()
+    .optional(),
+
+  maintenanceStrategy: z
+    .enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'ROUTINE'], {
+      message: 'Estrategia de mantenimiento inválida',
+    })
+    .nullable()
+    .optional(),
+
+  autoCreateSchedule: z
+    .boolean()
+    .default(false)
+    .optional(),
+
+  workOrderTemplateId: z
+    .string()
+    .cuid('ID de template inválido')
+    .nullable()
+    .optional(),
+
   specifications: z
     .record(z.string(), z.unknown())
     .nullable()
@@ -356,6 +398,48 @@ export const updateComponentSchema = z.object({
     .int('El MTTR debe ser un número entero')
     .min(1, 'El MTTR debe ser mayor a 0')
     .max(10000, 'El MTTR es demasiado grande')
+    .nullable()
+    .optional(),
+
+  // Mantenimiento programado híbrido (fabricante + predictivo)
+  manufacturerMaintenanceInterval: z
+    .number()
+    .int('El intervalo debe ser un número entero')
+    .min(1, 'El intervalo debe ser mayor a 0')
+    .max(100000, 'El intervalo es demasiado grande')
+    .nullable()
+    .optional(),
+
+  manufacturerMaintenanceIntervalUnit: z
+    .enum(['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS'], {
+      message: 'Unidad de intervalo inválida',
+    })
+    .nullable()
+    .optional(),
+
+  mtbfAlertThreshold: z
+    .number()
+    .min(0.1, 'El umbral mínimo es 0.1 (10%)')
+    .max(1, 'El umbral máximo es 1 (100%)')
+    .default(0.8)
+    .nullable()
+    .optional(),
+
+  maintenanceStrategy: z
+    .enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'ROUTINE'], {
+      message: 'Estrategia de mantenimiento inválida',
+    })
+    .nullable()
+    .optional(),
+
+  autoCreateSchedule: z
+    .boolean()
+    .default(false)
+    .optional(),
+
+  workOrderTemplateId: z
+    .string()
+    .cuid('ID de template inválido')
     .nullable()
     .optional(),
 

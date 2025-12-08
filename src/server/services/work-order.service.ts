@@ -184,6 +184,11 @@ export class WorkOrderService {
       createData.asset = { connect: { id: workOrderData.assetId } }
     }
 
+    // Add maintenance component if provided (PREDICTIVE_MAINTENANCE feature)
+    if (workOrderData.maintenanceComponentId) {
+      createData.maintenanceComponent = { connect: { id: workOrderData.maintenanceComponentId } }
+    }
+
     // Add template if provided
     if (workOrderData.templateId) {
       createData.template = { connect: { id: workOrderData.templateId } }
@@ -312,6 +317,13 @@ export class WorkOrderService {
       updatePrismaData.asset = { connect: { id: updateData.assetId } }
     } else if (updateData.assetId === null) {
       updatePrismaData.asset = { disconnect: true }
+    }
+
+    // Update maintenance component if provided (PREDICTIVE_MAINTENANCE feature)
+    if (updateData.maintenanceComponentId) {
+      updatePrismaData.maintenanceComponent = { connect: { id: updateData.maintenanceComponentId } }
+    } else if (updateData.maintenanceComponentId === null) {
+      updatePrismaData.maintenanceComponent = { disconnect: true }
     }
 
     // Handle status changes

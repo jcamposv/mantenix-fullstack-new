@@ -9,6 +9,21 @@ import { Badge } from '@/components/ui/badge'
 import { AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import type { MaintenanceAlert } from '@/types/maintenance-alert.types'
 
+/**
+ * Format days for display in card
+ */
+function formatMaintenanceDays(days: number): string {
+  const absDays = Math.abs(days)
+
+  if (days < 0) {
+    return `Vencido ${absDays}d`
+  } else if (days === 0) {
+    return 'Hoy'
+  } else {
+    return `En ${absDays}d`
+  }
+}
+
 interface MTBFAlertCardProps {
   alert: MaintenanceAlert
 }
@@ -57,7 +72,9 @@ export function MTBFAlertCard({ alert }: MTBFAlertCardProps) {
           <span>
             Stock: {alert.currentStock}/{alert.minimumStock}
           </span>
-          <span>Mant. en {alert.daysUntilMaintenance}d</span>
+          <span className={alert.daysUntilMaintenance < 0 ? 'text-destructive font-medium' : ''}>
+            {formatMaintenanceDays(alert.daysUntilMaintenance)}
+          </span>
           <span>Lead time: {alert.leadTimeDays}d</span>
           {alert.criticality && (
             <Badge variant="outline" className="text-xs">

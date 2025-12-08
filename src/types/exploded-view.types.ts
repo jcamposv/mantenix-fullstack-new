@@ -10,6 +10,7 @@
  * - Proper documentation
  */
 
+import type { FrequencyUnit, MaintenanceType } from '@prisma/client';
 import type { PaginatedResponse } from './common.types';
 
 // ============================================================================
@@ -143,6 +144,15 @@ export interface ExplodedViewComponent {
   mtbf: number | null; // Mean Time Between Failures (horas)
   mttr: number | null; // Mean Time To Repair (horas)
 
+  // Mantenimiento programado híbrido (fabricante + predictivo)
+  manufacturerMaintenanceInterval: number | null; // Intervalo recomendado por fabricante
+  manufacturerMaintenanceIntervalUnit: FrequencyUnit | null; // Unidad del intervalo
+  mtbfAlertThreshold: number | null; // Umbral de alerta MTBF (0.8 = 80%)
+  maintenanceStrategy: MaintenanceType | null; // PREVENTIVE, PREDICTIVE, etc.
+  autoCreateSchedule: boolean; // Crear schedule automáticamente
+  workOrderScheduleId: string | null; // ID del schedule creado
+  workOrderTemplateId: string | null; // Template a usar para OTs
+
   // Technical specs (stored as JSON)
   specifications: Record<string, unknown> | null;
 
@@ -191,6 +201,19 @@ export interface ExplodedViewComponentWithRelations extends ExplodedViewComponen
     name: string;
     email: string;
   };
+  // Mantenimiento programado híbrido - relaciones
+  workOrderSchedule?: {
+    id: string;
+    name: string;
+    recurrenceType: string;
+    nextGenerationDate: string | null;
+    isActive: boolean;
+  } | null;
+  workOrderTemplate?: {
+    id: string;
+    name: string;
+    category: string | null;
+  } | null;
   // Jerarquía padre-hijo
   parentComponent?: ExplodedViewComponent | null;
   childComponents?: ExplodedViewComponent[];
@@ -293,6 +316,15 @@ export interface CreateComponentData {
   lifeExpectancy?: number | null;
   mtbf?: number | null;
   mttr?: number | null;
+
+  // Mantenimiento programado híbrido
+  manufacturerMaintenanceInterval?: number | null;
+  manufacturerMaintenanceIntervalUnit?: FrequencyUnit | null;
+  mtbfAlertThreshold?: number | null;
+  maintenanceStrategy?: MaintenanceType | null;
+  autoCreateSchedule?: boolean;
+  workOrderTemplateId?: string | null;
+
   specifications?: Record<string, unknown> | null;
   manualUrl?: string | null;
   installationUrl?: string | null;
@@ -314,6 +346,15 @@ export interface UpdateComponentData {
   lifeExpectancy?: number | null;
   mtbf?: number | null;
   mttr?: number | null;
+
+  // Mantenimiento programado híbrido
+  manufacturerMaintenanceInterval?: number | null;
+  manufacturerMaintenanceIntervalUnit?: FrequencyUnit | null;
+  mtbfAlertThreshold?: number | null;
+  maintenanceStrategy?: MaintenanceType | null;
+  autoCreateSchedule?: boolean;
+  workOrderTemplateId?: string | null;
+
   specifications?: Record<string, unknown> | null;
   manualUrl?: string | null;
   installationUrl?: string | null;

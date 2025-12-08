@@ -1,3 +1,4 @@
+import type { ComponentCriticality, FrequencyUnit } from "@prisma/client"
 import type { SystemRoleKey } from "@/types/auth.types"
 import type { PaginatedResponse } from "@/types/common.types"
 
@@ -23,7 +24,10 @@ export interface WorkOrder {
   // Location and asset
   siteId: string | null
   assetId: string | null
-  
+
+  // Predictive maintenance (PREDICTIVE_MAINTENANCE feature)
+  maintenanceComponentId: string | null
+
   // Template integration
   templateId: string | null
   customFieldValues: JsonValue | null
@@ -99,6 +103,24 @@ export interface WorkOrderWithRelations extends WorkOrder {
     location: string | null
     status: string
   } | null
+  maintenanceComponent?: {
+    id: string
+    name: string
+    partNumber: string | null
+    criticality: ComponentCriticality | null
+    mtbf: number | null
+    lifeExpectancy: number | null
+    // Hybrid maintenance scheduling
+    manufacturerMaintenanceInterval: number | null
+    manufacturerMaintenanceIntervalUnit: FrequencyUnit | null
+    workOrderSchedule?: {
+      id: string
+      name: string
+      recurrenceType: string
+      nextGenerationDate: string | null
+      isActive: boolean
+    } | null
+  } | null
   template?: {
     id: string
     name: string
@@ -168,6 +190,7 @@ export interface CreateWorkOrderData {
   prefixId?: string
   siteId: string
   assetId?: string
+  maintenanceComponentId?: string
   templateId?: string
   customFieldValues?: Record<string, unknown>
   scheduledDate?: Date
@@ -189,6 +212,7 @@ export interface UpdateWorkOrderData {
   status?: WorkOrderStatus
   siteId?: string
   assetId?: string
+  maintenanceComponentId?: string
   templateId?: string
   customFieldValues?: Record<string, unknown>
   scheduledDate?: Date

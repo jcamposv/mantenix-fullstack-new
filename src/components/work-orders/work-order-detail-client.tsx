@@ -28,7 +28,9 @@ import { TimeSummaryCard } from "./time-tracking/time-summary-card"
 import { PrintableWorkOrder } from "./printable-work-order"
 import { WorkOrderStatusBadge } from "./work-order-status-badge"
 import { WorkOrderPriorityBadge } from "./work-order-priority-badge"
+import { MaintenanceComponentCard } from "./maintenance-component-card"
 import { useTimeTracker } from "@/hooks/use-time-tracker"
+import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 
@@ -50,6 +52,9 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
 
   // Get time summary for dynamic metrics
   const { summary } = useTimeTracker({ workOrderId: workOrder.id })
+
+  // Get company features for predictive maintenance
+  const { hasPredictiveMaintenance } = useCompanyFeatures()
 
   // Check if user can edit costs (JEFE_MANTENIMIENTO, ADMIN_EMPRESA, ADMIN_GRUPO, SUPER_ADMIN)
   const user = session?.user as { role?: string } | undefined
@@ -296,6 +301,11 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
             {/* General Tab */}
             <TabsContent value="general" className="space-y-4 mt-6">
               <WorkOrderConsolidatedInfo workOrder={workOrder} />
+
+              {/* Maintenance Component Card - Only for PREDICTIVE_MAINTENANCE feature */}
+              {workOrder.maintenanceComponent && hasPredictiveMaintenance && (
+                <MaintenanceComponentCard component={workOrder.maintenanceComponent} />
+              )}
 
               {/* Custom Fields */}
               {Object.keys(customFieldValues).length > 0 && (
