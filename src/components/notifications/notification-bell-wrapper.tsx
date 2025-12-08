@@ -16,9 +16,12 @@ export function NotificationBellWrapper() {
     isConnected,
     markAsRead,
     markAllAsRead,
-    clearNotifications
+    clearNotifications,
+    mtbfAlertsCount
   } = useNotifications({
-    enabled: true
+    enabled: true,
+    includeMTBFAlerts: true, // Enable MTBF alerts polling
+    mtbfRefreshInterval: 60000 // Poll every minute
   })
 
   return (
@@ -29,6 +32,7 @@ export function NotificationBellWrapper() {
       onMarkAsRead={markAsRead}
       onMarkAllAsRead={markAllAsRead}
       onClear={clearNotifications}
+      mtbfAlertsCount={mtbfAlertsCount}
     />
   )
 }

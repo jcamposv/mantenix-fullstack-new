@@ -17,6 +17,14 @@ import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import type { NotificationItem } from "@/types/notification-ui.types"
 
+interface MTBFAlertsCount {
+  total: number
+  critical: number
+  warnings: number
+  info: number
+  hasUnread: boolean
+}
+
 interface NotificationBellProps {
   notifications: NotificationItem[]
   unreadCount: number
@@ -24,6 +32,7 @@ interface NotificationBellProps {
   onMarkAsRead: (id: string) => void
   onMarkAllAsRead: () => void
   onClear: () => void
+  mtbfAlertsCount?: MTBFAlertsCount
 }
 
 const priorityEmojis = {
@@ -37,6 +46,7 @@ const priorityEmojis = {
  * Notification Bell Component
  *
  * Displays a bell icon with badge count and dropdown list of notifications
+ * Now includes MTBF alerts count
  */
 export function NotificationBell({
   notifications,
@@ -44,8 +54,11 @@ export function NotificationBell({
   isConnected,
   onMarkAsRead,
   onMarkAllAsRead,
-  onClear
+  onClear,
+  mtbfAlertsCount
 }: NotificationBellProps) {
+  // Calculate total unread including MTBF alerts
+  const totalUnread = unreadCount + (mtbfAlertsCount?.total || 0)
   const handleNotificationClick = (notification: NotificationItem) => {
     if (!notification.read) {
       onMarkAsRead(notification.id)
@@ -64,12 +77,12 @@ export function NotificationBell({
           aria-label="Notificaciones"
         >
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
+          {totalUnread > 0 && (
             <Badge
               variant="destructive"
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
-              {unreadCount > 9 ? "9+" : unreadCount}
+              {totalUnread > 9 ? "9+" : totalUnread}
             </Badge>
           )}
           {!isConnected && (
@@ -94,6 +107,44 @@ export function NotificationBell({
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
+
+        {/* MTBF Alerts Summary */}
+        {mtbfAlertsCount && mtbfAlertsCount.total > 0 && (
+          <>
+            <div className="px-3 py-2 bg-orange-50 dark:bg-orange-950/20 border-l-4 border-orange-500">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm font-semibold">Alertas MTBF</p>
+                <Badge variant="outline" className="text-xs">
+                  {mtbfAlertsCount.total}
+                </Badge>
+              </div>
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                {mtbfAlertsCount.critical > 0 && (
+                  <span className="text-red-600 dark:text-red-400 font-medium">
+                    🔴 {mtbfAlertsCount.critical} críticas
+                  </span>
+                )}
+                {mtbfAlertsCount.warnings > 0 && (
+                  <span className="text-orange-600 dark:text-orange-400">
+                    🟠 {mtbfAlertsCount.warnings} advertencias
+                  </span>
+                )}
+                {mtbfAlertsCount.info > 0 && (
+                  <span>ℹ️ {mtbfAlertsCount.info} info</span>
+                )}
+              </div>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 mt-1 text-xs"
+                onClick={() => window.location.href = '/maintenance/alerts'}
+              >
+                Ver todas las alertas MTBF →
+              </Button>
+            </div>
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         {notifications.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">

@@ -2,11 +2,22 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { toast } from "sonner"
+import useSWR from "swr"
 import type { SSEMessage, NotificationItem } from "@/types/notification-ui.types"
 
 interface UseNotificationsOptions {
   enabled?: boolean
   onNewAlert?: (alert: NotificationItem) => void
+  includeMTBFAlerts?: boolean // Poll MTBF alerts
+  mtbfRefreshInterval?: number // milliseconds
+}
+
+interface MTBFAlertsCount {
+  total: number
+  critical: number
+  warnings: number
+  info: number
+  hasUnread: boolean
 }
 
 interface UseNotificationsReturn {
@@ -16,13 +27,24 @@ interface UseNotificationsReturn {
   markAsRead: (id: string) => void
   markAllAsRead: () => void
   clearNotifications: () => void
+  mtbfAlertsCount?: MTBFAlertsCount // MTBF alerts count if enabled
 }
 
 const STORAGE_KEY = "mantenix_notifications"
 const MAX_STORED_NOTIFICATIONS = 50
 
 /**
+ * Fetcher for MTBF alerts count
+ */
+const mtbfFetcher = async (url: string): Promise<MTBFAlertsCount> => {
+  const response = await fetch(url, { credentials: 'include' })
+  if (!response.ok) throw new Error('Failed to fetch MTBF alerts')
+  return response.json()
+}
+
+/**
  * Custom hook for real-time notifications via Server-Sent Events (SSE)
+ * Now also includes MTBF alerts polling when enabled
  *
  * @param options - Configuration options
  * @returns Notifications state and control functions
@@ -30,12 +52,49 @@ const MAX_STORED_NOTIFICATIONS = 50
 export function useNotifications(
   options: UseNotificationsOptions = {}
 ): UseNotificationsReturn {
-  const { enabled = true, onNewAlert } = options
+  const {
+    enabled = true,
+    onNewAlert,
+    includeMTBFAlerts = true,
+    mtbfRefreshInterval = 60000, // 1 minute default
+  } = options
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Poll MTBF alerts using SWR
+  const { data: mtbfData } = useSWR<MTBFAlertsCount>(
+    includeMTBFAlerts ? '/api/maintenance/alerts/unread-count' : null,
+    mtbfFetcher,
+    {
+      refreshInterval: mtbfRefreshInterval,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 10000,
+      onSuccess: (data) => {
+        // Show toast for new critical MTBF alerts
+        if (data.critical > 0) {
+          const previousCritical = mtbfData?.critical || 0
+          if (data.critical > previousCritical) {
+            toast.error('🔴 Nueva alerta MTBF crítica', {
+              description: `${data.critical} componente(s) requieren atención urgente`,
+              action: {
+                label: 'Ver',
+                onClick: () => {
+                  window.location.href = '/maintenance/alerts'
+                }
+              }
+            })
+          }
+        }
+      },
+      onError: (err) => {
+        console.error('Error polling MTBF alerts:', err)
+      }
+    }
+  )
 
   // Load notifications from localStorage on mount
   useEffect(() => {
@@ -207,6 +266,7 @@ export function useNotifications(
     isConnected,
     markAsRead,
     markAllAsRead,
-    clearNotifications
+    clearNotifications,
+    mtbfAlertsCount: mtbfData,
   }
 }
