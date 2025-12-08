@@ -25,6 +25,8 @@ import {
 import type { AuthenticatedSession } from '@/types/auth.types'
 import { getCurrentCompanyId } from '@/lib/company-context'
 import { getComponentOperatingHours } from '@/lib/maintenance/operating-hours'
+import { MaintenanceAlertHistoryRepository } from '@/server/repositories/maintenance-alert-history.repository'
+import { MaintenanceAlertSeverity, Prisma } from '@prisma/client'
 
 export class MaintenanceAlertService {
   /**
@@ -338,5 +340,166 @@ export class MaintenanceAlertService {
     }
 
     return { updated, failed }
+  }
+
+  /**
+   * Sync generated alerts to database history
+   * Creates/updates alert records for persistence and analytics
+   */
+  static async syncAlertsToHistory(
+    alerts: MaintenanceAlert[],
+    companyId: string
+  ): Promise<{ created: number; updated: number; autoClosed: number }> {
+    let created = 0
+    let updated = 0
+    let autoClosed = 0
+
+    // Get all active alert IDs from generated alerts
+    const activeComponentIds = new Set(alerts.map((a) => a.componentId))
+
+    // Find currently active alerts in DB that are no longer in generated list
+    const existingActiveAlerts = await prisma.maintenanceAlertHistory.findMany({
+      where: {
+        companyId,
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        componentId: true,
+      },
+    })
+
+    // Auto-close alerts that are no longer active
+    for (const existing of existingActiveAlerts) {
+      if (!activeComponentIds.has(existing.componentId)) {
+        await MaintenanceAlertHistoryRepository.autoClose(
+          existing.id,
+          'Condiciones de alerta ya no se cumplen'
+        )
+        autoClosed++
+      }
+    }
+
+    // Upsert each alert
+    for (const alert of alerts) {
+      try {
+        // Map severity to enum
+        const severity: MaintenanceAlertSeverity =
+          alert.severity === 'CRITICAL'
+            ? 'CRITICAL'
+            : alert.severity === 'WARNING'
+            ? 'WARNING'
+            : 'INFO'
+
+        // Get asset ID from component
+        const component = await prisma.explodedViewComponent.findUnique({
+          where: { id: alert.componentId },
+          select: {
+            hotspots: {
+              take: 1,
+              select: {
+                view: {
+                  select: {
+                    assetId: true,
+                    asset: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+
+        const assetId = component?.hotspots[0]?.view.assetId
+        const assetName = component?.hotspots[0]?.view.asset.name || 'Unknown'
+
+        if (!assetId) {
+          console.warn(`Component ${alert.componentId} has no associated asset, skipping`)
+          continue
+        }
+
+        // Check if alert already exists
+        const existing = await prisma.maintenanceAlertHistory.findFirst({
+          where: {
+            componentId: alert.componentId,
+            companyId,
+            status: 'ACTIVE',
+          },
+        })
+
+        // Skip if mtbf is null (shouldn't happen but type safety)
+        if (!alert.mtbf) {
+          console.warn(`Alert for component ${alert.componentId} has no MTBF, skipping`)
+          continue
+        }
+
+        const alertData: Omit<
+          Prisma.MaintenanceAlertHistoryCreateInput,
+          'component' | 'company' | 'asset'
+        > = {
+          componentName: alert.componentName,
+          assetName,
+          partNumber: alert.partNumber,
+          severity,
+          criticality: alert.criticality,
+          mtbf: alert.mtbf,
+          currentOperatingHours: alert.currentOperatingHours,
+          hoursUntilMaintenance: alert.hoursUntilMaintenance,
+          daysUntilMaintenance: alert.daysUntilMaintenance,
+          mtbfUtilization: (alert.currentOperatingHours / alert.mtbf) * 100,
+          stockAvailable: alert.currentStock,
+          message: alert.message,
+          details: alert as unknown as Prisma.InputJsonValue,
+        }
+
+        if (existing) {
+          // Update existing alert
+          await MaintenanceAlertHistoryRepository.update(existing.id, alertData)
+          updated++
+        } else {
+          // Create new alert
+          await MaintenanceAlertHistoryRepository.create({
+            ...alertData,
+            component: { connect: { id: alert.componentId } },
+            company: { connect: { id: companyId } },
+            asset: { connect: { id: assetId } },
+          } as Prisma.MaintenanceAlertHistoryCreateInput)
+          created++
+        }
+      } catch (error) {
+        console.error(
+          `Failed to sync alert for component ${alert.componentId}:`,
+          error
+        )
+      }
+    }
+
+    return { created, updated, autoClosed }
+  }
+
+  /**
+   * Generate and sync alerts (combines generation + persistence)
+   */
+  static async generateAndSyncAlerts(
+    session: AuthenticatedSession
+  ): Promise<{
+    alerts: MaintenanceAlert[]
+    sync: { created: number; updated: number; autoClosed: number }
+  }> {
+    const companyId = await getCurrentCompanyId(session)
+    if (!companyId) {
+      throw new Error('No se pudo determinar la empresa')
+    }
+
+    // Generate alerts
+    const alerts = await this.generateAllAlerts(session)
+
+    // Sync to database
+    const sync = await this.syncAlertsToHistory(alerts, companyId)
+
+    return { alerts, sync }
   }
 }

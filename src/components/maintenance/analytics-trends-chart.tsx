@@ -10,10 +10,8 @@
 
 'use client'
 
-import { useState } from 'react'
 import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -33,10 +31,9 @@ async function fetcher(url: string): Promise<TrendsResponse> {
  * Analytics Trends Chart Component
  */
 export function AnalyticsTrendsChart() {
-  const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d')
-
+  // Use default 30d period - chart shows last 30 days of data
   const { data, error, isLoading } = useSWR<TrendsResponse>(
-    `/api/maintenance/analytics/trends?period=${period}`,
+    `/api/maintenance/analytics/trends?period=30d`,
     fetcher,
     {
       refreshInterval: 300000, // 5 minutes
@@ -47,37 +44,10 @@ export function AnalyticsTrendsChart() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Tendencias de Alertas</CardTitle>
-            <CardDescription>
-              Evolución de alertas en el tiempo
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={period === '7d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('7d')}
-            >
-              7 días
-            </Button>
-            <Button
-              variant={period === '30d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('30d')}
-            >
-              30 días
-            </Button>
-            <Button
-              variant={period === '90d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('90d')}
-            >
-              90 días
-            </Button>
-          </div>
-        </div>
+        <CardTitle>Tendencias de Alertas</CardTitle>
+        <CardDescription>
+          Evolución de alertas en los últimos 30 días
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading && <Skeleton className="h-80" />}

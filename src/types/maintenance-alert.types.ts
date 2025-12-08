@@ -36,6 +36,10 @@ export interface MaintenanceAlert {
   partNumber: string | null
   criticality: ComponentCriticality | null
 
+  // Technical data (for persistence)
+  mtbf: number | null // Mean Time Between Failures (hours)
+  currentOperatingHours: number // Current operating hours
+
   // Inventory information
   inventoryItemId: string | null
   currentStock: number

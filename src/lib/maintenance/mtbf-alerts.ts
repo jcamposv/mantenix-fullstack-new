@@ -156,6 +156,8 @@ export function generateMTBFAlert(
     componentName,
     partNumber,
     criticality,
+    mtbf,
+    currentOperatingHours,
     inventoryItemId,
     currentStock,
     minimumStock,

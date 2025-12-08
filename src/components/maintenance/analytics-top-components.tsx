@@ -62,8 +62,8 @@ export function AnalyticsTopComponents({ components }: AnalyticsTopComponentsPro
         <div className="space-y-3">
           {components.map((component, index) => (
             <Link
-              key={component.id}
-              href={`/admin/exploded-view-components/${component.id}`}
+              key={component.componentId}
+              href={`/admin/exploded-view-components/${component.componentId}`}
               className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
             >
               <div className="flex items-center gap-3 flex-1">
@@ -71,7 +71,7 @@ export function AnalyticsTopComponents({ components }: AnalyticsTopComponentsPro
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{component.name}</p>
+                  <p className="font-medium truncate">{component.componentName}</p>
                   {component.partNumber && (
                     <p className="text-xs text-muted-foreground">
                       P/N: {component.partNumber}

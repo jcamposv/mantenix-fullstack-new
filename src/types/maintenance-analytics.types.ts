@@ -17,8 +17,8 @@ export interface AnalyticsSummary {
 }
 
 export interface TopComponent {
-  id: string
-  name: string
+  componentId: string
+  componentName: string
   partNumber: string | null
   alertCount: number
   criticality: string | null

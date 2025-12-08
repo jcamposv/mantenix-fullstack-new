@@ -271,6 +271,10 @@ model User {
   explodedViewsCreated AssetExplodedView[] @relation("ExplodedViewCreator")
   explodedViewComponentsCreated ExplodedViewComponent[] @relation("ExplodedViewComponentCreator")
 
+  // Maintenance alert history relations
+  maintenanceAlertsResolved  MaintenanceAlertHistory[] @relation("AlertResolvedBy")
+  maintenanceAlertsDismissed MaintenanceAlertHistory[] @relation("AlertDismissedBy")
+
   @@map("user")
 }
 
@@ -371,6 +375,7 @@ model Company {
   productionLines ProductionLine[]
   customRoles     CustomRole[] // Roles personalizados de la empresa
   explodedViewComponents ExplodedViewComponent[] // Componentes de vistas explosionadas
+  maintenanceAlertHistory MaintenanceAlertHistory[] // Histórico de alertas de mantenimiento
 
   @@index([subdomain])
   @@index([isActive])
@@ -503,6 +508,9 @@ model Asset {
 
   // Exploded views
   explodedViews        AssetExplodedView[]
+
+  // Maintenance alert history
+  maintenanceAlertHistory MaintenanceAlertHistory[]
 
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -981,6 +989,9 @@ model WorkOrder {
 
   // Asset status history relations
   assetStatusHistory AssetStatusHistory[]
+
+  // Maintenance alert history relations
+  maintenanceAlerts MaintenanceAlertHistory[] @relation("AlertWorkOrder")
 
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
@@ -2176,6 +2187,9 @@ model ExplodedViewComponent {
   parentComponent      ExplodedViewComponent?  @relation("ComponentHierarchy", fields: [parentComponentId], references: [id], onDelete: SetNull)
   childComponents      ExplodedViewComponent[] @relation("ComponentHierarchy") // Componentes hijos
 
+  // Maintenance alert history
+  maintenanceAlertHistory MaintenanceAlertHistory[]
+
   @@unique([companyId, partNumber]) // Part number único por empresa
   @@index([companyId])
   @@index([inventoryItemId])
@@ -2332,4 +2346,93 @@ model MaintenanceTask {
   @@index([order])
   @@index([isActive])
   @@map("maintenance_tasks")
+}
+
+// ============================================================================
+// MAINTENANCE ALERT HISTORY
+// ============================================================================
+// Histórico completo de alertas de mantenimiento predictivo
+// Permite análisis temporal y auditoría de alertas de MTBF
+
+enum MaintenanceAlertSeverity {
+  CRITICAL  // Requiere acción inmediata
+  WARNING   // Planificar mantenimiento pronto
+  INFO      // Información preventiva
+}
+
+enum MaintenanceAlertStatus {
+  ACTIVE      // Alerta activa
+  RESOLVED    // Resuelta (OT creada o mantenimiento completado)
+  DISMISSED   // Ignorada/descartada por admin
+  AUTO_CLOSED // Cerrada automáticamente (condiciones ya no se cumplen)
+}
+
+model MaintenanceAlertHistory {
+  id        String @id @default(cuid())
+  companyId String
+
+  // Component and Asset information
+  componentId   String
+  assetId       String
+  componentName String  // Denormalized for quick queries
+  assetName     String  // Denormalized for quick queries
+  partNumber    String? // Denormalized
+
+  // Alert classification
+  severity    MaintenanceAlertSeverity
+  criticality String? // A, B, C (ISO 14224)
+
+  // MTBF Data (snapshot at alert generation time)
+  mtbf                   Float   // Mean Time Between Failures (hours)
+  currentOperatingHours  Float   // Operating hours at alert time
+  hoursUntilMaintenance  Float   // Hours remaining until maintenance
+  daysUntilMaintenance   Float   // Days remaining (can be negative)
+  mtbfUtilization        Float   // Percentage: currentHours / mtbf
+
+  // Inventory context
+  stockAvailable Int  // Stock available at alert time
+
+  // Alert message and details
+  message     String  // Human-readable alert message
+  details     Json?   // Additional context (calculations, thresholds, etc.)
+
+  // Status tracking
+  status       MaintenanceAlertStatus @default(ACTIVE)
+
+  // Resolution tracking
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolutionNotes  String?
+  workOrderId      String? // OT created to address this alert
+
+  // Dismissal tracking
+  dismissedAt       DateTime?
+  dismissedByUserId String?
+  dismissalReason   String?
+
+  // Auto-closure tracking
+  autoClosedAt     DateTime?
+  autoClosureReason String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company      Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  component    ExplodedViewComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  asset        Asset                  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  resolvedBy   User?                  @relation("AlertResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  dismissedBy  User?                  @relation("AlertDismissedBy", fields: [dismissedByUserId], references: [id], onDelete: SetNull)
+  workOrder    WorkOrder?             @relation("AlertWorkOrder", fields: [workOrderId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([componentId])
+  @@index([assetId])
+  @@index([status])
+  @@index([severity])
+  @@index([criticality])
+  @@index([createdAt])
+  @@index([companyId, status, createdAt])
+  @@map("maintenance_alert_history")
 }

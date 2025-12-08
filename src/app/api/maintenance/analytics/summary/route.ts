@@ -1,19 +1,19 @@
 /**
  * API Route: Maintenance Analytics Summary
  *
- * GET /api/maintenance/analytics/summary
+ * GET /api/maintenance/analytics/summary?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
  * Returns KPIs and summary metrics for MTBF alerts
  *
  * Following Next.js Expert standards:
  * - Feature flag gated (PREDICTIVE_MAINTENANCE)
  * - Type-safe with explicit return types
- * - Uses Service layer
+ * - Uses Repository layer for historical data
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { AuthService } from '@/server/services/auth.service'
 import { FeatureService } from '@/server/services/feature.service'
-import { MaintenanceAlertService } from '@/server/services/maintenance-alert.service'
+import { MaintenanceAlertHistoryRepository } from '@/server/repositories/maintenance-alert-history.repository'
 import { getCurrentCompanyId } from '@/lib/company-context'
 
 export const runtime = 'nodejs'
@@ -27,8 +27,8 @@ interface AnalyticsSummary {
   averageResponseTime: number // hours
   effectiveness: number // percentage
   topComponents: Array<{
-    id: string
-    name: string
+    componentId: string
+    componentName: string
     partNumber: string | null
     alertCount: number
     criticality: string | null
@@ -41,9 +41,9 @@ interface AnalyticsSummary {
 }
 
 /**
- * GET - Retrieve analytics summary
+ * GET - Retrieve analytics summary with optional date filters
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const sessionResult = await AuthService.getAuthenticatedSession()
 
@@ -73,77 +73,36 @@ export async function GET() {
       )
     }
 
-    // Get all alerts
-    const allAlerts = await MaintenanceAlertService.generateAllAlerts(sessionResult)
+    // Get date filters from query params
+    const searchParams = request.nextUrl.searchParams
+    const startDateStr = searchParams.get('startDate')
+    const endDateStr = searchParams.get('endDate')
 
-    // Calculate metrics
-    const totalAlerts = allAlerts.length
-    const critical = allAlerts.filter(a => a.severity === 'CRITICAL').length
-    const warnings = allAlerts.filter(a => a.severity === 'WARNING').length
-    const info = allAlerts.filter(a => a.severity === 'INFO').length
+    const startDate = startDateStr ? new Date(startDateStr) : undefined
+    const endDate = endDateStr ? new Date(endDateStr) : undefined
 
-    // Calculate average response time (mock for now - will be real when we track actions)
-    // For now, use daysUntilMaintenance as a proxy
-    const avgDays = allAlerts.length > 0
-      ? allAlerts.reduce((sum, a) => sum + Math.abs(a.daysUntilMaintenance), 0) / allAlerts.length
-      : 0
-    const averageResponseTime = avgDays * 24 // convert to hours
+    // Get analytics summary from repository (historical data)
+    const summary = await MaintenanceAlertHistoryRepository.getAnalyticsSummary(
+      companyId,
+      startDate,
+      endDate
+    )
 
-    // Calculate effectiveness (mock - will be real when we track OT creation)
-    // For now, assume 70% effectiveness
-    const effectiveness = 70
+    // Calculate average response time
+    // TODO: In future, calculate from actual resolved alerts
+    const averageResponseTime = 48 // Mock: 48 hours average
 
-    // Get top components (by alert severity and frequency)
-    const componentMap = new Map<string, {
-      id: string
-      name: string
-      partNumber: string | null
-      criticality: string | null
-      score: number
-    }>()
+    // Calculate effectiveness
+    // TODO: In future, calculate from resolved vs total alerts
+    const effectiveness = 70 // Mock: 70% effectiveness
 
-    allAlerts.forEach(alert => {
-      const existing = componentMap.get(alert.componentId)
-      // Score: CRITICAL=3, WARNING=2, INFO=1
-      const score = alert.severity === 'CRITICAL' ? 3 : alert.severity === 'WARNING' ? 2 : 1
-
-      if (existing) {
-        existing.score += score
-      } else {
-        componentMap.set(alert.componentId, {
-          id: alert.componentId,
-          name: alert.componentName,
-          partNumber: alert.partNumber,
-          criticality: alert.criticality,
-          score,
-        })
-      }
-    })
-
-    const topComponents = Array.from(componentMap.values())
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
-      .map(({ score, ...rest }) => ({ ...rest, alertCount: score }))
-
-    // Count by criticality
-    const byCriticality = {
-      A: allAlerts.filter(a => a.criticality === 'A').length,
-      B: allAlerts.filter(a => a.criticality === 'B').length,
-      C: allAlerts.filter(a => a.criticality === 'C').length,
-    }
-
-    const summary: AnalyticsSummary = {
-      totalAlerts,
-      critical,
-      warnings,
-      info,
+    const fullSummary: AnalyticsSummary = {
+      ...summary,
       averageResponseTime,
       effectiveness,
-      topComponents,
-      byCriticality,
     }
 
-    return NextResponse.json(summary)
+    return NextResponse.json(fullSummary)
   } catch (error) {
     console.error('Error getting analytics summary:', error)
     return NextResponse.json(
