@@ -273,6 +273,11 @@ export const getFeatureNavItems = (enabledFeatures: {
           permission: "assets.view",
         },
         {
+          title: "Analytics",
+          url: "/maintenance/analytics",
+          permission: "assets.view",
+        },
+        {
           title: "Componentes",
           url: "/admin/exploded-view-components",
           permission: "assets.view",
