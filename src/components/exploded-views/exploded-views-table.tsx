@@ -1,8 +1,8 @@
 /**
  * Exploded Views Table Component
  *
- * Professional table display using TanStack Table + useTableData hook.
- * Follows project patterns.
+ * Professional table display with server-side pagination and filtering.
+ * Follows Next.js Expert standards.
  */
 
 'use client'
@@ -13,40 +13,45 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
+import { FilterButton } from '@/components/common/filter-button'
+import { ExplodedViewsFilters } from './exploded-views-filters'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { ArrowUpDown, Eye, Settings, Trash2, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useTableData } from '@/components/hooks/use-table-data'
-import type { AssetExplodedViewWithRelations, PaginatedExplodedViewsResponse } from '@/types/exploded-view.types'
+import {
+  useEVViews,
+  type EVViewFilters,
+} from '@/hooks/use-ev-views'
+import type { AssetExplodedViewWithRelations } from '@/types/exploded-view.types'
 
 interface ExplodedViewsTableProps {
   assetId?: string // Optional filter by asset
 }
 
 /**
- * Exploded Views Table Component with auto-fetching
+ * Exploded Views Table Component with server-side pagination
  */
 export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
   const router = useRouter()
+  const [page, setPage] = useState(1)
+  const [filters, setFilters] = useState<EVViewFilters>(() => {
+    // Initialize with assetId from props if present
+    return assetId ? { assetId } : {}
+  })
+  const limit = 20
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [viewToDelete, setViewToDelete] = useState<AssetExplodedViewWithRelations | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Build endpoint URL with optional filter
-  const endpoint = assetId
-    ? `/api/exploded-views?assetId=${assetId}`
-    : '/api/exploded-views?limit=100'
-
-  // Use table data hook for auto-fetching
-  const { data: explodedViews, loading, refetch } = useTableData<AssetExplodedViewWithRelations>({
-    endpoint,
-    transform: (data: unknown) => {
-      const response = data as PaginatedExplodedViewsResponse
-      return response.items || []
-    },
-    dependencies: [assetId],
-  })
+  const { views: explodedViews, loading, totalPages, refetch } =
+    useEVViews({
+      page,
+      limit,
+      filters,
+      autoRefresh: false,
+    })
 
   const handleDeleteClick = useCallback((view: AssetExplodedViewWithRelations): void => {
     setViewToDelete(view)
@@ -220,6 +225,22 @@ export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
     [handleDeleteClick]
   )
 
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.isActive) count++
+    // Don't count assetId as it comes from URL
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    // Keep assetId filter if present
+    setFilters(assetId ? { assetId } : {})
+    setPage(1)
+  }
+
   return (
     <>
       <DataTable
@@ -228,6 +249,25 @@ export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
         searchKey="name"
         searchPlaceholder="Buscar vistas por nombre..."
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <ExplodedViewsFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </FilterButton>
+        }
       />
 
       <ConfirmDialog

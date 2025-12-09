@@ -1,8 +1,8 @@
 /**
  * Components Table Component
  *
- * Professional table display for exploded view components.
- * Uses TanStack Table + useTableData hook.
+ * Professional table display with server-side pagination and filtering.
+ * Follows Next.js Expert standards.
  */
 
 'use client'
@@ -13,46 +13,38 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
+import { FilterButton } from '@/components/common/filter-button'
+import { EVComponentsFilters } from './ev-components-filters'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { ArrowUpDown, Eye, Settings, Trash2, Package } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useTableData } from '@/components/hooks/use-table-data'
-import type { ExplodedViewComponentWithRelations, PaginatedComponentsResponse } from '@/types/exploded-view.types'
-
-interface ComponentsTableProps {
-  // Optional filters
-  manufacturer?: string
-  hasInventoryItem?: boolean
-}
+import {
+  useEVComponents,
+  type EVComponentFilters,
+} from '@/hooks/use-ev-components'
+import type { ExplodedViewComponentWithRelations } from '@/types/exploded-view.types'
 
 /**
- * Components Table with auto-fetching
+ * Components Table with server-side pagination
  */
-export function ComponentsTable({ manufacturer, hasInventoryItem }: ComponentsTableProps) {
+export function ComponentsTable() {
   const router = useRouter()
+  const [page, setPage] = useState(1)
+  const [filters, setFilters] = useState<EVComponentFilters>({})
+  const limit = 20
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [componentToDelete, setComponentToDelete] = useState<ExplodedViewComponentWithRelations | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Build endpoint URL with optional filters
-  const buildEndpoint = () => {
-    const params = new URLSearchParams()
-    params.append('limit', '100')
-    if (manufacturer) params.append('manufacturer', manufacturer)
-    if (hasInventoryItem !== undefined) params.append('hasInventoryItem', String(hasInventoryItem))
-    return `/api/exploded-view-components?${params.toString()}`
-  }
-
-  // Use table data hook for auto-fetching
-  const { data: components, loading, refetch } = useTableData<ExplodedViewComponentWithRelations>({
-    endpoint: buildEndpoint(),
-    transform: (data: unknown) => {
-      const response = data as PaginatedComponentsResponse
-      return response.items || []
-    },
-    dependencies: [manufacturer, hasInventoryItem],
-  })
+  const { components, loading, totalPages, refetch } =
+    useEVComponents({
+      page,
+      limit,
+      filters,
+      autoRefresh: false,
+    })
 
   const handleDeleteClick = useCallback((component: ExplodedViewComponentWithRelations): void => {
     setComponentToDelete(component)
@@ -226,6 +218,21 @@ export function ComponentsTable({ manufacturer, hasInventoryItem }: ComponentsTa
     [handleDeleteClick]
   )
 
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.isActive) count++
+    if (filters.hasInventoryItem) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
   return (
     <>
       <DataTable
@@ -234,6 +241,25 @@ export function ComponentsTable({ manufacturer, hasInventoryItem }: ComponentsTa
         searchKey="name"
         searchPlaceholder="Buscar componentes por nombre o número de parte..."
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[350px]"
+          >
+            <EVComponentsFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </FilterButton>
+        }
       />
 
       <ConfirmDialog
