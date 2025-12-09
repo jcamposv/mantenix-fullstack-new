@@ -59,6 +59,9 @@ export interface MaintenanceAlert {
   // Timestamps
   generatedAt: Date
   expiresAt: Date | null
+
+  // Database persistence (populated when alert is synced)
+  alertHistoryId?: string
 }
 
 /**

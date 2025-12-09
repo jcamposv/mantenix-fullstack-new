@@ -304,6 +304,32 @@ export class WorkOrderRepository {
             }
           }
         },
+        maintenanceAlerts: {
+          where: {
+            status: 'RESOLVED'
+          },
+          select: {
+            id: true,
+            componentName: true,
+            assetName: true,
+            partNumber: true,
+            severity: true,
+            message: true,
+            createdAt: true,
+            resolvedAt: true,
+            resolutionNotes: true,
+            resolvedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
         _count: {
           select: {
             assignments: true
@@ -326,6 +352,11 @@ export class WorkOrderRepository {
       assignments: workOrder.assignments?.map(assignment => ({
         ...assignment,
         assignedAt: assignment.assignedAt.toISOString()
+      })),
+      maintenanceAlerts: workOrder.maintenanceAlerts?.map(alert => ({
+        ...alert,
+        createdAt: alert.createdAt.toISOString(),
+        resolvedAt: alert.resolvedAt?.toISOString() || null
       }))
     } as unknown as WorkOrderWithRelations
   }

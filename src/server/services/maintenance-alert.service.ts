@@ -349,10 +349,16 @@ export class MaintenanceAlertService {
   static async syncAlertsToHistory(
     alerts: MaintenanceAlert[],
     companyId: string
-  ): Promise<{ created: number; updated: number; autoClosed: number }> {
+  ): Promise<{
+    created: number
+    updated: number
+    autoClosed: number
+    alertHistoryIds: Map<string, string> // componentId -> alertHistoryId
+  }> {
     let created = 0
     let updated = 0
     let autoClosed = 0
+    const alertHistoryIds = new Map<string, string>()
 
     // Get all active alert IDs from generated alerts
     const activeComponentIds = new Set(alerts.map((a) => a.componentId))
@@ -458,15 +464,17 @@ export class MaintenanceAlertService {
         if (existing) {
           // Update existing alert
           await MaintenanceAlertHistoryRepository.update(existing.id, alertData)
+          alertHistoryIds.set(alert.componentId, existing.id)
           updated++
         } else {
           // Create new alert
-          await MaintenanceAlertHistoryRepository.create({
+          const newAlert = await MaintenanceAlertHistoryRepository.create({
             ...alertData,
             component: { connect: { id: alert.componentId } },
             company: { connect: { id: companyId } },
             asset: { connect: { id: assetId } },
           } as Prisma.MaintenanceAlertHistoryCreateInput)
+          alertHistoryIds.set(alert.componentId, newAlert.id)
           created++
         }
       } catch (error) {
@@ -477,7 +485,7 @@ export class MaintenanceAlertService {
       }
     }
 
-    return { created, updated, autoClosed }
+    return { created, updated, autoClosed, alertHistoryIds }
   }
 
   /**
@@ -488,6 +496,7 @@ export class MaintenanceAlertService {
   ): Promise<{
     alerts: MaintenanceAlert[]
     sync: { created: number; updated: number; autoClosed: number }
+    alertHistoryIds: Map<string, string>
   }> {
     const companyId = await getCurrentCompanyId(session)
     if (!companyId) {
@@ -498,8 +507,87 @@ export class MaintenanceAlertService {
     const alerts = await this.generateAllAlerts(session)
 
     // Sync to database
-    const sync = await this.syncAlertsToHistory(alerts, companyId)
+    const { alertHistoryIds, ...syncStats } = await this.syncAlertsToHistory(alerts, companyId)
 
-    return { alerts, sync }
+    return { alerts, sync: syncStats, alertHistoryIds }
+  }
+
+  /**
+   * Sync alerts for all companies (used by cron job)
+   */
+  static async syncAlertsForAllCompanies(): Promise<{
+    companiesProcessed: number
+    successCount: number
+    failCount: number
+    results: Array<{
+      companyId: string
+      companyName: string
+      alertsGenerated?: number
+      alertsSynced?: number
+      success: boolean
+      error?: string
+    }>
+  }> {
+    // Get all companies with PREDICTIVE_MAINTENANCE enabled
+    const companies = await prisma.companyFeature.findMany({
+      where: {
+        module: 'PREDICTIVE_MAINTENANCE',
+        isEnabled: true,
+      },
+      select: {
+        companyId: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
+
+    const results = []
+
+    // Process each company
+    for (const { company } of companies) {
+      try {
+        // Create a mock session for this company
+        const mockSession: AuthenticatedSession = {
+          user: {
+            id: 'system-cron',
+            email: 'system@cron',
+            companyId: company.id,
+          },
+        } as AuthenticatedSession
+
+        // Generate and sync alerts
+        const { alerts, alertHistoryIds } = await this.generateAndSyncAlerts(mockSession)
+
+        results.push({
+          companyId: company.id,
+          companyName: company.name,
+          alertsGenerated: alerts.length,
+          alertsSynced: alertHistoryIds.size,
+          success: true,
+        })
+      } catch (error) {
+        console.error(`Error processing company ${company.name}:`, error)
+        results.push({
+          companyId: company.id,
+          companyName: company.name,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+      }
+    }
+
+    const successCount = results.filter((r) => r.success).length
+    const failCount = results.filter((r) => !r.success).length
+
+    return {
+      companiesProcessed: companies.length,
+      successCount,
+      failCount,
+      results,
+    }
   }
 }

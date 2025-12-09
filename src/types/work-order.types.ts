@@ -150,6 +150,22 @@ export interface WorkOrderWithRelations extends WorkOrder {
       avatar?: string | null
     }
   }>
+  maintenanceAlerts?: Array<{
+    id: string
+    componentName: string
+    assetName: string
+    partNumber: string | null
+    severity: 'CRITICAL' | 'WARNING' | 'INFO'
+    message: string
+    createdAt: string
+    resolvedAt: string | null
+    resolutionNotes: string | null
+    resolvedBy: {
+      id: string
+      name: string
+      email: string
+    } | null
+  }>
   _count?: {
     assignments?: number
   }

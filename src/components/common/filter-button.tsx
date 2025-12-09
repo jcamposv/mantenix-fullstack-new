@@ -111,9 +111,11 @@ export function FilterButton({
         </div>
         <Separator />
 
-        {/* Custom Filter Content */}
-        <div className="p-4">
-          {children}
+        {/* Custom Filter Content with custom scrollbar */}
+        <div className="max-h-[min(500px,70vh)] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          <div className="p-4">
+            {children}
+          </div>
         </div>
       </PopoverContent>
     </Popover>

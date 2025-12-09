@@ -21,10 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { AlertManagementFilters } from '@/hooks/use-maintenance-alerts-management'
-import { ComponentCriticality } from '@prisma/client'
+import { ComponentCriticality, MaintenanceAlertStatus } from '@prisma/client'
 import type { AlertSeverity, StockStatus } from '@/types/maintenance-alert.types'
-import { AlertTriangle, Package, Clock } from 'lucide-react'
+import { AlertTriangle, Package, Clock, CheckCircle, Calendar } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
 
 interface MaintenanceAlertsFiltersProps {
   filters: AlertManagementFilters
@@ -47,6 +49,14 @@ const stockStatusOptions: { value: StockStatus; label: string }[] = [
   { value: 'CRITICAL', label: 'Stock Crítico' },
   { value: 'LOW', label: 'Stock Bajo' },
   { value: 'SUFFICIENT', label: 'Stock Suficiente' },
+]
+
+const statusOptions: { value: MaintenanceAlertStatus | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'ACTIVE', label: 'Activas' },
+  { value: 'RESOLVED', label: 'Resueltas' },
+  { value: 'DISMISSED', label: 'Dismissadas' },
+  { value: 'AUTO_CLOSED', label: 'Auto-cerradas' },
 ]
 
 const daysRangeOptions = [
@@ -122,9 +132,103 @@ export function MaintenanceAlertsFilters({
     })
   }
 
+  const handleStatusChange = (value: string) => {
+    if (value === 'ALL') {
+      onFiltersChange({
+        ...filters,
+        status: undefined,
+      })
+    } else {
+      onFiltersChange({
+        ...filters,
+        status: value as MaintenanceAlertStatus,
+      })
+    }
+  }
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    onFiltersChange({
+      ...filters,
+      startDate: range?.from,
+      endDate: range?.to,
+    })
+  }
+
   return (
     <div className="space-y-4">
-      <div className="space-y-4">
+      {/* Primera fila: Estado y Fechas */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Status Filter */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <CheckCircle className="h-3.5 w-3.5" />
+            Estado
+          </Label>
+          <Select
+            value={filters.status || 'ALL'}
+            onValueChange={handleStatusChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Days Range Filter */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5" />
+            Días hasta Falla
+          </Label>
+          <Select
+            value={
+              filters.daysUntilMaintenance
+                ? `${filters.daysUntilMaintenance.min || 0}-${filters.daysUntilMaintenance.max || '+'}`
+                : 'all'
+            }
+            onValueChange={handleDaysRangeChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {daysRangeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Date Range Filter - Ancho completo */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <Calendar className="h-3.5 w-3.5" />
+          Rango de Fechas
+        </Label>
+        <DateRangePicker
+          value={{
+            from: filters.startDate,
+            to: filters.endDate,
+          }}
+          onChange={handleDateRangeChange}
+          placeholder="Seleccionar fechas"
+          className="w-full"
+        />
+      </div>
+
+      {/* Severidad y Criticidad en dos columnas */}
+      <div className="grid grid-cols-2 gap-4">
         {/* Severity Filter */}
         <div className="space-y-3">
           <Label className="text-sm font-medium flex items-center gap-2">
@@ -167,56 +271,28 @@ export function MaintenanceAlertsFilters({
             })}
           </div>
         </div>
+      </div>
 
-        {/* Stock Status Filter */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <Package className="h-3.5 w-3.5" />
-            Estado del Stock
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {stockStatusOptions.map((option) => {
-              const isSelected = filters.stockStatus?.includes(option.value)
-              return (
-                <Badge
-                  key={option.value}
-                  variant={isSelected ? 'default' : 'outline'}
-                  className="cursor-pointer hover:bg-primary/90"
-                  onClick={() => handleStockStatusChange(option.value)}
-                >
-                  {option.label}
-                </Badge>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Days Range Filter */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5" />
-            Días hasta Falla
-          </Label>
-          <Select
-            value={
-              filters.daysUntilMaintenance
-                ? `${filters.daysUntilMaintenance.min || 0}-${filters.daysUntilMaintenance.max || '+'}`
-                : 'all'
-            }
-            onValueChange={handleDaysRangeChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {daysRangeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Stock Status - Ancho completo */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <Package className="h-3.5 w-3.5" />
+          Estado del Stock
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          {stockStatusOptions.map((option) => {
+            const isSelected = filters.stockStatus?.includes(option.value)
+            return (
+              <Badge
+                key={option.value}
+                variant={isSelected ? 'default' : 'outline'}
+                className="cursor-pointer hover:bg-primary/90"
+                onClick={() => handleStockStatusChange(option.value)}
+              >
+                {option.label}
+              </Badge>
+            )
+          })}
         </div>
       </div>
     </div>

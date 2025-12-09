@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -16,7 +17,9 @@ import {
   Activity,
   Package,
   MessageSquare,
-  Info
+  Info,
+  AlertCircle,
+  CheckCircle
 } from "lucide-react"
 import { WorkOrderConsolidatedInfo } from "./work-order-consolidated-info"
 import { WorkOrderCostBreakdownCard } from "./cost-breakdown-card"
@@ -305,6 +308,72 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
               {/* Maintenance Component Card - Only for PREDICTIVE_MAINTENANCE feature */}
               {workOrder.maintenanceComponent && hasPredictiveMaintenance && (
                 <MaintenanceComponentCard component={workOrder.maintenanceComponent} />
+              )}
+
+              {/* Maintenance Alerts - Only show if there are resolved alerts */}
+              {workOrder.maintenanceAlerts && workOrder.maintenanceAlerts.length > 0 && hasPredictiveMaintenance && (
+                <Card className="shadow-none">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      Alertas de Mantenimiento Resueltas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {workOrder.maintenanceAlerts.map((alert) => {
+                      const severityColors = {
+                        CRITICAL: 'destructive',
+                        WARNING: 'outline',
+                        INFO: 'secondary',
+                      } as const
+
+                      return (
+                        <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
+                          <AlertCircle className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-medium text-sm">{alert.componentName}</p>
+                                {alert.partNumber && (
+                                  <p className="text-xs text-muted-foreground">P/N: {alert.partNumber}</p>
+                                )}
+                              </div>
+                              <Badge variant={severityColors[alert.severity]}>{alert.severity}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{alert.message}</p>
+                            {alert.resolutionNotes && (
+                              <div className="pt-2 border-t">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Notas de resolución:</p>
+                                <p className="text-sm">{alert.resolutionNotes}</p>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                              <span>
+                                Creada: {new Date(alert.createdAt).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                              {alert.resolvedAt && (
+                                <span>
+                                  Resuelta: {new Date(alert.resolvedAt).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                              )}
+                              {alert.resolvedBy && (
+                                <span>Por: {alert.resolvedBy.name}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </CardContent>
+                </Card>
               )}
 
               {/* Custom Fields */}

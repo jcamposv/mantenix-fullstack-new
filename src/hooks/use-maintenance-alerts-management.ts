@@ -18,12 +18,16 @@ import type {
   PaginatedAlertsResponse,
   StockStatus,
 } from '@/types/maintenance-alert.types'
+import type { MaintenanceAlertStatus } from '@prisma/client'
 
 /**
  * Extended filters for management page
  */
 export interface AlertManagementFilters extends AlertFilters {
   siteId?: string
+  status?: MaintenanceAlertStatus
+  startDate?: Date
+  endDate?: Date
 }
 
 /**
@@ -104,6 +108,19 @@ export function useMaintenanceAlertsManagement(
     // Stock status filters
     if (filters?.stockStatus && filters.stockStatus.length > 0) {
       filters.stockStatus.forEach((s) => params.append('stock_status', s))
+    }
+
+    // Status filter
+    if (filters?.status) {
+      params.append('status', filters.status)
+    }
+
+    // Date range filters
+    if (filters?.startDate) {
+      params.append('startDate', filters.startDate.toISOString())
+    }
+    if (filters?.endDate) {
+      params.append('endDate', filters.endDate.toISOString())
     }
 
     // Site filter (future support)

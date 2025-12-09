@@ -17,11 +17,12 @@ import {
   getStockStatusVariant,
   getStockStatusLabel,
 } from '@/hooks/use-maintenance-alerts-management'
-import { Eye, Wrench, Clock, Package } from 'lucide-react'
+import { Eye, Wrench, Clock, Package, X } from 'lucide-react'
 
 export function getMaintenanceAlertsColumns(
   onViewComponent: (componentId: string) => void,
-  onCreateWorkOrder: (alert: MaintenanceAlert) => void
+  onCreateWorkOrder: (alert: MaintenanceAlert) => void,
+  onDismissAlert?: (alertHistoryId: string) => void
 ): ColumnDef<MaintenanceAlert>[] {
   return [
     {
@@ -132,6 +133,15 @@ export function getMaintenanceAlertsColumns(
             onClick: () => onCreateWorkOrder(alert),
           },
         ]
+
+        // Add Dismissar button if alert has been synced to database
+        if (alert.alertHistoryId && onDismissAlert) {
+          actions.push({
+            label: 'Dismissar',
+            icon: X,
+            onClick: () => onDismissAlert(alert.alertHistoryId!),
+          })
+        }
 
         return <TableActions actions={actions} />
       },
