@@ -29,7 +29,10 @@ const MODULE_LABELS: Record<string, string> = {
   custom_roles: 'Roles Personalizados',
   attendance: 'Asistencia',
   locations: 'Ubicaciones',
-  inventory: 'Inventario'
+  inventory: 'Inventario',
+  dashboard: 'Dashboard',
+  analytics: 'Analytics',
+  production_lines: 'Líneas de Producción'
 };
 
 export function RolePermissionsSelector({ control }: RolePermissionsSelectorProps) {

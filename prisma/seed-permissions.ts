@@ -608,6 +608,16 @@ const PERMISSIONS: PermissionSeed[] = [
     name: 'Ver Analytics',
     description: 'Permite ver reportes y análisis del sistema',
     module: 'analytics'
+  },
+
+  // ============================================================================
+  // DASHBOARD MODULE
+  // ============================================================================
+  {
+    key: 'dashboard.view_global',
+    name: 'Ver Dashboard Global',
+    description: 'Permite acceso al dashboard ejecutivo con métricas consolidadas',
+    module: 'dashboard'
   }
 ];
 

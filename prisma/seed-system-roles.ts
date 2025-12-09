@@ -34,6 +34,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'BOTH',
     color: '#f97316', // orange
     permissions: [
+      'dashboard.view_global',
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
       'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
@@ -62,6 +63,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'BOTH',
     color: '#f59e0b', // amber
     permissions: [
+      'dashboard.view_global',
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
       'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
@@ -89,6 +91,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'BOTH',
     color: '#eab308', // yellow
     permissions: [
+      'dashboard.view_global',
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
       'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
