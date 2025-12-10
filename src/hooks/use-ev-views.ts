@@ -29,6 +29,7 @@ export interface EVViewFilters {
 interface UseEVViewsOptions {
   page?: number
   limit?: number
+  search?: string
   filters?: EVViewFilters
   autoRefresh?: boolean
   refreshInterval?: number
@@ -57,6 +58,7 @@ export function useEVViews(
   const {
     page = 1,
     limit = 20,
+    search,
     filters,
     autoRefresh = false,
     refreshInterval = 60000,
@@ -67,6 +69,7 @@ export function useEVViews(
       endpoint: '/api/exploded-views',
       page,
       limit,
+      search,
       filters,
       autoRefresh,
       refreshInterval,

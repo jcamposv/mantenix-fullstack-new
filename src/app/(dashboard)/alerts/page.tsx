@@ -35,12 +35,14 @@ import {
 export default function AlertsPage() {
   const router = useRouter()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<AlertManagementFilters>({})
   const limit = 20
 
   const { alerts, loading, total, totalPages, refetch } = useAlertsManagement({
     page,
     limit,
+    search,
     filters,
     autoRefresh: true,
     refreshInterval: 30000, // 30 seconds
@@ -241,6 +243,11 @@ export default function AlertsPage() {
     setPage(1)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
   return (
     <div className="container mx-auto py-0">
       <DataTable
@@ -248,6 +255,8 @@ export default function AlertsPage() {
         data={alerts}
         searchKey="title"
         searchPlaceholder="Buscar alertas..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Todas las Alertas"
         description={`${total} alertas | Filtre por estado, prioridad y más`}
         loading={loading}

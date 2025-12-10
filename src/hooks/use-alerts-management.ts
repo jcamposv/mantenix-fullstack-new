@@ -33,6 +33,7 @@ export interface AlertManagementFilters {
 interface UseAlertsManagementOptions {
   page?: number
   limit?: number
+  search?: string
   filters?: AlertManagementFilters
   autoRefresh?: boolean
   refreshInterval?: number
@@ -96,6 +97,7 @@ export function useAlertsManagement(
   const {
     page = 1,
     limit = 20,
+    search,
     filters,
     autoRefresh = false,
     refreshInterval = 60000,
@@ -106,6 +108,7 @@ export function useAlertsManagement(
       endpoint: '/api/alerts',
       page,
       limit,
+      search,
       filters,
       autoRefresh,
       refreshInterval,

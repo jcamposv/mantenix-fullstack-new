@@ -30,6 +30,7 @@ export interface EVComponentFilters {
 interface UseEVComponentsOptions {
   page?: number
   limit?: number
+  search?: string
   filters?: EVComponentFilters
   autoRefresh?: boolean
   refreshInterval?: number
@@ -58,6 +59,7 @@ export function useEVComponents(
   const {
     page = 1,
     limit = 20,
+    search,
     filters,
     autoRefresh = false,
     refreshInterval = 60000,
@@ -68,6 +70,7 @@ export function useEVComponents(
       endpoint: '/api/exploded-view-components',
       page,
       limit,
+      search,
       filters,
       autoRefresh,
       refreshInterval,

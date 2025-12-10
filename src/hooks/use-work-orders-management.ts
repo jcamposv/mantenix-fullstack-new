@@ -45,6 +45,7 @@ export interface WorkOrderManagementFilters {
 interface UseWorkOrdersManagementOptions {
   page?: number
   limit?: number
+  search?: string
   filters?: WorkOrderManagementFilters
   autoRefresh?: boolean
   refreshInterval?: number
@@ -73,6 +74,7 @@ export function useWorkOrdersManagement(
   const {
     page = 1,
     limit = 20,
+    search,
     filters,
     autoRefresh = false,
     refreshInterval = 60000,
@@ -83,6 +85,7 @@ export function useWorkOrdersManagement(
       endpoint: '/api/work-orders',
       page,
       limit,
+      search,
       filters,
       autoRefresh,
       refreshInterval,

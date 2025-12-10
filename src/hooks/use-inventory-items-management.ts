@@ -29,6 +29,7 @@ export interface InventoryItemManagementFilters {
 interface UseInventoryItemsManagementOptions {
   page?: number
   limit?: number
+  search?: string
   filters?: InventoryItemManagementFilters
   autoRefresh?: boolean
   refreshInterval?: number
@@ -87,6 +88,7 @@ export function useInventoryItemsManagement(
   const {
     page = 1,
     limit = 20,
+    search,
     filters,
     autoRefresh = false,
     refreshInterval = 60000,
@@ -97,6 +99,7 @@ export function useInventoryItemsManagement(
       endpoint: '/api/admin/inventory/items',
       page,
       limit,
+      search,
       filters,
       autoRefresh,
       refreshInterval,

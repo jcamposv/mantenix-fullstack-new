@@ -35,6 +35,7 @@ interface ExplodedViewsTableProps {
 export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
   const router = useRouter()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<EVViewFilters>(() => {
     // Initialize with assetId from props if present
     return assetId ? { assetId } : {}
@@ -49,6 +50,7 @@ export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
     useEVViews({
       page,
       limit,
+      search,
       filters,
       autoRefresh: false,
     })
@@ -241,6 +243,11 @@ export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
     setPage(1)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
   return (
     <>
       <DataTable
@@ -248,6 +255,8 @@ export function ExplodedViewsTable({ assetId }: ExplodedViewsTableProps) {
         data={explodedViews}
         searchKey="name"
         searchPlaceholder="Buscar vistas por nombre..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         loading={loading}
         manualPagination={true}
         pageCount={totalPages}

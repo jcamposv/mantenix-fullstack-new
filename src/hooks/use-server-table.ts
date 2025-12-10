@@ -9,9 +9,10 @@
  * - SWR for caching and revalidation
  * - Reusable across all tables
  * - Clean API with useMemo for performance
+ * - Debounced search (500ms) to avoid excessive API calls
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import useSWR from 'swr'
 
 /**
@@ -24,6 +25,10 @@ export interface UseServerTableOptions<TItem, TFilters extends Record<string, un
   page?: number
   /** Items per page */
   limit?: number
+  /** Search term for server-side search (debounced automatically) */
+  search?: string
+  /** Debounce delay for search in milliseconds (default: 500ms) */
+  searchDebounce?: number
   /** Filter object - will be converted to query params */
   filters?: TFilters
   /** Function to transform API response to items array */
@@ -212,6 +217,8 @@ export function useServerTable<
     endpoint,
     page = 1,
     limit = 20,
+    search,
+    searchDebounce = 500,
     filters,
     transform,
     autoRefresh = false,
@@ -219,6 +226,17 @@ export function useServerTable<
     fetcher,
     buildQueryParams = defaultBuildQueryParams,
   } = options
+
+  // Debounce search term
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, searchDebounce)
+
+    return () => clearTimeout(timer)
+  }, [search, searchDebounce])
 
   // Use the provided fetcher or default to our generic fetcher
   const fetchData = fetcher || ((url: string) => defaultFetcher<TItem>(url))
@@ -230,6 +248,11 @@ export function useServerTable<
       limit: limit.toString(),
     })
 
+    // Add search param if provided (using debounced value)
+    if (debouncedSearch && debouncedSearch.trim()) {
+      params.append('search', debouncedSearch.trim())
+    }
+
     // Add custom filters
     if (filters) {
       const filterParams = buildQueryParams(filters)
@@ -239,7 +262,7 @@ export function useServerTable<
     }
 
     return `${endpoint}?${params.toString()}`
-  }, [endpoint, page, limit, filters, buildQueryParams])
+  }, [endpoint, page, limit, debouncedSearch, filters, buildQueryParams])
 
   // Use SWR with auto-refresh if enabled
   const {

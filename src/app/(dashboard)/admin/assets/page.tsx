@@ -56,6 +56,7 @@ export default function AssetsPage() {
   const { hasPermission } = usePermissions()
 
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<AssetManagementFilters>(() => {
     // Initialize with siteId from URL if present
     const siteId = searchParams.get('siteId')
@@ -67,6 +68,7 @@ export default function AssetsPage() {
   const { assets, loading, total, totalPages, refetch } = useAssetsManagement({
     page,
     limit,
+    search,
     filters,
     autoRefresh: false,
   })
@@ -381,6 +383,11 @@ export default function AssetsPage() {
     return `${total} activos | Filtre por estado, categoría y más`
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
   return (
     <div className="container mx-auto py-0">
       {filters.siteId && (
@@ -399,6 +406,8 @@ export default function AssetsPage() {
         data={assets}
         searchKey="name"
         searchPlaceholder="Buscar activos..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title={getTitle()}
         description={getDescription()}
         {...(canCreate && {

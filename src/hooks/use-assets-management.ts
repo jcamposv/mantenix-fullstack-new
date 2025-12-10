@@ -34,6 +34,7 @@ export interface AssetManagementFilters {
 interface UseAssetsManagementOptions {
   page?: number
   limit?: number
+  search?: string
   filters?: AssetManagementFilters
   autoRefresh?: boolean
   refreshInterval?: number
@@ -91,6 +92,7 @@ export function useAssetsManagement(
   const {
     page = 1,
     limit = 20,
+    search,
     filters,
     autoRefresh = false,
     refreshInterval = 60000,
@@ -101,6 +103,7 @@ export function useAssetsManagement(
       endpoint: '/api/admin/assets',
       page,
       limit,
+      search,
       filters,
       autoRefresh,
       refreshInterval,

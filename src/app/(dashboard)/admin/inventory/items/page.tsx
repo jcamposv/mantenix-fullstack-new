@@ -38,6 +38,7 @@ import {
 export default function InventoryItemsPage() {
   const router = useRouter()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<InventoryItemManagementFilters>({})
   const limit = 20
 
@@ -45,6 +46,7 @@ export default function InventoryItemsPage() {
     useInventoryItemsManagement({
       page,
       limit,
+      search,
       filters,
       autoRefresh: false,
     })
@@ -234,6 +236,11 @@ export default function InventoryItemsPage() {
     setPage(1)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1) // Reset to first page on search
+  }
+
   return (
     <div className="container mx-auto py-0">
       <DataTable
@@ -241,6 +248,8 @@ export default function InventoryItemsPage() {
         data={items}
         searchKey="name"
         searchPlaceholder="Buscar ítems..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Ítems de Inventario"
         description={`${total} ítems | Filtre por categoría y más`}
         onAdd={handleAddItem}

@@ -40,6 +40,7 @@ import {
 export default function WorkOrdersListPage() {
   const router = useRouter()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<WorkOrderManagementFilters>({})
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [workOrderToDelete, setWorkOrderToDelete] =
@@ -51,6 +52,7 @@ export default function WorkOrdersListPage() {
     useWorkOrdersManagement({
       page,
       limit,
+      search,
       filters,
       autoRefresh: false,
     })
@@ -291,6 +293,11 @@ export default function WorkOrdersListPage() {
     setPage(1)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
   return (
     <div className="container mx-auto py-0">
       <DataTable
@@ -298,6 +305,8 @@ export default function WorkOrdersListPage() {
         data={workOrders}
         searchKey="number"
         searchPlaceholder="Buscar órdenes..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Órdenes de Trabajo"
         description={`${total} órdenes | Filtre por estado, prioridad y más`}
         onAdd={handleAddWorkOrder}

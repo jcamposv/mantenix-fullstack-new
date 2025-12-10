@@ -31,6 +31,7 @@ import type { ExplodedViewComponentWithRelations } from '@/types/exploded-view.t
 export function ComponentsTable() {
   const router = useRouter()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<EVComponentFilters>({})
   const limit = 20
 
@@ -42,6 +43,7 @@ export function ComponentsTable() {
     useEVComponents({
       page,
       limit,
+      search,
       filters,
       autoRefresh: false,
     })
@@ -233,6 +235,11 @@ export function ComponentsTable() {
     setPage(1)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
   return (
     <>
       <DataTable
@@ -240,6 +247,8 @@ export function ComponentsTable() {
         data={components}
         searchKey="name"
         searchPlaceholder="Buscar componentes por nombre o número de parte..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         loading={loading}
         manualPagination={true}
         pageCount={totalPages}

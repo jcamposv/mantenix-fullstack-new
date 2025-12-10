@@ -52,6 +52,9 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
+  // Server-side search props (optional - for controlled search)
+  searchValue?: string
+  onSearchChange?: (value: string) => void
   title?: string
   description?: string
   onAdd?: () => void
@@ -74,6 +77,8 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = "Buscar...",
+  searchValue,
+  onSearchChange,
   title,
   description,
   onAdd,
@@ -88,6 +93,8 @@ export function DataTable<TData, TValue>({
   onPageChange,
   onPageSizeChange,
 }: DataTableProps<TData, TValue>) {
+  // Determine if search is controlled (server-side) or uncontrolled (client-side)
+  const isControlledSearch = searchValue !== undefined && onSearchChange !== undefined
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility)
@@ -147,10 +154,18 @@ export function DataTable<TData, TValue>({
           {searchKey && (
             <Input
               placeholder={searchPlaceholder}
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+              value={
+                isControlledSearch
+                  ? searchValue
+                  : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
               }
+              onChange={(event) => {
+                if (isControlledSearch) {
+                  onSearchChange(event.target.value)
+                } else {
+                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                }
+              }}
               className="h-8 w-[150px] lg:w-[250px]"
             />
           )}
