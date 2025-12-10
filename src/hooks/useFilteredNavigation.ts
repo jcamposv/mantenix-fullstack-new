@@ -1,15 +1,16 @@
 /**
  * useFilteredNavigation Hook
- * Filters navigation items based on user permissions
+ * Filters navigation items based on user permissions AND feature flags
  *
  * Usage:
- * const filteredItems = useFilteredNavigation(BASE_NAV_ITEMS);
+ * const filteredItems = useFilteredNavigation(BASE_NAV_ITEMS, serverPermissions, enabledFeatures);
  */
 
 'use client';
 
 import { useMemo } from 'react';
 import { usePermissions } from './usePermissions';
+import type { FeatureFlags } from '@/lib/features';
 
 interface NavItem {
   title?: string;
@@ -26,7 +27,8 @@ interface NavItem {
 
 export function useFilteredNavigation<T extends NavItem>(
   items: T[],
-  serverPermissions?: string[] | null
+  serverPermissions?: string[] | null,
+  enabledFeatures?: FeatureFlags
 ): T[] {
   const { hasPermission, loading } = usePermissions();
 
@@ -63,10 +65,20 @@ export function useFilteredNavigation<T extends NavItem>(
     function filterItems(navItems: T[]): T[] {
       return navItems
         .filter(item => {
+          // Check feature flag requirement first
+          if (item.requiresFeature && enabledFeatures) {
+            const featureValue = enabledFeatures[item.requiresFeature as keyof FeatureFlags];
+            // If feature is explicitly false or undefined, filter out
+            if (!featureValue) {
+              return false;
+            }
+          }
+
           // If item has a permission requirement, check it
           if (item.permission) {
             return checkPermission(item.permission);
           }
+
           // If no permission specified, show the item
           return true;
         })
@@ -92,5 +104,5 @@ export function useFilteredNavigation<T extends NavItem>(
     }
 
     return filterItems(items);
-  }, [items, hasPermission, loading, serverPermissions]);
+  }, [items, hasPermission, loading, serverPermissions, enabledFeatures]);
 }
