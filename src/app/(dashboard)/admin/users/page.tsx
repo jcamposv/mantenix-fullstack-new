@@ -1,49 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterButton } from "@/components/common/filter-button"
+import { UsersFilters } from "@/components/users/users-filters"
 import { toast } from "sonner"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { RoleBadge } from "@/components/common/role-badge"
 import { TableActions, createEditAction, createDeleteAction, createResetPasswordAction } from "@/components/common/table-actions"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-import { useTableData } from "@/components/hooks/use-table-data"
 import { usePermissions } from "@/hooks/usePermissions"
-
-interface User {
-  id: string
-  name: string
-  email: string
-  emailVerified: boolean
-  role: {
-    id: string
-    key: string | null
-    name: string
-    color: string
-  }
-  image: string | null
-  createdAt: string
-  company: {
-    id: string
-    name: string
-    subdomain: string
-  } | null
-}
-
-interface UsersResponse {
-  users?: User[]
-  items?: User[]
-}
+import {
+  useUsersManagement,
+  type UserManagementFilters,
+  type UserItem,
+} from '@/hooks/use-users-management'
 
 export default function UsersPage() {
   const router = useRouter()
   const { hasPermission } = usePermissions()
-  const { data: users, loading, refetch } = useTableData<User>({
-    endpoint: '/api/admin/users',
-    transform: (data) => (data as UsersResponse).users || (data as UsersResponse).items || (data as User[]) || []
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<UserManagementFilters>({})
+  const limit = 20
+
+  const { users, loading, total, totalPages, refetch } = useUsersManagement({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
   })
 
   // Check permissions
@@ -51,11 +40,11 @@ export default function UsersPage() {
   const canEdit = hasPermission('users.update')
   const canDelete = hasPermission('users.delete')
 
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: User | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: UserItem | null }>({
     open: false,
     user: null
   })
-  const [resetPasswordDialog, setResetPasswordDialog] = useState<{ open: boolean; user: User | null }>({
+  const [resetPasswordDialog, setResetPasswordDialog] = useState<{ open: boolean; user: UserItem | null }>({
     open: false,
     user: null
   })
@@ -68,7 +57,7 @@ export default function UsersPage() {
     router.push(`/admin/users/${userId}/edit`)
   }
 
-  const handleDelete = (user: User) => {
+  const handleDelete = (user: UserItem) => {
     setDeleteDialog({ open: true, user })
   }
 
@@ -94,7 +83,7 @@ export default function UsersPage() {
     }
   }
 
-  const handleResetPassword = (user: User) => {
+  const handleResetPassword = (user: UserItem) => {
     setResetPasswordDialog({ open: true, user })
   }
 
@@ -118,7 +107,7 @@ export default function UsersPage() {
     }
   }
 
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<UserItem>[] = useMemo(() => [
     {
       accessorKey: "name",
       header: "Usuario",
@@ -191,7 +180,26 @@ export default function UsersPage() {
         return <TableActions actions={actions} />
       },
     },
-]
+  ], [canEdit, canDelete])
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.emailVerified) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="container mx-auto py-0">
@@ -200,10 +208,28 @@ export default function UsersPage() {
         data={users}
         searchKey="name"
         searchPlaceholder="Buscar usuarios..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Usuarios"
-        description="Gestionar todos los usuarios del sistema"
+        description={`${total} usuarios | Filtre por verificación y más`}
         {...(canCreate && { onAdd: handleAddUser, addLabel: "Agregar Usuario" })}
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Usuarios"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <UsersFilters filters={filters} onFiltersChange={setFilters} />
+          </FilterButton>
+        }
       />
 
       {/* Delete Confirmation Dialog */}

@@ -1,52 +1,35 @@
 "use client"
 
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterButton } from "@/components/common/filter-button"
+import { InventoryRequestsFilters } from "@/components/inventory/inventory-requests-filters"
 import { Package } from "lucide-react"
 import { TableActions, createViewAction } from "@/components/common/table-actions"
-import { useTableData } from "@/components/hooks/use-table-data"
 import { REQUEST_URGENCY_OPTIONS } from "@/schemas/inventory"
 import { InventoryRequestStatusBadge } from "@/components/inventory/inventory-request-status-badge"
-import type { InventoryRequestStatus } from "@/types/inventory.types"
-
-interface InventoryRequest {
-  id: string
-  workOrder: {
-    id: string
-    number: string
-    title: string
-  }
-  inventoryItem: {
-    id: string
-    code: string
-    name: string
-    unit: string
-  }
-  quantityRequested: number
-  quantityApproved: number | null
-  quantityDelivered: number
-  status: InventoryRequestStatus
-  urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
-  requestedAt: string
-  requester: {
-    id: string
-    name: string
-  }
-  notes: string | null
-}
-
-interface InventoryRequestsResponse {
-  requests: InventoryRequest[]
-  total: number
-}
+import {
+  useInventoryRequests,
+  type InventoryRequestFilters,
+  type InventoryRequestItem,
+} from '@/hooks/use-inventory-requests'
 
 export default function InventoryRequestsPage() {
   const router = useRouter()
-  const { data: requests, loading } = useTableData<InventoryRequest>({
-    endpoint: '/api/admin/inventory/requests',
-    transform: (data) => (data as InventoryRequestsResponse).requests || []
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<InventoryRequestFilters>({})
+  const limit = 20
+
+  const { requests, loading, total, totalPages } = useInventoryRequests({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
   })
 
   const handleView = (requestId: string) => {
@@ -63,7 +46,7 @@ export default function InventoryRequestsPage() {
     )
   }
 
-  const columns: ColumnDef<InventoryRequest>[] = [
+  const columns: ColumnDef<InventoryRequestItem>[] = useMemo(() => [
     {
       accessorKey: "workOrder.number",
       header: "Orden de Trabajo",
@@ -159,7 +142,27 @@ export default function InventoryRequestsPage() {
         )
       },
     },
-  ]
+  ], [])
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.status) count++
+    if (filters.urgency) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="space-y-4">
@@ -167,7 +170,7 @@ export default function InventoryRequestsPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Entregas de Inventario</h2>
           <p className="text-muted-foreground">
-            Solicitudes aprobadas pendientes de entrega desde bodega
+            {total} solicitudes | Solicitudes aprobadas pendientes de entrega desde bodega
           </p>
         </div>
       </div>
@@ -178,6 +181,27 @@ export default function InventoryRequestsPage() {
         loading={loading}
         searchKey="inventoryItem.name"
         searchPlaceholder="Buscar por ítem..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Solicitudes"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[350px]"
+          >
+            <InventoryRequestsFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </FilterButton>
+        }
       />
     </div>
   )

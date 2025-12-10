@@ -1,45 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterButton } from "@/components/common/filter-button"
+import { InventoryMovementsFilters } from "@/components/inventory/inventory-movements-filters"
 import { ArrowDownCircle, ArrowUpCircle, ArrowRightLeft, Settings, Plus } from "lucide-react"
-import { useTableData } from "@/components/hooks/use-table-data"
 import { MOVEMENT_TYPE_OPTIONS } from "@/schemas/inventory"
 import { CreateInventoryEntryDialog } from "@/components/inventory/create-inventory-entry-dialog"
-
-interface InventoryMovement {
-  id: string
-  type: "IN" | "OUT" | "TRANSFER" | "ADJUSTMENT"
-  inventoryItem: {
-    id: string
-    code: string
-    name: string
-    unit: string
-  }
-  fromLocationId: string | null
-  fromLocationType: string | null
-  toLocationId: string | null
-  toLocationType: string | null
-  quantity: number
-  unitCost: number | null
-  totalCost: number | null
-  reason: string | null
-  notes: string | null
-  createdAt: string
-  creator: {
-    id: string
-    name: string
-  }
-}
+import {
+  useInventoryMovements,
+  type InventoryMovementFilters,
+  type InventoryMovementItem,
+} from '@/hooks/use-inventory-movements'
 
 export default function InventoryMovementsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const { data: movements, loading, refetch } = useTableData<InventoryMovement>({
-    endpoint: '/api/admin/inventory/movements',
-    transform: (data) => (data as { items: InventoryMovement[]; total: number }).items || []
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<InventoryMovementFilters>({})
+  const limit = 20
+
+  const { movements, loading, total, totalPages, refetch } = useInventoryMovements({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
   })
 
   const handleSuccess = () => {
@@ -77,7 +66,7 @@ export default function InventoryMovementsPage() {
     )
   }
 
-  const columns: ColumnDef<InventoryMovement>[] = [
+  const columns: ColumnDef<InventoryMovementItem>[] = useMemo(() => [
     {
       accessorKey: "type",
       header: "Tipo",
@@ -197,7 +186,26 @@ export default function InventoryMovementsPage() {
         )
       },
     },
-  ]
+  ], [])
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.type) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="space-y-4">
@@ -205,7 +213,7 @@ export default function InventoryMovementsPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Movimientos de Inventario</h2>
           <p className="text-muted-foreground">
-            Historial de todos los movimientos de inventario
+            {total} movimientos | Historial de todos los movimientos de inventario
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)}>
@@ -220,6 +228,27 @@ export default function InventoryMovementsPage() {
         loading={loading}
         searchKey="inventoryItem.name"
         searchPlaceholder="Buscar por ítem..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Movimientos"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <InventoryMovementsFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </FilterButton>
+        }
       />
 
       <CreateInventoryEntryDialog
