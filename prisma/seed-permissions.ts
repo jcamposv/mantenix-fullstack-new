@@ -618,6 +618,12 @@ const PERMISSIONS: PermissionSeed[] = [
     name: 'Ver Dashboard Global',
     description: 'Permite acceso al dashboard ejecutivo con métricas consolidadas',
     module: 'dashboard'
+  },
+  {
+    key: 'dashboard.view_client',
+    name: 'Ver Dashboard de Cliente',
+    description: 'Permite acceso al dashboard de cliente externo con vista de órdenes y proveedores',
+    module: 'dashboard'
   }
 ];
 

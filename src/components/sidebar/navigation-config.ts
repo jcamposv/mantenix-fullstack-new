@@ -36,11 +36,10 @@ export const SUPER_ADMIN_NAV_ITEMS = [
 // Navigation items for regular users (company/group admins and operators)
 export const BASE_NAV_ITEMS = [
   {
-    title: "Dashboard Ejecutivo",
-    url: "/dashboard",
+    title: "Home",
+    url: "/",
     icon: SquareTerminal,
     isActive: true,
-    permission: "dashboard.view_global",
   },
   {
     title: "Alertas",

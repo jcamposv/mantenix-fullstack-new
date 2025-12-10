@@ -166,6 +166,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'DASHBOARD',
     color: '#8b5cf6', // violet
     permissions: [
+      'dashboard.view_client',
       'alerts.create', 'alerts.update', 'alerts.view_client', 'alerts.comment',
       'users.view_client',
       'sites.view',
@@ -179,6 +180,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'DASHBOARD',
     color: '#a855f7', // purple
     permissions: [
+      'dashboard.view_client',
       'alerts.create', 'alerts.update', 'alerts.view_site', 'alerts.comment',
       'sites.view',
       'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.change_status', 'assets.view_status_history'
