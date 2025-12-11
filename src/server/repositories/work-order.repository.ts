@@ -330,6 +330,80 @@ export class WorkOrderRepository {
             createdAt: 'desc'
           }
         },
+        approvals: {
+          select: {
+            id: true,
+            level: true,
+            status: true,
+            comments: true,
+            approvedAt: true,
+            rejectedAt: true,
+            approvedByUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            createdAt: true
+          },
+          orderBy: {
+            level: 'asc'
+          }
+        },
+        workPermits: {
+          select: {
+            id: true,
+            permitType: true,
+            status: true,
+            location: true,
+            validFrom: true,
+            validUntil: true
+          }
+        },
+        lotoProcedures: {
+          select: {
+            id: true,
+            status: true,
+            appliedAt: true,
+            removedAt: true,
+            asset: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            },
+            lockSerialNumbers: true
+          }
+        },
+        safetyAnalyses: {
+          select: {
+            id: true,
+            status: true,
+            preparer: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            jobSteps: true
+          }
+        },
+        rootCauseAnalyses: {
+          select: {
+            id: true,
+            failureMode: true,
+            analysisType: true,
+            status: true,
+            analyzer: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         _count: {
           select: {
             assignments: true
@@ -357,6 +431,22 @@ export class WorkOrderRepository {
         ...alert,
         createdAt: alert.createdAt.toISOString(),
         resolvedAt: alert.resolvedAt?.toISOString() || null
+      })),
+      approvals: workOrder.approvals?.map(approval => ({
+        ...approval,
+        approvedAt: approval.approvedAt?.toISOString() || null,
+        rejectedAt: approval.rejectedAt?.toISOString() || null,
+        createdAt: approval.createdAt.toISOString()
+      })),
+      workPermits: workOrder.workPermits?.map(permit => ({
+        ...permit,
+        validFrom: permit.validFrom?.toISOString() || null,
+        validUntil: permit.validUntil?.toISOString() || null
+      })),
+      lotoProcedures: workOrder.lotoProcedures?.map(procedure => ({
+        ...procedure,
+        appliedAt: procedure.appliedAt?.toISOString() || null,
+        removedAt: procedure.removedAt?.toISOString() || null
       }))
     } as unknown as WorkOrderWithRelations
   }

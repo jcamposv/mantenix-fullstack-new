@@ -5,6 +5,8 @@ import { EmailSenderService } from './email-sender.service'
 import { PermissionGuard } from '../helpers/permission-guard'
 import { prisma } from '@/lib/prisma'
 import { getCurrentCompanyId } from '@/lib/company-context'
+import { ApprovalService } from './approval.service'
+import { DigitalSignatureService } from './digital-signature.service'
 import type {
   CreateWorkOrderData,
   UpdateWorkOrderData,
@@ -196,6 +198,38 @@ export class WorkOrderService {
 
     // Create work order
     const workOrder = await WorkOrderRepository.create(createData)
+
+    // Evaluate if approval is needed
+    // Note: Asset model doesn't have criticality field directly
+    // Asset criticality would come from components if needed in the future
+    const evaluation = await ApprovalService.evaluateWorkOrderForApproval({
+      estimatedCost: workOrderData.estimatedCost,
+      priority: workOrderData.priority || "MEDIUM",
+      type: workOrderData.type,
+      assetCriticality: undefined // Asset model doesn't have criticality field
+    }, companyId)
+
+    if (evaluation.needsApproval) {
+      // Update work order status to PENDING_APPROVAL
+      await WorkOrderRepository.update(workOrder.id, {
+        status: "PENDING_APPROVAL",
+        updatedAt: new Date()
+      })
+
+      // Create approval records
+      await ApprovalService.createApprovalsForWorkOrder(
+        workOrder.id,
+        evaluation.approvalLevels
+      )
+    }
+
+    // Set requiresQA flag if QA sign-off is required
+    if (evaluation.requiresQA) {
+      await WorkOrderRepository.update(workOrder.id, {
+        requiresQA: true,
+        updatedAt: new Date()
+      })
+    }
 
     // Note: Asset status must be changed MANUALLY by technician/operator
     // Users can change status from the work order view or assets page
@@ -445,9 +479,13 @@ export class WorkOrderService {
       }
     }
 
+    // Determine final status based on QA requirements
+    // If work order requires QA sign-off, set status to PENDING_QA instead of COMPLETED
+    const finalStatus = existingWorkOrder.requiresQA ? "PENDING_QA" : "COMPLETED"
+
     // Prepare completion data
     const updateData: UpdateWorkOrderData = {
-      status: "COMPLETED",
+      status: finalStatus,
       observations: completionData.observations,
       completionNotes: completionData.completionNotes,
       actualDuration: completionData.actualDuration,
@@ -457,14 +495,112 @@ export class WorkOrderService {
 
     const updatedWorkOrder = await this.updateWorkOrder(session, id, updateData)
 
-    // Send email notifications (async, don't block response)
+    // Create digital signature for work order completion (ISO compliance)
     if (updatedWorkOrder) {
+      try {
+        await DigitalSignatureService.createSignature(
+          session,
+          'WORK_ORDER',
+          id,
+          finalStatus === 'PENDING_QA' ? 'EXECUTED' : 'COMPLETED',
+          completionData.completionNotes
+        )
+      } catch (error) {
+        console.error('Error creating digital signature:', error)
+        // Don't fail completion if signature creation fails
+      }
+
+      // Send email notifications (async, don't block response)
       this.sendWorkOrderCompletedEmails(updatedWorkOrder, session).catch(error => {
         console.error('Error sending work order completed emails:', error)
       })
     }
 
     return updatedWorkOrder
+  }
+
+  /**
+   * QA Approve work order
+   */
+  static async qaApproveWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    comments?: string
+  ): Promise<WorkOrderWithRelations | null> {
+    // Verificar permisos - requires QA permission
+    await PermissionGuard.require(session, 'work_orders.qa_signoff')
+
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Verify status is PENDING_QA
+    if (existingWorkOrder.status !== "PENDING_QA") {
+      throw new Error("La orden de trabajo no está pendiente de QA sign-off")
+    }
+
+    // Update status to COMPLETED and record QA approval
+    const updateData: UpdateWorkOrderData = {
+      status: "COMPLETED",
+      qaSignedOffBy: session.user.id,
+      qaSignedOffAt: new Date(),
+      qaComments: comments
+    }
+
+    const updatedWorkOrder = await this.updateWorkOrder(session, id, updateData)
+
+    // Create QA digital signature (ISO compliance)
+    if (updatedWorkOrder) {
+      try {
+        await DigitalSignatureService.createSignature(
+          session,
+          'WORK_ORDER',
+          id,
+          'QA_SIGNOFF',
+          comments
+        )
+      } catch (error) {
+        console.error('Error creating QA digital signature:', error)
+        // Don't fail QA approval if signature creation fails
+      }
+    }
+
+    return updatedWorkOrder
+  }
+
+  /**
+   * QA Reject work order
+   */
+  static async qaRejectWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    comments: string
+  ): Promise<WorkOrderWithRelations | null> {
+    // Verificar permisos - requires QA permission
+    await PermissionGuard.require(session, 'work_orders.qa_signoff')
+
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      throw new Error("Orden de trabajo no encontrada")
+    }
+
+    // Verify status is PENDING_QA
+    if (existingWorkOrder.status !== "PENDING_QA") {
+      throw new Error("La orden de trabajo no está pendiente de QA sign-off")
+    }
+
+    // Update status back to IN_PROGRESS and record QA rejection
+    const updateData: UpdateWorkOrderData = {
+      status: "IN_PROGRESS",
+      qaRejectedBy: session.user.id,
+      qaRejectedAt: new Date(),
+      qaComments: comments
+    }
+
+    return await this.updateWorkOrder(session, id, updateData)
   }
 
   /**

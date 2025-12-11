@@ -23,7 +23,7 @@ import {
   Circle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { WorkOrderWithRelations } from "@/types/work-order.types"
+import type { WorkOrderWithRelations, WorkOrderStatus as FullWorkOrderStatus } from "@/types/work-order.types"
 import type { WorkOrderStatus } from "@/schemas/work-order"
 
 interface WorkOrderHeaderProps {
@@ -44,7 +44,30 @@ const PROGRESS_STEPS: ProgressStep[] = [
   { id: "COMPLETED", label: "Completada", icon: CheckCircle2 }
 ]
 
-function getProgressPercentage(status: WorkOrderStatus): number {
+/**
+ * Map full WorkOrderStatus (including workflow statuses) to progress-compatible status
+ */
+function mapStatusToProgressStatus(status: FullWorkOrderStatus): WorkOrderStatus {
+  const validStatuses: WorkOrderStatus[] = ["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
+  if (validStatuses.includes(status as WorkOrderStatus)) {
+    return status as WorkOrderStatus
+  }
+  // Map workflow statuses to progress-compatible statuses
+  switch (status) {
+    case "PENDING_APPROVAL":
+    case "APPROVED":
+      return "ASSIGNED"
+    case "REJECTED":
+      return "DRAFT"
+    case "PENDING_QA":
+      return "COMPLETED"
+    default:
+      return "DRAFT"
+  }
+}
+
+function getProgressPercentage(status: FullWorkOrderStatus): number {
+  const progressStatus = mapStatusToProgressStatus(status)
   const statusMap: Record<WorkOrderStatus, number> = {
     DRAFT: 25,
     ASSIGNED: 50,
@@ -52,11 +75,12 @@ function getProgressPercentage(status: WorkOrderStatus): number {
     COMPLETED: 100,
     CANCELLED: 0
   }
-  return statusMap[status] || 0
+  return statusMap[progressStatus] || 0
 }
 
-function getStatusIndex(status: WorkOrderStatus): number {
-  return PROGRESS_STEPS.findIndex(step => step.id === status)
+function getStatusIndex(status: FullWorkOrderStatus): number {
+  const progressStatus = mapStatusToProgressStatus(status)
+  return PROGRESS_STEPS.findIndex(step => step.id === progressStatus)
 }
 
 export function WorkOrderHeader({ workOrder, onCreateAlert }: WorkOrderHeaderProps) {

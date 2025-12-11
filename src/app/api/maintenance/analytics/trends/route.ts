@@ -19,13 +19,6 @@ import { getCurrentCompanyId } from '@/lib/company-context'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-interface TrendDataPoint {
-  date: string
-  critical: number
-  warnings: number
-  info: number
-  total: number
-}
 
 /**
  * GET - Retrieve trend data

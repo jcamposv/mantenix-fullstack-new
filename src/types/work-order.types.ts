@@ -1,6 +1,10 @@
 import type { ComponentCriticality, FrequencyUnit } from "@prisma/client"
 import type { SystemRoleKey } from "@/types/auth.types"
 import type { PaginatedResponse } from "@/types/common.types"
+import type { PermitStatus, PermitType } from "@/types/work-permit.types"
+import type { LOTOStatus } from "@/types/loto-procedure.types"
+import type { JSAStatus } from "@/types/job-safety-analysis.types"
+import type { RCAStatus, RCAType } from "@/types/root-cause-analysis.types"
 
 // Define JsonValue type since it's not exported from Prisma client
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
@@ -8,7 +12,7 @@ type JsonValue = string | number | boolean | null | { [key: string]: JsonValue }
 // Enum types from Prisma
 export type WorkOrderType = "PREVENTIVO" | "CORRECTIVO" | "REPARACION"
 export type WorkOrderPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
-export type WorkOrderStatus = "DRAFT" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+export type WorkOrderStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "ASSIGNED" | "IN_PROGRESS" | "PENDING_QA" | "COMPLETED" | "CANCELLED"
 
 // Base WorkOrder interface
 export interface WorkOrder {
@@ -66,6 +70,14 @@ export interface WorkOrder {
   // Final notes
   observations: string | null
   completionNotes: string | null
+  
+  // QA Sign-off (Workflow GAPS feature)
+  requiresQA: boolean
+  qaSignedOffBy: string | null
+  qaSignedOffAt: string | null
+  qaRejectedBy: string | null
+  qaRejectedAt: string | null
+  qaComments: string | null
   
   // Control and ownership
   companyId: string
@@ -169,6 +181,60 @@ export interface WorkOrderWithRelations extends WorkOrder {
   _count?: {
     assignments?: number
   }
+  // Workflow integration (WORKFLOW_GAPS feature)
+  approvals?: Array<{
+    id: string
+    level: number
+    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    comments: string | null
+    approvedAt: string | null
+    rejectedAt: string | null
+    approvedByUser: {
+      id: string
+      name: string
+      email: string
+    } | null
+    createdAt: string
+  }>
+  workPermits?: Array<{
+    id: string
+    permitType: PermitType
+    status: PermitStatus
+    location: string
+    validFrom: string | null
+    validUntil: string | null
+  }>
+  lotoProcedures?: Array<{
+    id: string
+    status: LOTOStatus
+    appliedAt: string | null
+    releasedAt: string | null
+    asset: {
+      id: string
+      name: string
+      assetTag: string
+    } | null
+    lockSerialNumbers: string[]
+  }>
+  jobSafetyAnalyses?: Array<{
+    id: string
+    status: JSAStatus
+    preparer: {
+      id: string
+      name: string
+    } | null
+    jobSteps: unknown[]
+  }>
+  rootCauseAnalyses?: Array<{
+    id: string
+    failureMode: string
+    analysisType: RCAType
+    status: RCAStatus
+    analyzer: {
+      id: string
+      name: string
+    } | null
+  }>
 }
 
 // WorkOrderAssignment interface
@@ -243,6 +309,12 @@ export interface UpdateWorkOrderData {
   completionNotes?: string
   actualDuration?: number
   actualCost?: number
+  // QA Sign-off fields
+  qaSignedOffBy?: string
+  qaSignedOffAt?: Date
+  qaRejectedBy?: string
+  qaRejectedAt?: Date
+  qaComments?: string
 }
 
 // Complete work order data interface

@@ -22,6 +22,8 @@ import {
   Bell,
   Factory,
   BarChart3,
+  ShieldAlert,
+  Target,
 } from 'lucide-react'
 import type { NavigationItem } from './types'
 
@@ -157,7 +159,52 @@ export const MAIN_NAV_ITEMS: NavigationItem[] = [
     ],
   },
 
-  // 8. Analytics - Reports & insights
+  // 8. Safety - OSHA compliance & safety workflows
+  {
+    title: 'Seguridad',
+    url: '/safety/work-permits',
+    icon: ShieldAlert,
+    permission: 'work_orders.view',
+    items: [
+      {
+        title: 'Permisos de Trabajo',
+        url: '/safety/work-permits',
+        permission: 'work_orders.view',
+      },
+      {
+        title: 'Procedimientos LOTO',
+        url: '/safety/loto-procedures',
+        permission: 'work_orders.view',
+      },
+      {
+        title: 'Análisis JSA',
+        url: '/safety/job-safety-analyses',
+        permission: 'work_orders.view',
+      },
+    ],
+  },
+
+  // 9. Quality - ISO 9001/55001 compliance
+  {
+    title: 'Calidad',
+    url: '/quality/root-cause-analyses',
+    icon: Target,
+    permission: 'work_orders.view',
+    items: [
+      {
+        title: 'Análisis RCA',
+        url: '/quality/root-cause-analyses',
+        permission: 'work_orders.view',
+      },
+      {
+        title: 'Acciones CAPA',
+        url: '/quality/cap-actions',
+        permission: 'work_orders.view',
+      },
+    ],
+  },
+
+  // 10. Analytics - Reports & insights
   {
     title: 'Reportes',
     url: '/maintenance/analytics',

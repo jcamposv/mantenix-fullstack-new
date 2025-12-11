@@ -275,6 +275,26 @@ model User {
   maintenanceAlertsResolved  MaintenanceAlertHistory[] @relation("AlertResolvedBy")
   maintenanceAlertsDismissed MaintenanceAlertHistory[] @relation("AlertDismissedBy")
 
+  // Workflow improvements relations (optional)
+  approvalsGiven      WorkOrderApproval[] @relation("ApprovalApprovedBy")
+  permitsIssued       WorkPermit[] @relation("PermitIssuer")
+  permitsAuthorized   WorkPermit[] @relation("PermitAuthorizer")
+  lotoAuthorized      LOTOProcedure[] @relation("LOTOAuthorized")
+  lotoVerified        LOTOProcedure[] @relation("LOTOVerifier")
+  lotoRemovalAuth     LOTOProcedure[] @relation("LOTORemovalAuthorizer")
+  jsaPrepared         JobSafetyAnalysis[] @relation("JSAPreparer")
+  jsaReviewed         JobSafetyAnalysis[] @relation("JSAReviewer")
+  jsaApproved         JobSafetyAnalysis[] @relation("JSAApprover")
+  rcaAnalyzed         RootCauseAnalysis[] @relation("RCAAnalyzer")
+  rcaReviewed         RootCauseAnalysis[] @relation("RCAReviewer")
+  capaAssigned        CAPAction[] @relation("CAPAssigned")
+  capaVerified        CAPAction[] @relation("CAPVerifier")
+  workOrdersQASignedOff WorkOrder[] @relation("WorkOrderQASignedOff")
+  workOrdersQARejected  WorkOrder[] @relation("WorkOrderQARejected")
+  signaturesSigned    DigitalSignature[]
+  attachmentsUploaded Attachment[]
+  notifications       Notification[]
+
   @@map("user")
 }
 
@@ -376,6 +396,10 @@ model Company {
   customRoles     CustomRole[] // Roles personalizados de la empresa
   explodedViewComponents ExplodedViewComponent[] // Componentes de vistas explosionadas
   maintenanceAlertHistory MaintenanceAlertHistory[] // Histórico de alertas de mantenimiento
+
+  // Workflow improvements relations (optional)
+  authorityLimits AuthorityLimit[]
+  approvalRules   ApprovalRule[]
 
   @@index([subdomain])
   @@index([isActive])
@@ -511,6 +535,10 @@ model Asset {
 
   // Maintenance alert history
   maintenanceAlertHistory MaintenanceAlertHistory[]
+
+  // Workflow improvements relations (optional)
+  lotoProcedures      LOTOProcedure[]
+  rootCauseAnalyses   RootCauseAnalysis[]
 
   @@unique([code, siteId]) // Code must be unique per site
   @@index([siteId])
@@ -731,8 +759,12 @@ enum WorkOrderPriority {
 
 enum WorkOrderStatus {
   DRAFT // Borrador
+  PENDING_APPROVAL // Esperando aprobación (opcional - si hay límites de autoridad)
+  APPROVED // Aprobada, lista para asignar
+  REJECTED // Rechazada por aprobador
   ASSIGNED // Asignada
   IN_PROGRESS // En progreso
+  PENDING_QA // Completada, esperando QA sign-off (opcional - activos críticos)
   COMPLETED // Completada
   CANCELLED // Cancelada
 }
@@ -953,6 +985,14 @@ model WorkOrder {
   observations    String? // Observaciones durante la ejecución
   completionNotes String? // Notas de finalización
 
+  // QA Sign-off (Workflow GAPS feature)
+  requiresQA      Boolean  @default(false) // Si requiere QA sign-off antes de completar
+  qaSignedOffBy   String? // Usuario QA que firmó
+  qaSignedOffAt   DateTime? // Fecha de firma QA
+  qaRejectedBy    String? // Usuario QA que rechazó
+  qaRejectedAt    DateTime? // Fecha de rechazo QA
+  qaComments      String? @db.Text // Comentarios del inspector QA
+
   // Control de acceso y propiedad
   companyId String // Empresa propietaria
   createdBy String // Usuario que creó la orden
@@ -971,6 +1011,8 @@ model WorkOrder {
   template             WorkOrderTemplate?     @relation("WorkOrderFromTemplate", fields: [templateId], references: [id], onDelete: SetNull)
   prefix               WorkOrderPrefix?       @relation(fields: [prefixId], references: [id], onDelete: SetNull)
   creator              User                   @relation("WorkOrderCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  qaSignedOffByUser    User?                  @relation("WorkOrderQASignedOff", fields: [qaSignedOffBy], references: [id], onDelete: SetNull)
+  qaRejectedByUser     User?                  @relation("WorkOrderQARejected", fields: [qaRejectedBy], references: [id], onDelete: SetNull)
 
   // Assignments (many-to-many relationship for multiple users)
   assignments WorkOrderAssignment[]
@@ -992,6 +1034,13 @@ model WorkOrder {
 
   // Maintenance alert history relations
   maintenanceAlerts MaintenanceAlertHistory[] @relation("AlertWorkOrder")
+
+  // Workflow improvements relations (optional)
+  approvals         WorkOrderApproval[]
+  workPermits       WorkPermit[]
+  lotoProcedures    LOTOProcedure[]
+  safetyAnalyses    JobSafetyAnalysis[]
+  rootCauseAnalyses RootCauseAnalysis[]
 
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
@@ -2367,6 +2416,136 @@ enum MaintenanceAlertStatus {
   AUTO_CLOSED // Cerrada automáticamente (condiciones ya no se cumplen)
 }
 
+// ============================================================================
+// WORKFLOW IMPROVEMENTS ENUMS
+// Approval Workflow, Safety Integration, RCA, Digital Signatures
+// ============================================================================
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PermitType {
+  HOT_WORK          // Trabajo en caliente (soldadura, corte)
+  CONFINED_SPACE    // Espacio confinado
+  ELECTRICAL        // Trabajo eléctrico
+  HEIGHT_WORK       // Trabajo en altura
+  EXCAVATION        // Excavación
+  CHEMICAL          // Manejo de químicos
+  RADIATION         // Trabajo con radiación
+  GENERAL           // Permiso general
+}
+
+enum PermitStatus {
+  DRAFT
+  PENDING_AUTHORIZATION
+  ACTIVE
+  SUSPENDED
+  CLOSED
+  EXPIRED
+}
+
+enum LOTOStatus {
+  PENDING
+  APPLIED
+  VERIFIED
+  REMOVED
+}
+
+enum JSAStatus {
+  DRAFT
+  PENDING_REVIEW
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum RCAType {
+  FIVE_WHY
+  FISHBONE
+  FAULT_TREE
+  PARETO
+}
+
+enum RCAStatus {
+  DRAFT
+  IN_ANALYSIS
+  PENDING_REVIEW
+  APPROVED
+  IMPLEMENTING
+  IMPLEMENTED
+  VERIFIED
+}
+
+enum ActionType {
+  CORRECTIVE   // Corregir el problema actual
+  PREVENTIVE   // Prevenir recurrencia
+}
+
+enum CAPStatus {
+  PENDING
+  IN_PROGRESS
+  IMPLEMENTED
+  VERIFIED
+  CLOSED
+}
+
+enum SignatureEntityType {
+  WORK_ORDER
+  WORK_ORDER_APPROVAL
+  WORK_PERMIT
+  LOTO_PROCEDURE
+  JSA
+  RCA
+  CAP_ACTION
+  QA_INSPECTION
+}
+
+enum SignatureType {
+  CREATED
+  REVIEWED
+  APPROVED
+  AUTHORIZED
+  EXECUTED
+  VERIFIED
+  QA_SIGNOFF
+  CLOSED
+}
+
+enum AttachmentType {
+  IMAGE
+  PDF
+  VIDEO
+  DOCUMENT
+  OTHER
+}
+
+enum NotificationType {
+  APPROVAL_REQUIRED
+  APPROVAL_APPROVED
+  APPROVAL_REJECTED
+  PERMIT_REQUIRED
+  PERMIT_AUTHORIZED
+  LOTO_APPLIED
+  LOTO_VERIFIED
+  JSA_REQUIRED
+  JSA_APPROVED
+  QA_REQUIRED
+  RCA_REQUIRED
+  RCA_REVIEWED
+  CAPA_ASSIGNED
+  CAPA_DUE
+  WORK_ORDER_ASSIGNED
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
 model MaintenanceAlertHistory {
   id        String @id @default(cuid())
   companyId String
@@ -2435,4 +2614,371 @@ model MaintenanceAlertHistory {
   @@index([createdAt])
   @@index([companyId, status, createdAt])
   @@map("maintenance_alert_history")
+}
+
+// ============================================================================
+// WORKFLOW IMPROVEMENTS MODELS
+// Approval Workflow, Safety Integration, RCA, Digital Signatures
+// Optional - Companies can enable/configure as needed
+// ============================================================================
+
+// ============================================================================
+// 1. APPROVAL WORKFLOW MODELS (Optional - requires configuration)
+// ============================================================================
+
+// Authority limits by role (optional configuration per company)
+// If not configured, no automatic approval workflow is triggered
+model AuthorityLimit {
+  id                      String   @id @default(cuid())
+  companyId               String
+  roleKey                 String   // Key from CustomRole (e.g., 'JEFE_MANTENIMIENTO')
+  maxDirectAuthorization  Float    // Maximum amount user can authorize without approval
+  canCreateWorkOrders     Boolean  @default(true)
+  canAssignDirectly       Boolean  @default(true)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, roleKey])
+  @@index([companyId])
+  @@index([isActive])
+  @@map("authority_limits")
+}
+
+// Approval rules (evaluated AFTER authority limits)
+// Additional conditions beyond cost limits
+model ApprovalRule {
+  id                String   @id @default(cuid())
+  companyId         String
+  name              String
+  description       String?  @db.Text
+
+  // Trigger conditions
+  minCost           Float?   // Minimum cost to trigger
+  maxCost           Float?   // Maximum cost range
+  priority          WorkOrderPriority?
+  type              WorkOrderType?
+  assetCriticality  ComponentCriticality?
+
+  // Approval requirements
+  approvalLevels    Int      // Number of approval levels required (1-3)
+  requiresQA        Boolean  @default(false) // Requires QA sign-off at completion
+
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("approval_rules")
+}
+
+// Work order approval records
+model WorkOrderApproval {
+  id            String   @id @default(cuid())
+  workOrderId   String
+  level         Int      // Approval level (1 = first, 2 = second, etc.)
+  requiredRole  String?  // Role key that should approve (optional)
+  approverId    String?  // Specific user assigned to approve (optional)
+  approvedBy    String?  // User who actually approved/rejected
+  status        ApprovalStatus @default(PENDING)
+  comments      String?  @db.Text
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  approvedByUser User?     @relation("ApprovalApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([workOrderId])
+  @@index([status])
+  @@index([level])
+  @@map("work_order_approvals")
+}
+
+// ============================================================================
+// 2. SAFETY INTEGRATION MODELS (OSHA Compliance)
+// ============================================================================
+
+// Work Permits (Hot work, Confined space, Electrical, etc.)
+model WorkPermit {
+  id               String   @id @default(cuid())
+  workOrderId      String
+  permitType       PermitType
+  issuedBy         String   // User who issues the permit
+  authorizedBy     String?  // User who authorizes the permit
+  status           PermitStatus @default(DRAFT)
+
+  // Validity period
+  validFrom        DateTime
+  validUntil       DateTime
+
+  // Safety details
+  location         String   // Specific work location
+  hazards          String[] @default([]) // Identified hazards
+  precautions      String[] @default([]) // Required precautions
+  ppe              String[] @default([]) // Personal Protective Equipment required
+  emergencyContact String?
+
+  // Timestamps
+  issuedAt         DateTime?
+  authorizedAt     DateTime?
+  closedAt         DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workOrder  WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  issuer     User @relation("PermitIssuer", fields: [issuedBy], references: [id], onDelete: Restrict)
+  authorizer User? @relation("PermitAuthorizer", fields: [authorizedBy], references: [id], onDelete: SetNull)
+
+  @@index([workOrderId])
+  @@index([status])
+  @@index([permitType])
+  @@index([validFrom, validUntil])
+  @@map("work_permits")
+}
+
+// LOTO (Lock-Out/Tag-Out) Procedures - OSHA 1910.147 Compliance
+model LOTOProcedure {
+  id                  String   @id @default(cuid())
+  workOrderId         String
+  assetId             String
+  authorizedBy        String   // User authorized to apply LOTO
+  status              LOTOStatus @default(PENDING)
+
+  // LOTO details
+  isolationPoints     String[] @default([]) // Energy isolation points
+  energySources       String[] @default([]) // Types of energy isolated
+  lockSerialNumbers   String[] @default([]) // Physical lock serial numbers
+  tagNumbers          String[] @default([]) // Tag numbers applied
+
+  // Verification
+  verifiedBy          String?  // User who verifies LOTO application
+  appliedAt           DateTime?
+  verifiedAt          DateTime?
+  removedAt           DateTime?
+  removalAuthorizedBy String?  // User who authorizes removal
+
+  notes               String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  workOrder         WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  asset             Asset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  authorized        User @relation("LOTOAuthorized", fields: [authorizedBy], references: [id], onDelete: Restrict)
+  verifier          User? @relation("LOTOVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
+  removalAuthorizer User? @relation("LOTORemovalAuthorizer", fields: [removalAuthorizedBy], references: [id], onDelete: SetNull)
+
+  @@index([workOrderId])
+  @@index([assetId])
+  @@index([status])
+  @@map("loto_procedures")
+}
+
+// Job Safety Analysis (JSA) - Step-by-step hazard analysis
+model JobSafetyAnalysis {
+  id              String   @id @default(cuid())
+  workOrderId     String
+  preparedBy      String
+  reviewedBy      String?
+  approvedBy      String?
+  status          JSAStatus @default(DRAFT)
+
+  // JSA content (stored as JSON)
+  // Structure: [{ step: string, hazards: string[], controls: string[] }]
+  jobSteps        Json
+
+  // Workflow timestamps
+  preparedAt      DateTime?
+  reviewedAt      DateTime?
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workOrder  WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  preparer   User @relation("JSAPreparer", fields: [preparedBy], references: [id], onDelete: Restrict)
+  reviewer   User? @relation("JSAReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  approver   User? @relation("JSAApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([workOrderId])
+  @@index([status])
+  @@map("job_safety_analyses")
+}
+
+// ============================================================================
+// 3. ROOT CAUSE ANALYSIS MODELS (ISO 55001, ISO 9001)
+// ============================================================================
+
+// Root Cause Analysis - 5-Why, Fishbone, Fault Tree, Pareto
+model RootCauseAnalysis {
+  id                String   @id @default(cuid())
+  workOrderId       String
+  assetId           String?
+  analysisType      RCAType
+
+  // Failure description
+  failureMode       String   @db.Text // How it failed
+  immediateSymptom  String   @db.Text // What was observed
+
+  // 5-Why Analysis fields
+  why1              String?  @db.Text
+  why2              String?  @db.Text
+  why3              String?  @db.Text
+  why4              String?  @db.Text
+  why5              String?  @db.Text
+  rootCause         String?  @db.Text // Final root cause identified
+
+  // Fishbone/Ishikawa data (JSON)
+  // Structure: { man: [], machine: [], material: [], method: [], environment: [], management: [] }
+  fishboneData      Json?
+
+  // Workflow
+  analyzedBy        String
+  reviewedBy        String?
+  status            RCAStatus @default(DRAFT)
+  analyzedAt        DateTime?
+  reviewedAt        DateTime?
+  implementedAt     DateTime?
+  verifiedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workOrder  WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  asset      Asset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  analyzer   User @relation("RCAAnalyzer", fields: [analyzedBy], references: [id], onDelete: Restrict)
+  reviewer   User? @relation("RCAReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  // CAPA actions
+  actions    CAPAction[]
+
+  @@index([workOrderId])
+  @@index([assetId])
+  @@index([status])
+  @@index([analysisType])
+  @@map("root_cause_analyses")
+}
+
+// CAPA (Corrective and Preventive Actions)
+model CAPAction {
+  id            String   @id @default(cuid())
+  rcaId         String
+  actionType    ActionType
+  description   String   @db.Text
+  assignedTo    String
+  priority      WorkOrderPriority @default(MEDIUM)
+  status        CAPStatus @default(PENDING)
+  dueDate       DateTime?
+  completedAt   DateTime?
+  verifiedAt    DateTime?
+  verifiedBy    String?
+  effectiveness Int?     // Rating 1-5 after implementation
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rca      RootCauseAnalysis @relation(fields: [rcaId], references: [id], onDelete: Cascade)
+  assigned User @relation("CAPAssigned", fields: [assignedTo], references: [id], onDelete: Restrict)
+  verifier User? @relation("CAPVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@index([rcaId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([dueDate])
+  @@map("cap_actions")
+}
+
+// ============================================================================
+// 4. DIGITAL SIGNATURES (ISO Compliance & Traceability)
+// ============================================================================
+
+model DigitalSignature {
+  id                    String   @id @default(cuid())
+
+  // Polymorphic relation (can sign different entities)
+  entityType            SignatureEntityType
+  entityId              String
+
+  // Signature details
+  signedBy              String
+  role                  String   // User's role at time of signing
+  signatureType         SignatureType
+  comments              String?  @db.Text
+
+  // Audit trail
+  ipAddress             String?
+  userAgent             String?
+  certificateFingerprint String? // For future PKI integration
+
+  signedAt              DateTime @default(now())
+
+  signer User @relation(fields: [signedBy], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@index([signedBy])
+  @@index([signedAt])
+  @@map("digital_signatures")
+}
+
+// ============================================================================
+// 5. ATTACHMENTS (Photos, Documents, PDFs)
+// ============================================================================
+
+model Attachment {
+  id          String   @id @default(cuid())
+
+  // Polymorphic relation (can attach to different entities)
+  entityType  SignatureEntityType
+  entityId    String
+
+  // File details
+  fileName    String
+  filePath    String   // Storage path (S3, local, etc.)
+  fileSize    Int      // Size in bytes
+  fileType    AttachmentType
+  mimeType    String
+
+  uploadedBy  String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  uploader User @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@index([uploadedBy])
+  @@index([createdAt])
+  @@map("attachments")
+}
+
+// ============================================================================
+// 6. NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String   @db.Text
+
+  // Optional link to related entity
+  entityType  SignatureEntityType?
+  entityId    String?
+  actionUrl   String?  // Deep link to action
+
+  status      NotificationStatus @default(UNREAD)
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("notifications")
 }

@@ -73,6 +73,25 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
       },
     ],
   },
+
+  // Workflow Management
+  {
+    title: 'Gestión de Aprobaciones',
+    items: [
+      {
+        title: 'Límites de Autoridad',
+        url: '/admin/authority-limits',
+        icon: ShieldCheck,
+        permission: 'work_orders.view',
+      },
+      {
+        title: 'Reglas de Aprobación',
+        url: '/admin/approval-rules',
+        icon: ShieldCheck,
+        permission: 'work_orders.view',
+      },
+    ],
+  },
 ]
 
 /**

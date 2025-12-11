@@ -6,8 +6,29 @@ import type {
   CalendarEventType,
   CalendarDateRange,
 } from "@/types/calendar.types"
-import type { WorkOrderType } from "@/types/work-order.types"
+import type { WorkOrderType, WorkOrderStatus as CalendarWorkOrderStatus } from "@/types/work-order.types"
+import type { WorkOrderStatus as PrismaWorkOrderStatus } from "@prisma/client"
 import type { RecurrenceType } from "@/schemas/work-order-schedule"
+
+// Map Prisma WorkOrderStatus to calendar-compatible WorkOrderStatus
+const mapStatusToCalendar = (status: PrismaWorkOrderStatus): CalendarWorkOrderStatus => {
+  const validStatuses: CalendarWorkOrderStatus[] = ["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
+  if (validStatuses.includes(status as CalendarWorkOrderStatus)) {
+    return status as CalendarWorkOrderStatus
+  }
+  // Map workflow statuses to calendar-compatible statuses
+  switch (status) {
+    case "PENDING_APPROVAL":
+    case "APPROVED":
+      return "ASSIGNED"
+    case "REJECTED":
+      return "DRAFT"
+    case "PENDING_QA":
+      return "COMPLETED"
+    default:
+      return "DRAFT"
+  }
+}
 
 /**
  * Calendar Service
@@ -104,7 +125,7 @@ export class CalendarService {
           workOrderId: workOrder.id,
           number: workOrder.number,
           description: workOrder.description ?? undefined,
-          status: workOrder.status,
+          status: mapStatusToCalendar(workOrder.status),
           priority: workOrder.priority,
           scheduleId_ref: workOrder.scheduleId ?? undefined,
           assetId: workOrder.asset?.id,
