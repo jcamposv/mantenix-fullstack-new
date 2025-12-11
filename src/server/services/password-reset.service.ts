@@ -72,7 +72,7 @@ export class PasswordResetService {
 
     // Use Better Auth to send reset password email
     // This will automatically call the sendResetPassword callback configured in auth.ts
-    await auth.api.forgetPassword({
+    await auth.api.requestPasswordReset({
       body: {
         email: targetUser.email,
         redirectTo

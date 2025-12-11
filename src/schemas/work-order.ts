@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { WorkOrderStatus as FullWorkOrderStatus } from "@/types/work-order.types"
 
 // Enum schemas
 export const workOrderTypeSchema = z.enum(["PREVENTIVO", "CORRECTIVO", "REPARACION"])
@@ -21,7 +22,11 @@ export const workOrderSchema = z.object({
   // Location and asset (optional if EXTERNAL_CLIENT_MANAGEMENT feature is disabled)
   siteId: z.string().optional(),
   assetId: z.string().optional(),
-  
+
+  // Predictive maintenance (PREDICTIVE_MAINTENANCE feature)
+  maintenanceComponentId: z.string().optional(),
+  alertHistoryId: z.string().optional(), // Link to maintenance alert
+
   // Template integration
   templateId: z.string().optional(),
   customFieldValues: z.record(z.string(), z.unknown()).optional(),
@@ -132,27 +137,35 @@ export const getWorkOrderPriorityLabel = (priority: WorkOrderPriority): string =
 }
 
 // Helper function to get status label
-export const getWorkOrderStatusLabel = (status: WorkOrderStatus): string => {
-  const labels: Record<WorkOrderStatus, string> = {
+export const getWorkOrderStatusLabel = (status: FullWorkOrderStatus): string => {
+  const labels: Partial<Record<FullWorkOrderStatus, string>> & Record<string, string> = {
     DRAFT: "Borrador",
+    PENDING_APPROVAL: "Pendiente Aprobación",
+    APPROVED: "Aprobada",
+    REJECTED: "Rechazada",
     ASSIGNED: "Asignada",
     IN_PROGRESS: "En Progreso",
+    PENDING_QA: "Pendiente QA",
     COMPLETED: "Completada",
     CANCELLED: "Cancelada"
   }
-  return labels[status]
+  return labels[status] || "Desconocido"
 }
 
 // Helper function to get status color
-export const getWorkOrderStatusColor = (status: WorkOrderStatus): string => {
-  const colors: Record<WorkOrderStatus, string> = {
+export const getWorkOrderStatusColor = (status: FullWorkOrderStatus): string => {
+  const colors: Partial<Record<FullWorkOrderStatus, string>> & Record<string, string> = {
     DRAFT: "gray",
+    PENDING_APPROVAL: "yellow",
+    APPROVED: "blue",
+    REJECTED: "red",
     ASSIGNED: "blue",
     IN_PROGRESS: "yellow",
+    PENDING_QA: "yellow",
     COMPLETED: "green",
     CANCELLED: "red"
   }
-  return colors[status]
+  return colors[status] || "gray"
 }
 
 // Helper function to get priority color (for badges)

@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-import { useUserRole } from "@/hooks/useUserRole"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 
 interface CompanyGroup {
   id: string
@@ -32,7 +32,8 @@ interface CompanyGroupsResponse {
 
 export default function CompanyGroupsPage() {
   const router = useRouter()
-  const { isSuperAdmin } = useUserRole()
+  const { user } = useCurrentUser()
+  const isSuperAdmin = user?.isSuperAdmin ?? false
   const { data: groups, loading, refetch } = useTableData<CompanyGroup>({
     endpoint: '/api/admin/company-groups',
     transform: (data) => (data as CompanyGroupsResponse).companyGroups || []

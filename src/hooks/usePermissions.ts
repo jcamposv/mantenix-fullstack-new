@@ -2,6 +2,8 @@
  * usePermissions Hook
  * Provides permission checking functionality for components
  *
+ * Optimized with SWR for caching and deduplication to prevent duplicate API calls
+ *
  * Usage:
  * const { hasPermission, hasAnyPermission, hasAllPermissions, loading } = usePermissions();
  *
@@ -12,46 +14,40 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import useSWR from 'swr';
 import type { Permission, UserPermissions, PermissionCheckOptions } from '@/types/permissions.types';
 
+const fetcher = async (url: string): Promise<UserPermissions> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch permissions');
+  return res.json();
+};
+
 export function usePermissions() {
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchPermissions() {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/user/permissions');
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch permissions');
-        }
-
-        const data: UserPermissions = await response.json();
-        setPermissions(data.permissions);
-        setRole(data.role);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching permissions:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setPermissions([]);
-      } finally {
-        setLoading(false);
-      }
+  // Use SWR for permissions with caching and deduplication
+  const { data, error, isLoading } = useSWR<UserPermissions>(
+    '/api/user/permissions',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // Dedupe requests within 60 seconds
+      shouldRetryOnError: false,
     }
+  );
 
-    fetchPermissions();
-  }, []);
+  // Memoize permissions to prevent creating new array reference on every render
+  const permissions = useMemo(
+    () => data?.permissions ?? [],
+    [data?.permissions]
+  );
+  const role = data?.role ?? null;
 
   /**
    * Check if user has a specific permission
    */
   const hasPermission = useCallback((permission: Permission): boolean => {
-    if (loading || !permissions.length) return false;
+    if (isLoading || !permissions.length) return false;
 
     // Check for wildcard permission (full access)
     if (permissions.includes('*')) return true;
@@ -64,7 +60,7 @@ export function usePermissions() {
     if (permissions.includes(`${module}.*`)) return true;
 
     return false;
-  }, [permissions, loading]);
+  }, [permissions, isLoading]);
 
   /**
    * Check if user has ANY of the provided permissions
@@ -94,8 +90,8 @@ export function usePermissions() {
   return {
     permissions,
     role,
-    loading,
-    error,
+    loading: isLoading,
+    error: error?.message ?? null,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,

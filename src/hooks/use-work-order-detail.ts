@@ -4,11 +4,34 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import type { WorkOrderPriority, WorkOrderStatus } from "@prisma/client"
+import type { WorkOrderPriority } from "@prisma/client"
 import {
   workOrderDetailSchema,
   type WorkOrderDetailFormData,
 } from "@/schemas/work-order-detail.schema"
+
+// Valid statuses for the form schema
+type FormStatus = "DRAFT" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+
+// Map Prisma WorkOrderStatus to form-compatible status
+const mapStatusToForm = (status: string): FormStatus => {
+  const validStatuses: FormStatus[] = ["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
+  if (validStatuses.includes(status as FormStatus)) {
+    return status as FormStatus
+  }
+  // Map workflow statuses to form-compatible statuses
+  switch (status) {
+    case "PENDING_APPROVAL":
+    case "APPROVED":
+      return "ASSIGNED"
+    case "REJECTED":
+      return "DRAFT"
+    case "PENDING_QA":
+      return "COMPLETED"
+    default:
+      return "DRAFT"
+  }
+}
 
 interface UseWorkOrderDetailOptions {
   workOrderId: string | null
@@ -79,7 +102,7 @@ export function useWorkOrderDetail({ workOrderId, onSuccess }: UseWorkOrderDetai
         title: data.title,
         description: data.description || "",
         priority: data.priority as WorkOrderPriority,
-        status: data.status as WorkOrderStatus,
+        status: mapStatusToForm(data.status),
         scheduledDate: data.scheduledDate
           ? new Date(data.scheduledDate).toISOString().split("T")[0]
           : "",

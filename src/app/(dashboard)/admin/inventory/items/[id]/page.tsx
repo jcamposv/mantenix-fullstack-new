@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,69 +8,23 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Edit, Package, MapPin, Loader2 } from "lucide-react"
 import { StockBadge } from "@/components/inventory/stock-badge"
 import { toast } from "sonner"
-
-interface InventoryItemDetail {
-  id: string
-  code: string
-  name: string
-  description: string | null
-  category: string | null
-  subcategory: string | null
-  manufacturer: string | null
-  model: string | null
-  partNumber: string | null
-  unit: string
-  minStock: number
-  maxStock: number | null
-  reorderPoint: number
-  unitCost: number | null
-  totalQuantity: number
-  totalAvailable: number
-  totalReserved: number
-  isActive: boolean
-  company: {
-    id: string
-    name: string
-  }
-  stock: Array<{
-    id: string
-    locationId: string
-    locationType: string
-    locationName: string
-    quantity: number
-    reservedQuantity: number
-    availableQuantity: number
-  }>
-}
+import { useInventoryItem } from "@/hooks/useInventoryItem"
 
 export default function InventoryItemDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
-  const [item, setItem] = useState<InventoryItemDetail | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Use the new useInventoryItem hook with SWR
+  const { item, loading, error } = useInventoryItem(id)
 
+  // Handle error state
   useEffect(() => {
-    fetchItemData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
-
-  const fetchItemData = async () => {
-    try {
-      const response = await fetch(`/api/admin/inventory/items/${id}`)
-      if (!response.ok) throw new Error('Error al cargar el ítem')
-
-      const data = await response.json()
-      setItem(data)
-    } catch (error) {
-      console.error('Error fetching item:', error)
+    if (error) {
       toast.error('Error al cargar el ítem')
       router.push('/admin/inventory/items')
-    } finally {
-      setLoading(false)
     }
-  }
+  }, [error, router])
 
   if (loading) {
     return (

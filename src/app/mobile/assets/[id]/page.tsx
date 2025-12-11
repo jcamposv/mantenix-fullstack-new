@@ -21,37 +21,8 @@ import { toast } from "sonner"
 import { AssetStatusBadge } from "@/components/common/asset-status-badge"
 import { ChangeAssetStatusDialog } from "@/components/common/change-asset-status-dialog"
 import type { ChangeAssetStatusData } from "@/schemas/asset-status"
-
-interface Asset {
-  id: string
-  name: string
-  code: string
-  description: string | null
-  location: string
-  status: "OPERATIVO" | "EN_MANTENIMIENTO" | "FUERA_DE_SERVICIO"
-  category: string | null
-  manufacturer: string | null
-  model: string | null
-  serialNumber: string | null
-  site: {
-    id: string
-    name: string
-    clientCompany: {
-      name: string
-    }
-  }
-}
-
-interface StatusHistoryRecord {
-  id: string
-  status: string
-  startedAt: string
-  endedAt: string | null
-  reason: string | null
-  user: {
-    name: string
-  }
-}
+import { useAsset } from "@/hooks/useAsset"
+import { useAssetStatusHistory } from "@/hooks/useAssetStatusHistory"
 
 const statusConfig = {
   OPERATIVO: {
@@ -79,44 +50,24 @@ export default function MobileAssetDetailPage() {
   const router = useRouter()
   const assetId = params.id as string
 
-  const [asset, setAsset] = useState<Asset | null>(null)
-  const [history, setHistory] = useState<StatusHistoryRecord[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use the new useAsset hook with SWR
+  const { asset, loading: assetLoading, error: assetError, mutate } = useAsset(assetId)
+
+  // Use SWR hook for status history
+  const { history, loading: historyLoading, mutate: mutateHistory } = useAssetStatusHistory(assetId, {
+    limit: 5
+  })
+
   const [changeStatusDialogOpen, setChangeStatusDialogOpen] = useState(false)
   const [isChangingStatus, setIsChangingStatus] = useState(false)
 
+  // Handle asset fetch error
   useEffect(() => {
-    fetchAssetData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId])
-
-  const fetchAssetData = async () => {
-    try {
-      setLoading(true)
-      // Fetch asset details
-      const assetResponse = await fetch(`/api/admin/assets/${assetId}`)
-      if (assetResponse.ok) {
-        const assetData = await assetResponse.json()
-        setAsset(assetData.asset || assetData)
-      } else {
-        toast.error("Error al cargar el activo")
-        router.push('/mobile/assets')
-        return
-      }
-
-      // Fetch recent status history (last 5)
-      const historyResponse = await fetch(`/api/assets/${assetId}/status-history?limit=5`)
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json()
-        setHistory(historyData.history || [])
-      }
-    } catch (error) {
-      console.error('Error fetching asset data:', error)
-      toast.error('Error al cargar el activo')
-    } finally {
-      setLoading(false)
+    if (assetError) {
+      toast.error("Error al cargar el activo")
+      router.push('/mobile/assets')
     }
-  }
+  }, [assetError, router])
 
   const handleChangeStatus = async (data: ChangeAssetStatusData) => {
     if (!asset) return
@@ -134,8 +85,9 @@ export default function MobileAssetDetailPage() {
       if (response.ok) {
         toast.success('Estado actualizado exitosamente')
         setChangeStatusDialogOpen(false)
-        // Refresh asset data
-        fetchAssetData()
+        // Refresh asset data and history using SWR mutate
+        mutate()
+        mutateHistory()
       } else {
         const error = await response.json()
         toast.error(error.error || 'Error al cambiar el estado')
@@ -158,6 +110,8 @@ export default function MobileAssetDetailPage() {
       minute: "2-digit",
     })
   }
+
+  const loading = assetLoading || historyLoading
 
   if (loading || !asset) {
     return (

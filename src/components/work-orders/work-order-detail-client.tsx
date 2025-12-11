@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -16,7 +17,14 @@ import {
   Activity,
   Package,
   MessageSquare,
-  Info
+  Info,
+  AlertCircle,
+  CheckCircle,
+  ShieldCheck,
+  ShieldAlert,
+  Lock,
+  HardHat,
+  Search
 } from "lucide-react"
 import { WorkOrderConsolidatedInfo } from "./work-order-consolidated-info"
 import { WorkOrderCostBreakdownCard } from "./cost-breakdown-card"
@@ -28,7 +36,10 @@ import { TimeSummaryCard } from "./time-tracking/time-summary-card"
 import { PrintableWorkOrder } from "./printable-work-order"
 import { WorkOrderStatusBadge } from "./work-order-status-badge"
 import { WorkOrderPriorityBadge } from "./work-order-priority-badge"
+import { MaintenanceComponentCard } from "./maintenance-component-card"
+import { WorkflowSection } from "./workflow/workflow-section"
 import { useTimeTracker } from "@/hooks/use-time-tracker"
+import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 
@@ -50,6 +61,9 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
 
   // Get time summary for dynamic metrics
   const { summary } = useTimeTracker({ workOrderId: workOrder.id })
+
+  // Get company features for predictive maintenance
+  const { hasPredictiveMaintenance } = useCompanyFeatures()
 
   // Check if user can edit costs (JEFE_MANTENIMIENTO, ADMIN_EMPRESA, ADMIN_GRUPO, SUPER_ADMIN)
   const user = session?.user as { role?: string } | undefined
@@ -274,7 +288,7 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
         {/* Left Column - Main Content with Tabs */}
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="general" className="gap-2">
                 <Info className="h-4 w-4" />
                 <span className="hidden sm:inline">General</span>
@@ -287,6 +301,10 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
                 <Package className="h-4 w-4" />
                 <span className="hidden sm:inline">Materiales</span>
               </TabsTrigger>
+              <TabsTrigger value="workflow" className="gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Workflow</span>
+              </TabsTrigger>
               <TabsTrigger value="activity" className="gap-2">
                 <MessageSquare className="h-4 w-4" />
                 <span className="hidden sm:inline">Actividad</span>
@@ -296,6 +314,77 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
             {/* General Tab */}
             <TabsContent value="general" className="space-y-4 mt-6">
               <WorkOrderConsolidatedInfo workOrder={workOrder} />
+
+              {/* Maintenance Component Card - Only for PREDICTIVE_MAINTENANCE feature */}
+              {workOrder.maintenanceComponent && hasPredictiveMaintenance && (
+                <MaintenanceComponentCard component={workOrder.maintenanceComponent} />
+              )}
+
+              {/* Maintenance Alerts - Only show if there are resolved alerts */}
+              {workOrder.maintenanceAlerts && workOrder.maintenanceAlerts.length > 0 && hasPredictiveMaintenance && (
+                <Card className="shadow-none">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      Alertas de Mantenimiento Resueltas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {workOrder.maintenanceAlerts.map((alert) => {
+                      const severityColors = {
+                        CRITICAL: 'destructive',
+                        WARNING: 'outline',
+                        INFO: 'secondary',
+                      } as const
+
+                      return (
+                        <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
+                          <AlertCircle className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-medium text-sm">{alert.componentName}</p>
+                                {alert.partNumber && (
+                                  <p className="text-xs text-muted-foreground">P/N: {alert.partNumber}</p>
+                                )}
+                              </div>
+                              <Badge variant={severityColors[alert.severity]}>{alert.severity}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{alert.message}</p>
+                            {alert.resolutionNotes && (
+                              <div className="pt-2 border-t">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Notas de resolución:</p>
+                                <p className="text-sm">{alert.resolutionNotes}</p>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                              <span>
+                                Creada: {new Date(alert.createdAt).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                              {alert.resolvedAt && (
+                                <span>
+                                  Resuelta: {new Date(alert.resolvedAt).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                              )}
+                              {alert.resolvedBy && (
+                                <span>Por: {alert.resolvedBy.name}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Custom Fields */}
               {Object.keys(customFieldValues).length > 0 && (
@@ -327,6 +416,11 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
             {/* Materials Tab */}
             <TabsContent value="materials" className="space-y-4 mt-6">
               <WorkOrderToolsMaterials workOrder={workOrder} />
+            </TabsContent>
+
+            {/* Workflow Tab */}
+            <TabsContent value="workflow" className="space-y-4 mt-6">
+              <WorkflowSection workOrder={workOrder} />
             </TabsContent>
 
             {/* Activity Tab */}
@@ -426,6 +520,15 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
                     variant="outline"
                     size="sm"
                     className="w-full justify-start"
+                    onClick={() => setActiveTab("workflow")}
+                  >
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Ver Workflow
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
                     onClick={() => setActiveTab("activity")}
                   >
                     <MessageSquare className="mr-2 h-4 w-4" />
@@ -449,6 +552,53 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
                     <Package className="mr-2 h-4 w-4" />
                     Ver Materiales
                   </Button>
+                </CardContent>
+              </Card>
+
+              {/* Workflow Documents - Create New */}
+              <Card className="shadow-none">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Documentos de Seguridad</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => router.push(`/safety/work-permits/new?workOrderId=${workOrder.id}`)}
+                  >
+                    <ShieldAlert className="mr-2 h-4 w-4" />
+                    Crear Permiso
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => router.push(`/safety/loto-procedures/new?workOrderId=${workOrder.id}`)}
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    Crear LOTO
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => router.push(`/safety/job-safety-analyses/new?workOrderId=${workOrder.id}`)}
+                  >
+                    <HardHat className="mr-2 h-4 w-4" />
+                    Crear JSA
+                  </Button>
+                  {workOrder.type === "CORRECTIVO" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => router.push(`/quality/root-cause-analyses/new?workOrderId=${workOrder.id}`)}
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      Crear RCA
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>

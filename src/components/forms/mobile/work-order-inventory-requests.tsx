@@ -109,10 +109,10 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     return (request.status === "DELIVERED" && !!request.warehouseDeliveredAt) || request.status === "IN_TRANSIT"
   }
 
-  const selectedRequest = requests.find(r => r.id === selectedRequestId)
+  const selectedRequest = requests.find((r: InventoryRequest) => r.id === selectedRequestId)
 
   const getStatusBadge = (status: string) => {
-    const statusOption = REQUEST_STATUS_OPTIONS.find(opt => opt.value === status)
+    const statusOption = REQUEST_STATUS_OPTIONS.find((opt: { value: string; label: string; color: string }) => opt.value === status)
     return (
       <Badge className={`${statusOption?.color || "bg-gray-500"} text-xs`}>
         {statusOption?.label || status}
@@ -121,7 +121,7 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
   }
 
 
-  const pendingConfirmationCount = requests.filter(r => canConfirmReceipt(r)).length
+  const pendingConfirmationCount = requests.filter((r: InventoryRequest) => canConfirmReceipt(r)).length
 
   return (
     <>
@@ -176,7 +176,7 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
             </div>
           ) : (
             <div className="space-y-3">
-              {requests.map((request) => {
+              {requests.map((request: InventoryRequest) => {
                 const needsConfirmation = canConfirmReceipt(request)
                 const isUrgent = request.urgency === 'CRITICAL'
 

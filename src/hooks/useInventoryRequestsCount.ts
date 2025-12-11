@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import useSWR from "swr"
 import { useCurrentUser } from "./useCurrentUser"
 
 interface UseInventoryRequestsCountReturn {
@@ -10,62 +10,61 @@ interface UseInventoryRequestsCountReturn {
   refetch: () => Promise<void>
 }
 
+interface InventoryRequestsResponse {
+  total: number
+}
+
+const fetcher = async (url: string): Promise<InventoryRequestsResponse> => {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch')
+  return res.json()
+}
+
 export function useInventoryRequestsCount(): UseInventoryRequestsCountReturn {
-  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0)
-  const [pendingDeliveriesCount, setPendingDeliveriesCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const { user } = useCurrentUser()
 
-  // Fetch counts from API
-  const fetchCounts = useCallback(async () => {
-    if (!user) return
+  // Determine user role capabilities
+  const isWarehouseManager = user?.role === 'ENCARGADO_BODEGA'
+  const canApprove = user?.role ? ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'JEFE_MANTENIMIENTO'].includes(user.role) : false
 
-    try {
-      setLoading(true)
-
-      // Fetch counts based on user role
-      const isWarehouseManager = user.role === 'ENCARGADO_BODEGA'
-      const canApprove = user.role ? ['SUPER_ADMIN', 'ADMIN_GRUPO', 'ADMIN_EMPRESA', 'JEFE_MANTENIMIENTO'].includes(user.role) : false
-
-      // Fetch pending approvals count (for managers/admins)
-      if (canApprove) {
-        const approvalsResponse = await fetch('/api/admin/inventory/requests?status=PENDING&limit=1')
-        if (approvalsResponse.ok) {
-          const data = await approvalsResponse.json()
-          setPendingApprovalsCount(data.total || 0)
-        }
-      }
-
-      // Fetch pending deliveries count (for warehouse managers)
-      if (isWarehouseManager) {
-        const deliveriesResponse = await fetch('/api/admin/inventory/requests?status=APPROVED&limit=1')
-        if (deliveriesResponse.ok) {
-          const data = await deliveriesResponse.json()
-          setPendingDeliveriesCount(data.total || 0)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching inventory requests counts:', error)
-    } finally {
-      setLoading(false)
+  // Fetch pending approvals count (for managers/admins)
+  const { data: approvalsData, isLoading: approvalsLoading, mutate: refetchApprovals } = useSWR<InventoryRequestsResponse>(
+    canApprove ? '/api/admin/inventory/requests?status=PENDING&limit=1' : null,
+    fetcher,
+    {
+      refreshInterval: 30000, // Auto-refresh every 30 seconds
+      revalidateOnFocus: true, // Revalidate when window gets focus
+      dedupingInterval: 5000, // Dedupe requests within 5 seconds
     }
-  }, [user])
+  )
 
-  // Initial fetch
-  useEffect(() => {
-    fetchCounts()
-  }, [fetchCounts])
+  // Fetch pending deliveries count (for warehouse managers)
+  const { data: deliveriesData, isLoading: deliveriesLoading, mutate: refetchDeliveries } = useSWR<InventoryRequestsResponse>(
+    isWarehouseManager ? '/api/admin/inventory/requests?status=APPROVED&limit=1' : null,
+    fetcher,
+    {
+      refreshInterval: 30000, // Auto-refresh every 30 seconds
+      revalidateOnFocus: true, // Revalidate when window gets focus
+      dedupingInterval: 5000, // Dedupe requests within 5 seconds
+    }
+  )
 
-  // Refetch every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(fetchCounts, 30000)
-    return () => clearInterval(interval)
-  }, [fetchCounts])
+  const pendingApprovalsCount = approvalsData?.total ?? 0
+  const pendingDeliveriesCount = deliveriesData?.total ?? 0
+  const loading = approvalsLoading || deliveriesLoading
+
+  // Refetch function to manually trigger updates
+  const refetch = async () => {
+    await Promise.all([
+      canApprove ? refetchApprovals() : Promise.resolve(),
+      isWarehouseManager ? refetchDeliveries() : Promise.resolve(),
+    ])
+  }
 
   return {
     pendingApprovalsCount,
     pendingDeliveriesCount,
     loading,
-    refetch: fetchCounts
+    refetch
   }
 }

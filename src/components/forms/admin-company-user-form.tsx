@@ -8,18 +8,11 @@ import { Form } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
+import { useClientCompanies } from "@/hooks/useClientCompanies"
 import { createAdminUserSchema, type AdminUserFormData, EXTERNAL_ROLES } from "@/schemas/admin-user"
 import { AdminUserBasicInfo } from "./admin-user/admin-user-basic-info"
 import { AdminUserExternal } from "./admin-user/admin-user-external"
 import { AdminUserRoleSettings } from "./admin-user/admin-user-role-settings"
-
-interface ClientCompany {
-  id: string
-  name: string
-  companyId: string
-  email: string
-  contactName: string
-}
 
 interface Site {
   id: string
@@ -39,12 +32,13 @@ interface AdminCompanyUserFormProps {
 }
 
 export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "create" }: AdminCompanyUserFormProps) {
-  const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([])
   const [sites, setSites] = useState<Site[]>([])
-  const [loadingClientCompanies, setLoadingClientCompanies] = useState(false)
   const [loadingSites, setLoadingSites] = useState(false)
   const { user: currentUser } = useCurrentUser()
   const { hasExternalClientMgmt } = useCompanyFeatures()
+
+  // Use centralized useClientCompanies hook with SWR
+  const { clientCompanies, loading: loadingClientCompanies } = useClientCompanies()
 
   const form = useForm<AdminUserFormData>({
     resolver: zodResolver(createAdminUserSchema(mode)),
@@ -79,7 +73,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       // Reset role to first external role when switching to external user
       form.setValue("role", "CLIENTE_ADMIN_GENERAL")
       form.setValue("customRoleId", null)
-      fetchClientCompanies()
+      // Client companies are automatically loaded via SWR hook
     } else {
       // Reset role to first internal role when switching to internal user
       form.setValue("role", "TECNICO")
@@ -106,21 +100,6 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       form.setValue("siteId", undefined)
     }
   }, [selectedRole, isExternalUser, form])
-
-  const fetchClientCompanies = async () => {
-    setLoadingClientCompanies(true)
-    try {
-      const response = await fetch('/api/admin/client-companies')
-      if (response.ok) {
-        const data = await response.json()
-        setClientCompanies(data.items || [])
-      }
-    } catch (error) {
-      console.error('Error fetching client companies:', error)
-    } finally {
-      setLoadingClientCompanies(false)
-    }
-  }
 
   const fetchSites = async (clientCompanyId: string) => {
     setLoadingSites(true)

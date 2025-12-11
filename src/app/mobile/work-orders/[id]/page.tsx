@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +11,8 @@ import { WorkOrderCompleteForm } from "@/components/forms/mobile/work-order-comp
 import { WorkOrderReadonlyView } from "@/components/forms/mobile/work-order-complete/work-order-readonly-view"
 import { WorkOrderInventoryRequestsMobile } from "@/components/forms/mobile/work-order-inventory-requests"
 import { TimeTrackerCard, TimeSummaryCard } from "@/components/work-orders/time-tracking"
+import { SafetyDocumentsCard } from "@/components/mobile/safety-documents/safety-documents-card"
+import { SafetyBriefingDialog } from "@/components/workflow/safety-briefing-dialog"
 import { useWorkOrderManagement } from "@/hooks/use-work-order-management"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 import { cn } from "@/lib/utils"
@@ -34,6 +37,8 @@ export default function MobileWorkOrderDetailPage() {
     handleCompleteWork,
     handleCancelWork
   } = useWorkOrderManagement(workOrderId)
+
+  const [showSafetyBriefing, setShowSafetyBriefing] = useState(false)
 
   if (loading) {
     return (
@@ -161,6 +166,13 @@ export default function MobileWorkOrderDetailPage() {
         <TimeSummaryCard workOrderId={workOrderId} />
       )}
 
+      {/* Safety Documents - ISO Compliance */}
+      <SafetyDocumentsCard
+        workOrder={workOrder}
+        onConfirmClick={() => setShowSafetyBriefing(true)}
+        onRefresh={fetchWorkOrder}
+      />
+
       {/* Work Details Section - Collapsible when not the primary focus */}
       {isInProgress && hasCustomFields && (
         <Card className={cn(
@@ -221,6 +233,17 @@ export default function MobileWorkOrderDetailPage() {
           />
         )}
       </div>
+
+      {/* Safety Briefing Dialog - ISO 45001 Compliance */}
+      <SafetyBriefingDialog
+        workOrder={workOrder}
+        open={showSafetyBriefing}
+        onOpenChange={setShowSafetyBriefing}
+        onSuccess={() => {
+          fetchWorkOrder() // Refresh work order data
+          // SWR will auto-revalidate the safety briefing check
+        }}
+      />
     </div>
   )
 }

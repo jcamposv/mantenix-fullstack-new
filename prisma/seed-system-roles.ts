@@ -34,6 +34,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'BOTH',
     color: '#f97316', // orange
     permissions: [
+      'dashboard.view_global',
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
       'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
@@ -52,7 +53,13 @@ const SYSTEM_ROLES: SystemRole[] = [
       'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
       'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
       'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-      'inventory.delete_request', 'inventory.view_movements'
+      'inventory.delete_request', 'inventory.view_movements',
+      // Safety & Quality
+      'safety.view_permits', 'safety.manage_permits', 'safety.authorize_permits',
+      'safety.view_loto', 'safety.manage_loto', 'safety.verify_loto',
+      'safety.view_jsa', 'safety.create_jsa', 'safety.review_jsa', 'safety.approve_jsa',
+      'rca.view', 'rca.create', 'rca.review', 'rca.approve',
+      'capa.view', 'capa.create', 'capa.assign', 'capa.verify'
     ]
   },
   {
@@ -62,6 +69,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'BOTH',
     color: '#f59e0b', // amber
     permissions: [
+      'dashboard.view_global',
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
       'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.view_assigned', 'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
@@ -79,7 +87,13 @@ const SYSTEM_ROLES: SystemRole[] = [
       'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
       'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
       'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-      'inventory.delete_request', 'inventory.view_movements'
+      'inventory.delete_request', 'inventory.view_movements',
+      // Safety & Quality
+      'safety.view_permits', 'safety.manage_permits', 'safety.authorize_permits',
+      'safety.view_loto', 'safety.manage_loto', 'safety.verify_loto',
+      'safety.view_jsa', 'safety.create_jsa', 'safety.review_jsa', 'safety.approve_jsa',
+      'rca.view', 'rca.create', 'rca.review', 'rca.approve',
+      'capa.view', 'capa.create', 'capa.assign', 'capa.verify'
     ]
   },
   {
@@ -89,6 +103,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'BOTH',
     color: '#eab308', // yellow
     permissions: [
+      'dashboard.view_global',
       'alerts.create', 'alerts.update', 'alerts.delete', 'alerts.view_company', 'alerts.comment',
       'work_orders.create', 'work_orders.update', 'work_orders.delete', 'work_orders.view_all',
       'work_orders.assign', 'work_orders.complete', 'work_orders.cancel',
@@ -96,7 +111,13 @@ const SYSTEM_ROLES: SystemRole[] = [
       'analytics.view',
       'assets.view', 'assets.change_status', 'assets.view_status_history',
       'inventory.view_requests', 'inventory.approve_request', 'inventory.reject_request',
-      'inventory.view_items', 'inventory.view_stock'
+      'inventory.view_items', 'inventory.view_stock',
+      // Safety & Quality
+      'safety.view_permits', 'safety.manage_permits', 'safety.authorize_permits',
+      'safety.view_loto', 'safety.manage_loto', 'safety.verify_loto',
+      'safety.view_jsa', 'safety.create_jsa', 'safety.review_jsa', 'safety.approve_jsa',
+      'rca.view', 'rca.create', 'rca.review', 'rca.approve',
+      'capa.view', 'capa.create', 'capa.assign', 'capa.verify'
     ]
   },
   {
@@ -142,7 +163,9 @@ const SYSTEM_ROLES: SystemRole[] = [
       'assets.view', 'assets.change_status', 'assets.view_status_history',
       'attendance.view', 'attendance.create',
       'inventory.view_requests', 'inventory.create_request', 'inventory.confirm_receipt',
-      'inventory.view_items', 'inventory.view_stock'
+      'inventory.view_items', 'inventory.view_stock',
+      // Safety - ISO 45001 Compliance (view and execute safety procedures in field)
+      'safety.view_permits', 'safety.view_loto', 'safety.view_jsa'
     ]
   },
   {
@@ -163,6 +186,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'DASHBOARD',
     color: '#8b5cf6', // violet
     permissions: [
+      'dashboard.view_client',
       'alerts.create', 'alerts.update', 'alerts.view_client', 'alerts.comment',
       'users.view_client',
       'sites.view',
@@ -176,6 +200,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     interfaceType: 'DASHBOARD',
     color: '#a855f7', // purple
     permissions: [
+      'dashboard.view_client',
       'alerts.create', 'alerts.update', 'alerts.view_site', 'alerts.comment',
       'sites.view',
       'assets.create', 'assets.update', 'assets.delete', 'assets.view', 'assets.change_status', 'assets.view_status_history'

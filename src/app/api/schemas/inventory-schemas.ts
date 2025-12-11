@@ -17,6 +17,7 @@ export const createInventoryItemSchema = z.object({
   minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").default(0),
   maxStock: z.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
   reorderPoint: z.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").optional().default(0),
+  leadTime: z.number().int().min(1, "El tiempo de entrega debe ser mayor a 0").default(7),
   lastPurchasePrice: z.number().min(0, "El precio de última compra debe ser mayor o igual a 0").optional(),
   images: z.array(z.string()).optional(),
   companyId: z.string().min(1, "El ID de la empresa es requerido")
@@ -39,6 +40,7 @@ export const updateInventoryItemSchema = z.object({
   minStock: z.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").optional(),
   maxStock: z.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
   reorderPoint: z.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").optional(),
+  leadTime: z.number().int().min(1, "El tiempo de entrega debe ser mayor a 0").optional(),
   lastPurchasePrice: z.number().min(0, "El precio de última compra debe ser mayor o igual a 0").optional(),
   images: z.array(z.string()).optional(),
   isActive: z.boolean().optional()

@@ -229,4 +229,12 @@ export class CustomRoleService {
       createdBy
     });
   }
+
+  /**
+   * Get simple role options for dropdowns/selects
+   * Returns only id, key, and name for active roles
+   */
+  async getActiveRoleOptions(companyId: string): Promise<Array<{ id: string; key: string | null; name: string }>> {
+    return this.repository.getActiveRoleOptions(companyId);
+  }
 }

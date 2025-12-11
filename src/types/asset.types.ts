@@ -15,6 +15,7 @@ export interface Asset {
   serialNumber: string | null
   purchaseDate: Date | null
   estimatedLifespan: number | null
+  operatingHours: number | null
   category: string | null
   customFields: Record<string, unknown> | null
   createdAt: Date
@@ -50,6 +51,7 @@ export interface CreateAssetData {
   serialNumber?: string
   purchaseDate?: Date
   estimatedLifespan?: number
+  operatingHours?: number
   category?: string
   customFields?: Record<string, unknown>
 }
@@ -67,6 +69,7 @@ export interface UpdateAssetData {
   serialNumber?: string
   purchaseDate?: Date
   estimatedLifespan?: number
+  operatingHours?: number
   category?: string
   customFields?: Record<string, unknown>
 }

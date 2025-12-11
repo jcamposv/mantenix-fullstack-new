@@ -1,39 +1,40 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import useSWR from "swr"
 import { Loader2, Package, AlertTriangle, Clock, ArrowUpDown, PackageSearch, FileText, ClipboardList, Plus } from "lucide-react"
 import { StatsCard } from "@/components/inventory/dashboard/stats-card"
 import { LowStockAlerts } from "@/components/inventory/dashboard/low-stock-alerts"
 import { RecentActivity } from "@/components/inventory/dashboard/recent-activity"
 import { TopRequestedItems } from "@/components/inventory/dashboard/top-requested-items"
+import { MTBFAlerts } from "@/components/maintenance/mtbf-alerts"
 import type { InventoryDashboardMetrics } from "@/types/inventory.types"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
+const fetcher = async (url: string): Promise<InventoryDashboardMetrics> => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error('Error al cargar métricas')
+  return response.json()
+}
+
 export default function InventoryDashboardPage() {
-  const [metrics, setMetrics] = useState<InventoryDashboardMetrics | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchMetrics()
-  }, [])
-
-  const fetchMetrics = async () => {
-    try {
-      const response = await fetch('/api/admin/inventory/dashboard')
-      if (!response.ok) throw new Error('Error al cargar métricas')
-      const data = await response.json()
-      setMetrics(data)
-    } catch (error) {
-      console.error('Error fetching metrics:', error)
-      toast.error('Error al cargar el dashboard')
-    } finally {
-      setLoading(false)
+  // Use SWR with auto-refresh every 2 minutes for dashboard metrics
+  const { data: metrics, error, isLoading } = useSWR<InventoryDashboardMetrics>(
+    '/api/admin/inventory/dashboard',
+    fetcher,
+    {
+      refreshInterval: 120000, // Auto-refresh every 2 minutes
+      revalidateOnFocus: true, // Refresh when user returns to tab
+      dedupingInterval: 10000, // Dedupe requests within 10 seconds
+      onError: (err) => {
+        console.error('Error fetching dashboard metrics:', err)
+        toast.error('Error al cargar el dashboard')
+      }
     }
-  }
+  )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -41,7 +42,7 @@ export default function InventoryDashboardPage() {
     )
   }
 
-  if (!metrics) {
+  if (error || !metrics) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <p className="text-muted-foreground">Error al cargar el dashboard</p>
@@ -131,6 +132,9 @@ export default function InventoryDashboardPage() {
           variant="default"
         />
       </div>
+
+      {/* MTBF Maintenance Alerts */}
+      <MTBFAlerts limit={5} criticalOnly={true} autoRefresh={true} />
 
       {/* Charts and Alerts */}
       <div className="grid gap-4 md:grid-cols-2">

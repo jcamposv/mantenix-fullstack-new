@@ -1,6 +1,6 @@
 "use client"
 
-import { useUserRole } from "@/hooks/useUserRole"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { PageSkeleton } from "@/components/skeletons"
@@ -10,7 +10,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isSuperAdmin, loading, isCompanyAdmin, isGroupAdmin } = useUserRole()
+  const { user, loading } = useCurrentUser()
+  const isSuperAdmin = user?.isSuperAdmin ?? false
+  const isCompanyAdmin = user?.isCompanyAdmin ?? false
+  const isGroupAdmin = user?.isGroupAdmin ?? false
   const router = useRouter()
 
   useEffect(() => {

@@ -16,6 +16,7 @@ export interface FeatureFlags {
   hasAnalytics: boolean
   hasExternalClientMgmt: boolean
   hasInternalCorporateGroup: boolean
+  hasPredictiveMaintenance: boolean
 }
 
 export function parseCompanyFeatures(features: CompanyFeature[] | null | undefined): FeatureFlags {
@@ -27,6 +28,7 @@ export function parseCompanyFeatures(features: CompanyFeature[] | null | undefin
       hasAnalytics: false,
       hasExternalClientMgmt: false,
       hasInternalCorporateGroup: false,
+      hasPredictiveMaintenance: false,
     }
   }
 
@@ -37,6 +39,7 @@ export function parseCompanyFeatures(features: CompanyFeature[] | null | undefin
     hasAnalytics: features.some(f => f.module === 'ADVANCED_ANALYTICS' && f.isEnabled),
     hasExternalClientMgmt: features.some(f => f.module === 'EXTERNAL_CLIENT_MANAGEMENT' && f.isEnabled),
     hasInternalCorporateGroup: features.some(f => f.module === 'INTERNAL_CORPORATE_GROUP' && f.isEnabled),
+    hasPredictiveMaintenance: features.some(f => f.module === 'PREDICTIVE_MAINTENANCE' && f.isEnabled),
   }
 }
 

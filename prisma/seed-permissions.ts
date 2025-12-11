@@ -122,6 +122,12 @@ const PERMISSIONS: PermissionSeed[] = [
     module: 'work_orders'
   },
   {
+    key: 'work_orders.qa_signoff',
+    name: 'QA Sign-off de Órdenes',
+    description: 'Permite aprobar o rechazar órdenes en control de calidad',
+    module: 'work_orders'
+  },
+  {
     key: 'work_orders.cancel',
     name: 'Cancelar Órdenes de Trabajo',
     description: 'Permite cancelar órdenes de trabajo',
@@ -608,6 +614,190 @@ const PERMISSIONS: PermissionSeed[] = [
     name: 'Ver Analytics',
     description: 'Permite ver reportes y análisis del sistema',
     module: 'analytics'
+  },
+
+  // ============================================================================
+  // DASHBOARD MODULE
+  // ============================================================================
+  {
+    key: 'dashboard.view_global',
+    name: 'Ver Dashboard Global',
+    description: 'Permite acceso al dashboard ejecutivo con métricas consolidadas',
+    module: 'dashboard'
+  },
+  {
+    key: 'dashboard.view_client',
+    name: 'Ver Dashboard de Cliente',
+    description: 'Permite acceso al dashboard de cliente externo con vista de órdenes y proveedores',
+    module: 'dashboard'
+  },
+
+  // ============================================================================
+  // APPROVAL WORKFLOW MODULE (Optional - ISO 55001, ISO 9001)
+  // ============================================================================
+  {
+    key: 'work_orders.approve_level_1',
+    name: 'Aprobar OT - Nivel 1',
+    description: 'Permite aprobar órdenes de trabajo (nivel supervisor)',
+    module: 'work_orders'
+  },
+  {
+    key: 'work_orders.approve_level_2',
+    name: 'Aprobar OT - Nivel 2',
+    description: 'Permite aprobar órdenes de trabajo (nivel manager)',
+    module: 'work_orders'
+  },
+  {
+    key: 'work_orders.approve_level_3',
+    name: 'Aprobar OT - Nivel 3',
+    description: 'Permite aprobar órdenes de trabajo (nivel director)',
+    module: 'work_orders'
+  },
+  {
+    key: 'work_orders.qa_signoff',
+    name: 'Firma QA en OT',
+    description: 'Permite realizar sign-off de calidad en órdenes completadas',
+    module: 'work_orders'
+  },
+  {
+    key: 'approval.manage_rules',
+    name: 'Gestionar Reglas de Aprobación',
+    description: 'Permite crear y modificar reglas de aprobación automática',
+    module: 'approval'
+  },
+  {
+    key: 'approval.manage_authority_limits',
+    name: 'Gestionar Límites de Autoridad',
+    description: 'Permite configurar límites de autoridad por rol',
+    module: 'approval'
+  },
+
+  // ============================================================================
+  // SAFETY INTEGRATION MODULE (OSHA Compliance)
+  // ============================================================================
+  {
+    key: 'safety.issue_permits',
+    name: 'Emitir Permisos de Trabajo',
+    description: 'Permite emitir permisos de trabajo (hot work, confined space, etc.)',
+    module: 'safety'
+  },
+  {
+    key: 'safety.authorize_permits',
+    name: 'Autorizar Permisos de Trabajo',
+    description: 'Permite autorizar y activar permisos de trabajo emitidos',
+    module: 'safety'
+  },
+  {
+    key: 'safety.view_permits',
+    name: 'Ver Permisos de Trabajo',
+    description: 'Permite visualizar permisos de trabajo',
+    module: 'safety'
+  },
+  {
+    key: 'safety.manage_permits',
+    name: 'Gestionar Permisos de Trabajo',
+    description: 'Permite crear, modificar y eliminar permisos de trabajo',
+    module: 'safety'
+  },
+  {
+    key: 'safety.manage_loto',
+    name: 'Gestionar LOTO',
+    description: 'Permite aplicar y gestionar procedimientos LOTO (Lock-Out/Tag-Out)',
+    module: 'safety'
+  },
+  {
+    key: 'safety.verify_loto',
+    name: 'Verificar LOTO',
+    description: 'Permite verificar aplicación correcta de LOTO',
+    module: 'safety'
+  },
+  {
+    key: 'safety.view_loto',
+    name: 'Ver Procedimientos LOTO',
+    description: 'Permite visualizar procedimientos LOTO',
+    module: 'safety'
+  },
+  {
+    key: 'safety.prepare_jsa',
+    name: 'Preparar JSA',
+    description: 'Permite preparar Job Safety Analysis (análisis de seguridad)',
+    module: 'safety'
+  },
+  {
+    key: 'safety.create_jsa',
+    name: 'Crear JSA',
+    description: 'Permite crear Job Safety Analysis (análisis de seguridad en el trabajo)',
+    module: 'safety'
+  },
+  {
+    key: 'safety.view_jsa',
+    name: 'Ver JSA',
+    description: 'Permite visualizar Job Safety Analysis',
+    module: 'safety'
+  },
+  {
+    key: 'safety.review_jsa',
+    name: 'Revisar JSA',
+    description: 'Permite revisar Job Safety Analysis preparados',
+    module: 'safety'
+  },
+  {
+    key: 'safety.approve_jsa',
+    name: 'Aprobar JSA',
+    description: 'Permite aprobar Job Safety Analysis revisados',
+    module: 'safety'
+  },
+
+  // ============================================================================
+  // ROOT CAUSE ANALYSIS MODULE (ISO 55001, ISO 9001)
+  // ============================================================================
+  {
+    key: 'rca.create',
+    name: 'Crear Análisis RCA',
+    description: 'Permite crear análisis de causa raíz (5-Why, Fishbone, etc.)',
+    module: 'rca'
+  },
+  {
+    key: 'rca.view',
+    name: 'Ver Análisis RCA',
+    description: 'Permite visualizar análisis de causa raíz',
+    module: 'rca'
+  },
+  {
+    key: 'rca.review',
+    name: 'Revisar RCA',
+    description: 'Permite revisar y validar análisis de causa raíz',
+    module: 'rca'
+  },
+  {
+    key: 'rca.approve',
+    name: 'Aprobar RCA',
+    description: 'Permite aprobar análisis de causa raíz',
+    module: 'rca'
+  },
+  {
+    key: 'capa.create',
+    name: 'Crear Acciones CAPA',
+    description: 'Permite crear acciones correctivas y preventivas',
+    module: 'rca'
+  },
+  {
+    key: 'capa.assign',
+    name: 'Asignar Acciones CAPA',
+    description: 'Permite asignar acciones CAPA a usuarios',
+    module: 'rca'
+  },
+  {
+    key: 'capa.verify',
+    name: 'Verificar Acciones CAPA',
+    description: 'Permite verificar efectividad de acciones CAPA implementadas',
+    module: 'rca'
+  },
+  {
+    key: 'capa.view',
+    name: 'Ver Acciones CAPA',
+    description: 'Permite visualizar acciones correctivas y preventivas',
+    module: 'rca'
   }
 ];
 

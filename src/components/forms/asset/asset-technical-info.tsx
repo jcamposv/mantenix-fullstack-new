@@ -1,4 +1,4 @@
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { UseFormReturn } from "react-hook-form"
 import { AssetFormData } from "@/schemas/asset"
@@ -79,9 +79,9 @@ export function AssetTechnicalInfo({ form, clientCompanyId = "temp", assetId = "
             <FormItem>
               <FormLabel>Vida Útil Estimada (años)</FormLabel>
               <FormControl>
-                <Input 
-                  type="number" 
-                  placeholder="10" 
+                <Input
+                  type="number"
+                  placeholder="10"
                   min="0"
                   value={field.value ?? ""}
                   onChange={(e) => {
@@ -95,6 +95,32 @@ export function AssetTechnicalInfo({ form, clientCompanyId = "temp", assetId = "
           )}
         />
       </div>
+
+      <FormField
+        control={form.control}
+        name="operatingHours"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Horas de Operación (Opcional)</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                placeholder="12000"
+                min="0"
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value
+                  field.onChange(val === "" ? undefined : Number(val))
+                }}
+              />
+            </FormControl>
+            <FormDescription>
+              Horas actuales del odómetro/medidor. Si no se define, se calculará automáticamente desde la fecha de compra.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <FormField
         control={form.control}

@@ -196,4 +196,26 @@ export class CustomRoleRepository {
     const userCount = await this.countUsers(roleId);
     return userCount === 0;
   }
+
+  /**
+   * Get simple role options for dropdowns/selects
+   * Returns only id, key, and name for active roles
+   */
+  async getActiveRoleOptions(companyId: string): Promise<Array<{ id: string; key: string | null; name: string }>> {
+    const roles = await prisma.customRole.findMany({
+      where: {
+        companyId,
+        isActive: true,
+        deletedAt: null
+      },
+      select: {
+        id: true,
+        key: true,
+        name: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    return roles;
+  }
 }

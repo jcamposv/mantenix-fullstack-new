@@ -367,6 +367,7 @@ export interface CreateInventoryItemData {
   minStock?: number
   maxStock?: number
   reorderPoint?: number
+  leadTime?: number
   unitCost?: number
   lastPurchasePrice?: number
   averageCost?: number
@@ -395,6 +396,7 @@ export interface UpdateInventoryItemData {
   minStock?: number
   maxStock?: number
   reorderPoint?: number
+  leadTime?: number
   unitCost?: number
   lastPurchasePrice?: number
   averageCost?: number

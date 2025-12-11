@@ -22,110 +22,39 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { ASSET_STATUS_OPTIONS } from "@/schemas/asset-status"
+import { useAsset } from "@/hooks/useAsset"
+import { useAssetStatusHistory, type AssetStatusHistoryItem } from "@/hooks/useAssetStatusHistory"
 
-interface StatusHistoryRecord {
-  id: string
-  status: string
-  startedAt: string
-  endedAt: string | null
-  reason: string | null
-  notes: string | null
-  user: {
-    id: string
-    name: string
-    email: string
-    role: string
-  }
-  workOrder: {
-    id: string
-    number: string
-    title: string
-    status: string
-  } | null
-}
-
-interface Asset {
-  id: string
-  name: string
-  code: string
-}
+type StatusHistoryRecord = AssetStatusHistoryItem
 
 export default function AssetStatusHistoryPage() {
   const params = useParams()
   const router = useRouter()
   const assetId = params.id as string
 
-  const [asset, setAsset] = useState<Asset | null>(null)
-  const [history, setHistory] = useState<StatusHistoryRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
+  // Use the new useAsset hook with SWR
+  const { asset, error: assetError } = useAsset(assetId)
 
   // Filters
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [page, setPage] = useState(1)
-  const [limit] = useState(20)
+  const limit = 20
 
-  const fetchAsset = async () => {
-    try {
-      const response = await fetch(`/api/admin/assets/${assetId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAsset(data.asset || data)
-      } else {
-        toast.error("Error al cargar el activo")
-      }
-    } catch (error) {
-      console.error("Error fetching asset:", error)
+  // Use SWR hook for status history with filters
+  const { history, total, loading } = useAssetStatusHistory(assetId, {
+    limit,
+    page,
+    startDate: dateRange?.from,
+    endDate: dateRange?.to,
+  })
+
+  // Handle asset fetch error
+  useEffect(() => {
+    if (assetError) {
       toast.error("Error al cargar el activo")
     }
-  }
-
-  const fetchHistory = async () => {
-    try {
-      setLoading(true)
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      })
-
-      if (statusFilter) {
-        params.append("status", statusFilter)
-      }
-      if (dateRange?.from) {
-        params.append("startDate", dateRange.from.toISOString())
-      }
-      if (dateRange?.to) {
-        params.append("endDate", dateRange.to.toISOString())
-      }
-
-      const response = await fetch(`/api/assets/${assetId}/status-history?${params}`)
-
-      if (response.ok) {
-        const data = await response.json()
-        setHistory(data.history || [])
-        setTotal(data.total || 0)
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "Error al cargar el historial")
-      }
-    } catch (error) {
-      console.error("Error fetching status history:", error)
-      toast.error("Error al cargar el historial de estados")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAsset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId])
-
-  useEffect(() => {
-    fetchHistory()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId, dateRange, statusFilter, page])
+  }, [assetError])
 
   const calculateDuration = (startedAt: string, endedAt: string | null): string => {
     const start = new Date(startedAt)

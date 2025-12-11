@@ -9,14 +9,8 @@ import { AttendanceReportsFilters } from "@/components/attendance/attendance-rep
 import { AttendanceReportsStats } from "@/components/attendance/attendance-reports-stats"
 import { AttendanceReportsChart } from "@/components/attendance/attendance-reports-chart"
 import { AttendanceReportsTable } from "@/components/attendance/attendance-reports-table"
+import { useUsers } from "@/hooks/useUsers"
 import type { MonthlyAttendanceReport } from "@/types/attendance.types"
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-}
 
 const MONTHS = [
   { value: 1, label: "Enero" },
@@ -34,11 +28,13 @@ const MONTHS = [
 ]
 
 export default function AttendanceReportsPage() {
-  const [users, setUsers] = useState<User[]>([])
+  // Use SWR hook for users
+  const { users, loading: loadingUsers } = useUsers()
+
   const [selectedUserId, setSelectedUserId] = useState<string>("")
   const [selectedMonth, setSelectedMonth] = useState<number>(1)
   const [selectedYear, setSelectedYear] = useState<number>(2024) // Default year, will be updated on client
-  
+
   // Initialize with current date on client side only to avoid hydration mismatch
   useEffect(() => {
     const now = new Date()
@@ -47,34 +43,13 @@ export default function AttendanceReportsPage() {
   }, [])
   const [report, setReport] = useState<MonthlyAttendanceReport | null>(null)
   const [loading, setLoading] = useState(false)
-  const [loadingUsers, setLoadingUsers] = useState(true)
 
+  // Set initial user when users are loaded
   useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch("/api/admin/users")
-
-      if (response.ok) {
-        const data = await response.json()
-        const users = data.items || []
-        setUsers(users)
-
-        if (users && users.length > 0) {
-          setSelectedUserId(users[0].id)
-        }
-      } else {
-        toast.error("Error al cargar usuarios")
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast.error("Error al cargar usuarios")
-    } finally {
-      setLoadingUsers(false)
+    if (users && users.length > 0 && !selectedUserId) {
+      setSelectedUserId(users[0].id)
     }
-  }
+  }, [users, selectedUserId])
 
   const fetchReport = useCallback(async () => {
     if (!selectedUserId) {
@@ -184,7 +159,12 @@ export default function AttendanceReportsPage() {
 
         {/* Filters */}
         <AttendanceReportsFilters
-          users={users}
+          users={users.map(user => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role?.name || user.role?.key || 'Sin rol'
+          }))}
           selectedUserId={selectedUserId}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}

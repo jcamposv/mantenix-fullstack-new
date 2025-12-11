@@ -206,7 +206,7 @@ export interface FeatureModuleInfo {
   module: string
   name: string
   description: string
-  category: "HR" | "AI" | "ANALYTICS" | "BUSINESS_MODEL" | "PLATFORM" | "SUPPORT" | "OTHER"
+  category: "HR" | "AI" | "ANALYTICS" | "BUSINESS_MODEL" | "MAINTENANCE" | "PLATFORM" | "SUPPORT" | "OTHER"
 }
 
 export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
@@ -250,6 +250,14 @@ export const AVAILABLE_FEATURES: Record<string, FeatureModuleInfo> = {
     name: "Grupo Corporativo Multi-Compañía",
     description: "Habilita grupo empresarial con inventario compartido y transferencias inter-company",
     category: "BUSINESS_MODEL"
+  },
+
+  // Maintenance Modules
+  PREDICTIVE_MAINTENANCE: {
+    module: "PREDICTIVE_MAINTENANCE",
+    name: "Mantenimiento Predictivo",
+    description: "Alertas automáticas basadas en MTBF/ISO 14224, gestión de componentes y análisis de confiabilidad",
+    category: "MAINTENANCE"
   },
 
   // Platform Features

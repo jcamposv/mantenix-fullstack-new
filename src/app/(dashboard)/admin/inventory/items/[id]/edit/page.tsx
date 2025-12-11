@@ -1,59 +1,56 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { InventoryItemForm } from "@/components/forms/inventory/inventory-item-form"
 import { type InventoryItemFormData } from "@/schemas/inventory"
 import { toast } from "sonner"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useInventoryItem } from "@/hooks/useInventoryItem"
 
 export default function EditInventoryItemPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
-  const [initialData, setInitialData] = useState<Partial<InventoryItemFormData> | null>(null)
-  const [isLoadingData, setIsLoadingData] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Use the new useInventoryItem hook with SWR
+  const { item, loading: isLoadingData, error } = useInventoryItem(id)
+
+  // Handle error state
   useEffect(() => {
-    fetchItemData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
-
-  const fetchItemData = async () => {
-    try {
-      const response = await fetch(`/api/admin/inventory/items/${id}`)
-      if (!response.ok) throw new Error('Error al cargar el ítem')
-
-      const data = await response.json()
-      setInitialData({
-        code: data.code,
-        name: data.name,
-        description: data.description,
-        category: data.category,
-        subcategory: data.subcategory,
-        manufacturer: data.manufacturer,
-        model: data.model,
-        partNumber: data.partNumber,
-        unit: data.unit,
-        minStock: data.minStock,
-        maxStock: data.maxStock,
-        reorderPoint: data.reorderPoint,
-        unitCost: data.unitCost,
-        lastPurchasePrice: data.lastPurchasePrice,
-        images: data.images || [],
-        companyId: data.companyId,
-      })
-    } catch (error) {
-      console.error('Error fetching item:', error)
+    if (error) {
       toast.error('Error al cargar el ítem')
       router.push('/admin/inventory/items')
-    } finally {
-      setIsLoadingData(false)
     }
-  }
+  }, [error, router])
+
+  // Transform item data to form format
+  const initialData = useMemo<Partial<InventoryItemFormData> | null>(() => {
+    if (!item) return null
+
+    return {
+      code: item.code,
+      name: item.name,
+      description: item.description ?? undefined,
+      category: item.category ?? undefined,
+      subcategory: item.subcategory ?? undefined,
+      manufacturer: item.manufacturer ?? undefined,
+      model: item.model ?? undefined,
+      partNumber: item.partNumber ?? undefined,
+      unit: item.unit,
+      minStock: item.minStock,
+      maxStock: item.maxStock ?? undefined,
+      reorderPoint: item.reorderPoint,
+      leadTime: (item as { leadTime?: number }).leadTime ?? 7,
+      unitCost: item.unitCost ?? undefined,
+      lastPurchasePrice: item.lastPurchasePrice ?? undefined,
+      images: item.images || [],
+      companyId: item.companyId,
+    }
+  }, [item])
 
   const handleSubmit = async (data: InventoryItemFormData) => {
     try {
