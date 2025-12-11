@@ -83,7 +83,8 @@ export class LOTOProcedureService {
   }
 
   static async apply(lotoId: string, data: ApplyLOTOData, session: AuthenticatedSession): Promise<LOTOProcedureWithRelations | null> {
-    await PermissionGuard.require(session, 'safety.manage_loto')
+    // Técnicos solo necesitan ver/ejecutar LOTO, no gestionarlo
+    await PermissionGuard.require(session, 'safety.view_loto')
     const loto = await LOTOProcedureRepository.findById(lotoId)
     if (!loto) return null
     if (loto.status !== "PENDING") throw new Error("El procedimiento LOTO no está pendiente")

@@ -55,32 +55,6 @@ export function LOTOProcedureDetailClient({ procedure }: LOTOProcedureDetailClie
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const handleApply = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/loto-procedures/${procedure.id}/apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lockSerialNumbers: procedure.lockSerialNumbers,
-          tagNumbers: procedure.tagNumbers,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Error al aplicar LOTO')
-      }
-
-      toast.success('LOTO aplicado exitosamente')
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al aplicar LOTO')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleVerify = async () => {
     setLoading(true)
     try {
@@ -304,23 +278,6 @@ export function LOTOProcedureDetailClient({ procedure }: LOTOProcedureDetailClie
           </Card>
 
           {/* Actions Card */}
-          {procedure.status === 'PENDING' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Acciones</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  onClick={handleApply}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  Aplicar LOTO
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
           {procedure.status === 'APPLIED' && (
             <Card>
               <CardHeader>

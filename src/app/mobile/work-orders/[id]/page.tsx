@@ -170,6 +170,7 @@ export default function MobileWorkOrderDetailPage() {
       <SafetyDocumentsCard
         workOrder={workOrder}
         onConfirmClick={() => setShowSafetyBriefing(true)}
+        onRefresh={fetchWorkOrder}
       />
 
       {/* Work Details Section - Collapsible when not the primary focus */}

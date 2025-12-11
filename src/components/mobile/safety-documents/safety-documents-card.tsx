@@ -20,9 +20,10 @@ import { cn } from "@/lib/utils"
 interface SafetyDocumentsCardProps {
   workOrder: WorkOrderWithRelations
   onConfirmClick?: () => void
+  onRefresh?: () => void
 }
 
-export function SafetyDocumentsCard({ workOrder, onConfirmClick }: SafetyDocumentsCardProps) {
+export function SafetyDocumentsCard({ workOrder, onConfirmClick, onRefresh }: SafetyDocumentsCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const hasWorkPermits = workOrder.workPermits && workOrder.workPermits.length > 0
@@ -108,7 +109,11 @@ export function SafetyDocumentsCard({ workOrder, onConfirmClick }: SafetyDocumen
                 Procedimientos LOTO
               </h4>
               {workOrder.lotoProcedures!.map((procedure) => (
-                <LOTOProcedureCard key={procedure.id} procedure={procedure} />
+                <LOTOProcedureCard
+                  key={procedure.id}
+                  procedure={procedure}
+                  onRefresh={onRefresh}
+                />
               ))}
             </div>
           )}

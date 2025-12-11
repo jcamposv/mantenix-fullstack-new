@@ -1,14 +1,16 @@
 /**
  * LOTO Procedure Card - Mobile View
- * Displays lockout/tagout procedure details
+ * Displays lockout/tagout procedure details with apply functionality
  */
 
 "use client"
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronUp, Lock, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface LOTOProcedureCardProps {
   procedure: {
@@ -22,7 +24,9 @@ interface LOTOProcedureCardProps {
       assetTag: string
     } | null
     lockSerialNumbers: string[]
+    tagNumbers?: string[]
   }
+  onRefresh?: () => void
 }
 
 const statusColors: Record<string, string> = {
@@ -39,8 +43,37 @@ const statusLabels: Record<string, string> = {
   REMOVED: "Removido"
 }
 
-export function LOTOProcedureCard({ procedure }: LOTOProcedureCardProps) {
+export function LOTOProcedureCard({ procedure, onRefresh }: LOTOProcedureCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const handleApply = async (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card collapse
+
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/loto-procedures/${procedure.id}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lockSerialNumbers: procedure.lockSerialNumbers,
+          tagNumbers: procedure.tagNumbers || [],
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al aplicar LOTO')
+      }
+
+      toast.success('LOTO aplicado exitosamente')
+      onRefresh?.()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al aplicar LOTO')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
@@ -114,6 +147,24 @@ export function LOTOProcedureCard({ procedure }: LOTOProcedureCardProps) {
             <div className="p-2 rounded bg-red-50 border border-red-200">
               <p className="text-xs text-red-900 font-medium">
                 ⚠️ LOTO Activo - NO remover sin autorización
+              </p>
+            </div>
+          )}
+
+          {/* Apply LOTO Button - Only for PENDING status */}
+          {procedure.status === "PENDING" && (
+            <div className="pt-2">
+              <Button
+                onClick={handleApply}
+                disabled={loading}
+                className="w-full"
+                size="sm"
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                {loading ? "Aplicando..." : "Aplicar LOTO"}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Confirmar que los candados fueron colocados físicamente
               </p>
             </div>
           )}

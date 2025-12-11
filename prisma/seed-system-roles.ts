@@ -163,7 +163,9 @@ const SYSTEM_ROLES: SystemRole[] = [
       'assets.view', 'assets.change_status', 'assets.view_status_history',
       'attendance.view', 'attendance.create',
       'inventory.view_requests', 'inventory.create_request', 'inventory.confirm_receipt',
-      'inventory.view_items', 'inventory.view_stock'
+      'inventory.view_items', 'inventory.view_stock',
+      // Safety - ISO 45001 Compliance (view and execute safety procedures in field)
+      'safety.view_permits', 'safety.view_loto', 'safety.view_jsa'
     ]
   },
   {

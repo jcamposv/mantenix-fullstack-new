@@ -42,29 +42,22 @@ export const createLOTOProcedureSchema = lotoProcedureSchema
 export const updateLOTOProcedureSchema = lotoProcedureSchema.partial()
 
 export const applyLOTOSchema = z.object({
-  lockSerialNumbers: z.array(z.string()).min(1, "Debe especificar al menos un número de serie de candado"),
-  tagNumbers: z.array(z.string()).min(1, "Debe especificar al menos un número de etiqueta"),
-  appliedBy: z.string().min(1, "El responsable de aplicar es requerido"),
+  lockSerialNumbers: z.array(z.string()).default([]),
+  tagNumbers: z.array(z.string()).default([]),
   comments: z.string().max(1000).optional()
-})
+}).refine(
+  (data) => data.lockSerialNumbers.length > 0 || data.tagNumbers.length > 0,
+  {
+    message: "Debe especificar al menos un candado o una etiqueta",
+    path: ["lockSerialNumbers"]
+  }
+)
 
 export const verifyLOTOSchema = z.object({
-  verifiedBy: z.string().min(1, "El verificador es requerido"),
-  verificationPassed: z.boolean(),
   comments: z.string().max(1000).optional()
 })
 
 export const removeLOTOSchema = z.object({
-  removedBy: z.string().min(1, "El responsable de remover es requerido"),
-  allLocksRemoved: z.boolean().refine((val) => val === true, {
-    message: "Todos los candados deben ser removidos"
-  }),
-  allTagsRemoved: z.boolean().refine((val) => val === true, {
-    message: "Todas las etiquetas deben ser removidas"
-  }),
-  equipmentTested: z.boolean().refine((val) => val === true, {
-    message: "El equipo debe ser probado antes de remover LOTO"
-  }),
   comments: z.string().max(1000).optional()
 })
 
