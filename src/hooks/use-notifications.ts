@@ -63,6 +63,8 @@ export function useNotifications(
   const [isConnected, setIsConnected] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const MAX_RECONNECT_ATTEMPTS = 3
 
   // Poll MTBF alerts using SWR
   const { data: mtbfData } = useSWR<MTBFAlertsCount>(
@@ -208,23 +210,59 @@ export function useNotifications(
 
     console.log("Connecting to SSE...")
 
-    const eventSource = new EventSource("/api/alerts-notifications/stream")
+    try {
+      const eventSource = new EventSource("/api/alerts-notifications/stream")
 
-    eventSource.onmessage = handleSSEMessage
+      eventSource.onmessage = handleSSEMessage
 
-    eventSource.onerror = (error) => {
-      console.error("SSE error:", error)
+      eventSource.onopen = () => {
+        console.log("SSE connection opened successfully")
+        setIsConnected(true)
+        reconnectAttemptsRef.current = 0 // Reset reconnection attempts on successful connection
+      }
+
+      eventSource.onerror = () => {
+        // Check readyState to determine the type of error
+        if (eventSource.readyState === EventSource.CONNECTING) {
+          // Silently reconnecting, don't log
+        } else if (eventSource.readyState === EventSource.CLOSED) {
+          setIsConnected(false)
+          eventSource.close()
+
+          // Only attempt to reconnect if we haven't exceeded max attempts
+          if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttemptsRef.current += 1
+            const delay = Math.min(5000 * reconnectAttemptsRef.current, 30000) // Exponential backoff, max 30s
+
+            reconnectTimeoutRef.current = setTimeout(() => {
+              console.log(`SSE reconnect attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS}`)
+              connectToSSE()
+            }, delay)
+          } else {
+            console.info('SSE: Max reconnection attempts reached. Real-time notifications disabled. MTBF polling still active.')
+          }
+        } else {
+          setIsConnected(false)
+        }
+      }
+
+      eventSourceRef.current = eventSource
+    } catch (error) {
       setIsConnected(false)
-      eventSource.close()
 
-      // Attempt to reconnect after 5 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        console.log("Attempting to reconnect...")
-        connectToSSE()
-      }, 5000)
+      // Only retry if we haven't exceeded max attempts
+      if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttemptsRef.current += 1
+        const delay = Math.min(5000 * reconnectAttemptsRef.current, 30000)
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          console.log(`SSE reconnect after error, attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS}`)
+          connectToSSE()
+        }, delay)
+      } else {
+        console.info('SSE: Connection failed. Real-time notifications disabled. MTBF polling still active.')
+      }
     }
-
-    eventSourceRef.current = eventSource
   }, [enabled, handleSSEMessage])
 
   // Connect to SSE on mount

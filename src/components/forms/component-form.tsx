@@ -64,7 +64,7 @@ export function ComponentForm({
 
   // Use SWR for inventory items with caching and deduplication
   const { data: inventoryData, isLoading: loadingInventory } = useSWR<{ items: InventoryItem[] }>(
-    '/api/admin/inventory/items?limit=1000',
+    '/api/admin/inventory/items?limit=100',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -74,7 +74,7 @@ export function ComponentForm({
 
   // Use SWR for components with caching and deduplication
   const { data: componentsData, isLoading: loadingComponents } = useSWR<{ items: ExplodedViewComponent[] }>(
-    '/api/exploded-view-components?limit=1000',
+    '/api/exploded-view-components?limit=100',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -83,8 +83,8 @@ export function ComponentForm({
   )
 
   // Use SWR for work order templates (only if feature enabled)
-  const { data: templatesData, isLoading: loadingTemplates } = useSWR<{ templates: WorkOrderTemplate[] }>(
-    hasPredictiveMaintenance ? '/api/work-order-templates?limit=1000' : null,
+  const { data: templatesData, isLoading: loadingTemplates } = useSWR<{ templates?: WorkOrderTemplate[], items?: WorkOrderTemplate[] }>(
+    hasPredictiveMaintenance ? '/api/work-order-templates?limit=100' : null,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -94,7 +94,8 @@ export function ComponentForm({
 
   const inventoryItems = inventoryData?.items || []
   const components = componentsData?.items || []
-  const templates = templatesData?.templates || []
+  // Handle both response formats: { templates: [...] } or { items: [...] }
+  const templates = templatesData?.templates || templatesData?.items || []
 
   const form = useForm<ComponentFormData>({
     resolver: zodResolver(componentFormSchema),

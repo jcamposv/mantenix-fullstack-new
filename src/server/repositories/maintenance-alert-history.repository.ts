@@ -573,4 +573,56 @@ export class MaintenanceAlertHistoryRepository {
       autoClosureReason: reason,
     })
   }
+
+  /**
+   * Find alerts linked to a specific work order
+   */
+  static async findByWorkOrder(workOrderId: string): Promise<MaintenanceAlertHistoryWithRelations[]> {
+    const alerts = await prisma.maintenanceAlertHistory.findMany({
+      where: {
+        workOrderId
+      },
+      include: {
+        component: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true
+          }
+        },
+        asset: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        },
+        resolvedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        dismissedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        workOrder: {
+          select: {
+            id: true,
+            number: true,
+            title: true,
+            status: true
+          }
+        }
+      }
+    })
+
+    return alerts as unknown as MaintenanceAlertHistoryWithRelations[]
+  }
 }

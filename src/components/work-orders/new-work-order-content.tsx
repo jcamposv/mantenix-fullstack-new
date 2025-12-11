@@ -32,6 +32,7 @@ export function NewWorkOrderContent() {
   const searchParams = useSearchParams()
   const templateId = searchParams.get('templateId')
   const componentId = searchParams.get('componentId')
+  const alertHistoryId = searchParams.get('alertHistoryId') // Link to maintenance alert
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("basic")
 
@@ -61,6 +62,7 @@ export function NewWorkOrderContent() {
       siteId: "",
       assetId: "",
       maintenanceComponentId: componentId || undefined,
+      alertHistoryId: alertHistoryId || undefined, // Link to maintenance alert
       templateId: templateId || "",
       customFieldValues: {},
       instructions: "",

@@ -273,6 +273,7 @@ export interface CreateWorkOrderData {
   siteId: string
   assetId?: string
   maintenanceComponentId?: string
+  alertHistoryId?: string // Link to maintenance alert that triggered this WO
   templateId?: string
   customFieldValues?: Record<string, unknown>
   scheduledDate?: Date

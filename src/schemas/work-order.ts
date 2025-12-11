@@ -25,6 +25,7 @@ export const workOrderSchema = z.object({
 
   // Predictive maintenance (PREDICTIVE_MAINTENANCE feature)
   maintenanceComponentId: z.string().optional(),
+  alertHistoryId: z.string().optional(), // Link to maintenance alert
 
   // Template integration
   templateId: z.string().optional(),

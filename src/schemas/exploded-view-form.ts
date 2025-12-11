@@ -86,6 +86,36 @@ export const componentFormSchema = z.object({
   imageUrl: z.string().url("Debe ser una URL válida").optional().nullable(),
   inventoryItemId: z.string().cuid().optional().nullable(),
   isActive: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  // Validación condicional: si autoCreateSchedule está activo, los campos de schedule son requeridos
+  if (data.autoCreateSchedule) {
+    // Validar intervalo de mantenimiento
+    if (!data.manufacturerMaintenanceInterval) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El intervalo de mantenimiento es requerido cuando se activa el schedule automático",
+        path: ["manufacturerMaintenanceInterval"],
+      })
+    }
+
+    // Validar unidad de intervalo
+    if (!data.manufacturerMaintenanceIntervalUnit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La unidad de tiempo es requerida cuando se activa el schedule automático",
+        path: ["manufacturerMaintenanceIntervalUnit"],
+      })
+    }
+
+    // Validar template de OT
+    if (!data.workOrderTemplateId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El template de orden de trabajo es requerido cuando se activa el schedule automático",
+        path: ["workOrderTemplateId"],
+      })
+    }
+  }
 })
 
 export type ComponentFormData = z.infer<typeof componentFormSchema>

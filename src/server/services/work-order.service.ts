@@ -199,6 +199,21 @@ export class WorkOrderService {
     // Create work order
     const workOrder = await WorkOrderRepository.create(createData)
 
+    // Link to maintenance alert if provided (ISO 55001 standard)
+    // Alert remains ACTIVE until work order is completed
+    if (workOrderData.alertHistoryId) {
+      try {
+        const { MaintenanceAlertHistoryRepository } = await import('@/server/repositories/maintenance-alert-history.repository')
+        await MaintenanceAlertHistoryRepository.update(workOrderData.alertHistoryId, {
+          workOrder: { connect: { id: workOrder.id } }
+          // Note: Status remains ACTIVE - alert is only RESOLVED when WO completes
+        })
+      } catch (error) {
+        console.error('Error linking maintenance alert to work order:', error)
+        // Don't fail WO creation if alert linking fails
+      }
+    }
+
     // Evaluate if approval is needed
     // Note: Asset model doesn't have criticality field directly
     // Asset criticality would come from components if needed in the future
@@ -510,6 +525,31 @@ export class WorkOrderService {
         // Don't fail completion if signature creation fails
       }
 
+      // Resolve linked maintenance alert if exists and status is COMPLETED (ISO 55001 standard)
+      // Alert is only resolved when work is actually completed, not when PENDING_QA
+      if (finalStatus === 'COMPLETED') {
+        try {
+          // Check if this WO is linked to a maintenance alert
+          const { MaintenanceAlertHistoryRepository } = await import('@/server/repositories/maintenance-alert-history.repository')
+          const alerts = await MaintenanceAlertHistoryRepository.findByWorkOrder(id)
+
+          // Resolve all linked alerts that are still ACTIVE
+          for (const alert of alerts) {
+            if (alert.status === 'ACTIVE') {
+              await MaintenanceAlertHistoryRepository.resolve(
+                alert.id,
+                session.user.id,
+                id,
+                `Resuelta automáticamente al completar orden de trabajo ${updatedWorkOrder.number}`
+              )
+            }
+          }
+        } catch (error) {
+          console.error('Error resolving linked maintenance alerts:', error)
+          // Don't fail completion if alert resolution fails
+        }
+      }
+
       // Send email notifications (async, don't block response)
       this.sendWorkOrderCompletedEmails(updatedWorkOrder, session).catch(error => {
         console.error('Error sending work order completed emails:', error)
@@ -564,6 +604,28 @@ export class WorkOrderService {
       } catch (error) {
         console.error('Error creating QA digital signature:', error)
         // Don't fail QA approval if signature creation fails
+      }
+
+      // Resolve linked maintenance alert (ISO 55001 standard)
+      // When QA approves, work is considered completed
+      try {
+        const { MaintenanceAlertHistoryRepository } = await import('@/server/repositories/maintenance-alert-history.repository')
+        const alerts = await MaintenanceAlertHistoryRepository.findByWorkOrder(id)
+
+        // Resolve all linked alerts that are still ACTIVE
+        for (const alert of alerts) {
+          if (alert.status === 'ACTIVE') {
+            await MaintenanceAlertHistoryRepository.resolve(
+              alert.id,
+              session.user.id,
+              id,
+              `Resuelta automáticamente - QA aprobó orden de trabajo ${updatedWorkOrder.number}`
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error resolving linked maintenance alerts:', error)
+        // Don't fail QA approval if alert resolution fails
       }
     }
 

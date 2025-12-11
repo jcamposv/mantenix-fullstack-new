@@ -53,6 +53,13 @@ export default function EditComponentPage() {
           lifeExpectancy: component.lifeExpectancy,
           mtbf: component.mtbf,
           mttr: component.mttr,
+          // Maintenance scheduling fields
+          manufacturerMaintenanceInterval: component.manufacturerMaintenanceInterval,
+          manufacturerMaintenanceIntervalUnit: component.manufacturerMaintenanceIntervalUnit,
+          mtbfAlertThreshold: component.mtbfAlertThreshold ? parseFloat(component.mtbfAlertThreshold) : null,
+          maintenanceStrategy: component.maintenanceStrategy,
+          autoCreateSchedule: component.autoCreateSchedule || false,
+          workOrderTemplateId: component.workOrderTemplateId,
         }
         setInitialData(formData)
       } else {

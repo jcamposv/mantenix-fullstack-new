@@ -52,7 +52,7 @@ export default function MaintenanceAlertsPage() {
   }, [router])
 
   const handleCreateWorkOrder = useCallback((alert: MaintenanceAlert) => {
-    router.push(`/work-orders/new/select-template?componentId=${alert.componentId}`)
+    router.push(`/work-orders/new/select-template?componentId=${alert.componentId}&alertHistoryId=${alert.id}`)
   }, [router])
 
   const handleDismissAlert = useCallback((alertHistoryId: string) => {
