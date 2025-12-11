@@ -80,20 +80,29 @@ export class JobSafetyAnalysisRepository {
   ): Promise<{ items: JobSafetyAnalysisWithRelations[]; total: number }> {
     const skip = (page - 1) * limit
 
-    const [items, total] = await Promise.all([
-      prisma.jobSafetyAnalysis.findMany({
-        where: whereClause,
-        include: this.getIncludeRelations(),
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.jobSafetyAnalysis.count({ where: whereClause })
-    ])
+    try {
+      const [items, total] = await Promise.all([
+        prisma.jobSafetyAnalysis.findMany({
+          where: whereClause,
+          include: this.getIncludeRelations(),
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.jobSafetyAnalysis.count({ where: whereClause })
+      ])
 
-    return {
-      items: items as unknown as JobSafetyAnalysisWithRelations[],
-      total
+      return {
+        items: items as unknown as JobSafetyAnalysisWithRelations[],
+        total
+      }
+    } catch (error) {
+      // Handle JSON serialization errors
+      if (error instanceof Error && error.message.includes('JSON')) {
+        console.error('JSON serialization error in JobSafetyAnalysis:', error.message)
+        throw new Error('Error al leer datos de JSA. Algunos registros contienen datos JSON inválidos.')
+      }
+      throw error
     }
   }
 

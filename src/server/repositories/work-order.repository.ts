@@ -447,7 +447,9 @@ export class WorkOrderRepository {
         ...procedure,
         appliedAt: procedure.appliedAt?.toISOString() || null,
         removedAt: procedure.removedAt?.toISOString() || null
-      }))
+      })),
+      jobSafetyAnalyses: workOrder.safetyAnalyses,
+      rootCauseAnalyses: workOrder.rootCauseAnalyses
     } as unknown as WorkOrderWithRelations
   }
 

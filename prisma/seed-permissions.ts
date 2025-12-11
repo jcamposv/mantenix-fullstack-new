@@ -694,6 +694,12 @@ const PERMISSIONS: PermissionSeed[] = [
     module: 'safety'
   },
   {
+    key: 'safety.manage_permits',
+    name: 'Gestionar Permisos de Trabajo',
+    description: 'Permite crear, modificar y eliminar permisos de trabajo',
+    module: 'safety'
+  },
+  {
     key: 'safety.manage_loto',
     name: 'Gestionar LOTO',
     description: 'Permite aplicar y gestionar procedimientos LOTO (Lock-Out/Tag-Out)',
@@ -706,9 +712,27 @@ const PERMISSIONS: PermissionSeed[] = [
     module: 'safety'
   },
   {
+    key: 'safety.view_loto',
+    name: 'Ver Procedimientos LOTO',
+    description: 'Permite visualizar procedimientos LOTO',
+    module: 'safety'
+  },
+  {
     key: 'safety.prepare_jsa',
     name: 'Preparar JSA',
     description: 'Permite preparar Job Safety Analysis (análisis de seguridad)',
+    module: 'safety'
+  },
+  {
+    key: 'safety.create_jsa',
+    name: 'Crear JSA',
+    description: 'Permite crear Job Safety Analysis (análisis de seguridad en el trabajo)',
+    module: 'safety'
+  },
+  {
+    key: 'safety.view_jsa',
+    name: 'Ver JSA',
+    description: 'Permite visualizar Job Safety Analysis',
     module: 'safety'
   },
   {

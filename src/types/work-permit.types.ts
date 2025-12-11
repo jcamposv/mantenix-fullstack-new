@@ -47,7 +47,7 @@ export interface WorkPermit {
 export interface WorkPermitWithRelations extends WorkPermit {
   workOrder?: {
     id: string
-    code: string
+    number: string
     title: string
     status: string
   }

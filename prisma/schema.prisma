@@ -294,6 +294,7 @@ model User {
   signaturesSigned    DigitalSignature[]
   attachmentsUploaded Attachment[]
   notifications       Notification[]
+  safetyBriefings     SafetyBriefing[] @relation("SafetyBriefings")
 
   @@map("user")
 }
@@ -1041,6 +1042,7 @@ model WorkOrder {
   lotoProcedures    LOTOProcedure[]
   safetyAnalyses    JobSafetyAnalysis[]
   rootCauseAnalyses RootCauseAnalysis[]
+  safetyBriefings   SafetyBriefing[]
 
   @@unique([companyId, number]) // Número único por empresa
   @@index([companyId])
@@ -2981,4 +2983,36 @@ model Notification {
   @@index([createdAt])
   @@index([entityType, entityId])
   @@map("notifications")
+}
+
+// ============================================================================
+// 7. SAFETY BRIEFING (ISO Compliance)
+// ============================================================================
+
+model SafetyBriefing {
+  id                    String   @id @default(cuid())
+  workOrderId           String
+  userId                String   // Technician who confirmed
+
+  // Document confirmations
+  confirmedWorkPermits  Boolean  @default(false)
+  confirmedLOTO         Boolean  @default(false)
+  confirmedJSA          Boolean  @default(false)
+
+  // Digital signature (base64 encoded)
+  signature             String?  @db.Text
+
+  // Timestamps
+  confirmedAt           DateTime @default(now())
+  createdAt             DateTime @default(now())
+
+  // Relations
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  user      User @relation("SafetyBriefings", fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([workOrderId, userId]) // One briefing per user per work order
+  @@index([workOrderId])
+  @@index([userId])
+  @@index([confirmedAt])
+  @@map("safety_briefings")
 }

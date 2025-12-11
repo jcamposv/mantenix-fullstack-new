@@ -53,7 +53,13 @@ const SYSTEM_ROLES: SystemRole[] = [
       'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
       'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
       'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-      'inventory.delete_request', 'inventory.view_movements'
+      'inventory.delete_request', 'inventory.view_movements',
+      // Safety & Quality
+      'safety.view_permits', 'safety.manage_permits', 'safety.authorize_permits',
+      'safety.view_loto', 'safety.manage_loto', 'safety.verify_loto',
+      'safety.view_jsa', 'safety.create_jsa', 'safety.review_jsa', 'safety.approve_jsa',
+      'rca.view', 'rca.create', 'rca.review', 'rca.approve',
+      'capa.view', 'capa.create', 'capa.assign', 'capa.verify'
     ]
   },
   {
@@ -81,7 +87,13 @@ const SYSTEM_ROLES: SystemRole[] = [
       'inventory.view_stock', 'inventory.adjust_stock', 'inventory.transfer',
       'inventory.view_requests', 'inventory.create_request', 'inventory.approve_request', 'inventory.reject_request',
       'inventory.deliver_request', 'inventory.deliver_from_warehouse', 'inventory.confirm_receipt',
-      'inventory.delete_request', 'inventory.view_movements'
+      'inventory.delete_request', 'inventory.view_movements',
+      // Safety & Quality
+      'safety.view_permits', 'safety.manage_permits', 'safety.authorize_permits',
+      'safety.view_loto', 'safety.manage_loto', 'safety.verify_loto',
+      'safety.view_jsa', 'safety.create_jsa', 'safety.review_jsa', 'safety.approve_jsa',
+      'rca.view', 'rca.create', 'rca.review', 'rca.approve',
+      'capa.view', 'capa.create', 'capa.assign', 'capa.verify'
     ]
   },
   {
@@ -99,7 +111,13 @@ const SYSTEM_ROLES: SystemRole[] = [
       'analytics.view',
       'assets.view', 'assets.change_status', 'assets.view_status_history',
       'inventory.view_requests', 'inventory.approve_request', 'inventory.reject_request',
-      'inventory.view_items', 'inventory.view_stock'
+      'inventory.view_items', 'inventory.view_stock',
+      // Safety & Quality
+      'safety.view_permits', 'safety.manage_permits', 'safety.authorize_permits',
+      'safety.view_loto', 'safety.manage_loto', 'safety.verify_loto',
+      'safety.view_jsa', 'safety.create_jsa', 'safety.review_jsa', 'safety.approve_jsa',
+      'rca.view', 'rca.create', 'rca.review', 'rca.approve',
+      'capa.view', 'capa.create', 'capa.assign', 'capa.verify'
     ]
   },
   {

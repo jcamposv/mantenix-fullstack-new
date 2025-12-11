@@ -79,12 +79,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Transform jobSteps from string to JSAStep[] if needed
+    // Transform jobSteps - if it's a plain text string, split it into steps
+    let jobStepsData: import('@/types/job-safety-analysis.types').JSAStep[]
+
+    if (typeof validationResult.data.jobSteps === 'string') {
+      // Split by newlines and create simple step objects
+      const lines = validationResult.data.jobSteps.split('\n').filter(line => line.trim())
+      jobStepsData = lines.map((line, index) => ({
+        step: index + 1,
+        description: line.trim(),
+        hazards: [],
+        controls: []
+      }))
+    } else {
+      jobStepsData = validationResult.data.jobSteps as import('@/types/job-safety-analysis.types').JSAStep[]
+    }
+
     const createData: import('@/types/job-safety-analysis.types').CreateJobSafetyAnalysisData = {
       workOrderId: validationResult.data.workOrderId,
-      jobSteps: typeof validationResult.data.jobSteps === 'string'
-        ? (JSON.parse(validationResult.data.jobSteps) as import('@/types/job-safety-analysis.types').JSAStep[])
-        : (validationResult.data.jobSteps as import('@/types/job-safety-analysis.types').JSAStep[]),
+      jobSteps: jobStepsData,
       hazardsPerStep: {},
       controlsPerStep: {}
     }

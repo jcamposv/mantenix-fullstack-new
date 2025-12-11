@@ -27,9 +27,6 @@ export function WorkPermitForm({
 }: WorkPermitFormProps) {
   const [workOrders, setWorkOrders] = useState<Array<{ id: string; code: string; title: string }>>([])
   const [loadingWorkOrders, setLoadingWorkOrders] = useState(true)
-  const [hazards, setHazards] = useState<string[]>(initialData?.hazards || [])
-  const [precautions, setPrecautions] = useState<string[]>(initialData?.precautions || [])
-  const [ppe, setPPE] = useState<string[]>(initialData?.ppe || [])
 
   const form = useForm<WorkPermitFormData>({
     resolver: zodResolver(createWorkPermitSchema) as Resolver<WorkPermitFormData>,
@@ -45,6 +42,24 @@ export function WorkPermitForm({
       emergencyContact: initialData?.emergencyContact || ""
     }
   })
+
+  // Watch form arrays
+  const watchedHazards = form.watch("hazards") || []
+  const watchedPrecautions = form.watch("precautions") || []
+  const watchedPPE = form.watch("ppe") || []
+
+  // Handlers for array updates
+  const handleHazardsChange = (value: string[]) => {
+    form.setValue("hazards", value, { shouldValidate: true })
+  }
+
+  const handlePrecautionsChange = (value: string[]) => {
+    form.setValue("precautions", value, { shouldValidate: true })
+  }
+
+  const handlePPEChange = (value: string[]) => {
+    form.setValue("ppe", value, { shouldValidate: true })
+  }
 
   useEffect(() => {
     if (!defaultWorkOrderId) {
@@ -68,16 +83,6 @@ export function WorkPermitForm({
     }
   }
 
-  const handleSubmit = (data: WorkPermitFormData) => {
-    const submitData = {
-      ...data,
-      hazards,
-      precautions,
-      ppe
-    }
-    onSubmit(submitData)
-  }
-
   const isLoading = loadingWorkOrders || loading
 
   return (
@@ -89,7 +94,7 @@ export function WorkPermitForm({
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card className="shadow-none">
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
@@ -110,12 +115,13 @@ export function WorkPermitForm({
             </CardHeader>
             <CardContent>
               <WorkPermitSafetyInfo
-                hazards={hazards}
-                setHazards={setHazards}
-                precautions={precautions}
-                setPrecautions={setPrecautions}
-                ppe={ppe}
-                setPPE={setPPE}
+                form={form}
+                hazards={watchedHazards}
+                setHazards={handleHazardsChange}
+                precautions={watchedPrecautions}
+                setPrecautions={handlePrecautionsChange}
+                ppe={watchedPPE}
+                setPPE={handlePPEChange}
               />
             </CardContent>
           </Card>

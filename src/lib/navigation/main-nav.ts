@@ -164,22 +164,22 @@ export const MAIN_NAV_ITEMS: NavigationItem[] = [
     title: 'Seguridad',
     url: '/safety/work-permits',
     icon: ShieldAlert,
-    permission: 'work_orders.view',
+    permission: 'safety.view_permits',
     items: [
       {
         title: 'Permisos de Trabajo',
         url: '/safety/work-permits',
-        permission: 'work_orders.view',
+        permission: 'safety.view_permits',
       },
       {
         title: 'Procedimientos LOTO',
         url: '/safety/loto-procedures',
-        permission: 'work_orders.view',
+        permission: 'safety.view_loto',
       },
       {
         title: 'Análisis JSA',
         url: '/safety/job-safety-analyses',
-        permission: 'work_orders.view',
+        permission: 'safety.view_jsa',
       },
     ],
   },
@@ -189,17 +189,17 @@ export const MAIN_NAV_ITEMS: NavigationItem[] = [
     title: 'Calidad',
     url: '/quality/root-cause-analyses',
     icon: Target,
-    permission: 'work_orders.view',
+    permission: 'rca.view',
     items: [
       {
         title: 'Análisis RCA',
         url: '/quality/root-cause-analyses',
-        permission: 'work_orders.view',
+        permission: 'rca.view',
       },
       {
         title: 'Acciones CAPA',
         url: '/quality/cap-actions',
-        permission: 'work_orders.view',
+        permission: 'capa.view',
       },
     ],
   },

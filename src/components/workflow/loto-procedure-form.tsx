@@ -30,11 +30,6 @@ export function LOTOProcedureForm({
   const [workOrders, setWorkOrders] = useState<Array<{ id: string; code: string; title: string }>>([])
   const [assets, setAssets] = useState<Array<{ id: string; code: string; name: string }>>([])
   const [loadingData, setLoadingData] = useState(true)
-  const [isolationPoints, setIsolationPoints] = useState<string[]>(initialData?.isolationPoints || [])
-  const [energySources, setEnergySources] = useState<string[]>(initialData?.energySources || [])
-  const [lockSerials, setLockSerials] = useState<string[]>(initialData?.lockSerialNumbers || [])
-  const [tagNumbers, setTagNumbers] = useState<string[]>(initialData?.tagNumbers || [])
-  const [newItem, setNewItem] = useState("")
 
   const form = useForm<LOTOProcedureFormData>({
     resolver: zodResolver(createLOTOProcedureSchema),
@@ -47,6 +42,18 @@ export function LOTOProcedureForm({
       tagNumbers: initialData?.tagNumbers || []
     }
   })
+
+  // Watch form arrays
+  const watchedIsolationPoints = form.watch("isolationPoints") || []
+  const watchedEnergySources = form.watch("energySources") || []
+  const watchedLockSerials = form.watch("lockSerialNumbers") || []
+  const watchedTagNumbers = form.watch("tagNumbers") || []
+
+  // Input states for array fields
+  const [isolationPointInput, setIsolationPointInput] = useState("")
+  const [energySourceInput, setEnergySourceInput] = useState("")
+  const [lockSerialInput, setLockSerialInput] = useState("")
+  const [tagNumberInput, setTagNumberInput] = useState("")
 
   useEffect(() => {
     Promise.all([
@@ -79,63 +86,71 @@ export function LOTOProcedureForm({
     }
   }
 
-  const handleSubmit = (data: LOTOProcedureFormData) => {
-    onSubmit({
-      ...data,
-      isolationPoints,
-      energySources,
-      lockSerialNumbers: lockSerials,
-      tagNumbers
-    })
-  }
-
-  const addToArray = (setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-    if (newItem.trim()) {
-      setter(prev => [...prev, newItem.trim()])
-      setNewItem("")
+  const addToArray = (fieldName: keyof Pick<LOTOProcedureFormData, "isolationPoints" | "energySources" | "lockSerialNumbers" | "tagNumbers">, value: string, currentArray: string[]) => {
+    if (value.trim()) {
+      form.setValue(fieldName, [...currentArray, value.trim()], { shouldValidate: true })
     }
   }
 
-  const removeFromArray = (index: number, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-    setter(prev => prev.filter((_, i) => i !== index))
+  const removeFromArray = (fieldName: keyof Pick<LOTOProcedureFormData, "isolationPoints" | "energySources" | "lockSerialNumbers" | "tagNumbers">, index: number, currentArray: string[]) => {
+    form.setValue(fieldName, currentArray.filter((_, i) => i !== index), { shouldValidate: true })
   }
 
   const renderArrayInput = (
+    fieldName: keyof Pick<LOTOProcedureFormData, "isolationPoints" | "energySources" | "lockSerialNumbers" | "tagNumbers">,
     label: string,
     items: string[],
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
     placeholder: string,
-    description?: string
-  ) => (
-    <div className="space-y-2">
-      <FormLabel>{label}</FormLabel>
-      <div className="flex gap-2">
-        <Input
-          placeholder={placeholder}
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault()
-              addToArray(setter)
-            }
-          }}
-        />
-        <Button type="button" onClick={() => addToArray(setter)}>
-          Agregar
-        </Button>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item, index) => (
-          <Badge key={index} variant="secondary">
-            {item}
-            <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => removeFromArray(index, setter)} />
-          </Badge>
-        ))}
-      </div>
-      {description && <FormDescription>{description}</FormDescription>}
-    </div>
-  )
+    inputValue: string,
+    setInputValue: (value: string) => void,
+    description?: string,
+    required?: boolean
+  ) => {
+    return (
+      <FormField
+        control={form.control}
+        name={fieldName}
+        render={() => (
+          <FormItem>
+            <FormLabel>{label} {required && "*"}</FormLabel>
+            <div className="flex gap-2">
+              <Input
+                placeholder={placeholder}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    addToArray(fieldName, inputValue, items)
+                    setInputValue("")
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                onClick={() => {
+                  addToArray(fieldName, inputValue, items)
+                  setInputValue("")
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {items.map((item, index) => (
+                <Badge key={index} variant="secondary">
+                  {item}
+                  <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => removeFromArray(fieldName, index, items)} />
+                </Badge>
+              ))}
+            </div>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -144,7 +159,7 @@ export function LOTOProcedureForm({
       </h1>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card className="shadow-none">
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
@@ -203,33 +218,43 @@ export function LOTOProcedureForm({
               />
 
               {renderArrayInput(
-                "Puntos de Aislamiento *",
-                isolationPoints,
-                setIsolationPoints,
+                "isolationPoints",
+                "Puntos de Aislamiento",
+                watchedIsolationPoints,
                 "Ej: Válvula principal sector A",
-                "Especifique cada punto donde se aislará el equipo"
+                isolationPointInput,
+                setIsolationPointInput,
+                "Especifique cada punto donde se aislará el equipo",
+                true
               )}
 
               {renderArrayInput(
-                "Fuentes de Energía *",
-                energySources,
-                setEnergySources,
+                "energySources",
+                "Fuentes de Energía",
+                watchedEnergySources,
                 "Ej: Eléctrica 480V, Hidráulica, Neumática",
-                "Liste todas las fuentes de energía a aislar"
+                energySourceInput,
+                setEnergySourceInput,
+                "Liste todas las fuentes de energía a aislar",
+                true
               )}
 
               {renderArrayInput(
+                "lockSerialNumbers",
                 "Números de Serie de Candados",
-                lockSerials,
-                setLockSerials,
-                "Ej: LOCK-001, LOCK-002"
+                watchedLockSerials,
+                "Ej: LOCK-001, LOCK-002",
+                lockSerialInput,
+                setLockSerialInput
               )}
 
               {renderArrayInput(
+                "tagNumbers",
                 "Números de Etiquetas",
-                tagNumbers,
-                setTagNumbers,
-                "Ej: TAG-001, TAG-002"
+                watchedTagNumbers,
+                "Ej: TAG-001, TAG-002",
+                tagNumberInput,
+                setTagNumberInput
               )}
             </CardContent>
           </Card>
