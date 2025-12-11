@@ -530,6 +530,19 @@ export class MaintenanceAlertHistoryRepository {
   }
 
   /**
+   * Link alert to work order without resolving it
+   * Used when creating a work order from an alert - alert should remain ACTIVE until WO is completed
+   */
+  static async linkToWorkOrder(
+    id: string,
+    workOrderId: string
+  ): Promise<MaintenanceAlertHistoryWithRelations> {
+    return await this.update(id, {
+      workOrder: { connect: { id: workOrderId } }
+    })
+  }
+
+  /**
    * Mark alert as resolved
    */
   static async resolve(

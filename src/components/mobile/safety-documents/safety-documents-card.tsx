@@ -7,6 +7,8 @@
 "use client"
 
 import { useState } from "react"
+import useSWR from "swr"
+import { useSession } from "@/lib/auth-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,8 +25,28 @@ interface SafetyDocumentsCardProps {
   onRefresh?: () => void
 }
 
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
 export function SafetyDocumentsCard({ workOrder, onConfirmClick, onRefresh }: SafetyDocumentsCardProps) {
+  const { data: session } = useSession()
   const [isExpanded, setIsExpanded] = useState(false)
+
+  // Check if user has confirmed safety documents using SWR
+  const swrKey = session?.user?.id && workOrder.id
+    ? `/api/safety-briefings/check?workOrderId=${workOrder.id}&userId=${session.user.id}`
+    : null
+
+  const { data: confirmationData, isLoading } = useSWR(
+    swrKey,
+    fetcher,
+    {
+      revalidateOnFocus: true, // Revalidate when user returns to tab
+      revalidateOnReconnect: false,
+      dedupingInterval: 2000
+    }
+  )
+
+  const hasConfirmed = confirmationData?.hasConfirmed || false
 
   const hasWorkPermits = workOrder.workPermits && workOrder.workPermits.length > 0
   const hasLOTO = workOrder.lotoProcedures && workOrder.lotoProcedures.length > 0
@@ -130,20 +152,34 @@ export function SafetyDocumentsCard({ workOrder, onConfirmClick, onRefresh }: Sa
             </div>
           )}
 
-          {/* Confirmation Button */}
-          {onConfirmClick && (
+          {/* Confirmation Status */}
+          {!isLoading && (
             <div className="pt-3">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onConfirmClick()
-                }}
-                className="w-full"
-                variant="default"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Confirmar Revisión de Documentos
-              </Button>
+              {hasConfirmed ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-900">
+                      Documentos Confirmados
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Has confirmado la revisión de estos documentos de seguridad
+                    </p>
+                  </div>
+                </div>
+              ) : onConfirmClick ? (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onConfirmClick()
+                  }}
+                  className="w-full"
+                  variant="default"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Confirmar Revisión de Documentos
+                </Button>
+              ) : null}
             </div>
           )}
         </CardContent>

@@ -55,18 +55,17 @@ export async function POST(request: NextRequest) {
     // Create work order from template
     const workOrder = await WorkOrderService.createFromTemplate(session, templateData)
 
-    // If alertHistoryId is provided, resolve the alert
+    // If alertHistoryId is provided, link alert to work order (but don't resolve it yet)
+    // Alert will be auto-resolved when work order is completed (ISO 55001 workflow)
     if (validationResult.data.alertHistoryId) {
       try {
-        await MaintenanceAlertHistoryRepository.resolve(
+        await MaintenanceAlertHistoryRepository.linkToWorkOrder(
           validationResult.data.alertHistoryId,
-          session.user.id,
-          workOrder.id,
-          'OT creada automáticamente desde alerta de mantenimiento'
+          workOrder.id
         )
       } catch (alertError) {
-        console.error('Error resolving alert:', alertError)
-        // Continue even if alert resolution fails - OT was created successfully
+        console.error('Error linking alert to work order:', alertError)
+        // Continue even if alert linking fails - OT was created successfully
       }
     }
 

@@ -7,7 +7,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronUp, Shield, AlertTriangle, HardHat, MapPin, Calendar } from "lucide-react"
+import { ChevronDown, ChevronUp, Shield, MapPin, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"

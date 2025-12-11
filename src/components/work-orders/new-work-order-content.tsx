@@ -151,6 +151,7 @@ export function NewWorkOrderContent() {
           priority: formData.priority,
           instructions: formData.instructions,
           safetyNotes: formData.safetyNotes,
+          alertHistoryId: alertHistoryId, // Link to maintenance alert
           tools: formData.tools,
           materials: formData.materials
         })
@@ -212,6 +213,9 @@ export function NewWorkOrderContent() {
                 sites={sites}
                 assets={assets}
                 templates={templates}
+                initialData={{
+                  templateId: templateId
+                }}
                 prefixes={prefixes}
               />
 

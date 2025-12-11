@@ -3,7 +3,6 @@
  * Business logic for safety briefing management with digital signature
  */
 
-import { Prisma } from "@prisma/client"
 import { SafetyBriefingRepository } from "../repositories/safety-briefing.repository"
 import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
@@ -19,6 +18,7 @@ export class SafetyBriefingService {
    */
   static async createOrUpdate(
     data: SafetyBriefingCreateData,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     session: AuthenticatedSession
   ): Promise<SafetyBriefingWithRelations> {
     // Check if briefing already exists
@@ -40,12 +40,11 @@ export class SafetyBriefingService {
       return await SafetyBriefingRepository.update(existing.id, briefingData)
     } else {
       // Create new briefing
-      const createData: Prisma.SafetyBriefingCreateInput = {
+      return await SafetyBriefingRepository.create({
         workOrder: { connect: { id: data.workOrderId } },
         user: { connect: { id: data.userId } },
         ...briefingData
-      }
-      return await SafetyBriefingRepository.create(createData)
+      })
     }
   }
 
@@ -55,6 +54,7 @@ export class SafetyBriefingService {
   static async getByWorkOrderAndUser(
     workOrderId: string,
     userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     session: AuthenticatedSession
   ): Promise<SafetyBriefingWithRelations | null> {
     return await SafetyBriefingRepository.findByWorkOrderAndUser(

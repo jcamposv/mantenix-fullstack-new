@@ -12,17 +12,15 @@
 "use client"
 
 import useSWR from "swr"
-import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
+import type { WorkOrderTemplateWithRelations, PaginatedWorkOrderTemplatesResponse } from "@/types/work-order-template.types"
 
-const fetcher = async (url: string): Promise<WorkOrderTemplateWithRelations[]> => {
+const fetcher = async (url: string): Promise<PaginatedWorkOrderTemplatesResponse> => {
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error('Error al cargar plantillas')
   }
-  const data: WorkOrderTemplatesResponse = await response.json()
-
-  // Handle both response formats: { templates: [...] } or { items: [...] }
-  return (data.templates || data.items || [])
+  const data: PaginatedWorkOrderTemplatesResponse = await response.json()
+  return data
 }
 
 interface UseWorkOrderTemplatesOptions {
@@ -39,7 +37,7 @@ interface UseWorkOrderTemplatesReturn {
   templates: WorkOrderTemplateWithRelations[]
   loading: boolean
   error: Error | undefined
-  mutate: () => Promise<WorkOrderTemplateWithRelations[] | undefined>
+  mutate: () => Promise<PaginatedWorkOrderTemplatesResponse | undefined>
   isValidating: boolean
 }
 
@@ -66,7 +64,7 @@ export function useWorkOrderTemplates(
   const queryString = params.toString()
   const endpoint = `/api/work-order-templates${queryString ? `?${queryString}` : ''}`
 
-  const { data, error, isLoading, mutate, isValidating } = useSWR<WorkOrderTemplateWithRelations[]>(
+  const { data, error, isLoading, mutate, isValidating } = useSWR<PaginatedWorkOrderTemplatesResponse>(
     endpoint,
     fetcher,
     {
@@ -82,7 +80,7 @@ export function useWorkOrderTemplates(
   )
 
   return {
-    templates: data || [],
+    templates: data?.items || [],
     loading: isLoading,
     error,
     mutate,

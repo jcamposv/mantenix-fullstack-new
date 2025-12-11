@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,21 +37,36 @@ const getStatusLabel = (status: string) => {
 
 export default function SelectTemplatePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplateWithRelations | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  
+
+  // Preserve query params from maintenance alerts
+  const componentId = searchParams.get('componentId')
+  const alertHistoryId = searchParams.get('alertHistoryId')
+
   const { data: templates, loading } = useTableData<WorkOrderTemplateWithRelations>({
     endpoint: '/api/work-order-templates',
     transform: (data) => (data as WorkOrderTemplatesResponse).templates || (data as WorkOrderTemplatesResponse).items || (data as WorkOrderTemplateWithRelations[]) || []
   })
 
+  const buildQueryParams = (templateId?: string) => {
+    const params = new URLSearchParams()
+    if (templateId) params.append('templateId', templateId)
+    if (componentId) params.append('componentId', componentId)
+    if (alertHistoryId) params.append('alertHistoryId', alertHistoryId)
+    return params.toString()
+  }
+
   const handleSelectTemplate = (templateId: string) => {
-    router.push(`/work-orders/new?templateId=${templateId}`)
+    const queryString = buildQueryParams(templateId)
+    router.push(`/work-orders/new?${queryString}`)
   }
 
   const handleCreateWithoutTemplate = () => {
-    router.push("/work-orders/new")
+    const queryString = buildQueryParams()
+    router.push(`/work-orders/new${queryString ? `?${queryString}` : ''}`)
   }
 
   const handleViewTemplate = (template: WorkOrderTemplateWithRelations) => {

@@ -239,7 +239,10 @@ export default function MobileWorkOrderDetailPage() {
         workOrder={workOrder}
         open={showSafetyBriefing}
         onOpenChange={setShowSafetyBriefing}
-        onSuccess={fetchWorkOrder}
+        onSuccess={() => {
+          fetchWorkOrder() // Refresh work order data
+          // SWR will auto-revalidate the safety briefing check
+        }}
       />
     </div>
   )

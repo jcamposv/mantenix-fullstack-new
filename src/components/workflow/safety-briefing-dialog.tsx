@@ -8,6 +8,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useSession } from "@/lib/auth-client"
+import { mutate } from "swr"
 import {
   Dialog,
   DialogContent,
@@ -169,6 +170,12 @@ export function SafetyBriefingDialog({
       }
 
       toast.success("Confirmación de seguridad guardada")
+
+      // Invalidate SWR cache for safety briefing check
+      mutate(
+        `/api/safety-briefings/check?workOrderId=${workOrder.id}&userId=${session.user.id}`
+      )
+
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
