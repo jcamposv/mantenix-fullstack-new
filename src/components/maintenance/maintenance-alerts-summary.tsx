@@ -24,7 +24,7 @@ export function MaintenanceAlertsSummary({
 
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      <Card>
+      <Card className="shadow-none">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -36,7 +36,7 @@ export function MaintenanceAlertsSummary({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-none">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -50,7 +50,7 @@ export function MaintenanceAlertsSummary({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-none">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -64,7 +64,7 @@ export function MaintenanceAlertsSummary({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-none">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>

@@ -12,6 +12,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, AlertTriangle, Info, Clock, TrendingUp } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface AnalyticsKPICardsProps {
   data: {
@@ -111,7 +112,7 @@ export function AnalyticsKPICards({ data }: AnalyticsKPICardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {cards.map((card) => (
-        <Card key={card.title} className={variantClasses[card.variant]}>
+        <Card key={card.title} className={cn("shadow-none", variantClasses[card.variant])}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
             <div className={iconColors[card.variant]}>{card.icon}</div>
