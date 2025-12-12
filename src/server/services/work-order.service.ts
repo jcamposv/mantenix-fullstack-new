@@ -445,6 +445,22 @@ export class WorkOrderService {
 
     const updatedWorkOrder = await this.updateWorkOrder(session, id, updateData)
 
+    // Reset operating hours for MTBF-related work orders
+    if (updatedWorkOrder && updatedWorkOrder.maintenanceComponentId && updatedWorkOrder.assetId) {
+      try {
+        if (updatedWorkOrder.type === 'PREVENTIVO') {
+          await prisma.asset.update({
+            where: { id: updatedWorkOrder.assetId },
+            data: { operatingHours: 0 }
+          })
+          console.log(`✅ Reset operating hours for asset ${updatedWorkOrder.assetId} after completing MTBF maintenance`)
+        }
+      } catch (error) {
+        console.error('Error resetting operating hours:', error)
+        // Don't fail the completion if this fails
+      }
+    }
+
     // Send email notifications (async, don't block response)
     if (updatedWorkOrder) {
       this.sendWorkOrderCompletedEmails(updatedWorkOrder, session).catch(error => {
