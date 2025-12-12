@@ -38,6 +38,7 @@ import { WorkOrderStatusBadge } from "./work-order-status-badge"
 import { WorkOrderPriorityBadge } from "./work-order-priority-badge"
 import { MaintenanceComponentCard } from "./maintenance-component-card"
 import { WorkflowSection } from "./workflow/workflow-section"
+import { SafetyBriefingSignaturesCard } from "./safety-briefing-signatures-card"
 import { useTimeTracker } from "@/hooks/use-time-tracker"
 import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
@@ -314,6 +315,9 @@ export function WorkOrderDetailClient({ workOrder, companyInfo }: WorkOrderDetai
             {/* General Tab */}
             <TabsContent value="general" className="space-y-4 mt-6">
               <WorkOrderConsolidatedInfo workOrder={workOrder} />
+
+              {/* Safety Briefing Signatures - ISO 45001 Compliance */}
+              <SafetyBriefingSignaturesCard workOrderId={workOrder.id} />
 
               {/* Maintenance Component Card - Only for PREDICTIVE_MAINTENANCE feature */}
               {workOrder.maintenanceComponent && hasPredictiveMaintenance && (
