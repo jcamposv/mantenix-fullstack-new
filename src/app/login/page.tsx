@@ -10,6 +10,7 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
     const headersList = await headers()
     const host = headersList.get('host') || ''
     const subdomain = host.split('.')[0]
+
     
     // Only fetch if we have a subdomain (not just localhost or main domain)
     if (subdomain && subdomain !== 'localhost' && subdomain !== host) {
@@ -40,6 +41,5 @@ async function getCompanyBranding(): Promise<CompanyBranding | null> {
 
 export default async function LoginPage() {
   const companyBranding = await getCompanyBranding()
-  
   return <LoginForm companyBranding={companyBranding} />
 }

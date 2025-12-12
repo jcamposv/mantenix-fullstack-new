@@ -4,9 +4,9 @@ import { z } from "zod"
 export const workOrderTemplateStatusSchema = z.enum(["ACTIVE", "INACTIVE"])
 export const workOrderTemplatePrioritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
 export const customFieldTypeSchema = z.enum([
-  "TEXT", "TEXTAREA", "NUMBER", "SELECT", "RADIO", "CHECKBOX", 
-  "CHECKLIST", "DATE", "TIME", "DATETIME", "IMAGE_BEFORE", 
-  "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE"
+  "TEXT", "TEXTAREA", "NUMBER", "SELECT", "RADIO", "CHECKBOX",
+  "CHECKLIST", "DATE", "TIME", "DATETIME", "IMAGE_BEFORE",
+  "IMAGE_AFTER", "VIDEO_BEFORE", "VIDEO_AFTER", "FILE", "TABLE"
 ])
 
 // Role enum for assignment config
@@ -31,6 +31,30 @@ export const customFieldValidationSchema = z.object({
   message: z.string().optional()
 }).optional()
 
+// Table column schema
+export const tableColumnSchema = z.object({
+  id: z.string().min(1, "ID de columna es requerido"),
+  label: z.string().min(1, "Etiqueta de columna es requerida"),
+  type: z.enum(["text", "number", "select", "checkbox"]),
+  readonly: z.boolean().default(false),
+  width: z.string().optional(),
+  options: z.array(z.string()).optional(),
+  required: z.boolean().default(false)
+})
+
+// Table row schema
+export const tableRowSchema = z.record(z.string(), z.any())
+
+// Table configuration schema
+export const tableConfigSchema = z.object({
+  columns: z.array(tableColumnSchema).min(1, "Al menos una columna es requerida"),
+  rows: z.array(tableRowSchema).optional(),
+  allowAddRows: z.boolean().default(false),
+  allowDeleteRows: z.boolean().default(false),
+  minRows: z.number().min(0).optional(),
+  maxRows: z.number().min(1).optional()
+})
+
 // Custom field schema
 export const customFieldSchema = z.object({
   id: z.string().min(1, "ID del campo es requerido"),
@@ -43,7 +67,8 @@ export const customFieldSchema = z.object({
   validation: customFieldValidationSchema,
   defaultValue: z.unknown().optional(),
   placeholder: z.string().optional(),
-  multiple: z.boolean().optional().default(false)
+  multiple: z.boolean().optional().default(false),
+  tableConfig: tableConfigSchema.optional()
 }).refine((data) => {
   // Validar que campos de tipo SELECT, RADIO y CHECKLIST tengan opciones
   if (["SELECT", "RADIO", "CHECKLIST"].includes(data.type)) {
@@ -53,6 +78,15 @@ export const customFieldSchema = z.object({
 }, {
   message: "Los campos SELECT, RADIO y CHECKLIST deben tener opciones definidas",
   path: ["options"]
+}).refine((data) => {
+  // Validar que campos de tipo TABLE tengan tableConfig
+  if (data.type === "TABLE") {
+    return data.tableConfig !== undefined && data.tableConfig !== null
+  }
+  return true
+}, {
+  message: "Los campos TABLE deben tener configuración de tabla (tableConfig)",
+  path: ["tableConfig"]
 })
 
 // Custom fields configuration schema

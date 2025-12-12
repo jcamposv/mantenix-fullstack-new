@@ -13,7 +13,8 @@ import { useCompanies } from "@/components/hooks/use-companies"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { createUserSchema, type UserFormData } from "./user/user-form-schema"
 import { needsCompanyAssignment } from "./user/user-form-utils"
-import { PermissionHelper } from "@/server/helpers/permission.helper"
+import { getRolesCreatableBy } from "@/lib/rbac/role-definitions"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 interface UserFormProps {
   onSubmit: (data: UserFormData) => void
@@ -43,6 +44,7 @@ export function UserForm({
       password: mode === "invite" || mode === "edit" ? undefined : "",
       role: initialData?.role || "TECNICO",
       companyId: initialData?.companyId || currentUser?.company?.id || undefined,
+      hourlyRate: initialData?.hourlyRate || 20.00,
       timezone: initialData?.timezone || "UTC",
       locale: initialData?.locale || "en",
       image: initialData?.image || null,
@@ -54,18 +56,16 @@ export function UserForm({
 
   const handleSubmit = (data: UserFormData) => {
     // Apply business rules based on current user role
-    if (currentUser?.role !== PermissionHelper.ROLES.SUPER_ADMIN) {
+    if (currentUser?.role && currentUser.role !== 'SUPER_ADMIN') {
       // Non-super-admin users should use their own company
       data.companyId = currentUser?.company?.id
-      
-      // Restrict role selection for non-super-admin users
-      const allowedRoles = [PermissionHelper.ROLES.TECNICO, 
-        PermissionHelper.ROLES.SUPERVISOR, 
-        PermissionHelper.ROLES.CLIENTE_ADMIN_GENERAL, 
-        PermissionHelper.ROLES.CLIENTE_ADMIN_SEDE, 
-        PermissionHelper.ROLES.CLIENTE_OPERARIO] as readonly string[]
-      if (!allowedRoles.includes(data.role)) {
-        data.role = "TECNICO"
+
+      // Validate role selection using centralized system
+      const creatableRoles = getRolesCreatableBy(currentUser.role as SystemRoleKey)
+      const allowedRoleValues = creatableRoles.map(r => r.value)
+
+      if (!allowedRoleValues.includes(data.role as SystemRoleKey)) {
+        data.role = 'TECNICO'
       }
     }
 
@@ -77,8 +77,8 @@ export function UserForm({
   }
 
   // Filter companies and roles based on current user permissions
-  const filteredCompanies = currentUser?.role === PermissionHelper.ROLES.SUPER_ADMIN 
-    ? companies 
+  const filteredCompanies = currentUser?.role === 'SUPER_ADMIN'
+    ? companies
     : companies.filter(c => c.id === currentUser?.company?.id)
 
   const getFormTitle = () => {
@@ -121,18 +121,18 @@ export function UserForm({
               </div>
             )}
 
-            <UserRoleField 
-              control={form.control} 
+            <UserRoleField
+              control={form.control}
               selectedRole={selectedRole}
-              restrictedMode={currentUser?.role !== PermissionHelper.ROLES.SUPER_ADMIN}
+              restrictedMode={currentUser?.role !== 'SUPER_ADMIN'}
             />
             
-            <UserCompanyField 
+            <UserCompanyField
               control={form.control}
               companies={filteredCompanies}
               loadingCompanies={loadingCompanies}
               needsCompany={needsCompany}
-              readOnly={currentUser?.role !== PermissionHelper.ROLES.SUPER_ADMIN}
+              readOnly={currentUser?.role !== 'SUPER_ADMIN'}
             />
             
             <UserPreferencesFields control={form.control} />

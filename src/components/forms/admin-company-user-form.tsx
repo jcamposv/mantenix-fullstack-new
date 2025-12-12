@@ -7,18 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
+import { useClientCompanies } from "@/hooks/useClientCompanies"
 import { createAdminUserSchema, type AdminUserFormData, EXTERNAL_ROLES } from "@/schemas/admin-user"
 import { AdminUserBasicInfo } from "./admin-user/admin-user-basic-info"
 import { AdminUserExternal } from "./admin-user/admin-user-external"
 import { AdminUserRoleSettings } from "./admin-user/admin-user-role-settings"
-
-interface ClientCompany {
-  id: string
-  name: string
-  companyId: string
-  email: string
-  contactName: string
-}
 
 interface Site {
   id: string
@@ -38,11 +32,13 @@ interface AdminCompanyUserFormProps {
 }
 
 export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "create" }: AdminCompanyUserFormProps) {
-  const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([])
   const [sites, setSites] = useState<Site[]>([])
-  const [loadingClientCompanies, setLoadingClientCompanies] = useState(false)
   const [loadingSites, setLoadingSites] = useState(false)
   const { user: currentUser } = useCurrentUser()
+  const { hasExternalClientMgmt } = useCompanyFeatures()
+
+  // Use centralized useClientCompanies hook with SWR
+  const { clientCompanies, loading: loadingClientCompanies } = useClientCompanies()
 
   const form = useForm<AdminUserFormData>({
     resolver: zodResolver(createAdminUserSchema(mode)),
@@ -58,6 +54,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
       timezone: "UTC",
       locale: "es",
       image: null,
+      customRoleId: null,
     },
   })
 
@@ -75,7 +72,8 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
     if (isExternalUser) {
       // Reset role to first external role when switching to external user
       form.setValue("role", "CLIENTE_ADMIN_GENERAL")
-      fetchClientCompanies()
+      form.setValue("customRoleId", null)
+      // Client companies are automatically loaded via SWR hook
     } else {
       // Reset role to first internal role when switching to internal user
       form.setValue("role", "TECNICO")
@@ -103,28 +101,13 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
     }
   }, [selectedRole, isExternalUser, form])
 
-  const fetchClientCompanies = async () => {
-    setLoadingClientCompanies(true)
-    try {
-      const response = await fetch('/api/admin/client-companies')
-      if (response.ok) {
-        const data = await response.json()
-        setClientCompanies(data.clientCompanies || data.companies || data.items || data || [])
-      }
-    } catch (error) {
-      console.error('Error fetching client companies:', error)
-    } finally {
-      setLoadingClientCompanies(false)
-    }
-  }
-
   const fetchSites = async (clientCompanyId: string) => {
     setLoadingSites(true)
     try {
       const response = await fetch(`/api/admin/client-companies/${clientCompanyId}/sites`)
       if (response.ok) {
         const data = await response.json()
-        setSites(data.sites || data.items || data || [])
+        setSites(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching sites:', error)
@@ -162,7 +145,7 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
               currentUserCompanyName={currentUser?.company?.name}
             />
             
-            <AdminUserExternal 
+            <AdminUserExternal
               control={form.control}
               isExternalUser={isExternalUser}
               selectedClientCompanyId={selectedClientCompanyId}
@@ -171,12 +154,15 @@ export function AdminCompanyUserForm({ onSubmit, onCancel, loading, mode = "crea
               sites={sites}
               loadingClientCompanies={loadingClientCompanies}
               loadingSites={loadingSites}
+              hasExternalClientMgmt={hasExternalClientMgmt}
             />
             
-            <AdminUserRoleSettings 
+            <AdminUserRoleSettings
               control={form.control}
+              setValue={form.setValue}
               isExternalUser={isExternalUser}
               selectedRole={selectedRole}
+              currentUserRole={currentUser?.role}
             />
 
             <div className="flex justify-end space-x-4">

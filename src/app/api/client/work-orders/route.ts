@@ -36,16 +36,12 @@ export async function GET(request: NextRequest) {
       { page, limit }
     )
 
-    const totalPages = Math.ceil(result.total / limit)
-
     return NextResponse.json({
-      workOrders: result.workOrders,
-      pagination: {
-        page,
-        limit,
-        total: result.total,
-        totalPages
-      }
+      items: result.workOrders,
+      total: result.total,
+      page,
+      limit,
+      totalPages: Math.ceil(result.total / limit)
     })
   } catch (error) {
     console.error('Error fetching client work orders:', error)

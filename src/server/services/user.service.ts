@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client"
 import { UserRepository } from "../repositories/user.repository"
-import { AuthService } from "./auth.service"
+import { CompanyRepository } from "../repositories/company.repository"
+import { PermissionGuard } from "../helpers/permission-guard"
+import { SubscriptionGuard } from "../middleware/subscription-guard"
+import { SubscriptionService } from "./subscription.service"
+import { getCurrentCompanyId } from "@/lib/company-context"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { UserFilters, PaginatedUsersResponse, UserWithRelations } from "@/types/user.types"
 import type { CreateUserInput, UpdateUserInput } from "../../app/api/schemas/user-schemas"
@@ -13,23 +17,28 @@ export class UserService {
   
   /**
    * Construye el WHERE clause para filtrar usuarios según el rol del usuario
+   * Uses getCurrentCompanyId to respect subdomain context for ADMIN_GRUPO
    */
-  static buildWhereClause(session: AuthenticatedSession, userId?: string, filters?: UserFilters): Prisma.UserWhereInput {
+  static async buildWhereClause(session: AuthenticatedSession, userId?: string, filters?: UserFilters): Promise<Prisma.UserWhereInput> {
     const whereClause: Prisma.UserWhereInput = userId ? { id: userId } : {}
 
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los usuarios
-    } else if (session.user.role === "ADMIN_EMPRESA") {
-      if (!session.user.companyId) {
-        throw new Error("Usuario sin empresa asociada")
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+      // Get company ID based on current subdomain (for ADMIN_GRUPO)
+      const companyId = await getCurrentCompanyId(session)
+
+      if (!companyId) {
+        throw new Error("No se pudo determinar la empresa")
       }
-      // Admin empresa puede ver usuarios de su empresa y clientes
+
+      // Admin empresa/grupo puede ver usuarios de la empresa actual y sus clientes
       whereClause.OR = [
-        { companyId: session.user.companyId },
-        { 
+        { companyId },
+        {
           clientCompany: {
-            tenantCompanyId: session.user.companyId
+            tenantCompanyId: companyId
           }
         }
       ]
@@ -45,7 +54,9 @@ export class UserService {
 
     // Aplicar filtros adicionales
     if (filters) {
-      if (filters.role) whereClause.role = filters.role
+      if (filters.role) {
+        whereClause.role = { is: { key: filters.role } }
+      }
       if (filters.companyId) whereClause.companyId = filters.companyId
       if (filters.clientCompanyId) whereClause.clientCompanyId = filters.clientCompanyId
       if (filters.siteId) whereClause.siteId = filters.siteId
@@ -64,7 +75,7 @@ export class UserService {
    * Obtiene un usuario por ID verificando permisos
    */
   static async getById(userId: string, session: AuthenticatedSession): Promise<UserWithRelations | null> {
-    const whereClause = this.buildWhereClause(session, userId)
+    const whereClause = await this.buildWhereClause(session, userId)
     return await UserRepository.findFirst(whereClause)
   }
 
@@ -73,19 +84,13 @@ export class UserService {
    */
   static async getList(session: AuthenticatedSession, filters: UserFilters, page: number, limit: number): Promise<PaginatedUsersResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_all_users') ||
-                         AuthService.canUserPerformAction(session.user.role, 'view_company_users') ||
-                         AuthService.canUserPerformAction(session.user.role, 'view_client_users')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver usuarios")
-    }
+    await PermissionGuard.require(session, 'users.view')
 
-    const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { users, total } = await UserRepository.findMany(whereClause, page, limit)
+    const whereClause = await this.buildWhereClause(session, undefined, filters)
+    const { items, total } = await UserRepository.findMany(whereClause, page, limit)
 
     return {
-      users,
+      items,
       total,
       page,
       limit,
@@ -98,9 +103,7 @@ export class UserService {
    */
   static async create(userData: CreateUserInput & { password?: string }, session: AuthenticatedSession): Promise<UserWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_user')) {
-      throw new Error("No tienes permisos para crear usuarios")
-    }
+    await PermissionGuard.require(session, 'users.create')
 
     // Verificar que no existe un usuario con el mismo email
     const existingUser = await UserRepository.findByEmail(userData.email)
@@ -111,17 +114,37 @@ export class UserService {
     // Validar relaciones según el rol del usuario que crea
     await this.validateUserRelations(userData, session)
 
+    // Validar límites de subscripción antes de crear el usuario
+    if (userData.companyId) {
+      await SubscriptionGuard.validateUserCreation(userData.companyId)
+    }
+
+    // Obtener companyGroupId si el usuario tiene una companyId
+    let companyGroupId: string | null = null
+    if (userData.companyId) {
+      companyGroupId = await CompanyRepository.getCompanyGroupId(userData.companyId)
+    }
+
     // Preparar datos para crear
     const createData: Prisma.UserCreateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role,
+      // Connect to role by key (for system roles) or by ID (for custom roles)
+      role: userData.customRoleId 
+        ? { connect: { id: userData.customRoleId } }
+        : { connect: { key: userData.role } },
+      hourlyRate: userData.hourlyRate,
       image: userData.image
     }
 
     // Conectar relaciones opcionales
     if (userData.companyId) {
       createData.company = { connect: { id: userData.companyId } }
+
+      // Conectar companyGroup si existe
+      if (companyGroupId) {
+        createData.companyGroup = { connect: { id: companyGroupId } }
+      }
     }
     if (userData.clientCompanyId) {
       createData.clientCompany = { connect: { id: userData.clientCompanyId } }
@@ -130,7 +153,26 @@ export class UserService {
       createData.site = { connect: { id: userData.siteId } }
     }
 
-    return await UserRepository.create(createData)
+    const newUser = await UserRepository.create(createData)
+
+    // Incrementar contador de uso de subscripción
+    if (userData.companyId) {
+      try {
+        const subscription = await SubscriptionService.getCompanySubscription(userData.companyId)
+        if (subscription) {
+          await SubscriptionService.incrementUsage({
+            subscriptionId: subscription.id,
+            field: 'users',
+            amount: 1
+          })
+        }
+      } catch (error) {
+        console.error('[UserService] Error incrementing subscription usage:', error)
+        // No lanzamos error para no fallar la creación del usuario
+      }
+    }
+
+    return newUser
   }
 
   /**
@@ -138,9 +180,7 @@ export class UserService {
    */
   static async update(id: string, userData: UpdateUserInput, session: AuthenticatedSession): Promise<UserWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_user')) {
-      throw new Error("No tienes permisos para actualizar usuarios")
-    }
+    await PermissionGuard.require(session, 'users.update')
 
     // Verificar que el usuario existe y se tiene acceso
     const existingUser = await this.getById(id, session)
@@ -161,11 +201,32 @@ export class UserService {
       await this.validateUserRelations(userData, session)
     }
 
+    // Obtener companyGroupId si se está actualizando companyId
+    let companyGroupId: string | null | undefined = undefined
+    if (userData.companyId !== undefined) {
+      if (userData.companyId) {
+        companyGroupId = await CompanyRepository.getCompanyGroupId(userData.companyId)
+      } else {
+        companyGroupId = null
+      }
+    }
+
     // Preparar datos para actualizar
     const updateData: Prisma.UserUpdateInput = {
       name: userData.name,
       email: userData.email,
-      role: userData.role
+      hourlyRate: userData.hourlyRate
+    }
+
+    // Update role if provided (either by customRoleId or role key)
+    if (userData.customRoleId !== undefined) {
+      updateData.role = userData.customRoleId 
+        ? { connect: { id: userData.customRoleId } }
+        : userData.role
+        ? { connect: { key: userData.role } }
+        : undefined
+    } else if (userData.role !== undefined) {
+      updateData.role = { connect: { key: userData.role } }
     }
 
     // Solo actualizar image si fue proporcionado explícitamente
@@ -176,6 +237,15 @@ export class UserService {
     // Actualizar relaciones opcionales
     if (userData.companyId !== undefined) {
       updateData.company = userData.companyId ? { connect: { id: userData.companyId } } : { disconnect: true }
+
+      // Actualizar companyGroupId cuando cambia la companyId
+      if (companyGroupId !== undefined) {
+        if (companyGroupId) {
+          updateData.companyGroup = { connect: { id: companyGroupId } }
+        } else {
+          updateData.companyGroup = { disconnect: true }
+        }
+      }
     }
     if (userData.clientCompanyId !== undefined) {
       updateData.clientCompany = userData.clientCompanyId ? { connect: { id: userData.clientCompanyId } } : { disconnect: true }
@@ -192,9 +262,7 @@ export class UserService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<UserWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_user')) {
-      throw new Error("No tienes permisos para eliminar usuarios")
-    }
+    await PermissionGuard.require(session, 'users.delete')
 
     // Verificar que el usuario existe y se tiene acceso
     const existingUser = await this.getById(id, session)
@@ -207,7 +275,26 @@ export class UserService {
       throw new Error("No puedes eliminar tu propio usuario")
     }
 
-    return await UserRepository.delete(id)
+    const deletedUser = await UserRepository.delete(id)
+
+    // Decrementar contador de uso de subscripción
+    if (deletedUser && deletedUser.companyId) {
+      try {
+        const subscription = await SubscriptionService.getCompanySubscription(deletedUser.companyId)
+        if (subscription) {
+          await SubscriptionService.decrementUsage({
+            subscriptionId: subscription.id,
+            field: 'users',
+            amount: 1
+          })
+        }
+      } catch (error) {
+        console.error('[UserService] Error decrementing subscription usage:', error)
+        // No lanzamos error para no fallar la eliminación del usuario
+      }
+    }
+
+    return deletedUser
   }
 
   /**
@@ -226,6 +313,7 @@ export class UserService {
 
   /**
    * Valida las relaciones del usuario según el rol del usuario que está creando/actualizando
+   * ADMIN_GRUPO can create users for the company of the subdomain they're currently on
    */
   private static async validateUserRelations(userData: Partial<CreateUserInput | UpdateUserInput>, session: AuthenticatedSession): Promise<void> {
     // Los super admin pueden asignar cualquier relación
@@ -233,10 +321,15 @@ export class UserService {
       return
     }
 
-    // Los admin empresa solo pueden crear usuarios en su empresa o empresas cliente
-    if (session.user.role === "ADMIN_EMPRESA") {
-      if (userData.companyId && userData.companyId !== session.user.companyId) {
-        throw new Error("No puedes asignar usuarios a otras empresas")
+    // Los admin empresa/grupo solo pueden crear usuarios en la empresa actual (subdomain)
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+      if (userData.companyId) {
+        // Get current company ID based on subdomain
+        const currentCompanyId = await getCurrentCompanyId(session)
+
+        if (userData.companyId !== currentCompanyId) {
+          throw new Error("Solo puedes crear usuarios para la empresa del subdominio actual")
+        }
       }
       // TODO: Validar que clientCompanyId pertenezca a la empresa del admin
     }

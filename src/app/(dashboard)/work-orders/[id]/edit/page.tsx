@@ -14,6 +14,7 @@ import { updateWorkOrderSchema } from "@/schemas/work-order"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import type { CreateWorkOrderData, UpdateWorkOrderData, WorkOrderWithRelations } from "@/types/work-order.types"
 import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
+import { FormSkeleton } from "@/components/skeletons"
 
 interface Site {
   id: string
@@ -30,7 +31,12 @@ interface User {
   id: string
   name: string
   email: string
-  role: string
+  role: {
+    id: string
+    key: string | null
+    name: string
+    color: string
+  }
 }
 
 export default function EditWorkOrderPage() {
@@ -63,7 +69,8 @@ export default function EditWorkOrderPage() {
       instructions: "",
       safetyNotes: "",
       tools: [],
-      materials: []
+      materials: [],
+      assignedUserIds: []
     }
   })
 
@@ -93,22 +100,22 @@ export default function EditWorkOrderPage() {
         // Load other data if responses are successful
         if (sitesRes.ok) {
           const sitesData = await sitesRes.json()
-          setSites(sitesData.sites || [])
+          setSites(sitesData.items || [])
         }
 
         if (assetsRes.ok) {
           const assetsData = await assetsRes.json()
-          setAssets(assetsData.assets || [])
+          setAssets(assetsData.items || [])
         }
 
         if (usersRes.ok) {
           const usersData = await usersRes.json()
-          setUsers(usersData.users || [])
+          setUsers(usersData.items || [])
         }
 
         if (templatesRes.ok) {
           const templatesData = await templatesRes.json()
-          setTemplates(templatesData.templates || [])
+          setTemplates(templatesData.items || [])
         }
 
         // Set form values with work order data
@@ -127,7 +134,8 @@ export default function EditWorkOrderPage() {
           instructions: workOrder.instructions || "",
           safetyNotes: workOrder.safetyNotes || "",
           tools: workOrder.tools || [],
-          materials: workOrder.materials || []
+          materials: workOrder.materials || [],
+          assignedUserIds: workOrder.assignments?.map(a => a.userId) || []
         })
 
       } catch (error) {
@@ -174,13 +182,8 @@ export default function EditWorkOrderPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6 max-w-4xl">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/4" />
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
-        </div>
+      <div className="container mx-auto py-0 max-w-4xl">
+        <FormSkeleton fields={8} showTitle={true} showFooter={true} />
       </div>
     )
   }

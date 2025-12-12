@@ -84,7 +84,7 @@ export class EmailConfigurationRepository {
       prisma.emailConfiguration.count({ where: whereClause })
     ])
 
-    return { configurations, total }
+    return { items: configurations, total }
   }
 
   static async create(data: Prisma.EmailConfigurationCreateInput) {

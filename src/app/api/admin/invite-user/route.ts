@@ -1,34 +1,33 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Role } from "@prisma/client"
-import { auth } from "@/lib/auth"
+import type { SystemRoleKey } from "@/types/auth.types"
 import { prisma } from "@/lib/prisma"
 import { sendInviteEmail } from "@/lib/email"
-import { headers } from "next/headers"
 import crypto from "crypto"
+import { AuthService } from "@/server/services/auth.service"
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
     // Check authentication and authorization
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
-    // Check if user can invite users (Super Admin or Company Admin)
-    const canInvite = session.user.role === "SUPER_ADMIN" || session.user.role === "ADMIN_EMPRESA"
+    const session = sessionResult
+
+    // Check if user can invite users (Super Admin, Group Admin or Company Admin)
+    const canInvite = session.user.role === 'SUPER_ADMIN' || session.user.role === 'ADMIN_GRUPO' || session.user.role === 'ADMIN_EMPRESA'
     if (!canInvite) {
-      return NextResponse.json({ 
-        error: "Forbidden - Only administrators can invite users" 
+      return NextResponse.json({
+        error: "Forbidden - Only administrators can invite users"
       }, { status: 403 })
     }
 
     const body = await request.json()
-    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image } = body
+    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image, hourlyRate } = body
 
     // Validate required fields
     if (!email || !role || !name) {
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only require site for roles that need site-specific access
-    const roleRequiresSite = role === "CLIENTE_ADMIN_SEDE" || role === "CLIENTE_OPERARIO"
+    const roleRequiresSite = role === 'CLIENTE_ADMIN_SEDE' || role === 'CLIENTE_OPERARIO'
     if (isExternalUser && roleRequiresSite && !siteId) {
       return NextResponse.json(
         { error: "Site is required for this role" },
@@ -55,8 +54,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate client company belongs to the tenant (only for company admins)
-    if (isExternalUser && clientCompanyId && session.user.role === "ADMIN_EMPRESA") {
+    // Validate client company belongs to the tenant (only for company/group admins)
+    if (isExternalUser && clientCompanyId && (session.user.role === 'ADMIN_EMPRESA' || session.user.role === 'ADMIN_GRUPO')) {
       if (!session.user.companyId) {
         return NextResponse.json(
           { error: "Admin user has no associated company" },
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
       const clientCompany = await prisma.clientCompany.findFirst({
         where: {
           id: clientCompanyId,
-          tenantCompanyId: session.user.companyId,
+          tenantCompanyId: session.user.companyId!,
           isActive: true
         }
       })
@@ -98,9 +97,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For company admins, ensure they can only invite to their own company
+    // For company/group admins, ensure they can only invite to their own company
     let targetCompanyId = companyId
-    if (session.user.role === "ADMIN_EMPRESA") {
+    if (session.user.role === 'ADMIN_EMPRESA' || session.user.role === 'ADMIN_GRUPO') {
       if (!session.user.companyId) {
         return NextResponse.json(
           { error: "Admin user has no associated company" },
@@ -110,10 +109,10 @@ export async function POST(request: NextRequest) {
       targetCompanyId = session.user.companyId
     }
 
-    // Super admins must specify a company for non-super-admin roles
-    if (session.user.role === "SUPER_ADMIN" && role !== "SUPER_ADMIN" && !targetCompanyId) {
+    // Super admins must specify a company for all roles except SUPER_ADMIN
+    if (session.user.role === 'SUPER_ADMIN' && role !== 'SUPER_ADMIN' && !targetCompanyId) {
       return NextResponse.json(
-        { error: "Company is required for non-super-admin roles" },
+        { error: "Company is required for this role" },
         { status: 400 }
       )
     }
@@ -161,6 +160,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Find the role by key
+    const roleRecord = await prisma.customRole.findUnique({
+      where: { key: role as SystemRoleKey }
+    })
+
+    if (!roleRecord) {
+      return NextResponse.json(
+        { error: `Role '${role}' not found` },
+        { status: 400 }
+      )
+    }
+
     // Create invitation token
     const token = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
@@ -169,17 +180,24 @@ export async function POST(request: NextRequest) {
     const invitation = await prisma.userInvitation.create({
       data: {
         email,
-        role: role as Role,
+        roleId: roleRecord.id,
         companyId: targetCompanyId,
         isExternalUser: isExternalUser || false,
         clientCompanyId: isExternalUser ? clientCompanyId : null,
         siteId: isExternalUser && siteId ? siteId : null,
         image: image || null,
+        hourlyRate: hourlyRate || null,
         token,
         expiresAt,
         createdBy: session.user.id
       },
       include: {
+        role: {
+          select: {
+            key: true,
+            name: true
+          }
+        },
         company: true,
         creator: true,
         clientCompany: true,
@@ -192,7 +210,7 @@ export async function POST(request: NextRequest) {
     let inviteLink
     if (company?.subdomain) {
       // Use company subdomain for tenant-specific invitation
-      const domainBase = process.env.DOMAIN_BASE || "mantenix.ai"
+      const domainBase = process.env.DOMAIN_BASE || "mantenix.com"
       const baseUrl = process.env.NODE_ENV === 'production' 
         ? `https://${company.subdomain}.${domainBase}`
         : `http://${company.subdomain}.localhost:3000`
@@ -218,7 +236,8 @@ export async function POST(request: NextRequest) {
       invitation: {
         id: invitation.id,
         email: invitation.email,
-        role: invitation.role,
+        role: invitation.role.key,
+        roleName: invitation.role.name,
         companyName: company?.name,
         expiresAt: invitation.expiresAt
       }

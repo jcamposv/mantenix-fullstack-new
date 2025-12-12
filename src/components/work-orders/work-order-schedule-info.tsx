@@ -17,12 +17,12 @@ export function WorkOrderScheduleInfo({ workOrder }: WorkOrderScheduleInfoProps)
   if (!hasScheduleInfo) return null
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Programación y Estimaciones</CardTitle>
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Programación y Estimaciones</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3">
           {workOrder.scheduledDate && (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />

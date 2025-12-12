@@ -9,6 +9,7 @@ export const emailTemplateTypeEnum = z.enum([
   "ALERT_CREATED",
   "ALERT_ASSIGNED",
   "ALERT_RESOLVED",
+  "PASSWORD_RESET",
 ])
 
 export const emailTemplateFormSchema = z.object({
@@ -33,4 +34,5 @@ export const emailTemplateTypeLabels: Record<string, string> = {
   ALERT_CREATED: "Alerta Creada",
   ALERT_ASSIGNED: "Alerta Asignada",
   ALERT_RESOLVED: "Alerta Resuelta",
+  PASSWORD_RESET: "Restablecer Contraseña",
 }

@@ -19,6 +19,12 @@ export async function GET(
     const invitation = await prisma.userInvitation.findUnique({
       where: { token },
       include: {
+        role: {
+          select: {
+            key: true,
+            name: true
+          }
+        },
         company: {
           select: {
             id: true,
@@ -63,7 +69,8 @@ export async function GET(
     // Return invitation details
     return NextResponse.json({
       email: invitation.email,
-      role: invitation.role,
+      role: invitation.role.key,
+      roleName: invitation.role.name,
       company: invitation.company,
       invitedBy: invitation.creator,
       expiresAt: invitation.expiresAt

@@ -3,39 +3,22 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {  ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
-import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
-import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
-import { WorkOrderBasicInfo } from "@/components/work-orders/work-order-basic-info"
-import { WorkOrderScheduleInfo } from "@/components/work-orders/work-order-schedule-info"
-import { WorkOrderInstructions } from "@/components/work-orders/work-order-instructions"
-import { WorkOrderToolsMaterials } from "@/components/work-orders/work-order-tools-materials"
-import { WorkOrderTemplateInfo } from "@/components/work-orders/work-order-template-info"
-import { WorkOrderCustomFieldsDisplay } from "@/components/work-orders/work-order-custom-fields-display"
-import { WorkOrderComments } from "@/components/client/work-order-comments"
+import { WorkOrderHeader } from "@/components/client/work-order/work-order-header"
+import { WorkOrderOverview } from "@/components/client/work-order/work-order-overview"
+import { WorkOrderTimeline } from "@/components/client/work-order/work-order-timeline"
+import { WorkOrderComments } from "@/components/client/work-order/work-order-comments"
+import { WorkOrderSkeleton } from "@/components/client/work-order/work-order-skeleton"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
-import type { CustomFieldsConfig } from "@/schemas/work-order-template"
-
-interface WorkOrderComment {
-  id: string
-  content: string
-  createdAt: string
-  author: {
-    id: string
-    name: string
-    email: string
-  }
-}
 
 export default function ClientWorkOrderDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [workOrder, setWorkOrder] = useState<WorkOrderWithRelations | null>(null)
-  const [comments, setComments] = useState<WorkOrderComment[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
     const fetchWorkOrder = async () => {
@@ -47,10 +30,7 @@ export default function ClientWorkOrderDetailPage() {
         }
 
         const orderData = await orderRes.json()
-
         setWorkOrder(orderData.workOrder)
-        // Comments will be supported when WorkOrderComment model is added
-        setComments([])
       } catch (error) {
         console.error("Error fetching work order:", error)
         toast.error("Error al cargar la orden de trabajo")
@@ -65,135 +45,64 @@ export default function ClientWorkOrderDetailPage() {
     }
   }, [params.id, router])
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleAddComment = async (_content: string) => {
-    // TODO: Implement when WorkOrderComment model is added to schema
-    toast.info("Funcionalidad de comentarios próximamente disponible")
-    throw new Error("Not implemented yet")
-  }
-
   const handleCreateAlert = () => {
     router.push(`/client/alerts/new?workOrderId=${params.id}`)
   }
 
   if (loading) {
-    return (
-      <div className="container mx-auto py-6 max-w-6xl">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/4" />
-          <div className="h-32 bg-muted rounded" />
-        </div>
-      </div>
-    )
+    return <WorkOrderSkeleton />
   }
 
   if (!workOrder) {
     return null
   }
 
-  const customFieldValues = workOrder.customFieldValues as Record<string, unknown> || {}
-
   return (
-    <div className="container mx-auto py-6 max-w-6xl">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{workOrder.number}</h1>
-            <p className="text-muted-foreground">{workOrder.title}</p>
-          </div>
-          <Button onClick={handleCreateAlert} variant="outline">
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Crear Alerta
-          </Button>
-        </div>
-      </div>
+    <div className="container mx-auto py-6 max-w-7xl space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push("/client/work-orders")}
+        className="mb-2"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Volver a órdenes
+      </Button>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Estado y Prioridad */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Estado y Prioridad</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Estado</p>
-                  <WorkOrderStatusBadge status={workOrder.status} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Prioridad</p>
-                  <WorkOrderPriorityBadge priority={workOrder.priority} showIcon />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Tipo</p>
-                  <WorkOrderTypeBadge type={workOrder.type} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Comprehensive Header with all key details and progress */}
+      <WorkOrderHeader workOrder={workOrder} onCreateAlert={handleCreateAlert} />
 
-          {/* Componentes reutilizables */}
-          <WorkOrderBasicInfo workOrder={workOrder} />
-          <WorkOrderScheduleInfo workOrder={workOrder} />
-          <WorkOrderInstructions workOrder={workOrder} />
-          <WorkOrderToolsMaterials workOrder={workOrder} />
+      {/* Main Content with Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Formulario de Trabajo</TabsTrigger>
+          <TabsTrigger value="timeline">Cronología</TabsTrigger>
+          <TabsTrigger value="comments">
+            Comentarios
+            {workOrder.comments && workOrder.comments.length > 0 && (
+              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                {workOrder.comments.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Custom Fields */}
-          {Object.keys(customFieldValues).length > 0 && workOrder.template?.customFields && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Campos Personalizados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WorkOrderCustomFieldsDisplay
-                  customFields={workOrder.template.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
-                  customFieldValues={customFieldValues}
-                />
-              </CardContent>
-            </Card>
-          )}
+        <TabsContent value="overview" className="space-y-6">
+          <WorkOrderOverview workOrder={workOrder} />
+        </TabsContent>
 
-          <WorkOrderTemplateInfo workOrder={workOrder} />
-        </div>
+        <TabsContent value="timeline" className="space-y-6">
+          <WorkOrderTimeline workOrder={workOrder} />
+        </TabsContent>
 
-        <div className="space-y-6">
+        <TabsContent value="comments" className="space-y-6">
           <WorkOrderComments
             workOrderId={params.id as string}
-            comments={comments}
-            onAddComment={handleAddComment}
-            loading={loading}
+            initialComments={workOrder.comments}
           />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Información del Sistema</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <label className="font-medium">Creado</label>
-                <p className="text-muted-foreground">
-                  {new Date(workOrder.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <label className="font-medium">Última actualización</label>
-                <p className="text-muted-foreground">
-                  {new Date(workOrder.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-              {workOrder.completedAt && (
-                <div>
-                  <label className="font-medium">Completado</label>
-                  <p className="text-muted-foreground">
-                    {new Date(workOrder.completedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

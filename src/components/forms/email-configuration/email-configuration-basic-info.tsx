@@ -44,7 +44,7 @@ export function EmailConfigurationBasicInfo({ control, mode }: EmailConfiguratio
         const response = await fetch('/api/admin/companies')
         if (response.ok) {
           const data = await response.json()
-          setCompanies(data.companies || data.items || [])
+          setCompanies(data.items || [])
         }
       } catch (error) {
         console.error('Error fetching companies:', error)

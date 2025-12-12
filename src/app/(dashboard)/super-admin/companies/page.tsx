@@ -1,62 +1,74 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState, useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterButton } from "@/components/common/filter-button"
+import { SACompaniesFilters } from "@/components/super-admin/sa-companies-filters"
 import Image from "next/image"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
-import { useTableData } from "@/components/hooks/use-table-data"
 import { toast } from "sonner"
-
-interface Company {
-  id: string
-  name: string
-  subdomain: string
-  tier: string
-  primaryColor: string
-  logo: string | null
-  createdAt: string
-  _count: {
-    users: number
-  }
-}
-
-interface CompaniesResponse {
-  companies?: Company[]
-  items?: Company[]
-}
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import {
+  useSACompanies,
+  type SACompanyFilters,
+  type SACompanyItem,
+} from '@/hooks/use-sa-companies'
 
 export default function CompaniesPage() {
   const router = useRouter()
-  const { data: companies, loading, refetch } = useTableData<Company>({
-    endpoint: '/api/admin/companies',
-    transform: (data) => (data as CompaniesResponse).companies || (data as CompaniesResponse).items || (data as Company[]) || []
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<SACompanyFilters>({})
+  const limit = 20
+
+  const { companies, loading, total, totalPages, refetch } = useSACompanies({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
   })
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [companyToDelete, setCompanyToDelete] = useState<SACompanyItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleEdit = (companyId: string) => {
     router.push(`/super-admin/companies/${companyId}/edit`)
   }
 
-  const handleDelete = async (company: Company) => {
-    if (confirm(`¿Está seguro que desea desactivar "${company.name}"?`)) {
-      try {
-        const response = await fetch(`/api/super-admin/companies/${company.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Empresa desactivada exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar la empresa')
-        }
-      } catch (error) {
-        console.error('Error deleting company:', error)
-        toast.error('Error al desactivar la empresa')
+  const handleDelete = (company: SACompanyItem) => {
+    setCompanyToDelete(company)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!companyToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/super-admin/companies/${companyToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Empresa desactivada exitosamente')
+        setDeleteDialogOpen(false)
+        setCompanyToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar la empresa')
       }
+    } catch (error) {
+      console.error('Error deleting company:', error)
+      toast.error('Error al desactivar la empresa')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -64,10 +76,10 @@ export default function CompaniesPage() {
     router.push("/super-admin/companies/new")
   }
 
-  const columns: ColumnDef<Company>[] = [
+  const columns: ColumnDef<SACompanyItem>[] = useMemo(() => [
     {
       accessorKey: "name",
-      header: "Company Name",
+      header: "Nombre de Empresa",
       cell: ({ row }) => {
         const company = row.original
         return (
@@ -83,7 +95,7 @@ export default function CompaniesPage() {
             )}
             <div>
               <div className="font-medium">{company.name}</div>
-              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.ai</div>
+              <div className="text-sm text-muted-foreground">{company.subdomain}.mantenix.com</div>
             </div>
           </div>
         )
@@ -91,26 +103,29 @@ export default function CompaniesPage() {
     },
     {
       accessorKey: "tier",
-      header: "Tier",
+      header: "Plan",
       cell: ({ row }) => {
-        const tier = row.getValue("tier") as string
+        const company = row.original
+        const planName = company.subscription?.plan?.name || company.tier
+        const planTier = company.subscription?.plan?.tier || company.tier
+
         return (
-          <Badge variant={tier === "ENTERPRISE" ? "default" : tier === "PROFESSIONAL" ? "secondary" : "outline"}>
-            {tier}
+          <Badge variant={planTier === "ENTERPRISE" ? "default" : planTier === "PROFESSIONAL" || planTier === "BUSINESS" ? "secondary" : "outline"}>
+            {planName}
           </Badge>
         )
       },
     },
     {
       accessorKey: "_count.users",
-      header: "Users",
+      header: "Usuarios",
       cell: ({ row }) => {
         return <div className="text-center">{row.original._count.users}</div>
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: "Creado",
       cell: ({ row }) => {
         return new Date(row.getValue("createdAt")).toLocaleDateString()
       },
@@ -128,20 +143,69 @@ export default function CompaniesPage() {
         )
       },
     },
-  ]
+  ], [])
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.hasSubscription) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <DataTable
         columns={columns}
         data={companies}
         searchKey="name"
-        searchPlaceholder="Search companies..."
-        title="Companies"
-        description="Manage all companies in the system"
+        searchPlaceholder="Buscar empresas..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
+        title="Empresas"
+        description={`${total} empresas | Gestionar todas las empresas del sistema`}
         onAdd={handleAddCompany}
-        addLabel="Add Company"
+        addLabel="Agregar Empresa"
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Empresas"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <SACompaniesFilters filters={filters} onFiltersChange={setFilters} />
+          </FilterButton>
+        }
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Empresa"
+        description={`¿Está seguro que desea desactivar "${companyToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )

@@ -15,7 +15,7 @@ export class WorkOrderRepository {
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number },
     companyId?: string
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     const page = pagination?.page || 1
     const limit = pagination?.limit || 50
     const offset = (page - 1) * limit
@@ -53,6 +53,17 @@ export class WorkOrderRepository {
         }
         if (filters.scheduledDateTo) {
           whereClause.scheduledDate.lte = filters.scheduledDateTo
+        }
+      }
+
+      // Created at date range filters
+      if (filters.createdAtFrom || filters.createdAtTo) {
+        whereClause.createdAt = {}
+        if (filters.createdAtFrom) {
+          whereClause.createdAt.gte = filters.createdAtFrom
+        }
+        if (filters.createdAtTo) {
+          whereClause.createdAt.lte = filters.createdAtTo
         }
       }
 
@@ -111,6 +122,28 @@ export class WorkOrderRepository {
               code: true,
               manufacturer: true,
               model: true
+            }
+          },
+          maintenanceComponent: {
+            select: {
+              id: true,
+              name: true,
+              partNumber: true,
+              criticality: true,
+              mtbf: true,
+              lifeExpectancy: true,
+              // Hybrid maintenance scheduling
+              manufacturerMaintenanceInterval: true,
+              manufacturerMaintenanceIntervalUnit: true,
+              workOrderSchedule: {
+                select: {
+                  id: true,
+                  name: true,
+                  recurrenceType: true,
+                  nextGenerationDate: true,
+                  isActive: true,
+                },
+              },
             }
           },
           template: {
@@ -179,7 +212,7 @@ export class WorkOrderRepository {
       }))
     }))
 
-    return { workOrders: serializedWorkOrders as unknown as WorkOrderWithRelations[], total }
+    return { items: serializedWorkOrders as unknown as WorkOrderWithRelations[], total }
   }
 
   /**
@@ -221,7 +254,18 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {
@@ -260,6 +304,106 @@ export class WorkOrderRepository {
             }
           }
         },
+        maintenanceAlerts: {
+          where: {
+            status: 'RESOLVED'
+          },
+          select: {
+            id: true,
+            componentName: true,
+            assetName: true,
+            partNumber: true,
+            severity: true,
+            message: true,
+            createdAt: true,
+            resolvedAt: true,
+            resolutionNotes: true,
+            resolvedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        approvals: {
+          select: {
+            id: true,
+            level: true,
+            status: true,
+            comments: true,
+            approvedAt: true,
+            rejectedAt: true,
+            approvedByUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            createdAt: true
+          },
+          orderBy: {
+            level: 'asc'
+          }
+        },
+        workPermits: {
+          select: {
+            id: true,
+            permitType: true,
+            status: true,
+            location: true,
+            validFrom: true,
+            validUntil: true
+          }
+        },
+        lotoProcedures: {
+          select: {
+            id: true,
+            status: true,
+            appliedAt: true,
+            removedAt: true,
+            asset: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            },
+            lockSerialNumbers: true
+          }
+        },
+        safetyAnalyses: {
+          select: {
+            id: true,
+            status: true,
+            preparer: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            jobSteps: true
+          }
+        },
+        rootCauseAnalyses: {
+          select: {
+            id: true,
+            failureMode: true,
+            analysisType: true,
+            status: true,
+            analyzer: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         _count: {
           select: {
             assignments: true
@@ -282,7 +426,30 @@ export class WorkOrderRepository {
       assignments: workOrder.assignments?.map(assignment => ({
         ...assignment,
         assignedAt: assignment.assignedAt.toISOString()
-      }))
+      })),
+      maintenanceAlerts: workOrder.maintenanceAlerts?.map(alert => ({
+        ...alert,
+        createdAt: alert.createdAt.toISOString(),
+        resolvedAt: alert.resolvedAt?.toISOString() || null
+      })),
+      approvals: workOrder.approvals?.map(approval => ({
+        ...approval,
+        approvedAt: approval.approvedAt?.toISOString() || null,
+        rejectedAt: approval.rejectedAt?.toISOString() || null,
+        createdAt: approval.createdAt.toISOString()
+      })),
+      workPermits: workOrder.workPermits?.map(permit => ({
+        ...permit,
+        validFrom: permit.validFrom?.toISOString() || null,
+        validUntil: permit.validUntil?.toISOString() || null
+      })),
+      lotoProcedures: workOrder.lotoProcedures?.map(procedure => ({
+        ...procedure,
+        appliedAt: procedure.appliedAt?.toISOString() || null,
+        removedAt: procedure.removedAt?.toISOString() || null
+      })),
+      jobSafetyAnalyses: workOrder.safetyAnalyses,
+      rootCauseAnalyses: workOrder.rootCauseAnalyses
     } as unknown as WorkOrderWithRelations
   }
 
@@ -320,7 +487,18 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {
@@ -418,7 +596,18 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {
@@ -493,14 +682,58 @@ export class WorkOrderRepository {
 
   /**
    * Generate next work order number for company
+   * If prefixId is provided, generates format: {PREFIX}{####}
+   * Otherwise, generates legacy format: YYYY0001
    */
-  static async generateNumber(companyId: string): Promise<string> {
+  static async generateNumber(companyId: string, prefixId?: string | null): Promise<string> {
+    // If prefix is provided, use prefix-based numbering
+    if (prefixId) {
+      // Get the prefix details
+      const prefix = await prisma.workOrderPrefix.findUnique({
+        where: { id: prefixId },
+        select: { code: true }
+      })
+
+      if (!prefix) {
+        throw new Error("Prefix not found")
+      }
+
+      // Get the last work order number for this prefix
+      const lastWorkOrder = await prisma.workOrder.findFirst({
+        where: {
+          companyId,
+          prefixId,
+          number: {
+            startsWith: prefix.code
+          }
+        },
+        orderBy: {
+          number: 'desc'
+        },
+        select: {
+          number: true
+        }
+      })
+
+      let nextNumber = 1
+      if (lastWorkOrder) {
+        // Extract the numeric part from the last number (format: PREFIX0001)
+        const numericPart = lastWorkOrder.number.substring(prefix.code.length)
+        nextNumber = parseInt(numericPart) + 1
+      }
+
+      // Format: PREFIX + zero-padded 4-digit number
+      return `${prefix.code}${nextNumber.toString().padStart(4, '0')}`
+    }
+
+    // Legacy format without prefix: YYYY0001
     const currentYear = new Date().getFullYear()
-    
-    // Get the last work order number for this company in the current year
+
+    // Get the last work order number for this company in the current year (without prefix)
     const lastWorkOrder = await prisma.workOrder.findFirst({
       where: {
         companyId,
+        prefixId: null,
         number: {
           startsWith: currentYear.toString()
         }
@@ -581,7 +814,7 @@ export class WorkOrderRepository {
     userId: string,
     filters?: Omit<WorkOrderFilters, 'assignedToMe'>,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     return await this.findMany(
       { ...filters, assignedToMe: userId },
       pagination,
@@ -724,6 +957,17 @@ export class WorkOrderRepository {
       }
       if (filters.assetId) whereClause.assetId = filters.assetId
       if (filters.templateId) whereClause.templateId = filters.templateId
+
+      // Created at date range filters
+      if (filters.createdAtFrom || filters.createdAtTo) {
+        whereClause.createdAt = {}
+        if (filters.createdAtFrom) {
+          whereClause.createdAt.gte = filters.createdAtFrom
+        }
+        if (filters.createdAtTo) {
+          whereClause.createdAt.lte = filters.createdAtTo
+        }
+      }
     }
 
     const [
@@ -732,11 +976,14 @@ export class WorkOrderRepository {
       completed,
       pending,
       overdue,
-      activeUsersCount
+      activeUsersCount,
+      completedWorkOrders,
+      plannedCount,
+      unplannedCount
     ] = await Promise.all([
       // Total active work orders
       prisma.workOrder.count({ where: whereClause }),
-      
+
       // In progress work orders
       prisma.workOrder.count({
         where: {
@@ -744,7 +991,7 @@ export class WorkOrderRepository {
           status: 'IN_PROGRESS'
         }
       }),
-      
+
       // Completed work orders
       prisma.workOrder.count({
         where: {
@@ -752,7 +999,7 @@ export class WorkOrderRepository {
           status: 'COMPLETED'
         }
       }),
-      
+
       // Pending work orders (DRAFT + ASSIGNED)
       prisma.workOrder.count({
         where: {
@@ -762,7 +1009,7 @@ export class WorkOrderRepository {
           }
         }
       }),
-      
+
       // Overdue work orders
       prisma.workOrder.count({
         where: {
@@ -775,7 +1022,7 @@ export class WorkOrderRepository {
           }
         }
       }),
-      
+
       // Active users (users with work order assignments)
       prisma.workOrderAssignment.groupBy({
         by: ['userId'],
@@ -788,11 +1035,55 @@ export class WorkOrderRepository {
             }
           }
         }
+      }),
+
+      // Completed work orders with times for avgCompletionTime calculation
+      prisma.workOrder.findMany({
+        where: {
+          ...whereClause,
+          status: 'COMPLETED',
+          startedAt: { not: null },
+          completedAt: { not: null }
+        },
+        select: {
+          startedAt: true,
+          completedAt: true
+        }
+      }),
+
+      // Planned maintenance count (PREVENTIVO)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          type: 'PREVENTIVO'
+        }
+      }),
+
+      // Unplanned maintenance count (CORRECTIVO + REPARACION)
+      prisma.workOrder.count({
+        where: {
+          ...whereClause,
+          type: {
+            in: ['CORRECTIVO', 'REPARACION']
+          }
+        }
       })
     ])
 
     // Calculate completion rate
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+    // Calculate average completion time in hours
+    let avgCompletionTime = 0
+    if (completedWorkOrders.length > 0) {
+      const totalCompletionTimeMs = completedWorkOrders.reduce((sum, wo) => {
+        const start = new Date(wo.startedAt!).getTime()
+        const end = new Date(wo.completedAt!).getTime()
+        return sum + (end - start)
+      }, 0)
+      // Convert to hours and round to 1 decimal
+      avgCompletionTime = Math.round((totalCompletionTimeMs / completedWorkOrders.length / (1000 * 60 * 60)) * 10) / 10
+    }
 
     return {
       total,
@@ -801,25 +1092,42 @@ export class WorkOrderRepository {
       pending,
       overdue,
       completionRate,
-      avgCompletionTime: 0, // TODO: Calculate from actual completion times
-      activeUsers: activeUsersCount.length
+      avgCompletionTime,
+      activeUsers: activeUsersCount.length,
+      plannedVsUnplanned: {
+        planned: plannedCount,
+        unplanned: unplannedCount
+      }
     }
   }
 
   /**
    * Get recent work order activity
    */
-  static async getRecentActivity(companyId: string, limit: number = 10) {
+  static async getRecentActivity(companyId: string, limit: number = 10, filters?: WorkOrderFilters) {
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true,
+      OR: [
+        { startedAt: { not: null } },
+        { completedAt: { not: null } },
+        { assignments: { some: {} } }
+      ]
+    }
+
+    // Apply date filters
+    if (filters?.createdAtFrom || filters?.createdAtTo) {
+      whereClause.createdAt = {}
+      if (filters.createdAtFrom) {
+        whereClause.createdAt.gte = filters.createdAtFrom
+      }
+      if (filters.createdAtTo) {
+        whereClause.createdAt.lte = filters.createdAtTo
+      }
+    }
+
     const activities = await prisma.workOrder.findMany({
-      where: {
-        companyId,
-        isActive: true,
-        OR: [
-          { startedAt: { not: null } },
-          { completedAt: { not: null } },
-          { assignments: { some: {} } }
-        ]
-      },
+      where: whereClause,
       include: {
         assignments: {
           include: {
@@ -894,10 +1202,14 @@ export class WorkOrderRepository {
   /**
    * Get performance metrics for the last 7 days
    */
-  static async getPerformanceMetrics(companyId: string, days: number = 7) {
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+  static async getPerformanceMetrics(companyId: string, days: number = 7, filters?: WorkOrderFilters) {
+    // Use filters if provided, otherwise use default date range
+    const endDate = filters?.createdAtTo || new Date()
+    const startDate = filters?.createdAtFrom || (() => {
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      return date
+    })()
 
     // Get completion data for each day
     const dailyCompletions = await prisma.workOrder.groupBy({
@@ -966,5 +1278,147 @@ export class WorkOrderRepository {
     }
 
     return performanceData
+  }
+
+  /**
+   * Get upcoming scheduled work orders
+   */
+  static async getUpcomingWorkOrders(companyId: string, limit: number = 10, filters?: WorkOrderFilters) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Build where clause
+    const whereClause: Prisma.WorkOrderWhereInput = {
+      companyId,
+      isActive: true,
+      scheduledDate: {
+        gte: today
+      },
+      status: {
+        in: ['DRAFT', 'ASSIGNED', 'IN_PROGRESS']
+      }
+    }
+
+    // Apply additional filters
+    if (filters) {
+      if (filters.siteId) whereClause.siteId = filters.siteId
+      if (filters.clientCompanyId) {
+        whereClause.site = {
+          clientCompanyId: filters.clientCompanyId
+        }
+      }
+    }
+
+    const upcomingWorkOrders = await prisma.workOrder.findMany({
+      where: whereClause,
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: {
+          select: {
+            assignments: true
+          }
+        }
+      },
+      orderBy: {
+        scheduledDate: 'asc'
+      },
+      take: limit
+    })
+
+    return upcomingWorkOrders
+  }
+
+  /**
+   * Get critical work orders (URGENT and HIGH priority) with client company filter
+   */
+  static async getCriticalOrders(whereClause: Prisma.WorkOrderWhereInput, limit: number = 10) {
+    const criticalOrders = await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        priority: {
+          in: ['URGENT', 'HIGH'],
+        },
+        status: {
+          in: ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'],
+        },
+        isActive: true,
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { scheduledDate: 'asc' },
+      ],
+      take: limit,
+    })
+
+    return criticalOrders
+  }
+
+  /**
+   * Get work orders for provider metrics calculation
+   */
+  static async getOrdersForProviderMetrics(whereClause: Prisma.WorkOrderWhereInput) {
+    return await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        status: {
+          in: ['COMPLETED', 'IN_PROGRESS'],
+        },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        scheduledDate: true,
+        createdAt: true,
+        updatedAt: true,
+        assignments: {
+          select: {
+            assignedAt: true,
+          },
+          orderBy: {
+            assignedAt: 'asc',
+          },
+          take: 1,
+        },
+      },
+    })
+  }
+
+  /**
+   * Get all work orders for site metrics calculation
+   */
+  static async getOrdersForSiteMetrics(whereClause: Prisma.WorkOrderWhereInput) {
+    return await prisma.workOrder.findMany({
+      where: {
+        ...whereClause,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        scheduledDate: true,
+        createdAt: true,
+        updatedAt: true,
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
   }
 }

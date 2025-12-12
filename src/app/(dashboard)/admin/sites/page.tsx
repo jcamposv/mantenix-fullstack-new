@@ -10,6 +10,8 @@ import { MapPin, Building2, Users } from "lucide-react"
 import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 
 interface Site {
   id: string
@@ -48,10 +50,20 @@ export default function SitesPage() {
   const [filteredClientCompany, setFilteredClientCompany] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { hasPermission } = usePermissions()
   const { data: allSites, loading, refetch } = useTableData<Site>({
     endpoint: '/api/admin/sites',
     transform: (data) => (data as SitesResponse).sites || (data as SitesResponse).items || (data as Site[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('sites.create')
+  const canEdit = hasPermission('sites.update')
+  const canDelete = hasPermission('sites.delete')
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [siteToDelete, setSiteToDelete] = useState<Site | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const clientCompanyId = searchParams.get('clientCompanyId')
@@ -71,25 +83,35 @@ export default function SitesPage() {
     router.push(`/admin/sites/${siteId}/edit`)
   }
 
-  const handleDelete = async (site: Site) => {
-    if (confirm(`¿Está seguro que desea desactivar "${site.name}"?`)) {
-      try {
-        const response = await fetch(`/api/admin/sites/${site.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Sede desactivada exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar la sede')
-        }
-      } catch (error) {
-        console.error('Error deleting site:', error)
-        toast.error('Error al desactivar la sede')
+  const handleDelete = (site: Site) => {
+    setSiteToDelete(site)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!siteToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/admin/sites/${siteToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Sede desactivada exitosamente')
+        setDeleteDialogOpen(false)
+        setSiteToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar la sede')
       }
+    } catch (error) {
+      console.error('Error deleting site:', error)
+      toast.error('Error al desactivar la sede')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -187,10 +209,10 @@ export default function SitesPage() {
       cell: ({ row }) => {
         const site = row.original
         const actions = [
-          createEditAction(() => handleEdit(site.id)),
-          createDeleteAction(() => handleDelete(site))
+          ...(canEdit ? [createEditAction(() => handleEdit(site.id))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(site))] : [])
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
@@ -211,7 +233,7 @@ export default function SitesPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       {filteredClientCompany && (
         <div className="mb-4">
           <Button 
@@ -230,9 +252,20 @@ export default function SitesPage() {
         searchPlaceholder="Buscar sedes..."
         title={getTitle()}
         description={getDescription()}
-        onAdd={handleAddSite}
-        addLabel="Agregar Sede"
+        {...(canCreate && { onAdd: handleAddSite, addLabel: "Agregar Sede" })}
         loading={loading}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Sede"
+        description={`¿Está seguro que desea desactivar "${siteToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { AuthService } from "@/server/services/auth.service"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 
 export const dynamic = 'force-dynamic'
@@ -21,13 +20,13 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB for images (reduced for better per
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     // Check if user can upload work order media (technicians, supervisors, admins)
     const allowedRoles = ["TECNICO", "SUPERVISOR", "ADMIN_EMPRESA", "SUPER_ADMIN"]

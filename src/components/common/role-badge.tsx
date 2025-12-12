@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 
 const ROLE_CONFIG = {
-  SUPER_ADMIN: { variant: "destructive" as const, label: "Super Admin" },
+  SUPER_ADMIN: { variant: "destructive" as const, label: "Súper Admin" },
   ADMIN_EMPRESA: { variant: "default" as const, label: "Admin Empresa" },
   SUPERVISOR: { variant: "secondary" as const, label: "Supervisor" },
   TECNICO: { variant: "outline" as const, label: "Técnico" },

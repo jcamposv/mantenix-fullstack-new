@@ -62,11 +62,18 @@ export async function GET(request: NextRequest) {
       headers: await headers()
     })
 
-    if (!session?.user) {
-      return new Response('Unauthorized', { status: 401 })
+    if (!session?.user?.id) {
+      console.warn('SSE connection attempt without valid session')
+      return new Response('Unauthorized', {
+        status: 401,
+        headers: {
+          'Content-Type': 'text/plain',
+        }
+      })
     }
 
     const userId = session.user.id
+    console.log(`SSE: Authenticated user ${userId} attempting to connect`)
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({

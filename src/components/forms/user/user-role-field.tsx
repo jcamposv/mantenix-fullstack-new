@@ -18,6 +18,9 @@ import { Control } from "react-hook-form"
 import { UserFormData } from "./user-form-schema"
 import { ROLES } from "./user-form-constants"
 import { getRoleBadgeVariant } from "./user-form-utils"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { getRolesCreatableBy } from "@/lib/rbac/role-definitions"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 interface UserRoleFieldProps {
   control: Control<UserFormData>
@@ -26,9 +29,13 @@ interface UserRoleFieldProps {
 }
 
 export function UserRoleField({ control, selectedRole, restrictedMode = false }: UserRoleFieldProps) {
-  const availableRoles = restrictedMode 
-    ? ROLES.filter(role => !["SUPER_ADMIN", "ADMIN_EMPRESA"].includes(role.value))
+  const { user: currentUser } = useCurrentUser()
+
+  // Use centralized system to determine available roles
+  const availableRoles = restrictedMode && currentUser?.role
+    ? getRolesCreatableBy(currentUser.role as SystemRoleKey)
     : ROLES
+
   return (
     <FormField<UserFormData>
       control={control}
@@ -36,7 +43,7 @@ export function UserRoleField({ control, selectedRole, restrictedMode = false }:
       render={({ field }) => (
         <FormItem>
           <FormLabel>Role</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+          <Select onValueChange={field.onChange} defaultValue={(field.value as string | undefined) ?? undefined}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />

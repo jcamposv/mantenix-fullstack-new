@@ -1,38 +1,37 @@
 "use client"
 
-import { useUserRole } from "@/hooks/useUserRole"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { PageSkeleton } from "@/components/skeletons"
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { isSuperAdmin, loading, isCompanyAdmin } = useUserRole()
+  const { user, loading } = useCurrentUser()
+  const isSuperAdmin = user?.isSuperAdmin ?? false
+  const isCompanyAdmin = user?.isCompanyAdmin ?? false
+  const isGroupAdmin = user?.isGroupAdmin ?? false
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !isSuperAdmin && !isCompanyAdmin) {
+    if (!loading && !isSuperAdmin && !isCompanyAdmin && !isGroupAdmin) {
       router.replace("/")
     }
-  }, [isSuperAdmin, loading, router, isCompanyAdmin])
+  }, [isSuperAdmin, loading, router, isCompanyAdmin, isGroupAdmin])
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-        <span className="ml-2">Loading...</span>
-      </div>
-    )
+    return <PageSkeleton />
   }
 
-  if (!isSuperAdmin && !isCompanyAdmin) {
+  if (!isSuperAdmin && !isCompanyAdmin && !isGroupAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
-          <p className="text-gray-600 mt-2">You don&apos;t have permission to access this area.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Acceso Denegado</h1>
+          <p className="text-gray-600 mt-2">No tienes permiso para acceder a esta área.</p>
         </div>
       </div>
     )

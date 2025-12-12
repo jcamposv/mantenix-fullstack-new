@@ -5,7 +5,7 @@ export const assetSchema = z.object({
   code: z.string().min(1, "El código es requerido"),
   description: z.string().optional(),
   location: z.string().min(1, "La ubicación es requerida"),
-  siteId: z.string().min(1, "La sede es requerida"),
+  siteId: z.string().optional(), // Can be optional - will auto-assign internal site if not provided
   images: z.array(z.string()).optional(),
   status: z.enum(["OPERATIVO", "EN_MANTENIMIENTO", "FUERA_DE_SERVICIO"]).optional(),
   manufacturer: z.string().optional(),
@@ -13,6 +13,7 @@ export const assetSchema = z.object({
   serialNumber: z.string().optional(),
   purchaseDate: z.string().optional(),
   estimatedLifespan: z.number().optional(),
+  operatingHours: z.number().int().min(0, "Las horas de operación deben ser mayor o igual a 0").optional(),
   category: z.string().optional(),
 })
 

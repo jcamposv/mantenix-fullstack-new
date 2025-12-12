@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { ClientCompanyRepository } from "../repositories/client-company.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { ClientCompanyFilters, PaginatedClientCompaniesResponse, ClientCompanyWithRelations } from "@/types/client-company.types"
 import type { CreateClientCompanyInput, UpdateClientCompanyInput } from "../../app/api/schemas/client-company-schemas"
@@ -21,11 +21,11 @@ export class ClientCompanyService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las empresas cliente
-    } else if (session.user.role === "ADMIN_EMPRESA") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa solo puede ver empresas cliente de su empresa
+      // Admin empresa/grupo solo puede ver empresas cliente de su empresa
       whereClause.tenantCompanyId = session.user.companyId
     } else {
       throw new Error("Rol no autorizado para gestionar empresas cliente")
@@ -65,17 +65,13 @@ export class ClientCompanyService {
    */
   static async getList(session: AuthenticatedSession, filters: ClientCompanyFilters, page: number, limit: number): Promise<PaginatedClientCompaniesResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_client_companies')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver empresas cliente")
-    }
+    await PermissionGuard.require(session, 'client_companies.view')
 
     const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { clientCompanies, total } = await ClientCompanyRepository.findMany(whereClause, page, limit)
+    const { items, total } = await ClientCompanyRepository.findMany(whereClause, page, limit)
 
     return {
-      clientCompanies,
+      items,
       total,
       page,
       limit,
@@ -88,11 +84,7 @@ export class ClientCompanyService {
    */
   static async getAll(session: AuthenticatedSession): Promise<ClientCompanyWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_client_companies')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver empresas cliente")
-    }
+    await PermissionGuard.require(session, 'client_companies.view')
 
     const whereClause = this.buildWhereClause(session)
     return await ClientCompanyRepository.findAll(whereClause)
@@ -103,9 +95,7 @@ export class ClientCompanyService {
    */
   static async create(clientCompanyData: CreateClientCompanyInput, session: AuthenticatedSession): Promise<ClientCompanyWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_client_company')) {
-      throw new Error("No tienes permisos para crear empresas cliente")
-    }
+    await PermissionGuard.require(session, 'client_companies.create')
 
     // Validar empresa tenant según el rol
     await this.validateTenantCompany(clientCompanyData, session)
@@ -134,9 +124,7 @@ export class ClientCompanyService {
    */
   static async update(id: string, clientCompanyData: UpdateClientCompanyInput, session: AuthenticatedSession): Promise<ClientCompanyWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_client_company')) {
-      throw new Error("No tienes permisos para actualizar empresas cliente")
-    }
+    await PermissionGuard.require(session, 'client_companies.update')
 
     // Verificar que la empresa cliente existe y se tiene acceso
     const existingClientCompany = await this.getById(id, session)
@@ -167,9 +155,7 @@ export class ClientCompanyService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<ClientCompanyWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_client_company')) {
-      throw new Error("No tienes permisos para eliminar empresas cliente")
-    }
+    await PermissionGuard.require(session, 'client_companies.delete')
 
     // Verificar que la empresa cliente existe y se tiene acceso
     const existingClientCompany = await ClientCompanyRepository.findWithRelatedData(id)
@@ -178,7 +164,7 @@ export class ClientCompanyService {
     }
 
     // Verificar permisos de acceso por rol
-    if (session.user.role === "ADMIN_EMPRESA") {
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId || existingClientCompany.tenantCompanyId !== session.user.companyId) {
         throw new Error("No tienes acceso a esta empresa cliente")
       }
@@ -203,8 +189,8 @@ export class ClientCompanyService {
   private static async validateTenantCompany(clientCompanyData: CreateClientCompanyInput, session: AuthenticatedSession): Promise<void> {
     let targetTenantCompanyId = clientCompanyData.tenantCompanyId
 
-    // Para admin empresa, forzar su propia empresa
-    if (session.user.role === "ADMIN_EMPRESA") {
+    // Para admin empresa/grupo, forzar su propia empresa
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }

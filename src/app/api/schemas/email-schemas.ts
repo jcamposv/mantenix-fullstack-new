@@ -30,6 +30,7 @@ export const emailConfigurationFiltersSchema = z.object({
 export const emailTemplateTypeEnum = z.enum([
   "WELCOME",
   "USER_INVITATION",
+  "PASSWORD_RESET",
   "WORK_ORDER_CREATED",
   "WORK_ORDER_COMPLETED",
   "WORK_ORDER_CANCELLED",

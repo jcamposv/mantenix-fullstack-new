@@ -37,8 +37,9 @@ export function useUserSites(): UseUserSitesReturn {
   const [error, setError] = useState<string | null>(null)
   const { user } = useCurrentUser()
 
-  const needsSiteSelection = user?.role === "SUPER_ADMIN" || 
-                            user?.role === "ADMIN_EMPRESA" || 
+  const needsSiteSelection = user?.role === "SUPER_ADMIN" ||
+                            user?.role === "ADMIN_EMPRESA" ||
+                            user?.role === "ADMIN_GRUPO" ||
                             user?.role === "CLIENTE_ADMIN_GENERAL"
 
   const currentUserSiteId = user?.siteId || null

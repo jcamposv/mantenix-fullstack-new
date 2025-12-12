@@ -1,6 +1,6 @@
 "use client"
 
-import { KPICard } from "./kpi-card"
+import { KPICard } from "./shared/kpi-card"
 import { 
   ClipboardList, 
   Clock, 

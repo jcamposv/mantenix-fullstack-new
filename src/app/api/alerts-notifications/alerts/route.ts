@@ -26,12 +26,58 @@ export async function GET(request: NextRequest) {
 
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las alertas
+    } else if (session.user.role === "ADMIN_GRUPO") {
+      // Admin de grupo puede ver alertas de todas las empresas del grupo
+      if (!session.user.companyId) {
+        return NextResponse.json({ error: "Usuario sin empresa asociada" }, { status: 400 })
+      }
+
+      // Obtener todas las empresas del grupo
+      const company = await prisma.company.findUnique({
+        where: { id: session.user.companyId },
+        include: {
+          companyGroup: {
+            include: {
+              companies: true
+            }
+          }
+        }
+      })
+
+      if (company?.companyGroup) {
+        const groupCompanyIds = company.companyGroup.companies.map(c => c.id)
+        whereClause.site = {
+          clientCompany: {
+            tenantCompanyId: {
+              in: groupCompanyIds
+            }
+          }
+        }
+      } else {
+        // Si no tiene grupo, ver solo alertas de su empresa
+        whereClause.site = {
+          clientCompany: {
+            tenantCompanyId: session.user.companyId
+          }
+        }
+      }
     } else if (session.user.role === "ADMIN_EMPRESA") {
       // Admin empresa puede ver alertas de todas las sedes de su empresa
       if (!session.user.companyId) {
         return NextResponse.json({ error: "Usuario sin empresa asociada" }, { status: 400 })
       }
-      
+
+      whereClause.site = {
+        clientCompany: {
+          tenantCompanyId: session.user.companyId
+        }
+      }
+    } else if (session.user.role === "JEFE_MANTENIMIENTO") {
+      // Jefe de mantenimiento ve alertas de su empresa
+      if (!session.user.companyId) {
+        return NextResponse.json({ error: "Usuario sin empresa asociada" }, { status: 400 })
+      }
+
       whereClause.site = {
         clientCompany: {
           tenantCompanyId: session.user.companyId
@@ -112,14 +158,12 @@ export async function GET(request: NextRequest) {
     const unreadCount = notifications.filter(n => !n.read).length
 
     return NextResponse.json({
-      notifications,
+      items: notifications,
       unreadCount,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      }
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     })
 
   } catch (error) {

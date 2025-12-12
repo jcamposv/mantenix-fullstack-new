@@ -1,4 +1,10 @@
-import type { Role } from "@prisma/client"
+import type { ComponentCriticality, FrequencyUnit } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
+import type { PaginatedResponse } from "@/types/common.types"
+import type { PermitStatus, PermitType } from "@/types/work-permit.types"
+import type { LOTOStatus } from "@/types/loto-procedure.types"
+import type { JSAStatus } from "@/types/job-safety-analysis.types"
+import type { RCAStatus, RCAType } from "@/types/root-cause-analysis.types"
 
 // Define JsonValue type since it's not exported from Prisma client
 type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
@@ -6,25 +12,33 @@ type JsonValue = string | number | boolean | null | { [key: string]: JsonValue }
 // Enum types from Prisma
 export type WorkOrderType = "PREVENTIVO" | "CORRECTIVO" | "REPARACION"
 export type WorkOrderPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
-export type WorkOrderStatus = "DRAFT" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+export type WorkOrderStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "ASSIGNED" | "IN_PROGRESS" | "PENDING_QA" | "COMPLETED" | "CANCELLED"
 
 // Base WorkOrder interface
 export interface WorkOrder {
   id: string
   number: string
+  prefixId: string | null
   title: string
   description: string | null
   type: WorkOrderType
   priority: WorkOrderPriority
   status: WorkOrderStatus
-  
+
   // Location and asset
-  siteId: string
+  siteId: string | null
   assetId: string | null
-  
+
+  // Predictive maintenance (PREDICTIVE_MAINTENANCE feature)
+  maintenanceComponentId: string | null
+
   // Template integration
   templateId: string | null
   customFieldValues: JsonValue | null
+  
+  // Recurring work orders
+  isRecurring: boolean
+  scheduleId: string | null
   
   // Dates
   scheduledDate: string | null
@@ -36,6 +50,16 @@ export interface WorkOrder {
   estimatedCost: number | null
   actualDuration: number | null
   actualCost: number | null
+  laborCost: number | null
+  partsCost: number | null
+  otherCosts: number | null
+  downtimeCost: number | null
+
+  // Time tracking detailed
+  activeWorkTime: number | null
+  waitingTime: number | null
+  diagnosticTime: number | null
+  travelTime: number | null
   
   // Instructions and resources
   instructions: string | null
@@ -46,6 +70,14 @@ export interface WorkOrder {
   // Final notes
   observations: string | null
   completionNotes: string | null
+  
+  // QA Sign-off (Workflow GAPS feature)
+  requiresQA: boolean
+  qaSignedOffBy: string | null
+  qaSignedOffAt: string | null
+  qaRejectedBy: string | null
+  qaRejectedAt: string | null
+  qaComments: string | null
   
   // Control and ownership
   companyId: string
@@ -81,6 +113,25 @@ export interface WorkOrderWithRelations extends WorkOrder {
     manufacturer: string | null
     model: string | null
     location: string | null
+    status: string
+  } | null
+  maintenanceComponent?: {
+    id: string
+    name: string
+    partNumber: string | null
+    criticality: ComponentCriticality | null
+    mtbf: number | null
+    lifeExpectancy: number | null
+    // Hybrid maintenance scheduling
+    manufacturerMaintenanceInterval: number | null
+    manufacturerMaintenanceIntervalUnit: FrequencyUnit | null
+    workOrderSchedule?: {
+      id: string
+      name: string
+      recurrenceType: string
+      nextGenerationDate: string | null
+      isActive: boolean
+    } | null
   } | null
   template?: {
     id: string
@@ -88,16 +139,102 @@ export interface WorkOrderWithRelations extends WorkOrder {
     category: string | null
     customFields: JsonValue | null
   } | null
+  prefix?: {
+    id: string
+    code: string
+    name: string
+  } | null
   creator?: {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
   } | null
   assignments?: WorkOrderAssignmentWithUser[]
+  comments?: Array<{
+    id: string
+    content: string
+    createdAt: string
+    author: {
+      id: string
+      name: string
+      email: string
+      avatar?: string | null
+    }
+  }>
+  maintenanceAlerts?: Array<{
+    id: string
+    componentName: string
+    assetName: string
+    partNumber: string | null
+    severity: 'CRITICAL' | 'WARNING' | 'INFO'
+    message: string
+    createdAt: string
+    resolvedAt: string | null
+    resolutionNotes: string | null
+    resolvedBy: {
+      id: string
+      name: string
+      email: string
+    } | null
+  }>
   _count?: {
     assignments?: number
   }
+  // Workflow integration (WORKFLOW_GAPS feature)
+  approvals?: Array<{
+    id: string
+    level: number
+    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    comments: string | null
+    approvedAt: string | null
+    rejectedAt: string | null
+    approvedByUser: {
+      id: string
+      name: string
+      email: string
+    } | null
+    createdAt: string
+  }>
+  workPermits?: Array<{
+    id: string
+    permitType: PermitType
+    status: PermitStatus
+    location: string
+    validFrom: string | null
+    validUntil: string | null
+  }>
+  lotoProcedures?: Array<{
+    id: string
+    status: LOTOStatus
+    appliedAt: string | null
+    releasedAt: string | null
+    asset: {
+      id: string
+      name: string
+      assetTag: string
+    } | null
+    lockSerialNumbers: string[]
+  }>
+  jobSafetyAnalyses?: Array<{
+    id: string
+    status: JSAStatus
+    preparer: {
+      id: string
+      name: string
+    } | null
+    jobSteps: unknown[]
+  }>
+  rootCauseAnalyses?: Array<{
+    id: string
+    failureMode: string
+    analysisType: RCAType
+    status: RCAStatus
+    analyzer: {
+      id: string
+      name: string
+    } | null
+  }>
 }
 
 // WorkOrderAssignment interface
@@ -115,7 +252,7 @@ export interface WorkOrderAssignmentWithUser extends WorkOrderAssignment {
     id: string
     name: string
     email: string
-    role: Role
+    role: SystemRoleKey
     image: string | null
   }
   assigner: {
@@ -132,8 +269,11 @@ export interface CreateWorkOrderData {
   type: WorkOrderType
   priority?: WorkOrderPriority
   status?: WorkOrderStatus
+  prefixId?: string
   siteId: string
   assetId?: string
+  maintenanceComponentId?: string
+  alertHistoryId?: string // Link to maintenance alert that triggered this WO
   templateId?: string
   customFieldValues?: Record<string, unknown>
   scheduledDate?: Date
@@ -155,6 +295,7 @@ export interface UpdateWorkOrderData {
   status?: WorkOrderStatus
   siteId?: string
   assetId?: string
+  maintenanceComponentId?: string
   templateId?: string
   customFieldValues?: Record<string, unknown>
   scheduledDate?: Date
@@ -164,10 +305,17 @@ export interface UpdateWorkOrderData {
   safetyNotes?: string
   tools?: string[]
   materials?: string[]
+  assignedUserIds?: string[]
   observations?: string
   completionNotes?: string
   actualDuration?: number
   actualCost?: number
+  // QA Sign-off fields
+  qaSignedOffBy?: string
+  qaSignedOffAt?: Date
+  qaRejectedBy?: string
+  qaRejectedAt?: Date
+  qaComments?: string
 }
 
 // Complete work order data interface
@@ -192,12 +340,20 @@ export interface WorkOrderFilters {
   createdByMe?: boolean
   scheduledDateFrom?: Date
   scheduledDateTo?: Date
+  createdAtFrom?: Date
+  createdAtTo?: Date
   search?: string
   isActive?: boolean
 }
 
 // Paginated response for work order lists
-export interface PaginatedWorkOrdersResponse {
+export type PaginatedWorkOrdersResponse = PaginatedResponse<WorkOrderWithRelations>
+
+/**
+ * @deprecated Use PaginatedWorkOrdersResponse instead. This type is kept for backward compatibility.
+ * Will be removed in a future version.
+ */
+export interface LegacyWorkOrdersResponse {
   workOrders: WorkOrderWithRelations[]
   total: number
   page: number
@@ -245,7 +401,11 @@ export interface WorkOrderFromTemplateData {
   materials?: string[]
 }
 
-// Response interface for API calls
+/**
+ * @deprecated Use PaginatedWorkOrdersResponse for paginated responses.
+ * This inconsistent type is kept for backward compatibility only.
+ * Will be removed in a future version.
+ */
 export interface WorkOrdersResponse {
   workOrders?: WorkOrderWithRelations[]
   items?: WorkOrderWithRelations[]

@@ -25,7 +25,7 @@ export const auth = betterAuth({
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-      domain: process.env.NODE_ENV === "production" ? ".mantenix.ai" : ".localhost",
+      domain: process.env.NODE_ENV === "production" ? ".mantenix.com" : ".localhost",
     },
   },
 
@@ -45,7 +45,7 @@ export const auth = betterAuth({
   
   // Trust origins for development
   trustedOrigins: process.env.NODE_ENV === "production" 
-    ? ["https://*.mantenix.ai"] 
+    ? ["https://*.mantenix.com"] 
     : [
         "http://localhost:3000", 
         "http://acme.localhost:3000",

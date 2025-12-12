@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { EmailConfigurationRepository } from "../repositories/email-configuration.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type {
   CreateEmailConfigurationData,
@@ -26,11 +26,11 @@ export class EmailConfigurationService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todas las configuraciones
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa puede ver solo la configuración de su empresa
+      // Admin empresa/grupo puede ver solo la configuración de su empresa
       whereClause.companyId = session.user.companyId
     } else {
       throw new Error("Rol no autorizado para gestionar configuraciones de email")
@@ -69,15 +69,13 @@ export class EmailConfigurationService {
     limit: number
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_email_configurations')) {
-      throw new Error("No tienes permisos para ver configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     const whereClause = this.buildWhereClause(session)
-    const { configurations, total } = await EmailConfigurationRepository.findMany(whereClause, page, limit)
+    const { items, total } = await EmailConfigurationRepository.findMany(whereClause, page, limit)
 
     return {
-      configurations,
+      items,
       total,
       page,
       limit,
@@ -93,9 +91,7 @@ export class EmailConfigurationService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_email_configuration')) {
-      throw new Error("No tienes permisos para crear configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar acceso a la company
     this.validateCompanyAccess(configData.companyId, session)
@@ -130,9 +126,7 @@ export class EmailConfigurationService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_email_configuration')) {
-      throw new Error("No tienes permisos para actualizar configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que la configuración existe y se tiene acceso
     const existingConfig = await this.getById(id, session)
@@ -158,9 +152,7 @@ export class EmailConfigurationService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_email_configuration')) {
-      throw new Error("No tienes permisos para eliminar configuraciones de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que la configuración existe y se tiene acceso
     const existingConfig = await this.getById(id, session)
@@ -179,7 +171,7 @@ export class EmailConfigurationService {
       return
     }
 
-    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+    if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
       if (session.user.companyId !== companyId) {
         throw new Error("No tienes acceso a esta empresa")
       }

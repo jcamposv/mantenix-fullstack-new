@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash2, Eye, UserX } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Eye, UserX, KeyRound, Printer } from "lucide-react"
 
 interface TableAction {
   label: string
@@ -71,4 +71,17 @@ export const createDeactivateAction = (onClick: () => void): TableAction => ({
   icon: UserX,
   onClick,
   variant: "destructive",
+})
+
+export const createResetPasswordAction = (onClick: () => void, disabled = false): TableAction => ({
+  label: "Resetear Contraseña",
+  icon: KeyRound,
+  onClick,
+  disabled,
+})
+
+export const createPrintAction = (onClick: () => void): TableAction => ({
+  label: "Imprimir",
+  icon: Printer,
+  onClick,
 })

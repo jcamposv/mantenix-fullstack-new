@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PermissionHelper } from "@/server/helpers/permission.helper";  
 
 export async function middleware(request: NextRequest) {
   try {
@@ -17,49 +16,82 @@ export async function middleware(request: NextRequest) {
     // Extract subdomain from request
     const host = request.headers.get('host') || ''
     const subdomain = host.split('.')[0]
-    
+
     // Skip validation for main domain (localhost or main domain)
     if (!subdomain || subdomain === 'localhost' || subdomain === host) {
       return NextResponse.next()
     }
 
-    // Get user with company info
+    // Get user with company info and role (all roles are now in CustomRole)
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { company: true }
+      include: {
+        role: {
+          select: {
+            key: true,
+            interfaceType: true
+          }
+        },
+        company: {
+          include: {
+            companyGroup: {
+              include: {
+                companies: true
+              }
+            }
+          }
+        }
+      }
     })
 
-    if (!user) {
+    if (!user || !user.role) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Role-based route protection
     const pathname = request.nextUrl.pathname
-    const mobileOnlyRoles = [PermissionHelper.ROLES.TECNICO, PermissionHelper.ROLES.SUPERVISOR, PermissionHelper.ROLES.CLIENTE_OPERARIO] as const
 
     // Super admins can access any subdomain and any route
-    if (user.role === 'SUPER_ADMIN') {
+    if (user.role.key === 'SUPER_ADMIN') {
+      // Redirect to super-admin dashboard if accessing root
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL('/super-admin/dashboard', request.url))
+      }
       return NextResponse.next()
+    }
+
+    // Group admins can access any subdomain within their corporate group
+    if (user.role.key === 'ADMIN_GRUPO' && user.company?.companyGroup) {
+      const groupSubdomains = user.company.companyGroup.companies.map(c => c.subdomain)
+      if (groupSubdomains.includes(subdomain)) {
+        return NextResponse.next()
+      }
     }
 
     // Regular users must access their company's subdomain
     if (user.company?.subdomain !== subdomain) {
       // Redirect to correct company subdomain
-      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.ai"
-      const correctUrl = process.env.NODE_ENV === 'production' 
+      const domainBase = process.env.NEXT_PUBLIC_DOMAIN_BASE || "mantenix.com"
+      const correctUrl = process.env.NODE_ENV === 'production'
         ? `https://${user.company?.subdomain}.${domainBase}${request.nextUrl.pathname}`
         : `http://${user.company?.subdomain}.localhost:3000${request.nextUrl.pathname}`
-      
+
       return NextResponse.redirect(new URL(correctUrl))
     }
 
-    // Check if mobile-only user is trying to access dashboard routes
-    if ((mobileOnlyRoles as readonly string[]).includes(user.role) && !pathname.startsWith('/mobile')) {
+    // Enforce interface restrictions based on role's interfaceType
+    const interfaceType = user.role.interfaceType
+
+    if (interfaceType === 'MOBILE' && !pathname.startsWith('/mobile')) {
+      // Mobile-only users must use /mobile
       return NextResponse.redirect(new URL("/mobile", request.url))
+    } else if (interfaceType === 'DASHBOARD' && pathname.startsWith('/mobile')) {
+      // Dashboard-only users cannot access /mobile
+      return NextResponse.redirect(new URL("/", request.url))
     }
 
-    // Admin users can access both dashboard and mobile routes
-    // No restriction needed for admin users accessing mobile
+    // BOTH: User can access any interface
+    // No restriction needed
 
     return NextResponse.next()
   } catch (error) {

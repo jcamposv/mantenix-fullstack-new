@@ -30,14 +30,14 @@ export function useAlerts(): UseAlertsReturn {
   const { user } = useCurrentUser()
   const eventSourceRef = useRef<EventSource | null>(null)
 
-  // Fetch alerts from API
+  // Fetch alerts from API (memoized to prevent recreating on every render)
   const fetchAlerts = useCallback(async () => {
     if (!user) return
 
     try {
       setLoading(true)
       const response = await fetch('/api/alerts-notifications/alerts')
-      
+
       if (response.ok) {
         const data = await response.json()
         setAlerts(data.notifications)
@@ -50,11 +50,12 @@ export function useAlerts(): UseAlertsReturn {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Only depend on user ID, not the entire user object
 
   // Server-Sent Events connection for real-time updates
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
 
     let reconnectTimeout: NodeJS.Timeout
 

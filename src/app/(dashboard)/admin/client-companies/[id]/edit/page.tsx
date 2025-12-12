@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ClientCompanyForm } from "@/components/forms/client-company/client-company-form"
 import { toast } from "sonner"
+import { FormSkeleton } from "@/components/skeletons"
 
 export default function EditClientCompanyPage() {
   const [loading, setLoading] = useState(false)
@@ -72,20 +73,15 @@ export default function EditClientCompanyPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Cargando datos de la empresa cliente...</p>
-          </div>
-        </div>
+      <div className="container mx-auto py-0">
+        <FormSkeleton fields={6} showTitle={true} showFooter={true} />
       </div>
     )
   }
 
   if (!initialData) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-0">
         <div className="text-center">
           <p className="text-muted-foreground">No se pudieron cargar los datos de la empresa cliente.</p>
         </div>
@@ -94,7 +90,7 @@ export default function EditClientCompanyPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <ClientCompanyForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

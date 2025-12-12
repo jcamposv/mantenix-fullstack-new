@@ -29,7 +29,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -37,7 +37,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -45,7 +45,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         comments: {
@@ -55,7 +55,7 @@ export class AlertRepository {
                 id: true,
                 name: true,
                 email: true,
-                role: true
+                roleId: true
               }
             }
           },
@@ -89,7 +89,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -97,7 +97,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -105,7 +105,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         comments: {
@@ -115,7 +115,7 @@ export class AlertRepository {
                 id: true,
                 name: true,
                 email: true,
-                role: true
+                roleId: true
               }
             }
           },
@@ -127,7 +127,7 @@ export class AlertRepository {
     })
   }
 
-  static async findMany(whereClause: Prisma.AlertWhereInput, page: number, limit: number): Promise<{ alerts: AlertWithRelations[], total: number }> {
+  static async findMany(whereClause: Prisma.AlertWhereInput, page: number, limit: number): Promise<{ items: AlertWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [alerts, total] = await Promise.all([
@@ -152,7 +152,7 @@ export class AlertRepository {
               id: true,
               name: true,
               email: true,
-              role: true
+              roleId: true
             }
           },
           assignedTo: {
@@ -160,7 +160,7 @@ export class AlertRepository {
               id: true,
               name: true,
               email: true,
-              role: true
+              roleId: true
             }
           },
           _count: {
@@ -179,7 +179,7 @@ export class AlertRepository {
       prisma.alert.count({ where: whereClause })
     ])
 
-    return { alerts, total }
+    return { items: alerts, total }
   }
 
   static async create(data: Prisma.AlertCreateInput): Promise<AlertWithRelations> {
@@ -208,7 +208,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -216,7 +216,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -224,7 +224,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         }
       }
@@ -256,7 +256,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -264,7 +264,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -272,7 +272,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         }
       }
@@ -301,7 +301,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         assignedTo: {
@@ -309,7 +309,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         },
         resolvedBy: {
@@ -317,7 +317,7 @@ export class AlertRepository {
             id: true,
             name: true,
             email: true,
-            role: true
+            roleId: true
           }
         }
       }

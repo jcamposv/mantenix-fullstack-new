@@ -41,6 +41,31 @@ export function AdminUserBasicInfo({ control, mode, currentUserCompanyName }: Ad
             </FormItem>
           )}
         />
+
+        <FormField
+          control={control}
+          name="hourlyRate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tarifa por Hora (₡)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="20.00"
+                  {...field}
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                />
+              </FormControl>
+              <FormDescription>
+                Tarifa por hora para cálculo de costos de mano de obra (default: ₡20.00)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       {/* Password - only show when creating users directly */}

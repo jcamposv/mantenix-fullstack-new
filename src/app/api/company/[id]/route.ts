@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
 import { CompanyService } from "@/server/services/company.service"
-import type { AuthenticatedSession } from "@/types/auth.types"
+import { AuthService } from "@/server/services/auth.service"
 
 export const dynamic = 'force-dynamic'
 
@@ -11,13 +9,13 @@ export const GET = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    }) as AuthenticatedSession
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
+
+    const session = sessionResult
 
     const { id } = await params
     const company = await CompanyService.getBasicInfoById(session, id)

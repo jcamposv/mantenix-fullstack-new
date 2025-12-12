@@ -1,3 +1,5 @@
+import type { PaginatedResponse } from "@/types/common.types"
+
 // Enum types from Prisma
 export type EmailTemplateType =
   | "WELCOME"
@@ -8,6 +10,8 @@ export type EmailTemplateType =
   | "ALERT_CREATED"
   | "ALERT_ASSIGNED"
   | "ALERT_RESOLVED"
+  | "ALERT_ESCALATED"
+  | "PASSWORD_RESET"
 
 // Base EmailConfiguration interface
 export interface EmailConfiguration {
@@ -113,22 +117,10 @@ export interface EmailTemplateFilters {
 }
 
 // Paginated response for email configurations
-export interface PaginatedEmailConfigurationsResponse {
-  configurations: EmailConfigurationWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedEmailConfigurationsResponse = PaginatedResponse<EmailConfigurationWithRelations>
 
 // Paginated response for email templates
-export interface PaginatedEmailTemplatesResponse {
-  templates: EmailTemplateWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedEmailTemplatesResponse = PaginatedResponse<EmailTemplateWithRelations>
 
 // Email sending data
 export interface SendEmailData {
@@ -234,5 +226,25 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "resolved_at",
     "resolution_notes",
     "alert_url"
+  ],
+  ALERT_ESCALATED: [
+    "alert_title",
+    "alert_description",
+    "alert_type",
+    "alert_priority",
+    "site_name",
+    "location",
+    "reported_by_name",
+    "reported_at",
+    "escalation_reason",
+    "alert_url"
+  ],
+  PASSWORD_RESET: [
+    "user_name",
+    "user_email",
+    "admin_name",
+    "company_name",
+    "reset_link",
+    "expiration_date"
   ]
 }

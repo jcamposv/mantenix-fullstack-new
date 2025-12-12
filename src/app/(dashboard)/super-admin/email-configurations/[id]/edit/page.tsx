@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { EmailConfigurationForm } from "@/components/forms/email-configuration/email-configuration-form"
 import type { EmailConfigurationSubmitData } from "@/schemas/email-configuration"
 import { toast } from "sonner"
+import { FormSkeleton } from "@/components/skeletons"
 
 export default function EditEmailConfigurationPage() {
   const [loading, setLoading] = useState(false)
@@ -69,14 +70,14 @@ export default function EditEmailConfigurationPage() {
 
   if (loadingData) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="text-center">Cargando...</div>
+      <div className="container mx-auto py-0">
+        <FormSkeleton fields={6} showTitle={true} showFooter={true} />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <EmailConfigurationForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}

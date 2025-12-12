@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
@@ -9,6 +10,8 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 
 
 const getStatusBadgeVariant = (status: string) => {
@@ -35,10 +38,20 @@ const getStatusLabel = (status: string) => {
 
 export default function WorkOrderTemplatesPage() {
   const router = useRouter()
+  const { hasPermission } = usePermissions()
   const { data: templates, loading, refetch } = useTableData<WorkOrderTemplateWithRelations>({
     endpoint: '/api/work-order-templates',
     transform: (data) => (data as WorkOrderTemplatesResponse).templates || (data as WorkOrderTemplatesResponse).items || (data as WorkOrderTemplateWithRelations[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('work_orders.manage_templates')
+  const canEdit = hasPermission('work_orders.manage_templates')
+  const canDelete = hasPermission('work_orders.manage_templates')
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<WorkOrderTemplateWithRelations | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleAddTemplate = () => {
     router.push("/admin/work-order-templates/new")
@@ -48,25 +61,35 @@ export default function WorkOrderTemplatesPage() {
     router.push(`/admin/work-order-templates/${templateId}/edit`)
   }
 
-  const handleDelete = async (template: WorkOrderTemplateWithRelations) => {
-    if (confirm(`¿Está seguro que desea desactivar el template "${template.name}"?`)) {
-      try {
-        const response = await fetch(`/api/work-order-templates/${template.id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          toast.success(result.message || 'Template desactivado exitosamente')
-          refetch()
-        } else {
-          const error = await response.json()
-          toast.error(error.error || 'Error al desactivar el template')
-        }
-      } catch (error) {
-        console.error('Error deleting template:', error)
-        toast.error('Error al desactivar el template')
+  const handleDelete = (template: WorkOrderTemplateWithRelations) => {
+    setTemplateToDelete(template)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!templateToDelete) return
+
+    try {
+      setIsDeleting(true)
+      const response = await fetch(`/api/work-order-templates/${templateToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(result.message || 'Template desactivado exitosamente')
+        setDeleteDialogOpen(false)
+        setTemplateToDelete(null)
+        refetch()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Error al desactivar el template')
       }
+    } catch (error) {
+      console.error('Error deleting template:', error)
+      toast.error('Error al desactivar el template')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -146,17 +169,17 @@ export default function WorkOrderTemplatesPage() {
       cell: ({ row }) => {
         const template = row.original
         const actions = [
-          createEditAction(() => handleEdit(template.id)),
-          createDeleteAction(() => handleDelete(template))
+          ...(canEdit ? [createEditAction(() => handleEdit(template.id))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(template))] : [])
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
   ]
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-0">
       <DataTable
         columns={columns}
         data={templates}
@@ -164,9 +187,20 @@ export default function WorkOrderTemplatesPage() {
         searchPlaceholder="Buscar templates..."
         title="Templates de Órdenes de Trabajo"
         description="Gestionar templates para crear órdenes de trabajo estandarizadas"
-        onAdd={handleAddTemplate}
-        addLabel="Crear Template"
+        {...(canCreate && { onAdd: handleAddTemplate, addLabel: "Crear Template" })}
         loading={loading}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Desactivar Template"
+        description={`¿Está seguro que desea desactivar el template "${templateToDelete?.name}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        loading={isDeleting}
       />
     </div>
   )

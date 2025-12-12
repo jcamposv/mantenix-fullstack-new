@@ -3,14 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Control } from "react-hook-form"
 import { AdminUserFormData, EXTERNAL_ROLES } from "@/schemas/admin-user"
-
-interface ClientCompany {
-  id: string
-  name: string
-  companyId: string
-  email: string
-  contactName: string
-}
+import type { ClientCompany } from "@/hooks/useClientCompanies"
 
 interface Site {
   id: string
@@ -31,6 +24,7 @@ interface AdminUserExternalProps {
   sites: Site[]
   loadingClientCompanies: boolean
   loadingSites: boolean
+  hasExternalClientMgmt?: boolean
 }
 
 export function AdminUserExternal({
@@ -41,8 +35,14 @@ export function AdminUserExternal({
   clientCompanies,
   sites,
   loadingClientCompanies,
-  loadingSites
+  loadingSites,
+  hasExternalClientMgmt = false
 }: AdminUserExternalProps) {
+  // Don't render anything if external client management is not enabled
+  if (!hasExternalClientMgmt) {
+    return null
+  }
+
   // Check if selected role requires site assignment
   const roleRequiresSite = EXTERNAL_ROLES.find(role => role.value === selectedRole)?.requiresSite || false
   return (
@@ -100,7 +100,9 @@ export function AdminUserExternal({
                         <div>
                           <div className="font-medium">{clientCompany.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            Contacto: {clientCompany.contactName} • {clientCompany.email}
+                            {clientCompany.contactName && clientCompany.email
+                              ? `Contacto: ${clientCompany.contactName} • ${clientCompany.email}`
+                              : clientCompany.contactName || clientCompany.email || ''}
                           </div>
                         </div>
                       </SelectItem>

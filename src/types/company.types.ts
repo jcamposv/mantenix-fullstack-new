@@ -1,10 +1,20 @@
 import type { Company, Tier } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 export interface CompanyWithRelations extends Company {
   _count?: {
     users: number
     clientCompanies: number
   }
+  subscription?: {
+    id: string
+    planId: string
+    plan: {
+      id: string
+      name: string
+      tier: string
+    }
+  } | null
 }
 
 export interface CompanyBranding {
@@ -29,6 +39,7 @@ export interface CreateCompanyData {
   name: string
   subdomain: string
   tier?: Tier
+  planId?: string
   primaryColor?: string
   secondaryColor?: string
   backgroundColor?: string
@@ -41,6 +52,7 @@ export interface UpdateCompanyData {
   name?: string
   subdomain?: string
   tier?: Tier
+  planId?: string
   primaryColor?: string
   secondaryColor?: string
   backgroundColor?: string
@@ -58,10 +70,4 @@ export interface CompanyFilters {
   search?: string
 }
 
-export interface PaginatedCompaniesResponse {
-  companies: CompanyWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedCompaniesResponse = PaginatedResponse<CompanyWithRelations>

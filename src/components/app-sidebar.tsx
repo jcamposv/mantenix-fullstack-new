@@ -14,14 +14,17 @@ import {
 } from "@/components/ui/sidebar"
 import { useSidebarData, type AppSidebarProps } from "@/components/sidebar"
 
+
 interface ExtendedAppSidebarProps extends AppSidebarProps, React.ComponentProps<typeof Sidebar> {}
 
-export function AppSidebar({ 
-  companyBranding, 
+export function AppSidebar({
+  companyBranding,
   availableCompanies,
   serverUser,
   userPermissions,
-  ...props 
+  companyFeatures,
+  serverUserPermissions,
+  ...props
 }: ExtendedAppSidebarProps) {
   const {
     currentUser,
@@ -29,27 +32,31 @@ export function AppSidebar({
     adminItems,
     companyInfo,
     isSuperAdmin,
+    isGroupAdmin,
     isCompanyAdmin,
     loading,
-  } = useSidebarData({ 
-    companyBranding, 
-    serverUser, 
-    userPermissions 
+  } = useSidebarData({
+    companyBranding,
+    serverUser,
+    userPermissions,
+    companyFeatures,
+    serverUserPermissions,
   })
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher 
+        <TeamSwitcher
           company={companyInfo}
-          availableCompanies={isSuperAdmin ? availableCompanies : null}
+          availableCompanies={(isSuperAdmin || isGroupAdmin) ? availableCompanies : null}
           isSuperAdmin={isSuperAdmin}
+          isGroupAdmin={isGroupAdmin}
         />
       </SidebarHeader>
-      
+
       <SidebarContent>
         <NavMain items={navItems} />
-        {(isSuperAdmin || isCompanyAdmin) && <NavProjects projects={adminItems} />}
+        {(isSuperAdmin || isGroupAdmin || isCompanyAdmin) && <NavProjects projects={adminItems} />}
       </SidebarContent>
       
       <SidebarFooter>

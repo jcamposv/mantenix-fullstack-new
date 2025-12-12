@@ -1,48 +1,55 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { WorkOrderForm } from "@/components/work-orders/work-order-form"
 import { WorkOrderFormAdvanced } from "@/components/work-orders/work-order-form-advanced"
 import { createWorkOrderSchema } from "@/schemas/work-order"
 import type { CreateWorkOrderData } from "@/types/work-order.types"
-import type { WorkOrderTemplateWithRelations } from "@/types/work-order-template.types"
-
-interface Site {
-  id: string
-  name: string
-}
-
-interface Asset {
-  id: string
-  name: string
-  code: string
-}
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-}
+import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
+import { useUsers } from "@/hooks/useUsers"
+import { useSites } from "@/hooks/useSites"
+import { useAssets } from "@/hooks/useAssets"
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates"
+import { useActivePrefixes } from "@/hooks/useWorkOrderPrefixes"
+import {
+  useMaintenanceComponent,
+  generateMaintenanceWorkOrderTitle,
+  generateMaintenanceWorkOrderDescription,
+  getMaintenancePriority,
+} from "@/hooks/use-maintenance-component"
+import { useState } from "react"
+import { Loader2 } from "lucide-react"
 
 export function NewWorkOrderContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const templateId = searchParams.get('templateId')
+  const componentId = searchParams.get('componentId')
+  const alertHistoryId = searchParams.get('alertHistoryId') // Link to maintenance alert
   const [loading, setLoading] = useState(false)
-  const [sites, setSites] = useState<Site[]>([])
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [templates, setTemplates] = useState<WorkOrderTemplateWithRelations[]>([])
   const [activeTab, setActiveTab] = useState("basic")
+
+  // Get company features
+  const { hasExternalClientMgmt } = useCompanyFeatures()
+
+  // Fetch maintenance component data if componentId is provided
+  const { component, isLoading: isLoadingComponent, isFeatureEnabled } = useMaintenanceComponent({
+    componentId,
+  })
+
+  // Use all optimized hooks with SWR
+  const { users } = useUsers()
+  const { sites } = useSites()
+  const { assets } = useAssets()
+  const { templates } = useWorkOrderTemplates()
+  const { prefixes } = useActivePrefixes()
 
   const form = useForm<CreateWorkOrderData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,6 +61,8 @@ export function NewWorkOrderContent() {
       priority: "MEDIUM",
       siteId: "",
       assetId: "",
+      maintenanceComponentId: componentId || undefined,
+      alertHistoryId: alertHistoryId || undefined, // Link to maintenance alert
       templateId: templateId || "",
       customFieldValues: {},
       instructions: "",
@@ -64,44 +73,7 @@ export function NewWorkOrderContent() {
     }
   })
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [sitesRes, assetsRes, usersRes, templatesRes] = await Promise.all([
-          fetch('/api/admin/sites'),
-          fetch('/api/admin/assets'),
-          fetch('/api/admin/users'),
-          fetch('/api/work-order-templates')
-        ])
-
-        if (sitesRes.ok) {
-          const sitesData = await sitesRes.json()
-          setSites(sitesData.sites || sitesData.items || [])
-        }
-
-        if (assetsRes.ok) {
-          const assetsData = await assetsRes.json()
-          setAssets(assetsData.assets || assetsData.items || [])
-        }
-
-        if (usersRes.ok) {
-          const usersData = await usersRes.json()
-          setUsers(usersData.users || usersData.items || [])
-        }
-
-        if (templatesRes.ok) {
-          const templatesData = await templatesRes.json()
-          setTemplates(templatesData.templates || templatesData.items || [])
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        toast.error('Error al cargar los datos necesarios')
-      }
-    }
-
-    fetchData()
-  }, [])
-
+  // Auto-populate title from template if available
   useEffect(() => {
     if (templateId && templates.length > 0) {
       const template = templates.find(t => t.id === templateId)
@@ -112,6 +84,16 @@ export function NewWorkOrderContent() {
       }
     }
   }, [templateId, templates, form])
+
+  // Auto-populate from maintenance component if available (PREDICTIVE_MAINTENANCE feature)
+  useEffect(() => {
+    if (component && isFeatureEnabled && !form.getValues("title")) {
+      form.setValue("title", generateMaintenanceWorkOrderTitle(component))
+      form.setValue("description", generateMaintenanceWorkOrderDescription(component))
+      form.setValue("priority", getMaintenancePriority(component.criticality))
+      form.setValue("type", "PREVENTIVO")
+    }
+  }, [component, isFeatureEnabled, form])
 
   const handleSubmit = async (data: CreateWorkOrderData): Promise<void> => {
     try {
@@ -169,6 +151,7 @@ export function NewWorkOrderContent() {
           priority: formData.priority,
           instructions: formData.instructions,
           safetyNotes: formData.safetyNotes,
+          alertHistoryId: alertHistoryId, // Link to maintenance alert
           tools: formData.tools,
           materials: formData.materials
         })
@@ -192,7 +175,12 @@ export function NewWorkOrderContent() {
 
   const isBasicFormValid = () => {
     const { title, type, siteId, assignedUserIds } = form.getValues()
-    return title && type && siteId && assignedUserIds?.length > 0
+    // If EXTERNAL_CLIENT_MANAGEMENT is enabled, siteId is required
+    // Otherwise, only title, type, and assignedUserIds are required
+    if (hasExternalClientMgmt) {
+      return title && type && siteId && assignedUserIds?.length > 0
+    }
+    return title && type && assignedUserIds?.length > 0
   }
 
   return (
@@ -201,11 +189,18 @@ export function NewWorkOrderContent() {
         <div>
           <h1 className="text-2xl font-bold">Nueva Orden de Trabajo</h1>
           <p className="text-muted-foreground">
-            {templateId 
-              ? "Crear orden de trabajo usando template seleccionado"
-              : "Crear una nueva orden de trabajo para mantenimiento"
+            {component && isFeatureEnabled
+              ? `Orden de mantenimiento preventivo para: ${component.name}`
+              : templateId
+                ? "Crear orden de trabajo usando template seleccionado"
+                : "Crear una nueva orden de trabajo para mantenimiento"
             }
           </p>
+          {isLoadingComponent && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Cargando información del componente...
+            </p>
+          )}
         </div>
       </div>
 
@@ -218,6 +213,10 @@ export function NewWorkOrderContent() {
                 sites={sites}
                 assets={assets}
                 templates={templates}
+                initialData={{
+                  templateId: templateId
+                }}
+                prefixes={prefixes}
               />
 
               <WorkOrderFormAdvanced
@@ -261,6 +260,7 @@ export function NewWorkOrderContent() {
                   sites={sites}
                   assets={assets}
                   templates={templates}
+                  prefixes={prefixes}
                 />
 
                 <div className="flex justify-end">

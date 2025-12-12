@@ -5,35 +5,67 @@
 
 import { useMemo } from "react"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
-import { useUserRole } from "@/hooks/useUserRole"
+import { useFilteredNavigation } from "@/hooks/useFilteredNavigation"
+import { parseCompanyFeatures } from "@/lib/features"
 import type { CompanyBranding } from "@/types/branding"
-import type { ServerUser, UserPermissions } from "./sidebar-types"
-import { BASE_NAV_ITEMS, CLIENT_NAV_ITEMS, ADMIN_NAV_ITEMS, FALLBACK_USER } from "./navigation-config"
+import type { ServerUser, UserPermissions, CompanyFeature } from "./sidebar-types"
+import {
+  MAIN_NAV_ITEMS,
+  SUPER_ADMIN_NAV_ITEMS,
+  CLIENT_NAV_ITEMS,
+  buildAdminNavigation,
+  getMainFeatureNavItems,
+  mergeNavigationItems,
+} from "@/lib/navigation"
 import { getInitials, getAvatarUrl } from "./sidebar-utils"
+
+const FALLBACK_USER = {
+  name: "Usuario",
+  email: "user@example.com",
+  avatar: "/avatars/default.jpg",
+  initials: "U",
+}
 
 interface UseSidebarDataProps {
   companyBranding?: CompanyBranding | null
   serverUser?: ServerUser | null
   userPermissions?: UserPermissions
+  companyFeatures?: CompanyFeature[] | null
+  serverUserPermissions?: string[] | null
 }
 
-export function useSidebarData({ companyBranding, serverUser, userPermissions }: UseSidebarDataProps) {
+export function useSidebarData({ companyBranding, serverUser, userPermissions, companyFeatures, serverUserPermissions }: UseSidebarDataProps) {
   const { user, loading } = useCurrentUser()
-  const { isSuperAdmin: clientIsSuperAdmin, isCompanyAdmin: clientIsCompanyAdmin } = useUserRole()
-  
-  // Use server-side data when available, fallback to client-side
-  const isSuperAdmin = userPermissions?.isSuperAdmin ?? clientIsSuperAdmin
-  const isCompanyAdmin = userPermissions?.isCompanyAdmin ?? clientIsCompanyAdmin
+
+  // Use server-side data when available, fallback to client-side (from useCurrentUser)
+  const isSuperAdmin = userPermissions?.isSuperAdmin ?? user?.isSuperAdmin ?? false
+  const isGroupAdmin = userPermissions?.isGroupAdmin ?? user?.isGroupAdmin ?? false
+  const isCompanyAdmin = userPermissions?.isCompanyAdmin ?? user?.isCompanyAdmin ?? false
   const effectiveUser = serverUser ?? user
   const effectiveLoading = serverUser ? false : loading
+
+  // Parse company features using centralized helper
+  const featureFlags = parseCompanyFeatures(companyFeatures)
+  const {
+    hasAttendance,
+    hasTimeOff,
+    hasExternalClientMgmt,
+    hasInternalCorporateGroup,
+    hasPredictiveMaintenance
+  } = featureFlags
 
   // Debug logs
   if (process.env.NODE_ENV === 'development') {
     console.log('Sidebar Data:', {
       isSuperAdmin,
+      isGroupAdmin,
       isCompanyAdmin,
-      userRole: user?.role,
-      hasUser: !!user,
+      userRole: effectiveUser?.role,
+      hasUser: !!effectiveUser,
+      serverUser: !!serverUser,
+      userPermissions,
+      hasExternalClientMgmt,
+      hasInternalCorporateGroup,
     })
   }
 
@@ -57,28 +89,64 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions }:
            role === "CLIENTE_OPERARIO"
   }, [effectiveUser?.role])
 
-  // Navigation items - use CLIENT_NAV_ITEMS for external users
-  const navItems = useMemo(() => {
-    return isExternalUser ? CLIENT_NAV_ITEMS : BASE_NAV_ITEMS
-  }, [isExternalUser])
+  // Generate feature navigation items based on enabled features
+  const featureNavItems = useMemo(() => {
+    // Don't show feature items for external users or super admins
+    if (isExternalUser || isSuperAdmin) return []
 
-  // Admin items (for super admin and company admin only, not for external users)
+    const items = getMainFeatureNavItems({
+      hasAttendance,
+      hasTimeOff,
+      hasPredictiveMaintenance,
+    })
+
+    return items
+  }, [isExternalUser, isSuperAdmin, hasAttendance, hasTimeOff, hasPredictiveMaintenance])
+
+  // Navigation items - different items based on user role
+  const navItems = useMemo(() => {
+    // SUPER_ADMIN gets minimal nav items (no operational features)
+    if (isSuperAdmin) {
+      return SUPER_ADMIN_NAV_ITEMS
+    }
+
+    // External clients get their own nav items
+    if (isExternalUser) {
+      return CLIENT_NAV_ITEMS
+    }
+
+    // Regular users: merge main nav with feature items
+    return mergeNavigationItems(MAIN_NAV_ITEMS, featureNavItems)
+  }, [isSuperAdmin, isExternalUser, featureNavItems])
+
+  // Admin items (for super admin, group admin and company admin only, not for external users)
   const adminItems = useMemo(() => {
     if (isExternalUser) return []
 
-    if (isSuperAdmin) {
-      // Super admins can see items marked as SUPER_ADMIN or BOTH
-      return ADMIN_NAV_ITEMS.filter(item =>
-        item.role === "SUPER_ADMIN" || item.role === "BOTH"
-      )
-    } else if (isCompanyAdmin) {
-      // Company admins can see items marked as ADMIN_EMPRESA or BOTH
-      return ADMIN_NAV_ITEMS.filter(item =>
-        item.role === "ADMIN_EMPRESA" || item.role === "BOTH"
+    // For regular company/group admins: use new navigation system
+    if (!isSuperAdmin) {
+      const groups = buildAdminNavigation({
+        hasExternalClientMgmt,
+        hasAttendance,
+        hasTimeOff,
+      })
+
+      // Flatten groups and map to NavProjects expected format
+      return groups.flatMap(group =>
+        group.items.map(item => ({
+          name: item.title,
+          url: item.url,
+          icon: item.icon,
+          items: item.items,
+        }))
       )
     }
+
+    // For super admins: use SUPER_ADMIN_PANEL_GROUPS
+    // Import this from the new navigation system if needed
+    // For now, return empty as super admin has their own dashboard
     return []
-  }, [isSuperAdmin, isCompanyAdmin, isExternalUser])
+  }, [isSuperAdmin, isExternalUser, hasExternalClientMgmt, hasAttendance, hasTimeOff])
 
   // Company info for TeamSwitcher
   const companyInfo = useMemo(() => ({
@@ -88,12 +156,19 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions }:
     plan: "Enterprise", // Can be made dynamic based on company tier
   }), [companyBranding, effectiveUser])
 
+  // Apply permission-based and feature-based filtering to navigation items
+  // Pass server permissions to avoid client-side fetch delay
+  // Pass feature flags to filter items with requiresFeature
+  const filteredNavItems = useFilteredNavigation(navItems, serverUserPermissions, featureFlags)
+  const filteredAdminItems = useFilteredNavigation(adminItems, serverUserPermissions, featureFlags)
+
   return {
     currentUser,
-    navItems,
-    adminItems,
+    navItems: filteredNavItems,
+    adminItems: filteredAdminItems,
     companyInfo,
     isSuperAdmin,
+    isGroupAdmin,
     isCompanyAdmin,
     isExternalUser,
     loading: effectiveLoading,

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { EmailTemplateRepository } from "../repositories/email-template.repository"
 import { EmailConfigurationRepository } from "../repositories/email-configuration.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type {
   EmailTemplateType,
@@ -33,11 +33,11 @@ export class EmailTemplateService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los templates
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
       if (!session.user.companyId) {
         throw new Error("Usuario sin empresa asociada")
       }
-      // Admin empresa puede ver templates de su company
+      // Admin empresa/grupo puede ver templates de su company
       whereClause.emailConfiguration = {
         is: {
           companyId: session.user.companyId
@@ -91,7 +91,7 @@ export class EmailTemplateService {
 
     // Validar acceso
     if (session.user.role !== "SUPER_ADMIN") {
-      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
         if (config.companyId !== session.user.companyId) {
           throw new Error("No tienes acceso a esta configuración")
         }
@@ -113,15 +113,13 @@ export class EmailTemplateService {
     limit: number
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'view_email_templates')) {
-      throw new Error("No tienes permisos para ver templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
-    const { templates, total } = await EmailTemplateRepository.findMany(whereClause, page, limit)
+    const { items, total } = await EmailTemplateRepository.findMany(whereClause, page, limit)
 
     return {
-      templates,
+      items,
       total,
       page,
       limit,
@@ -144,7 +142,7 @@ export class EmailTemplateService {
 
     // Validar acceso
     if (session.user.role !== "SUPER_ADMIN") {
-      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
         if (config.companyId !== session.user.companyId) {
           throw new Error("No tienes acceso a esta configuración")
         }
@@ -164,9 +162,7 @@ export class EmailTemplateService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_email_template')) {
-      throw new Error("No tienes permisos para crear templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar acceso a la configuración
     const config = await EmailConfigurationRepository.findById(templateData.emailConfigurationId)
@@ -176,7 +172,7 @@ export class EmailTemplateService {
 
     // Validar acceso
     if (session.user.role !== "SUPER_ADMIN") {
-      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
+      if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO" || session.user.role === "SUPERVISOR" || session.user.role === "TECNICO") {
         if (config.companyId !== session.user.companyId) {
           throw new Error("No tienes acceso a esta configuración")
         }
@@ -217,9 +213,7 @@ export class EmailTemplateService {
     session: AuthenticatedSession
   ) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_email_template')) {
-      throw new Error("No tienes permisos para actualizar templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que el template existe y se tiene acceso
     const existingTemplate = await this.getById(id, session)
@@ -243,9 +237,7 @@ export class EmailTemplateService {
    */
   static async delete(id: string, session: AuthenticatedSession) {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_email_template')) {
-      throw new Error("No tienes permisos para eliminar templates de email")
-    }
+    await PermissionGuard.require(session, 'email_settings.manage')
 
     // Verificar que el template existe y se tiene acceso
     const existingTemplate = await this.getById(id, session)

@@ -3,13 +3,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Control } from "react-hook-form"
 import { SiteFormData } from "@/schemas/site"
-
-interface ClientCompany {
-  id: string
-  name: string
-  companyId: string
-  contactName: string | null
-}
+import type { ClientCompany } from "@/hooks/useClientCompanies"
 
 interface SiteBasicInfoProps {
   control: Control<SiteFormData>
@@ -60,9 +54,11 @@ export function SiteBasicInfo({ control, clientCompanies, loadingClientCompanies
                     <SelectItem key={company.id} value={company.id}>
                       <div>
                         <div className="font-medium">{company.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          ID: {company.companyId}
-                        </div>
+                        {company.companyId && (
+                          <div className="text-sm text-muted-foreground">
+                            ID: {company.companyId}
+                          </div>
+                        )}
                       </div>
                     </SelectItem>
                   ))

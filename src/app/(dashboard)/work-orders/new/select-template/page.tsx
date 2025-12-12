@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { User, Settings, FileText, Plus, Search, LayoutTemplate, Clock } from "l
 import { useTableData } from "@/components/hooks/use-table-data"
 import { TemplatePreviewModal } from "@/components/work-orders/template-preview-modal"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
+import { CardListSkeleton } from "@/components/skeletons"
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
@@ -36,21 +37,36 @@ const getStatusLabel = (status: string) => {
 
 export default function SelectTemplatePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTemplate, setSelectedTemplate] = useState<WorkOrderTemplateWithRelations | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  
+
+  // Preserve query params from maintenance alerts
+  const componentId = searchParams.get('componentId')
+  const alertHistoryId = searchParams.get('alertHistoryId')
+
   const { data: templates, loading } = useTableData<WorkOrderTemplateWithRelations>({
     endpoint: '/api/work-order-templates',
     transform: (data) => (data as WorkOrderTemplatesResponse).templates || (data as WorkOrderTemplatesResponse).items || (data as WorkOrderTemplateWithRelations[]) || []
   })
 
+  const buildQueryParams = (templateId?: string) => {
+    const params = new URLSearchParams()
+    if (templateId) params.append('templateId', templateId)
+    if (componentId) params.append('componentId', componentId)
+    if (alertHistoryId) params.append('alertHistoryId', alertHistoryId)
+    return params.toString()
+  }
+
   const handleSelectTemplate = (templateId: string) => {
-    router.push(`/work-orders/new?templateId=${templateId}`)
+    const queryString = buildQueryParams(templateId)
+    router.push(`/work-orders/new?${queryString}`)
   }
 
   const handleCreateWithoutTemplate = () => {
-    router.push("/work-orders/new")
+    const queryString = buildQueryParams()
+    router.push(`/work-orders/new${queryString ? `?${queryString}` : ''}`)
   }
 
   const handleViewTemplate = (template: WorkOrderTemplateWithRelations) => {
@@ -64,20 +80,20 @@ export default function SelectTemplatePage() {
   }
 
   // Filter templates based on search term
-  const filteredTemplates = templates.filter(template =>
+  const filteredTemplates = templates.filter((template: WorkOrderTemplateWithRelations) =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.category?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const activeTemplates = filteredTemplates.filter(template => template.status === "ACTIVE")
+  const activeTemplates = filteredTemplates.filter((template: WorkOrderTemplateWithRelations) => template.status === "ACTIVE")
 
   return (
-    <div className="container mx-auto py-6 max-w-7xl">
+    <div className="container mx-auto py-0 max-w-7xl">
       <div className="mb-6">      
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Seleccionar Template</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Seleccionar Template</h1>
             <p className="text-muted-foreground mt-2">
               Elige un template para acelerar la creación de tu orden de trabajo
             </p>
@@ -99,25 +115,7 @@ export default function SelectTemplatePage() {
 
         {/* Templates grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-muted rounded"></div>
-                    <div className="h-3 bg-muted rounded w-2/3"></div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <div className="h-8 bg-muted rounded w-full"></div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <CardListSkeleton count={6} showFooter={true} showHeader={true} />
         ) : (
           <div>
             {activeTemplates.length === 0 ? (
@@ -174,7 +172,7 @@ export default function SelectTemplatePage() {
                     </CardFooter>
                   </Card>
 
-                  {activeTemplates.map((template) => {
+                  {activeTemplates.map((template: WorkOrderTemplateWithRelations) => {
                     const fieldsCount = (template.customFields as { fields?: unknown[] })?.fields?.length || 0
                     
                     return (

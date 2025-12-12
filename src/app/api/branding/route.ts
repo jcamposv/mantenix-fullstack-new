@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
+import { auditCompanyAction } from "@/lib/audit"
 
 export const dynamic = 'force-dynamic'
 
@@ -167,10 +168,25 @@ export async function PUT(request: NextRequest) {
         tier: true,
       },
     })
-    
-    // TODO: Create audit log for branding update
-    // await auditCompanyAction(companyId, userId, 'branding_updated', ...)
-    
+
+    // Create audit log for branding update
+    const ipAddress = headersList.get("x-forwarded-for") ||
+                     headersList.get("x-real-ip") ||
+                     "unknown"
+    const userAgent = headersList.get("user-agent") || undefined
+
+    await auditCompanyAction(
+      companyId,
+      userId,
+      'branding_updated',
+      ipAddress,
+      userAgent,
+      JSON.stringify({
+        updatedFields: Object.keys(validatedData.data),
+        newValues: validatedData.data
+      })
+    )
+
     return NextResponse.json({
       message: "Branding updated successfully",
       company: updatedCompany,
@@ -207,8 +223,8 @@ function extractSubdomainFromUrl(url: string): string | null {
       return null
     }
     
-    // Production - mantenix.ai
-    if (hostname.includes("mantenix.ai")) {
+    // Production - mantenix.com
+    if (hostname.includes("mantenix.com")) {
       const parts = hostname.split(".")
       if (parts.length > 2 && parts[0] !== "www") {
         return parts[0]
