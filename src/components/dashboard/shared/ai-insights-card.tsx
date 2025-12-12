@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,44 +18,154 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
-import { useAIInsights } from "@/hooks/use-ai-insights"
+
+const COOLDOWN_DURATION = 2 * 60 * 1000 // 2 minutes in milliseconds
+const COOLDOWN_KEY = 'ai-insights-last-generated'
+
+interface AIInsight {
+  type: 'trend' | 'alert' | 'recommendation' | 'prediction'
+  title: string
+  description: string
+  severity?: 'info' | 'warning' | 'critical'
+  impact?: 'low' | 'medium' | 'high'
+  actionable?: boolean
+}
 
 interface AIInsightsCardProps {
   dateRange?: DateRange
 }
 
 export function AIInsightsCard({ dateRange }: AIInsightsCardProps) {
-  const {
-    data: insights,
-    error,
-    isLoading: loading,
-    generate,
-    isOnCooldown,
-    cooldownRemaining,
-    isFeatureEnabled,
-    hasGenerated,
-  } = useAIInsights({ dateRange })
+  const [insights, setInsights] = useState<{
+    summary: string
+    insights: AIInsight[]
+  } | null>(null)
+  const [loading, setLoading] = useState(false) // Don't auto-load
+  const [error, setError] = useState<string | null>(null)
+  const [canGenerate, setCanGenerate] = useState<boolean | null>(null) // null = checking, true = enabled, false = disabled
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0)
+  const [hasGenerated, setHasGenerated] = useState(false)
 
-  // Handle generate button click
-  const handleGenerate = async () => {
+  // Check cooldown status
+  const checkCooldown = useCallback(() => {
+    const lastGenerated = localStorage.getItem(COOLDOWN_KEY)
+    if (!lastGenerated) return 0
+
+    const timeSinceLastGeneration = Date.now() - parseInt(lastGenerated)
+    const remaining = COOLDOWN_DURATION - timeSinceLastGeneration
+
+    return remaining > 0 ? remaining : 0
+  }, [])
+
+  // Update cooldown timer
+  useEffect(() => {
+    const updateCooldown = () => {
+      const remaining = checkCooldown()
+      setCooldownRemaining(remaining)
+
+      if (remaining > 0) {
+        setHasGenerated(true)
+      }
+    }
+
+    updateCooldown()
+    const interval = setInterval(updateCooldown, 1000)
+
+    return () => clearInterval(interval)
+  }, [checkCooldown])
+
+  const fetchInsights = async () => {
+    // Check cooldown
+    const remaining = checkCooldown()
+    if (remaining > 0) {
+      const minutes = Math.ceil(remaining / 60000)
+      toast.error(`Por favor espera ${minutes} minuto${minutes > 1 ? 's' : ''} antes de generar nuevos insights`)
+      return
+    }
+
+    console.log('[AIInsightsCard] fetchInsights called', { dateRange })
+    setLoading(true)
+    setError(null)
+
     try {
-      await generate()
+      const params = new URLSearchParams()
+      if (dateRange?.from) {
+        params.set('dateFrom', dateRange.from.toISOString())
+      }
+      if (dateRange?.to) {
+        params.set('dateTo', dateRange.to.toISOString())
+      }
+
+      console.log('[AIInsightsCard] Fetching:', `/api/client/ai-insights?${params.toString()}`)
+      const response = await fetch(`/api/client/ai-insights?${params.toString()}`)
+      const data = await response.json()
+      console.log('[AIInsightsCard] Response:', { ok: response.ok, status: response.status, data })
+
+      if (!response.ok) {
+        // Check if it's a feature disabled error
+        const isFeatureDisabled = data.error?.includes("not enabled") || data.error?.includes("Unauthorized")
+        console.log('[AIInsightsCard] Feature disabled check:', isFeatureDisabled)
+        setCanGenerate(isFeatureDisabled ? false : true)
+
+        if (isFeatureDisabled) {
+          console.log('[AIInsightsCard] Feature is disabled, hiding component')
+          // Silently don't show - feature is disabled
+          return
+        }
+
+        throw new Error(data.error || 'Error al generar insights')
+      }
+
+      setInsights(data.data)
+      setCanGenerate(true)
+      setHasGenerated(true)
+
+      // Set cooldown timestamp
+      localStorage.setItem(COOLDOWN_KEY, Date.now().toString())
+      setCooldownRemaining(COOLDOWN_DURATION)
+
+      console.log('[AIInsightsCard] Insights loaded successfully')
       toast.success("Insights generados exitosamente")
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al generar insights'
-      toast.error(message)
+      const message = err instanceof Error ? err.message : 'Error desconocido'
+      console.error('[AIInsightsCard] Error:', message, err)
+      setError(message)
+      // Only show error toast if feature is enabled but there was an error
+      if (canGenerate !== false) {
+        toast.error(message)
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
-  // If AI feature is not enabled, don't render anything
-  if (isFeatureEnabled === false) {
-    return null
-  }
+  // Check feature availability on mount
+  useEffect(() => {
+    const checkFeature = async () => {
+      try {
+        const response = await fetch('/api/client/ai-insights')
+        const data = await response.json()
 
-  // If still checking and loading, don't render yet
-  if (isFeatureEnabled === null && loading) {
-    return null
-  }
+        if (!response.ok) {
+          const isFeatureDisabled = data.error?.includes("not enabled") || data.error?.includes("Unauthorized")
+          setCanGenerate(isFeatureDisabled ? false : null)
+        } else {
+          setCanGenerate(true)
+        }
+      } catch {
+        setCanGenerate(null)
+      }
+    }
+
+    checkFeature()
+  }, [])
+
+  // Reset insights when date range changes
+  useEffect(() => {
+    setInsights(null)
+    setError(null)
+    setHasGenerated(false)
+  }, [dateRange?.from, dateRange?.to])
 
   const getInsightIcon = (type: string) => {
     switch (type) {
@@ -105,6 +216,16 @@ export function AIInsightsCard({ dateRange }: AIInsightsCardProps) {
     )
   }
 
+  // If AI feature is not enabled, don't render anything
+  if (canGenerate === false) {
+    return null
+  }
+
+  // If still checking and loading, don't render yet
+  if (canGenerate === null && loading) {
+    return null
+  }
+
   const formatCooldownTime = (ms: number) => {
     const seconds = Math.ceil(ms / 1000)
     const minutes = Math.floor(seconds / 60)
@@ -115,6 +236,8 @@ export function AIInsightsCard({ dateRange }: AIInsightsCardProps) {
     }
     return `${seconds}s`
   }
+
+  const isOnCooldown = cooldownRemaining > 0
 
   return (
     <Card className="shadow-none">
@@ -135,7 +258,7 @@ export function AIInsightsCard({ dateRange }: AIInsightsCardProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleGenerate}
+              onClick={fetchInsights}
               disabled={loading || isOnCooldown}
               className="h-8"
               title={isOnCooldown ? `Disponible en ${formatCooldownTime(cooldownRemaining)}` : 'Regenerar insights'}
@@ -166,7 +289,7 @@ export function AIInsightsCard({ dateRange }: AIInsightsCardProps) {
               Obtén análisis inteligente, tendencias y recomendaciones personalizadas para tus órdenes de trabajo
             </p>
             <Button
-              onClick={handleGenerate}
+              onClick={fetchInsights}
               disabled={loading || isOnCooldown}
               size="lg"
               className="gap-2"
@@ -197,11 +320,11 @@ export function AIInsightsCard({ dateRange }: AIInsightsCardProps) {
         {error && !loading && !insights && (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
-            <p className="text-sm text-destructive mb-2">{error.message || 'Error al generar insights'}</p>
+            <p className="text-sm text-destructive mb-2">{error}</p>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleGenerate}
+              onClick={fetchInsights}
               className="mt-2"
             >
               Reintentar
