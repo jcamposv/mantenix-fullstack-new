@@ -74,6 +74,7 @@ export function WorkOrderForm({
   // Get company features to determine if external client management is enabled
   const { hasExternalClientMgmt } = useCompanyFeatures()
 
+
   // Find the selected template if templateId is provided
   const selectedTemplateFromId = templates.find(t => t.id === form.watch("templateId"))
   const [initialTemplateId] = useState(initialData?.templateId)
@@ -89,6 +90,7 @@ export function WorkOrderForm({
     })
     return () => subscription.unsubscribe()
   }, [form, initialTemplateId, isEditing])
+
 
   return (
     <div className="space-y-6">

@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
 import { useTableData } from "@/components/hooks/use-table-data"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 
 interface ClientCompany {
   id: string
@@ -45,10 +46,16 @@ interface ClientCompaniesResponse {
 
 export default function ClientCompaniesPage() {
   const router = useRouter()
+  const { hasPermission } = usePermissions()
   const { data: clientCompanies, loading, refetch } = useTableData<ClientCompany>({
     endpoint: '/api/admin/client-companies',
     transform: (data) => (data as ClientCompaniesResponse).clientCompanies || (data as ClientCompaniesResponse).companies || (data as ClientCompaniesResponse).items || (data as ClientCompany[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('client_companies.create')
+  const canEdit = hasPermission('client_companies.update')
+  const canDelete = hasPermission('client_companies.delete')
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [companyToDelete, setCompanyToDelete] = useState<ClientCompany | null>(null)
@@ -211,10 +218,10 @@ const columns: ColumnDef<ClientCompany>[] = [
             icon: MapPin,
             onClick: () => handleViewSites(company.id)
           },
-          createEditAction(() => handleEdit(company.id)),
-          createDeleteAction(() => handleDelete(company))
+          ...(canEdit ? [createEditAction(() => handleEdit(company.id))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(company))] : [])
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
@@ -229,8 +236,7 @@ const columns: ColumnDef<ClientCompany>[] = [
         searchPlaceholder="Buscar empresas cliente..."
         title="Empresas Cliente"
         description="Gestionar empresas cliente para órdenes de trabajo e inventario de equipos"
-        onAdd={handleAddClientCompany}
-        addLabel="Agregar Empresa Cliente"
+        {...(canCreate && { onAdd: handleAddClientCompany, addLabel: "Agregar Empresa Cliente" })}
         loading={loading}
       />
 

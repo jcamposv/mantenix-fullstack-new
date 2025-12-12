@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Package, Loader2, ChevronRight, CheckCircle2, PackageOpen, AlertCircle } from "lucide-react"
 import { CreateInventoryRequestMobileDialog } from "./create-inventory-request-mobile-dialog"
 import { ConfirmReceiptDialog } from "@/components/inventory/confirm-receipt-dialog"
-import { REQUEST_STATUS_OPTIONS, REQUEST_URGENCY_OPTIONS } from "@/schemas/inventory"
+import { REQUEST_STATUS_OPTIONS } from "@/schemas/inventory"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useTableData } from "@/components/hooks/use-table-data"
@@ -52,7 +52,7 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     endpoint: `/api/admin/inventory/requests?workOrderId=${workOrderId}`,
     transform: (data: unknown) => {
       const response = data as PaginatedInventoryRequestsResponse
-      return (response.requests || [])
+      return (response.items || [])
         .filter((req): req is WorkOrderInventoryRequestWithRelations & { inventoryItem: NonNullable<WorkOrderInventoryRequestWithRelations['inventoryItem']> } =>
           req.inventoryItem !== undefined
         )
@@ -109,10 +109,10 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     return (request.status === "DELIVERED" && !!request.warehouseDeliveredAt) || request.status === "IN_TRANSIT"
   }
 
-  const selectedRequest = requests.find(r => r.id === selectedRequestId)
+  const selectedRequest = requests.find((r: InventoryRequest) => r.id === selectedRequestId)
 
   const getStatusBadge = (status: string) => {
-    const statusOption = REQUEST_STATUS_OPTIONS.find(opt => opt.value === status)
+    const statusOption = REQUEST_STATUS_OPTIONS.find((opt: { value: string; label: string; color: string }) => opt.value === status)
     return (
       <Badge className={`${statusOption?.color || "bg-gray-500"} text-xs`}>
         {statusOption?.label || status}
@@ -120,16 +120,8 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
     )
   }
 
-  const getUrgencyBadge = (urgency: string) => {
-    const urgencyOption = REQUEST_URGENCY_OPTIONS.find(opt => opt.value === urgency)
-    return (
-      <Badge variant="outline" className={`${urgencyOption?.color || "text-gray-500"} text-xs`}>
-        {urgencyOption?.label || urgency}
-      </Badge>
-    )
-  }
 
-  const pendingConfirmationCount = requests.filter(r => canConfirmReceipt(r)).length
+  const pendingConfirmationCount = requests.filter((r: InventoryRequest) => canConfirmReceipt(r)).length
 
   return (
     <>
@@ -184,7 +176,7 @@ export function WorkOrderInventoryRequestsMobile({ workOrderId }: WorkOrderInven
             </div>
           ) : (
             <div className="space-y-3">
-              {requests.map((request) => {
+              {requests.map((request: InventoryRequest) => {
                 const needsConfirmation = canConfirmReceipt(request)
                 const isUrgent = request.urgency === 'CRITICAL'
 

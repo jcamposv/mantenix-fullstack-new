@@ -1,6 +1,6 @@
 import { CommentRepository } from "../repositories/comment.repository"
 import { AlertService } from "./alert.service"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { CommentWithAuthor, CreateCommentData } from "@/types/comment.types"
 import type { CreateCommentInput } from "../../app/api/schemas/comment-schemas"
@@ -37,9 +37,7 @@ export class CommentService {
     }
 
     // Verificar permisos para comentar
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_comment')) {
-      throw new Error("No tienes permisos para comentar en alertas")
-    }
+    await PermissionGuard.require(session, 'alerts.comment')
 
     const createData: CreateCommentData = {
       content: commentData.content,

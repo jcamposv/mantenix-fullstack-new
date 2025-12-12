@@ -70,7 +70,7 @@ export default function MobileWorkOrdersPage() {
       }
 
       const data = await response.json()
-      setWorkOrders(data.workOrders || [])
+      setWorkOrders(data.items || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {

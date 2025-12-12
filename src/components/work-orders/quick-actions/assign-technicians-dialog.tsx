@@ -68,6 +68,7 @@ export function AssignTechniciansDialog({
       setValue("technicianIds", currentTechnicianIds)
       fetchTechnicians()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, workOrderId, currentTechnicianIds])
 
   const fetchTechnicians = async (): Promise<void> => {
@@ -78,7 +79,7 @@ export function AssignTechniciansDialog({
       if (!response.ok) throw new Error("Error al cargar técnicos")
 
       const data = await response.json()
-      setTechnicians(data.users || [])
+      setTechnicians(data.items || [])
     } catch (error) {
       console.error("Error fetching technicians:", error)
       toast.error("Error al cargar técnicos")

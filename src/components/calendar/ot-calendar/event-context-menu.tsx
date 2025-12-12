@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Edit, Users, Eye, Trash2, MoreVertical } from "lucide-react"
+import { Edit, Users, Eye, Trash2 } from "lucide-react"
 
 interface EventContextMenuProps {
   children: React.ReactNode

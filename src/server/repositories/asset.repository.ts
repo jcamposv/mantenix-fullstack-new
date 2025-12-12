@@ -21,12 +21,12 @@ export class AssetRepository {
             }
           }
         }
+      },
+      _count: {
+        select: {
+          workOrders: true
+        }
       }
-      // _count: {
-      //   select: {
-      //     workOrders: true // For future implementation
-      //   }
-      // }
     }
   }
 
@@ -47,7 +47,7 @@ export class AssetRepository {
     whereClause: Prisma.AssetWhereInput, 
     page: number, 
     limit: number
-  ): Promise<{ assets: AssetWithRelations[], total: number }> {
+  ): Promise<{ items: AssetWithRelations[], total: number }> {
     const skip = (page - 1) * limit
 
     const [assets, total] = await Promise.all([
@@ -61,7 +61,7 @@ export class AssetRepository {
       prisma.asset.count({ where: whereClause })
     ])
 
-    return { assets: assets as unknown as AssetWithRelations[], total }
+    return { items: assets as unknown as AssetWithRelations[], total }
   }
 
   /**

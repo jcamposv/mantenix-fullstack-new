@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { CompanyRepository } from "@/server/repositories/company.repository";
@@ -14,6 +14,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Mark as dynamic since we use headers() for subdomain detection
+export const dynamic = 'force-dynamic'
+
 /**
  * Generate dynamic metadata based on subdomain branding
  * Uses Repository pattern - Server Components can call Repository directly
@@ -22,7 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
   // Default values
   let companyName = "MantenIX"
   let companyLogo = "/favicon.ico"
-  let themeColor = "#000000"
 
   try {
     const headersList = await headers()
@@ -37,7 +39,6 @@ export async function generateMetadata(): Promise<Metadata> {
       if (branding) {
         companyName = branding.name
         companyLogo = branding.logo || branding.logoSmall || "/favicon.ico"
-        themeColor = branding.primaryColor || "#000000"
       }
     }
   } catch (error) {
@@ -66,7 +67,6 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: companyLogo, // Dynamic apple-touch-icon for iOS PWA
     },
     manifest: "/api/manifest",
-    themeColor: themeColor,
     openGraph: {
       type: "website",
       locale: "es_ES",
@@ -88,6 +88,34 @@ export async function generateMetadata(): Promise<Metadata> {
       description: "Sistema completo de gestión de mantenimiento. Optimiza órdenes de trabajo y gestiona activos.",
       images: [companyLogo],
     },
+  }
+}
+
+/**
+ * Generate viewport configuration including dynamic theme color
+ */
+export async function generateViewport(): Promise<Viewport> {
+  let themeColor = "#000000"
+
+  try {
+    const headersList = await headers()
+    const host = headersList.get('host') || ''
+    const subdomain = host.split('.')[0]
+
+    // Only fetch if we have a valid subdomain
+    if (subdomain && subdomain !== 'localhost' && subdomain !== host) {
+      const branding = await CompanyRepository.findBrandingBySubdomain(subdomain)
+
+      if (branding?.primaryColor) {
+        themeColor = branding.primaryColor
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to fetch company branding for viewport:', error)
+  }
+
+  return {
+    themeColor: themeColor,
   }
 }
 

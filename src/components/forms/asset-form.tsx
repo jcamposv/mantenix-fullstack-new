@@ -51,6 +51,7 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
       serialNumber: initialData?.serialNumber || "",
       purchaseDate: initialData?.purchaseDate || "",
       estimatedLifespan: initialData?.estimatedLifespan,
+      operatingHours: initialData?.operatingHours,
       category: initialData?.category || "",
     },
   })
@@ -83,7 +84,7 @@ export function AssetForm({ onSubmit, onCancel, loading, initialData, clientComp
       const response = await fetch("/api/admin/sites")
       if (response.ok) {
         const data = await response.json()
-        setSites(data.sites || data.items || data || [])
+        setSites(data.items || [])
       }
     } catch (error) {
       console.error("Error fetching sites:", error)

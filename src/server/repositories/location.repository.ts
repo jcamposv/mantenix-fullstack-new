@@ -52,7 +52,7 @@ export class LocationRepository {
     whereClause: Prisma.CompanyLocationWhereInput,
     page: number,
     limit: number
-  ): Promise<{ locations: CompanyLocationWithRelations[], total: number }> {
+  ): Promise<{ items: CompanyLocationWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [locations, total] = await Promise.all([
@@ -66,7 +66,7 @@ export class LocationRepository {
       prisma.companyLocation.count({ where: whereClause })
     ])
 
-    return { locations, total }
+    return { items: locations, total }
   }
 
   static async create(data: Prisma.CompanyLocationCreateInput): Promise<CompanyLocationWithRelations> {

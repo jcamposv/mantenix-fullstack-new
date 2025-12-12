@@ -15,7 +15,7 @@ export class WorkOrderRepository {
     filters?: WorkOrderFilters,
     pagination?: { page: number; limit: number },
     companyId?: string
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     const page = pagination?.page || 1
     const limit = pagination?.limit || 50
     const offset = (page - 1) * limit
@@ -124,6 +124,28 @@ export class WorkOrderRepository {
               model: true
             }
           },
+          maintenanceComponent: {
+            select: {
+              id: true,
+              name: true,
+              partNumber: true,
+              criticality: true,
+              mtbf: true,
+              lifeExpectancy: true,
+              // Hybrid maintenance scheduling
+              manufacturerMaintenanceInterval: true,
+              manufacturerMaintenanceIntervalUnit: true,
+              workOrderSchedule: {
+                select: {
+                  id: true,
+                  name: true,
+                  recurrenceType: true,
+                  nextGenerationDate: true,
+                  isActive: true,
+                },
+              },
+            }
+          },
           template: {
             select: {
               id: true,
@@ -190,7 +212,7 @@ export class WorkOrderRepository {
       }))
     }))
 
-    return { workOrders: serializedWorkOrders as unknown as WorkOrderWithRelations[], total }
+    return { items: serializedWorkOrders as unknown as WorkOrderWithRelations[], total }
   }
 
   /**
@@ -232,7 +254,18 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {
@@ -271,6 +304,106 @@ export class WorkOrderRepository {
             }
           }
         },
+        maintenanceAlerts: {
+          where: {
+            status: 'RESOLVED'
+          },
+          select: {
+            id: true,
+            componentName: true,
+            assetName: true,
+            partNumber: true,
+            severity: true,
+            message: true,
+            createdAt: true,
+            resolvedAt: true,
+            resolutionNotes: true,
+            resolvedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        approvals: {
+          select: {
+            id: true,
+            level: true,
+            status: true,
+            comments: true,
+            approvedAt: true,
+            rejectedAt: true,
+            approvedByUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            createdAt: true
+          },
+          orderBy: {
+            level: 'asc'
+          }
+        },
+        workPermits: {
+          select: {
+            id: true,
+            permitType: true,
+            status: true,
+            location: true,
+            validFrom: true,
+            validUntil: true
+          }
+        },
+        lotoProcedures: {
+          select: {
+            id: true,
+            status: true,
+            appliedAt: true,
+            removedAt: true,
+            asset: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            },
+            lockSerialNumbers: true
+          }
+        },
+        safetyAnalyses: {
+          select: {
+            id: true,
+            status: true,
+            preparer: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            jobSteps: true
+          }
+        },
+        rootCauseAnalyses: {
+          select: {
+            id: true,
+            failureMode: true,
+            analysisType: true,
+            status: true,
+            analyzer: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         _count: {
           select: {
             assignments: true
@@ -293,7 +426,30 @@ export class WorkOrderRepository {
       assignments: workOrder.assignments?.map(assignment => ({
         ...assignment,
         assignedAt: assignment.assignedAt.toISOString()
-      }))
+      })),
+      maintenanceAlerts: workOrder.maintenanceAlerts?.map(alert => ({
+        ...alert,
+        createdAt: alert.createdAt.toISOString(),
+        resolvedAt: alert.resolvedAt?.toISOString() || null
+      })),
+      approvals: workOrder.approvals?.map(approval => ({
+        ...approval,
+        approvedAt: approval.approvedAt?.toISOString() || null,
+        rejectedAt: approval.rejectedAt?.toISOString() || null,
+        createdAt: approval.createdAt.toISOString()
+      })),
+      workPermits: workOrder.workPermits?.map(permit => ({
+        ...permit,
+        validFrom: permit.validFrom?.toISOString() || null,
+        validUntil: permit.validUntil?.toISOString() || null
+      })),
+      lotoProcedures: workOrder.lotoProcedures?.map(procedure => ({
+        ...procedure,
+        appliedAt: procedure.appliedAt?.toISOString() || null,
+        removedAt: procedure.removedAt?.toISOString() || null
+      })),
+      jobSafetyAnalyses: workOrder.safetyAnalyses,
+      rootCauseAnalyses: workOrder.rootCauseAnalyses
     } as unknown as WorkOrderWithRelations
   }
 
@@ -331,7 +487,18 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {
@@ -429,7 +596,18 @@ export class WorkOrderRepository {
             code: true,
             manufacturer: true,
             model: true,
-            location: true
+            location: true,
+            status: true
+          }
+        },
+        maintenanceComponent: {
+          select: {
+            id: true,
+            name: true,
+            partNumber: true,
+            criticality: true,
+            mtbf: true,
+            lifeExpectancy: true
           }
         },
         template: {
@@ -636,7 +814,7 @@ export class WorkOrderRepository {
     userId: string,
     filters?: Omit<WorkOrderFilters, 'assignedToMe'>,
     pagination?: { page: number; limit: number }
-  ): Promise<{ workOrders: WorkOrderWithRelations[]; total: number }> {
+  ): Promise<{ items: WorkOrderWithRelations[]; total: number }> {
     return await this.findMany(
       { ...filters, assignedToMe: userId },
       pagination,

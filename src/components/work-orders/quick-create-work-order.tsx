@@ -32,6 +32,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { formatDate } from "@/lib/calendar-utils"
 import { useCompanyFeatures } from "@/hooks/useCompanyFeatures"
+import { useUsers } from "@/hooks/useUsers"
+import { useSites } from "@/hooks/useSites"
+import { useAssets } from "@/hooks/useAssets"
+import { useWorkOrderTemplates } from "@/hooks/useWorkOrderTemplates"
 import {
   quickCreateWorkOrderSchema,
   type QuickCreateWorkOrderData
@@ -42,29 +46,6 @@ interface QuickCreateWorkOrderProps {
   onOpenChange: (open: boolean) => void
   selectedDate: Date | null
   onSuccess?: () => void
-}
-
-interface Template {
-  id: string
-  name: string
-  category: string
-}
-
-interface User {
-  id: string
-  name: string
-  role: string
-}
-
-interface Site {
-  id: string
-  name: string
-}
-
-interface Asset {
-  id: string
-  name: string
-  code: string
 }
 
 const PRIORITY_OPTIONS = [
@@ -82,11 +63,15 @@ export function QuickCreateWorkOrder({
 }: QuickCreateWorkOrderProps) {
   const { hasExternalClientMgmt } = useCompanyFeatures()
   const [loading, setLoading] = useState(false)
-  const [templates, setTemplates] = useState<Template[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [sites, setSites] = useState<Site[]>([])
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [loadingData, setLoadingData] = useState(false)
+
+  // Use all optimized hooks with SWR
+  const { users, loading: loadingUsers } = useUsers()
+  const { sites, loading: loadingSites } = useSites()
+  const { assets, loading: loadingAssets } = useAssets()
+  const { templates, loading: loadingTemplates } = useWorkOrderTemplates({ page: 1, limit: 100 })
+
+  // Combined loading state for all data
+  const loadingData = loadingUsers || loadingSites || loadingAssets || loadingTemplates
 
   const form = useForm<QuickCreateWorkOrderData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,59 +94,6 @@ export function QuickCreateWorkOrder({
       form.setValue("scheduledDate", selectedDate)
     }
   }, [selectedDate, form])
-
-  // Load templates, users, and sites
-  useEffect(() => {
-    if (!open) return
-
-    const fetchData = async () => {
-      try {
-        setLoadingData(true)
-
-        // Build fetch promises
-        const fetchPromises = [
-          fetch("/api/work-order-templates?page=1&limit=100"),
-          fetch("/api/admin/users"),
-          fetch("/api/admin/assets"),
-        ]
-
-        // Add sites fetch if feature is enabled
-        if (hasExternalClientMgmt) {
-          fetchPromises.push(fetch("/api/admin/sites"))
-        }
-
-        const responses = await Promise.all(fetchPromises)
-        const [templatesRes, usersRes, assetsRes, sitesRes] = responses
-
-        if (templatesRes.ok) {
-          const data = await templatesRes.json()
-          setTemplates(data.templates || [])
-        }
-
-        if (usersRes.ok) {
-          const data = await usersRes.json()
-          setUsers(data.users || [])
-        }
-
-        if (assetsRes.ok) {
-          const data = await assetsRes.json()
-          setAssets(data.assets || [])
-        }
-
-        if (sitesRes && sitesRes.ok) {
-          const data = await sitesRes.json()
-          setSites(data.sites || [])
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-        toast.error("Error al cargar los datos")
-      } finally {
-        setLoadingData(false)
-      }
-    }
-
-    fetchData()
-  }, [open])
 
   // Auto-populate title when template is selected
   useEffect(() => {

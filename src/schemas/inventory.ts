@@ -16,6 +16,7 @@ export const inventoryItemSchema = z.object({
   minStock: z.coerce.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0").default(0),
   maxStock: z.coerce.number().int().min(0, "El stock máximo debe ser mayor o igual a 0").optional(),
   reorderPoint: z.coerce.number().int().min(0, "El punto de reorden debe ser mayor o igual a 0").default(0),
+  leadTime: z.coerce.number().int().min(1, "El tiempo de entrega debe ser mayor a 0").default(7),
   unitCost: z.coerce.number().min(0, "El costo unitario debe ser mayor o igual a 0").optional().default(0),
   lastPurchasePrice: z.coerce.number().min(0, "El último precio de compra debe ser mayor o igual a 0").optional(),
   images: z.array(z.string()).optional(),

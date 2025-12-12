@@ -138,7 +138,12 @@ export class ClientWorkOrderService {
             id: true,
             name: true,
             address: true,
-            clientCompanyId: true,
+            clientCompany: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         asset: {
@@ -146,12 +151,17 @@ export class ClientWorkOrderService {
             id: true,
             name: true,
             code: true,
+            manufacturer: true,
+            model: true,
+            location: true,
+            status: true,
           },
         },
         template: {
           select: {
             id: true,
             name: true,
+            category: true,
             customFields: true,
           },
         },
@@ -163,6 +173,7 @@ export class ClientWorkOrderService {
                 name: true,
                 email: true,
                 role: true,
+                image: true,
               },
             },
             assigner: {
@@ -170,9 +181,23 @@ export class ClientWorkOrderService {
                 id: true,
                 name: true,
                 email: true,
-                role: true,
               },
             },
+          },
+        },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
           },
         },
       },
@@ -204,15 +229,23 @@ export class ClientWorkOrderService {
     const [
       total,
       draft,
+      pendingApproval,
+      approved,
+      rejected,
       assigned,
       inProgress,
+      pendingQA,
       completed,
       cancelled,
     ] = await Promise.all([
       prisma.workOrder.count({ where: whereClause }),
       prisma.workOrder.count({ where: { ...whereClause, status: 'DRAFT' } }),
+      prisma.workOrder.count({ where: { ...whereClause, status: 'PENDING_APPROVAL' } }),
+      prisma.workOrder.count({ where: { ...whereClause, status: 'APPROVED' } }),
+      prisma.workOrder.count({ where: { ...whereClause, status: 'REJECTED' } }),
       prisma.workOrder.count({ where: { ...whereClause, status: 'ASSIGNED' } }),
       prisma.workOrder.count({ where: { ...whereClause, status: 'IN_PROGRESS' } }),
+      prisma.workOrder.count({ where: { ...whereClause, status: 'PENDING_QA' } }),
       prisma.workOrder.count({ where: { ...whereClause, status: 'COMPLETED' } }),
       prisma.workOrder.count({ where: { ...whereClause, status: 'CANCELLED' } }),
     ])
@@ -235,8 +268,12 @@ export class ClientWorkOrderService {
       total,
       byStatus: {
         DRAFT: draft,
+        PENDING_APPROVAL: pendingApproval,
+        APPROVED: approved,
+        REJECTED: rejected,
         ASSIGNED: assigned,
         IN_PROGRESS: inProgress,
+        PENDING_QA: pendingQA,
         COMPLETED: completed,
         CANCELLED: cancelled,
       },

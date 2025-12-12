@@ -1,60 +1,48 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterButton } from "@/components/common/filter-button"
+import { SAUsersFilters } from "@/components/super-admin/sa-users-filters"
 import { Building2, Users } from "lucide-react"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { RoleBadge } from "@/components/common/role-badge"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
-import { useTableData } from "@/components/hooks/use-table-data"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-
-interface User {
-  id: string
-  name: string
-  email: string
-  emailVerified: boolean
-  role: string
-  image: string | null
-  isExternalUser: boolean
-  createdAt: string
-  company: {
-    id: string
-    name: string
-    subdomain: string
-  } | null
-  clientCompany: {
-    id: string
-    name: string
-    contactName: string
-  } | null
-}
-
-interface UsersResponse {
-  users?: User[]
-  items?: User[]
-}
+import {
+  useSAUsers,
+  type SAUserFilters,
+  type SAUserItem,
+} from '@/hooks/use-sa-users'
 
 export default function SuperAdminUsersPage() {
   const router = useRouter()
-  const { data: users, loading, refetch } = useTableData<User>({
-    endpoint: '/api/super-admin/users',
-    transform: (data) => (data as UsersResponse).users || (data as UsersResponse).items || (data as User[]) || []
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<SAUserFilters>({})
+  const limit = 20
+
+  const { users, loading, total, totalPages, refetch } = useSAUsers({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
   })
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [userToDelete, setUserToDelete] = useState<SAUserItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleEdit = (userId: string) => {
     router.push(`/super-admin/users/${userId}/edit`)
   }
 
-  const handleDelete = (user: User) => {
+  const handleDelete = (user: SAUserItem) => {
     setUserToDelete(user)
     setDeleteDialogOpen(true)
   }
@@ -90,7 +78,7 @@ export default function SuperAdminUsersPage() {
     router.push("/super-admin/users/new")
   }
 
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<SAUserItem>[] = useMemo(() => [
     {
       accessorKey: "name",
       header: "Usuario",
@@ -114,7 +102,7 @@ export default function SuperAdminUsersPage() {
         const user = row.original
         return (
           <div className="space-y-1">
-            <RoleBadge role={row.getValue("role")} />
+            <RoleBadge role={user.role.key || ''} />
             {user.isExternalUser && (
               <Badge variant="outline" className="text-xs">
                 <Users className="mr-1 h-3 w-3" />
@@ -188,7 +176,27 @@ export default function SuperAdminUsersPage() {
         )
       },
     },
-  ]
+  ], [])
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.emailVerified) count++
+    if (filters.isExternalUser) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="container mx-auto py-0">
@@ -197,11 +205,29 @@ export default function SuperAdminUsersPage() {
         data={users}
         searchKey="name"
         searchPlaceholder="Buscar usuarios..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Gestión de Usuarios (Super Admin)"
-        description="Gestionar todos los usuarios de todas las empresas e inquilinos"
+        description={`${total} usuarios | Gestionar todos los usuarios de todas las empresas e inquilinos`}
         onAdd={handleAddUser}
         addLabel="Invitar Usuario"
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Usuarios"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <SAUsersFilters filters={filters} onFiltersChange={setFilters} />
+          </FilterButton>
+        }
       />
 
       <ConfirmDialog

@@ -19,6 +19,8 @@ const getStatusConfig = (status: string | null) => {
       return { label: "Ausente", className: "bg-destructive/10 text-destructive border-destructive/20" }
     case "JUSTIFIED":
       return { label: "Justificado", className: "bg-info/10 text-info border-info/20" }
+    case "EARLY_DEPARTURE":
+      return { label: "Salida Temprana", className: "bg-orange-500/10 text-orange-500 border-orange-500/20" }
     default:
       return { label: "Sin registro", className: "" }
   }
@@ -85,9 +87,21 @@ export const AttendanceReportsTable = ({ records }: AttendanceReportsTableProps)
                             const hours = Math.floor(record.lateMinutes / 60)
                             const minutes = record.lateMinutes % 60
                             if (hours > 0) {
-                              return `+${hours}h ${minutes}m`
+                              return `+${hours}h ${minutes}m tarde`
                             }
-                            return `+${minutes}m`
+                            return `+${minutes}m tarde`
+                          })()}
+                        </span>
+                      )}
+                      {record.earlyDepartureMinutes && record.earlyDepartureMinutes > 0 && (
+                        <span className="text-orange-500 font-medium">
+                          {(() => {
+                            const hours = Math.floor(record.earlyDepartureMinutes / 60)
+                            const minutes = record.earlyDepartureMinutes % 60
+                            if (hours > 0) {
+                              return `-${hours}h ${minutes}m temprano`
+                            }
+                            return `-${minutes}m temprano`
                           })()}
                         </span>
                       )}

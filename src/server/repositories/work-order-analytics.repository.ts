@@ -222,8 +222,7 @@ export class WorkOrderAnalyticsRepository {
    */
   static async getTimeseriesData(
     companyId: string,
-    dateRange: DateRange,
-    interval: 'day' | 'week' | 'month' = 'day'
+    dateRange: DateRange
   ): Promise<TimeseriesData[]> {
     // This is a simplified version - in production you'd use SQL aggregation
     const workOrders = await prisma.workOrder.findMany({

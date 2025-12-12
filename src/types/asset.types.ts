@@ -1,3 +1,5 @@
+import type { PaginatedResponse } from "@/types/common.types"
+
 export interface Asset {
   id: string
   name: string
@@ -13,6 +15,7 @@ export interface Asset {
   serialNumber: string | null
   purchaseDate: Date | null
   estimatedLifespan: number | null
+  operatingHours: number | null
   category: string | null
   customFields: Record<string, unknown> | null
   createdAt: Date
@@ -30,7 +33,9 @@ export interface AssetWithRelations extends Asset {
       tenantCompanyId: string
     }
   } | null
-  _count?: Record<string, number>
+  _count?: {
+    workOrders: number
+  }
 }
 
 export interface CreateAssetData {
@@ -46,6 +51,7 @@ export interface CreateAssetData {
   serialNumber?: string
   purchaseDate?: Date
   estimatedLifespan?: number
+  operatingHours?: number
   category?: string
   customFields?: Record<string, unknown>
 }
@@ -63,6 +69,7 @@ export interface UpdateAssetData {
   serialNumber?: string
   purchaseDate?: Date
   estimatedLifespan?: number
+  operatingHours?: number
   category?: string
   customFields?: Record<string, unknown>
 }
@@ -75,10 +82,4 @@ export interface AssetFilters {
   isActive?: boolean
 }
 
-export interface PaginatedAssetsResponse {
-  assets: AssetWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedAssetsResponse = PaginatedResponse<AssetWithRelations>

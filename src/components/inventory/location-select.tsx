@@ -49,6 +49,7 @@ export function LocationSelect({
       setLocations([])
       onLocationIdChange("")
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationTypeValue])
 
   const fetchLocations = async (type: LocationType) => {
@@ -73,8 +74,8 @@ export function LocationSelect({
       const response = await fetch(endpoint)
       if (response.ok) {
         const data = await response.json()
-        // Handle different response structures
-        const items = data.sites || data.companies || data.vehicles || data || []
+        // Use standardized items property
+        const items = data.items || []
         setLocations(items)
       } else {
         setLocations([])

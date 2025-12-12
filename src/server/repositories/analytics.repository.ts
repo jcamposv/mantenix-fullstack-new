@@ -495,10 +495,6 @@ export class AnalyticsRepository {
       return sum + (wo.partsCost || 0)
     }, 0)
 
-    const totalOtherCosts = workOrders.reduce((sum, wo) => {
-      return sum + (wo.otherCosts || 0)
-    }, 0)
-
     // Estimate downtime cost (assuming $100/hour of downtime)
     const DOWNTIME_COST_PER_HOUR = 100
     const totalDowntimeHours = workOrders.reduce((sum, wo) => {
@@ -772,7 +768,9 @@ export class AnalyticsRepository {
     const technicians = await prisma.user.findMany({
       where: {
         companyId,
-        role: { in: ["TECNICO", "SUPERVISOR", "JEFE_MANTENIMIENTO"] },
+        role: {
+          key: { in: ["TECNICO", "SUPERVISOR", "JEFE_MANTENIMIENTO"] }
+        },
         isLocked: false,
       },
       select: {

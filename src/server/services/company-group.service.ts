@@ -43,7 +43,7 @@ export class CompanyGroupService {
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedCompanyGroupsResponse> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
 
     let whereClause = this.buildWhereClause(filters)
 
@@ -65,12 +65,12 @@ export class CompanyGroupService {
     }
     // SUPER_ADMIN sees all groups (no filter needed)
 
-    const { companyGroups, total } = await CompanyGroupRepository.findMany(whereClause, page, limit)
+    const { items, total } = await CompanyGroupRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      companyGroups,
+      items,
       total,
       page,
       limit,
@@ -82,7 +82,7 @@ export class CompanyGroupService {
     session: AuthenticatedSession,
     id: string
   ): Promise<CompanyGroupWithRelations | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
 
     const group = await CompanyGroupRepository.findById(id)
 
@@ -98,7 +98,7 @@ export class CompanyGroupService {
     session: AuthenticatedSession,
     id: string
   ): Promise<CompanyGroupWithDetails | null> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
 
     const group = await CompanyGroupRepository.findByIdWithDetails(id)
 
@@ -114,7 +114,7 @@ export class CompanyGroupService {
     session: AuthenticatedSession,
     data: CreateCompanyGroupData
   ): Promise<CompanyGroupWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.CREATE_COMPANY_GROUP)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.CREATE_COMPANY_GROUP)
 
     // Only SUPER_ADMIN can create new company groups
     if (session.user.role !== "SUPER_ADMIN") {
@@ -144,7 +144,7 @@ export class CompanyGroupService {
     id: string,
     data: UpdateCompanyGroupData
   ): Promise<CompanyGroupWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.UPDATE_COMPANY_GROUP)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.UPDATE_COMPANY_GROUP)
 
     // Verify the group exists
     const existingGroup = await CompanyGroupRepository.findById(id)
@@ -180,7 +180,7 @@ export class CompanyGroupService {
     session: AuthenticatedSession,
     id: string
   ): Promise<CompanyGroupWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.DELETE_COMPANY_GROUP)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.DELETE_COMPANY_GROUP)
 
     // Check if there are companies in the group
     const group = await CompanyGroupRepository.findByIdWithDetails(id)
@@ -205,7 +205,7 @@ export class CompanyGroupService {
     groupId: string,
     data: AddCompaniesToGroupData
   ): Promise<CompanyGroupWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.MANAGE_GROUP_COMPANIES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.MANAGE_GROUP_COMPANIES)
 
     if (!data.companyIds || data.companyIds.length === 0) {
       throw new Error("Debe proporcionar al menos una empresa")
@@ -230,7 +230,7 @@ export class CompanyGroupService {
     groupId: string,
     data: RemoveCompaniesFromGroupData
   ): Promise<CompanyGroupWithRelations> {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.MANAGE_GROUP_COMPANIES)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.MANAGE_GROUP_COMPANIES)
 
     if (!data.companyIds || data.companyIds.length === 0) {
       throw new Error("Debe proporcionar al menos una empresa")
@@ -254,7 +254,7 @@ export class CompanyGroupService {
     session: AuthenticatedSession,
     groupId: string
   ) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
     return await CompanyGroupRepository.getGroupCompanies(groupId)
   }
 
@@ -262,7 +262,7 @@ export class CompanyGroupService {
    * Get all active company groups (for dropdowns, etc.)
    */
   static async getActiveGroups(session: AuthenticatedSession) {
-    await PermissionHelper.requirePermission(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
+    await PermissionHelper.requirePermissionAsync(session, PermissionHelper.PERMISSIONS.VIEW_COMPANY_GROUPS)
     return await CompanyGroupRepository.findAll({ isActive: true })
   }
 

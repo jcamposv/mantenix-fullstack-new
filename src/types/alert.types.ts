@@ -1,4 +1,5 @@
 import type { Alert, AlertPriority, AlertType, AlertStatus, Site, User } from "@prisma/client"
+import type { PaginatedResponse } from "@/types/common.types"
 
 export interface AlertWithRelations extends Alert {
   site: Pick<Site, 'id' | 'name' | 'address'> & {
@@ -7,14 +8,14 @@ export interface AlertWithRelations extends Alert {
       name: string
     }
   }
-  reportedBy: Pick<User, 'id' | 'name' | 'email' | 'role'>
-  assignedTo?: Pick<User, 'id' | 'name' | 'email' | 'role'> | null
-  resolvedBy?: Pick<User, 'id' | 'name' | 'email' | 'role'> | null
+  reportedBy: Pick<User, 'id' | 'name' | 'email' | 'roleId'>
+  assignedTo?: Pick<User, 'id' | 'name' | 'email' | 'roleId'> | null
+  resolvedBy?: Pick<User, 'id' | 'name' | 'email' | 'roleId'> | null
   comments?: Array<{
     id: string
     content: string
     createdAt: Date
-    author: Pick<User, 'id' | 'name' | 'email' | 'role'>
+    author: Pick<User, 'id' | 'name' | 'email' | 'roleId'>
   }>
   _count?: {
     comments: number
@@ -29,13 +30,7 @@ export interface AlertFilters {
   my?: 'reported' | 'assigned'
 }
 
-export interface PaginatedAlertsResponse {
-  alerts: AlertWithRelations[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+export type PaginatedAlertsResponse = PaginatedResponse<AlertWithRelations>
 
 export interface CreateAlertData {
   title: string

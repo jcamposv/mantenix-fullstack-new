@@ -1,4 +1,10 @@
 import * as z from "zod"
+import {
+  CREATABLE_ROLE_VALUES,
+  INTERNAL_ROLE_VALUES,
+  EXTERNAL_ROLE_VALUES,
+  ROLE_DEFINITIONS
+} from "@/lib/rbac/role-definitions"
 
 export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -6,7 +12,7 @@ export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
   password: mode === "invite"
     ? z.string().optional()
     : z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-  role: z.enum(["ADMIN_EMPRESA", "JEFE_MANTENIMIENTO", "SUPERVISOR", "TECNICO", "CLIENTE_ADMIN_GENERAL", "CLIENTE_ADMIN_SEDE", "CLIENTE_OPERARIO"]),
+  role: z.enum(CREATABLE_ROLE_VALUES as [string, ...string[]]),
   companyId: z.string().optional(),
   hourlyRate: z.number().positive("La tarifa debe ser positiva").optional().or(z.literal(null)),
   isExternalUser: z.boolean(),
@@ -15,6 +21,7 @@ export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
   timezone: z.string(),
   locale: z.string(),
   image: z.string().nullable().optional(),
+  customRoleId: z.string().nullable().optional(),
 }).refine((data) => {
   // If external user is selected, client company is required
   if (data.isExternalUser && !data.clientCompanyId) {
@@ -38,35 +45,27 @@ export const createAdminUserSchema = (mode: "create" | "invite") => z.object({
 
 export type AdminUserFormData = z.infer<ReturnType<typeof createAdminUserSchema>>
 
-// Roles para usuarios internos de la empresa
-export const INTERNAL_ROLES = [
-  { value: "ADMIN_EMPRESA", label: "Admin Empresa", description: "Administrador de empresa", forGroupAdminOnly: true },
-  { value: "JEFE_MANTENIMIENTO", label: "Jefe de Mantenimiento", description: "Aprobar solicitudes de inventario y gestionar mantenimiento" },
-  { value: "SUPERVISOR", label: "Supervisor", description: "Supervisar operaciones internas" },
-  { value: "TECNICO", label: "Técnico", description: "Trabajo de campo y mantenimiento" },
-]
+// Roles para usuarios internos de la empresa (generados automáticamente desde ROLE_DEFINITIONS)
+export const INTERNAL_ROLES = INTERNAL_ROLE_VALUES.map(roleValue => {
+  const def = ROLE_DEFINITIONS[roleValue]
+  return {
+    value: roleValue,
+    label: def.label,
+    description: def.description,
+    forGroupAdminOnly: roleValue === 'ADMIN_EMPRESA' // Solo ADMIN_EMPRESA requiere ser ADMIN_GRUPO
+  }
+})
 
-// Roles para usuarios externos (clientes)
-export const EXTERNAL_ROLES = [
-  { 
-    value: "CLIENTE_ADMIN_GENERAL", 
-    label: "Admin General Cliente", 
-    description: "Ver todas las sedes del cliente, generar alertas en cualquier sede, reportes generales",
-    requiresSite: false
-  },
-  { 
-    value: "CLIENTE_ADMIN_SEDE", 
-    label: "Admin de Sede", 
-    description: "Ver progreso de órdenes de trabajo de su sede específica, reportar errores",
-    requiresSite: true
-  },
-  { 
-    value: "CLIENTE_OPERARIO", 
-    label: "Operario", 
-    description: "Reportar errores e incidencias en su sede específica",
-    requiresSite: true
-  },
-]
+// Roles para usuarios externos (clientes) - generados automáticamente desde ROLE_DEFINITIONS
+export const EXTERNAL_ROLES = EXTERNAL_ROLE_VALUES.map(roleValue => {
+  const def = ROLE_DEFINITIONS[roleValue]
+  return {
+    value: roleValue,
+    label: def.label,
+    description: def.description,
+    requiresSite: ['CLIENTE_ADMIN_SEDE', 'CLIENTE_OPERARIO'].includes(roleValue)
+  }
+})
 
 // Todos los roles disponibles (para uso general)
 export const ALL_ADMIN_ROLES = [...INTERNAL_ROLES, ...EXTERNAL_ROLES]

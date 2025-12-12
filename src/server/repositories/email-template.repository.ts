@@ -102,7 +102,7 @@ export class EmailTemplateRepository {
       prisma.emailTemplate.count({ where: whereClause })
     ])
 
-    return { templates, total }
+    return { items: templates, total }
   }
 
   static async findByEmailConfigurationId(emailConfigurationId: string) {

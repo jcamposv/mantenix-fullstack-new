@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { randomUUID } from "crypto"
 
 export const dynamic = 'force-dynamic'
 
@@ -52,11 +53,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid file type. Only images are allowed." }, { status: 400 })
     }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 15)
+    // Generate unique filename using UUID
+    const uniqueId = randomUUID()
     const extension = file.name.split('.').pop()
-    const fileName = `${timestamp}-${randomString}.${extension}`
+    const fileName = `${uniqueId}.${extension}`
     const key = `${clientCompanyId}/${assetId}/${fileName}`
 
     // Convert file to buffer

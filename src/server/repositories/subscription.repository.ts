@@ -41,7 +41,7 @@ export class SubscriptionRepository {
     whereClause: Prisma.SubscriptionWhereInput,
     page?: number,
     limit?: number
-  ): Promise<{ subscriptions: SubscriptionWithRelations[]; total: number }> {
+  ): Promise<{ items: SubscriptionWithRelations[]; total: number }> {
     const offset = page && limit ? (page - 1) * limit : 0
 
     const [subscriptions, total] = await Promise.all([
@@ -55,7 +55,7 @@ export class SubscriptionRepository {
       prisma.subscription.count({ where: whereClause }),
     ])
 
-    return { subscriptions, total }
+    return { items: subscriptions, total }
   }
 
   static async create(data: Prisma.SubscriptionCreateInput): Promise<SubscriptionWithRelations> {

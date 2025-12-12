@@ -102,7 +102,7 @@ export class InventoryMovementRepository {
     whereClause: Prisma.InventoryMovementWhereInput,
     page: number,
     limit: number
-  ): Promise<{ movements: InventoryMovementWithRelations[], total: number }> {
+  ): Promise<{ items: InventoryMovementWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [movements, total] = await Promise.all([
@@ -118,9 +118,9 @@ export class InventoryMovementRepository {
       prisma.inventoryMovement.count({ where: whereClause })
     ])
 
-    return { 
-      movements: movements.map(item => InventoryMovementRepository.convertToInventoryMovementWithRelations(item)), 
-      total 
+    return {
+      items: movements.map(item => InventoryMovementRepository.convertToInventoryMovementWithRelations(item)),
+      total
     }
   }
 

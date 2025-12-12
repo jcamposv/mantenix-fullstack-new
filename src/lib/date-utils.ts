@@ -1,6 +1,4 @@
 import { DateRange } from "react-day-picker"
-import type { Locale } from "date-fns"
-import { es } from "date-fns/locale"
 import { DatePeriod } from "@/components/dashboard/shared/dashboard-filters"
 
 export function getDateRangeFromPeriod(period: DatePeriod): DateRange | undefined {
@@ -107,7 +105,7 @@ export function getDateRangeFromPeriod(period: DatePeriod): DateRange | undefine
   }
 }
 
-export function formatDateRange(range: DateRange | undefined, locale: Locale = es): string {
+export function formatDateRange(range: DateRange | undefined): string {
   if (!range?.from) return ""
 
   if (!range.to) {

@@ -67,7 +67,7 @@ export class FeatureRepository {
     whereClause: Prisma.CompanyFeatureWhereInput,
     page: number,
     limit: number
-  ): Promise<{ features: CompanyFeatureWithRelations[], total: number }> {
+  ): Promise<{ items: CompanyFeatureWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [features, total] = await Promise.all([
@@ -81,7 +81,7 @@ export class FeatureRepository {
       prisma.companyFeature.count({ where: whereClause })
     ])
 
-    return { features, total }
+    return { items: features, total }
   }
 
   static async create(data: Prisma.CompanyFeatureCreateInput): Promise<CompanyFeatureWithRelations> {

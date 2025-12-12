@@ -48,5 +48,6 @@ export interface AppSidebarProps {
   serverUser?: ServerUser | null
   userPermissions?: UserPermissions
   companyFeatures?: CompanyFeature[] | null
+  serverUserPermissions?: string[] | null // Role permissions from server
 }
 

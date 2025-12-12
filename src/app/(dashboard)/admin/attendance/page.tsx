@@ -1,14 +1,22 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DataTable } from "@/components/ui/data-table"
-import { Clock, MapPin, LogIn, LogOut } from "lucide-react"
-import { AttendanceListFilters } from "@/components/attendance/attendance-list-filters"
+import { FilterButton } from "@/components/common/filter-button"
+import { AttendanceFilters } from "@/components/attendance/attendance-filters"
+import { Button } from "@/components/ui/button"
+import { Clock, MapPin, LogIn, LogOut, CheckCircle } from "lucide-react"
+import { JustifyAttendanceDialog } from "@/components/attendance/justify-attendance-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 import type { AttendanceRecordWithRelations } from "@/types/attendance.types"
 import { AttendanceStatus } from "@prisma/client"
+import {
+  useAttendance,
+  type AttendanceFilters as AttendanceFilterType,
+} from '@/hooks/use-attendance'
 
 const statusConfig = {
   ON_TIME: {
@@ -56,83 +64,34 @@ const formatDuration = (minutes: number | null) => {
 }
 
 export default function AttendanceListPage() {
-  const [records, setRecords] = useState<AttendanceRecordWithRelations[]>([])
-  const [users, setUsers] = useState<Array<{ id: string; name: string; email: string }>>([])
-  const [locations, setLocations] = useState<Array<{ id: string; name: string }>>([])
-  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<AttendanceFilterType>({})
+  const limit = 20
 
-  // Filters
-  const [selectedUserId, setSelectedUserId] = useState("all")
-  const [selectedLocationId, setSelectedLocationId] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+  const { records, loading, total, totalPages, refetch } = useAttendance({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
+  })
 
-  // Build query params
-  const queryParams = useMemo(() => {
-    const params = new URLSearchParams()
-    if (selectedUserId !== "all") params.append("userId", selectedUserId)
-    if (selectedLocationId !== "all") params.append("locationId", selectedLocationId)
-    if (selectedStatus !== "all") params.append("status", selectedStatus)
-    if (startDate) params.append("startDate", startDate)
-    if (endDate) params.append("endDate", endDate)
-    return params.toString()
-  }, [selectedUserId, selectedLocationId, selectedStatus, startDate, endDate])
+  // Justify dialog
+  const [justifyDialogOpen, setJustifyDialogOpen] = useState(false)
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecordWithRelations | null>(null)
 
-  // Fetch records
-  useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        setLoading(true)
-        const url = `/api/attendance${queryParams ? `?${queryParams}` : ""}`
-        const response = await fetch(url)
+  // Permissions
+  const { hasPermission } = usePermissions()
+  const canManageAttendance = hasPermission("attendance.manage")
 
-        if (response.ok) {
-          const data = await response.json()
-          setRecords(data.records || data)
-        }
-      } catch (error) {
-        console.error("Error fetching attendance records:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  const handleJustifyClick = (record: AttendanceRecordWithRelations) => {
+    setSelectedRecord(record)
+    setJustifyDialogOpen(true)
+  }
 
-    fetchRecords()
-  }, [queryParams])
-
-  // Fetch users and locations for filters
-  useEffect(() => {
-    const fetchFiltersData = async () => {
-      try {
-        const [usersRes, locationsRes] = await Promise.all([
-          fetch("/api/users"),
-          fetch("/api/admin/locations"),
-        ])
-
-        if (usersRes.ok) {
-          const usersData = await usersRes.json()
-          setUsers(usersData.users || usersData)
-        }
-
-        if (locationsRes.ok) {
-          const locationsData = await locationsRes.json()
-          setLocations(locationsData)
-        }
-      } catch (error) {
-        console.error("Error fetching filters data:", error)
-      }
-    }
-
-    fetchFiltersData()
-  }, [])
-
-  const handleClearFilters = () => {
-    setSelectedUserId("all")
-    setSelectedLocationId("all")
-    setSelectedStatus("all")
-    setStartDate("")
-    setEndDate("")
+  const handleJustifySuccess = () => {
+    refetch()
   }
 
   const columns: ColumnDef<AttendanceRecordWithRelations>[] = [
@@ -232,34 +191,94 @@ export default function AttendanceListPage() {
         )
       },
     },
+    {
+      id: "actions",
+      header: "Acciones",
+      cell: ({ row }) => {
+        const record = row.original
+        const canJustify = canManageAttendance && record.status !== "JUSTIFIED"
+
+        return (
+          <div className="flex items-center gap-2">
+            {canJustify && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleJustifyClick(record)}
+                className="h-8 px-2"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Justificar
+              </Button>
+            )}
+            {record.status === "JUSTIFIED" && (
+              <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                Justificado
+              </Badge>
+            )}
+          </div>
+        )
+      },
+    },
   ]
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.status) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="container mx-auto py-0 space-y-4">
-      <AttendanceListFilters
-        users={users}
-        locations={locations}
-        selectedUserId={selectedUserId}
-        selectedLocationId={selectedLocationId}
-        selectedStatus={selectedStatus}
-        startDate={startDate}
-        endDate={endDate}
-        onUserChange={setSelectedUserId}
-        onLocationChange={setSelectedLocationId}
-        onStatusChange={setSelectedStatus}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        onClearFilters={handleClearFilters}
-      />
-
       <DataTable
         columns={columns}
         data={records}
         searchKey="user.name"
         searchPlaceholder="Buscar por usuario..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Registros de Asistencia"
-        description="Visualiza y gestiona todos los registros de asistencia de tu equipo"
+        description={`${total} registros | Visualiza y gestiona todos los registros de asistencia`}
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Asistencia"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <AttendanceFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </FilterButton>
+        }
+      />
+
+      <JustifyAttendanceDialog
+        record={selectedRecord}
+        open={justifyDialogOpen}
+        onOpenChange={setJustifyDialogOpen}
+        onSuccess={handleJustifySuccess}
       />
     </div>
   )

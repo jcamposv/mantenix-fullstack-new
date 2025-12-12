@@ -66,7 +66,7 @@ export class WorkOrderTemplateRepository {
       prisma.workOrderTemplate.count({ where: whereClause })
     ])
 
-    return { templates, total }
+    return { items: templates, total }
   }
 
   /**

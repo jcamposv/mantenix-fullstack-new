@@ -41,6 +41,7 @@ export function InventoryItemForm({
       minStock: initialData?.minStock ?? 0,
       maxStock: initialData?.maxStock,
       reorderPoint: initialData?.reorderPoint ?? 0,
+      leadTime: initialData?.leadTime ?? 7,
       unitCost: initialData?.unitCost ?? 0,
       lastPurchasePrice: initialData?.lastPurchasePrice,
       images: initialData?.images || [],

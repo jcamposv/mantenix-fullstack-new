@@ -4,7 +4,6 @@ import { useState } from "react"
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Edit, Users, Eye, Trash2 } from "lucide-react"
@@ -24,7 +23,6 @@ interface EventActionsPopoverProps {
  * Provides quick action buttons
  */
 export function EventActionsPopover({
-  workOrderId,
   workOrderNumber,
   onEdit,
   onAssign,

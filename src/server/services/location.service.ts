@@ -46,30 +46,32 @@ export class LocationService {
     page: number = 1,
     limit: number = 20
   ): Promise<PaginatedLocationsResponse> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.MANAGE_LOCATIONS
     )
 
     // Si no es super admin, solo ver su empresa
-    const companyId = PermissionHelper.hasPermission(
-      session.user.role,
+    const hasViewCompanies = await PermissionHelper.hasPermissionAsync(
+      session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANIES
     )
+
+    const companyId = hasViewCompanies
       ? filters?.companyId
       : session.user.companyId
 
-    if (!companyId && !PermissionHelper.hasPermission(session.user.role, PermissionHelper.PERMISSIONS.VIEW_COMPANIES)) {
+    if (!companyId && !hasViewCompanies) {
       throw new Error("Usuario sin empresa asignada")
     }
 
     const whereClause = this.buildWhereClause(filters, companyId)
-    const { locations, total } = await LocationRepository.findMany(whereClause, page, limit)
+    const { items, total } = await LocationRepository.findMany(whereClause, page, limit)
 
     const totalPages = Math.ceil(total / limit)
 
     return {
-      locations,
+      items,
       total,
       page,
       limit,
@@ -81,7 +83,7 @@ export class LocationService {
     session: AuthenticatedSession,
     id: string
   ): Promise<CompanyLocationWithRelations | null> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.MANAGE_LOCATIONS
     )
@@ -93,8 +95,8 @@ export class LocationService {
     }
 
     // Verificar que la ubicación es de su empresa
-    const isSuperAdmin = PermissionHelper.hasPermission(
-      session.user.role,
+    const isSuperAdmin = await PermissionHelper.hasPermissionAsync(
+      session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANIES
     )
 
@@ -116,8 +118,8 @@ export class LocationService {
     }
 
     // Verificar permisos
-    const isSuperAdmin = PermissionHelper.hasPermission(
-      session.user.role,
+    const isSuperAdmin = await PermissionHelper.hasPermissionAsync(
+      session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANIES
     )
 
@@ -136,14 +138,14 @@ export class LocationService {
     session: AuthenticatedSession,
     data: CreateLocationData
   ): Promise<CompanyLocationWithRelations> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.MANAGE_LOCATIONS
     )
 
     // Verificar que es su empresa o es super admin
-    const isSuperAdmin = PermissionHelper.hasPermission(
-      session.user.role,
+    const isSuperAdmin = await PermissionHelper.hasPermissionAsync(
+      session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANIES
     )
 
@@ -175,7 +177,7 @@ export class LocationService {
     id: string,
     data: UpdateLocationData
   ): Promise<CompanyLocationWithRelations> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.MANAGE_LOCATIONS
     )
@@ -187,8 +189,8 @@ export class LocationService {
     }
 
     // Verificar que es su empresa o es super admin
-    const isSuperAdmin = PermissionHelper.hasPermission(
-      session.user.role,
+    const isSuperAdmin = await PermissionHelper.hasPermissionAsync(
+      session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANIES
     )
 
@@ -217,7 +219,7 @@ export class LocationService {
     session: AuthenticatedSession,
     id: string
   ): Promise<CompanyLocationWithRelations> {
-    await PermissionHelper.requirePermission(
+    await PermissionHelper.requirePermissionAsync(
       session,
       PermissionHelper.PERMISSIONS.MANAGE_LOCATIONS
     )
@@ -229,8 +231,8 @@ export class LocationService {
     }
 
     // Verificar que es su empresa o es super admin
-    const isSuperAdmin = PermissionHelper.hasPermission(
-      session.user.role,
+    const isSuperAdmin = await PermissionHelper.hasPermissionAsync(
+      session,
       PermissionHelper.PERMISSIONS.VIEW_COMPANIES
     )
 

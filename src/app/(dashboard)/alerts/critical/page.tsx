@@ -47,7 +47,7 @@ interface Alert {
 }
 
 interface AlertsResponse {
-  alerts: Alert[]
+  items: Alert[]
   pagination: {
     page: number
     limit: number
@@ -70,9 +70,9 @@ export default function CriticalAlertsPage() {
 
       const response = await fetch(`/api/alerts?${params}`)
       if (!response.ok) throw new Error('Error fetching critical alerts')
-      
+
       const data: AlertsResponse = await response.json()
-      setAlerts(data.alerts  || data || [])
+      setAlerts(data.items || [])
     } catch (error) {
       console.error('Error fetching critical alerts:', error)
     } finally {

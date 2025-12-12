@@ -5,45 +5,32 @@ import { useRouter } from "next/navigation"
 import { SuperAdminUserForm } from "@/components/forms/super-admin-user-form"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+import { useUser } from "@/hooks/useUser"
+import type { SystemRoleKey } from "@/types/auth.types"
+import type { UserFormData } from "@/components/forms/user/user-form-schema"
 
 export default function SuperAdminEditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const [loading, setLoading] = useState(false)
-  const [fetchingUser, setFetchingUser] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [userData, setUserData] = useState<any>(null)
   const router = useRouter()
 
+  // Extract userId from params
   useEffect(() => {
     params.then((resolvedParams) => {
       setUserId(resolvedParams.id)
     })
   }, [params])
 
+  // Use the new useUser hook with SWR
+  const { user: userData, loading: fetchingUser, error } = useUser(userId)
+
+  // Handle error state
   useEffect(() => {
-    if (!userId) return
-
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`/api/admin/users/${userId}`)
-        if (response.ok) {
-          const data = await response.json()
-          setUserData(data)
-        } else {
-          toast.error('Error al cargar el usuario')
-          router.push('/super-admin/users')
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error)
-        toast.error('Error al cargar el usuario')
-        router.push('/super-admin/users')
-      } finally {
-        setFetchingUser(false)
-      }
+    if (error) {
+      toast.error('Error al cargar el usuario')
+      router.push('/super-admin/users')
     }
-
-    fetchUser()
-  }, [userId, router])
+  }, [error, router])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = async (data: any) => {
@@ -102,10 +89,18 @@ export default function SuperAdminEditUserPage({ params }: { params: Promise<{ i
     )
   }
 
+  // Transform user data to form format
+  const formInitialData: Partial<UserFormData> = {
+    name: userData.name,
+    email: userData.email,
+    role: userData.role as SystemRoleKey,
+    image: userData.image ?? null,
+  }
+
   return (
     <div className="container mx-auto py-0">
       <SuperAdminUserForm
-        initialData={userData}
+        initialData={formInitialData}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         loading={loading}

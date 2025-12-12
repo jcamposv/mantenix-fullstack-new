@@ -122,7 +122,7 @@ export default function ClientWorkOrdersPage() {
         }
 
         setStats(calculatedStats)
-        setRecentOrders(ordersData.workOrders)
+        setRecentOrders(ordersData.items)
         setCriticalOrders(criticalData.orders)
         setProviderMetrics(providerData.metrics)
         setSiteMetrics(sitesData.sites)

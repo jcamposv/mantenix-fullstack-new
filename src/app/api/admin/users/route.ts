@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 import { AuthService, UserService } from "@/server"
 import { createUserSchema, userFiltersSchema } from "../../schemas/user-schemas"
 import bcrypt from "bcrypt"
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return sessionResult
     }
 
-    const filters = { role: role as Role | undefined, companyId, clientCompanyId, siteId, isActive, search }
+    const filters = { role: role as SystemRoleKey | undefined, companyId, clientCompanyId, siteId, isActive, search }
     const result = await UserService.getList(sessionResult, filters, page, limit)
     return NextResponse.json(result)
 

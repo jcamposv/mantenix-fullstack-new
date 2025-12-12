@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { SiteRepository } from "../repositories/site.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { SiteFilters, PaginatedSitesResponse, SiteWithRelations } from "@/types/site.types"
 import type { CreateSiteInput, UpdateSiteInput } from "../../app/api/schemas/site-schemas"
@@ -84,17 +84,13 @@ export class SiteService {
    */
   static async getList(session: AuthenticatedSession, filters: SiteFilters, page: number, limit: number): Promise<PaginatedSitesResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_sites')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver sedes")
-    }
+    await PermissionGuard.require(session, 'sites.view')
 
     const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { sites, total } = await SiteRepository.findMany(whereClause, page, limit)
+    const { items, total } = await SiteRepository.findMany(whereClause, page, limit)
 
     return {
-      sites,
+      items,
       total,
       page,
       limit,
@@ -107,11 +103,7 @@ export class SiteService {
    */
   static async getAll(session: AuthenticatedSession): Promise<SiteWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_sites')
-    
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver sedes")
-    }
+    await PermissionGuard.require(session, 'sites.view')
 
     const whereClause = this.buildWhereClause(session)
     return await SiteRepository.findAll(whereClause)
@@ -122,9 +114,7 @@ export class SiteService {
    */
   static async create(siteData: CreateSiteInput, session: AuthenticatedSession): Promise<SiteWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_site')) {
-      throw new Error("No tienes permisos para crear sedes")
-    }
+    await PermissionGuard.require(session, 'sites.create')
 
     // Validar empresa cliente según el rol
     await this.validateClientCompany(siteData.clientCompanyId, session)
@@ -152,9 +142,7 @@ export class SiteService {
    */
   static async update(id: string, siteData: UpdateSiteInput, session: AuthenticatedSession): Promise<SiteWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_site')) {
-      throw new Error("No tienes permisos para actualizar sedes")
-    }
+    await PermissionGuard.require(session, 'sites.update')
 
     // Verificar que la sede existe y se tiene acceso
     const existingSite = await this.getById(id, session)
@@ -184,9 +172,7 @@ export class SiteService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<SiteWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_site')) {
-      throw new Error("No tienes permisos para eliminar sedes")
-    }
+    await PermissionGuard.require(session, 'sites.delete')
 
     // Verificar que la sede existe y se tiene acceso
     const existingSite = await SiteRepository.findWithRelatedData(id)

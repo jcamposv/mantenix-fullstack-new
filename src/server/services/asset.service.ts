@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { AssetRepository } from "../repositories/asset.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import { getCurrentCompanyId } from "@/lib/company-context"
 import { getOrCreateInternalSite } from "@/lib/internal-site-helper"
 import { parseCompanyFeatures } from "@/lib/features"
@@ -26,7 +26,15 @@ export class AssetService {
     // Aplicar filtros de acceso por rol
     if (session.user.role === "SUPER_ADMIN") {
       // Super admin puede ver todos los activos
-    } else if (session.user.role === "ADMIN_EMPRESA" || session.user.role === "ADMIN_GRUPO") {
+    } else if (
+      session.user.role === "ADMIN_EMPRESA" ||
+      session.user.role === "ADMIN_GRUPO" ||
+      session.user.role === "JEFE_MANTENIMIENTO" ||
+      session.user.role === "ENCARGADO_BODEGA" ||
+      session.user.role === "SUPERVISOR" ||
+      session.user.role === "TECNICO" ||
+      session.user.role === "OPERARIO"
+    ) {
       // Get company ID based on current subdomain (for ADMIN_GRUPO)
       const companyId = await getCurrentCompanyId(session)
 
@@ -34,7 +42,7 @@ export class AssetService {
         throw new Error("No se pudo determinar la empresa")
       }
 
-      // Admin empresa/grupo puede ver todos los activos (internos y externos) de su empresa
+      // Personal interno de la empresa puede ver todos los activos (internos y externos) de su empresa
       whereClause.site = {
         clientCompany: {
           tenantCompanyId: companyId
@@ -48,11 +56,11 @@ export class AssetService {
       whereClause.site = {
         clientCompanyId: session.user.clientCompanyId
       }
-    } else if (session.user.role === "CLIENTE_ADMIN_SEDE") {
+    } else if (session.user.role === "CLIENTE_ADMIN_SEDE" || session.user.role === "CLIENTE_OPERARIO") {
       if (!session.user.siteId) {
         throw new Error("Usuario sin sede asociada")
       }
-      // Site admin can only view assets from their own site
+      // Site admin y operario cliente solo pueden ver activos de su sede
       whereClause.siteId = session.user.siteId
     } else {
       throw new Error("Rol no autorizado para gestionar activos")
@@ -98,17 +106,13 @@ export class AssetService {
    */
   static async getList(session: AuthenticatedSession, filters: AssetFilters, page: number, limit: number): Promise<PaginatedAssetsResponse> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
-
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver activos")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     const whereClause = await this.buildWhereClause(session, undefined, filters)
-    const { assets, total } = await AssetRepository.findMany(whereClause, page, limit)
+    const { items, total } = await AssetRepository.findMany(whereClause, page, limit)
 
     return {
-      assets,
+      items,
       total,
       page,
       limit,
@@ -121,11 +125,7 @@ export class AssetService {
    */
   static async getAll(session: AuthenticatedSession): Promise<AssetWithRelations[]> {
     // Verificar permisos
-    const hasPermission = AuthService.canUserPerformAction(session.user.role, 'view_assets')
-
-    if (!hasPermission) {
-      throw new Error("No tienes permisos para ver activos")
-    }
+    await PermissionGuard.require(session, 'assets.view')
 
     const whereClause = await this.buildWhereClause(session)
     return await AssetRepository.findAll(whereClause)
@@ -137,9 +137,7 @@ export class AssetService {
    */
   static async create(assetData: CreateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_asset')) {
-      throw new Error("No tienes permisos para crear activos")
-    }
+    await PermissionGuard.require(session, 'assets.create')
 
     // Get company ID for context
     const companyId = await getCurrentCompanyId(session)
@@ -203,9 +201,7 @@ export class AssetService {
    */
   static async update(id: string, assetData: UpdateAssetInput, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_asset')) {
-      throw new Error("No tienes permisos para actualizar activos")
-    }
+    await PermissionGuard.require(session, 'assets.update')
 
     // Verificar que el activo existe y se tiene acceso
     const existingAsset = await this.getById(id, session)
@@ -254,9 +250,7 @@ export class AssetService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<AssetWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_asset')) {
-      throw new Error("No tienes permisos para eliminar activos")
-    }
+    await PermissionGuard.require(session, 'assets.delete')
 
     // Verificar que el activo existe y se tiene acceso
     const existingAsset = await AssetRepository.findWithRelatedData(id)

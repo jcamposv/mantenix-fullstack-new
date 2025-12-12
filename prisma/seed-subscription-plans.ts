@@ -12,22 +12,19 @@ const PLAN_FEATURES = {
   STARTER: [
     FeatureModule.ADVANCED_ANALYTICS,
     FeatureModule.HR_ATTENDANCE,
-    FeatureModule.HR_VACATIONS,
-    FeatureModule.HR_PERMISSIONS,
+    FeatureModule.HR_TIME_OFF,
   ],
   BUSINESS: [
     FeatureModule.ADVANCED_ANALYTICS,
     FeatureModule.HR_ATTENDANCE,
-    FeatureModule.HR_VACATIONS,
-    FeatureModule.HR_PERMISSIONS,
+    FeatureModule.HR_TIME_OFF,
     FeatureModule.API_ACCESS,
     FeatureModule.INTERNAL_CORPORATE_GROUP,
   ],
   CORPORATE: [
     FeatureModule.ADVANCED_ANALYTICS,
     FeatureModule.HR_ATTENDANCE,
-    FeatureModule.HR_VACATIONS,
-    FeatureModule.HR_PERMISSIONS,
+    FeatureModule.HR_TIME_OFF,
     FeatureModule.API_ACCESS,
     FeatureModule.INTERNAL_CORPORATE_GROUP,
     FeatureModule.PRIORITY_SUPPORT,
@@ -35,8 +32,7 @@ const PLAN_FEATURES = {
   ENTERPRISE: [
     FeatureModule.ADVANCED_ANALYTICS,
     FeatureModule.HR_ATTENDANCE,
-    FeatureModule.HR_VACATIONS,
-    FeatureModule.HR_PERMISSIONS,
+    FeatureModule.HR_TIME_OFF,
     FeatureModule.API_ACCESS,
     FeatureModule.INTERNAL_CORPORATE_GROUP,
     FeatureModule.PRIORITY_SUPPORT,
@@ -51,7 +47,11 @@ async function main() {
   // Starter Plan - $199/mes
   const starter = await prisma.subscriptionPlan.upsert({
     where: { name: 'Plan Starter' },
-    update: {},
+    update: {
+      monthlyPrice: 199,
+      annualPrice: 1990,
+      overageStoragePrice: 0.15, // Updated overage pricing
+    },
     create: {
       name: 'Plan Starter',
       tier: PlanTier.STARTER,
@@ -67,9 +67,9 @@ async function main() {
       maxInventoryItems: 500,
       maxStorageGB: 20,
 
-      // Overage pricing
+      // Overage pricing (optimized margins)
       overageUserPrice: 15,
-      overageStoragePrice: 0.50,
+      overageStoragePrice: 0.15, // Reduced from $0.50 for better competitiveness
       overageWorkOrderPrice: 1,
 
       isActive: true,
@@ -87,7 +87,11 @@ async function main() {
   // Business Plan - $449/mes
   const business = await prisma.subscriptionPlan.upsert({
     where: { name: 'Plan Business' },
-    update: {},
+    update: {
+      monthlyPrice: 449,
+      annualPrice: 4490,
+      overageStoragePrice: 0.15, // Updated overage pricing
+    },
     create: {
       name: 'Plan Business',
       tier: PlanTier.BUSINESS,
@@ -103,9 +107,9 @@ async function main() {
       maxInventoryItems: 2000,
       maxStorageGB: 100,
 
-      // Overage pricing
+      // Overage pricing (optimized margins)
       overageUserPrice: 15,
-      overageStoragePrice: 0.50,
+      overageStoragePrice: 0.15, // Reduced from $0.50 for better competitiveness
       overageWorkOrderPrice: 1,
 
       isActive: true,
@@ -120,16 +124,20 @@ async function main() {
   console.log('✅ Created Business plan:', business.name, `- $${business.monthlyPrice}/mes`)
   console.log('   Features:', PLAN_FEATURES.BUSINESS.join(', '))
 
-  // Corporate Plan - $799/mes
+  // Corporate Plan - $899/mes (Increased from $799 for better margins)
   const corporate = await prisma.subscriptionPlan.upsert({
     where: { name: 'Plan Corporate' },
-    update: {},
+    update: {
+      monthlyPrice: 899,
+      annualPrice: 8990,
+      overageStoragePrice: 0.15, // Updated overage pricing
+    },
     create: {
       name: 'Plan Corporate',
       tier: PlanTier.CORPORATE,
       description: 'Para empresas medianas con múltiples ubicaciones y alto volumen',
-      monthlyPrice: 799,
-      annualPrice: 7990, // ~16% descuento anual
+      monthlyPrice: 899,
+      annualPrice: 8990, // ~16% descuento anual
 
       // Limits
       maxUsers: 75,
@@ -139,9 +147,9 @@ async function main() {
       maxInventoryItems: 5000,
       maxStorageGB: 300,
 
-      // Overage pricing
+      // Overage pricing (optimized margins)
       overageUserPrice: 15,
-      overageStoragePrice: 0.50,
+      overageStoragePrice: 0.15, // Reduced from $0.50 for better competitiveness
       overageWorkOrderPrice: 1,
 
       isActive: true,
@@ -156,16 +164,20 @@ async function main() {
   console.log('✅ Created Corporate plan:', corporate.name, `- $${corporate.monthlyPrice}/mes`)
   console.log('   Features:', PLAN_FEATURES.CORPORATE.join(', '))
 
-  // Enterprise Plan - $1499/mes
+  // Enterprise Plan - $1999/mes (Increased from $1499 for sustainable margins)
   const enterprise = await prisma.subscriptionPlan.upsert({
     where: { name: 'Plan Enterprise' },
-    update: {},
+    update: {
+      monthlyPrice: 1999,
+      annualPrice: 19990,
+      overageStoragePrice: 0.15, // Updated overage pricing
+    },
     create: {
       name: 'Plan Enterprise',
       tier: PlanTier.ENTERPRISE,
       description: 'Para grandes organizaciones con necesidades empresariales avanzadas',
-      monthlyPrice: 1499,
-      annualPrice: 14990, // ~16% descuento anual
+      monthlyPrice: 1999,
+      annualPrice: 19990, // ~16% descuento anual
 
       // Limits
       maxUsers: 200,
@@ -175,9 +187,9 @@ async function main() {
       maxInventoryItems: 20000,
       maxStorageGB: 1000,
 
-      // Overage pricing
+      // Overage pricing (optimized margins)
       overageUserPrice: 15,
-      overageStoragePrice: 0.50,
+      overageStoragePrice: 0.15, // Reduced from $0.50 for better competitiveness
       overageWorkOrderPrice: 1,
 
       isActive: true,
@@ -193,15 +205,21 @@ async function main() {
   console.log('   Features:', PLAN_FEATURES.ENTERPRISE.join(', '))
 
   console.log('\n🎉 Subscription plans seeded successfully!')
-  console.log('\n📊 Summary:')
-  console.log('- Starter:    $199/mes  | 10 usuarios  | 200 OT/mes')
-  console.log('- Business:   $449/mes  | 25 usuarios  | 600 OT/mes')
-  console.log('- Corporate:  $799/mes  | 75 usuarios  | 2000 OT/mes')
-  console.log('- Enterprise: $1499/mes | 200 usuarios | 10000 OT/mes')
+  console.log('\n📊 Summary (Optimized Pricing):')
+  console.log('- Starter:    $199/mes  | 10 usuarios  | 200 OT/mes  | 20GB')
+  console.log('- Business:   $449/mes  | 25 usuarios  | 600 OT/mes  | 100GB')
+  console.log('- Corporate:  $899/mes  | 75 usuarios  | 2000 OT/mes | 300GB')
+  console.log('- Enterprise: $1999/mes | 200 usuarios | 10000 OT/mes | 1TB')
   console.log('\n💰 Ventaja vs MaintainX Premium ($65/usuario):')
-  console.log('- 10 usuarios: $199 vs $650 (69% más barato)')
-  console.log('- 25 usuarios: $449 vs $1625 (72% más barato)')
-  console.log('- 75 usuarios: $799 vs $4875 (84% más barato)')
+  console.log('- 10 usuarios:  $199 vs $650   (69% más barato)')
+  console.log('- 25 usuarios:  $449 vs $1,625 (72% más barato)')
+  console.log('- 75 usuarios:  $899 vs $4,875 (82% más barato)')
+  console.log('- 200 usuarios: $1,999 vs $13,000 (85% más barato)')
+  console.log('\n📈 Mejoras de margen aplicadas:')
+  console.log('- Corporate: +$100/mes (mejor margen bruto)')
+  console.log('- Enterprise: +$500/mes (márgenes sostenibles 25-70%)')
+  console.log('- Storage overage: $0.15/GB (más competitivo, margen 550%)')
+  console.log('\n✅ Target de margen bruto: 65-75% en todos los planes')
 }
 
 main()

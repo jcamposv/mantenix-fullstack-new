@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -10,13 +9,7 @@ import { siteSchema, type SiteFormData } from "@/schemas/site"
 import { SiteBasicInfo } from "./site/site-basic-info"
 import { SiteContactInfo } from "./site/site-contact-info"
 import { SiteLocationInfo } from "./site/site-location-info"
-
-interface ClientCompany {
-  id: string
-  name: string
-  companyId: string
-  contactName: string | null
-}
+import { useClientCompanies } from "@/hooks/useClientCompanies"
 
 interface SiteFormProps {
   onSubmit: (data: SiteFormData) => void
@@ -26,8 +19,8 @@ interface SiteFormProps {
 }
 
 export function SiteForm({ onSubmit, onCancel, loading, initialData }: SiteFormProps) {
-  const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([])
-  const [loadingClientCompanies, setLoadingClientCompanies] = useState(true)
+  // Use centralized useClientCompanies hook with SWR
+  const { clientCompanies, loading: loadingClientCompanies } = useClientCompanies()
 
   const form = useForm<SiteFormData>({
     resolver: zodResolver(siteSchema),
@@ -44,24 +37,6 @@ export function SiteForm({ onSubmit, onCancel, loading, initialData }: SiteFormP
       notes: initialData?.notes || "",
     },
   })
-
-  useEffect(() => {
-    fetchClientCompanies()
-  }, [])
-
-  const fetchClientCompanies = async () => {
-    try {
-      const response = await fetch('/api/admin/client-companies')
-      if (response.ok) {
-        const data = await response.json()
-        setClientCompanies(data.clientCompanies || [])
-      }
-    } catch (error) {
-      console.error('Error fetching client companies:', error)
-    } finally {
-      setLoadingClientCompanies(false)
-    }
-  }
 
   const handleSubmit = (data: SiteFormData) => {
     onSubmit(data)

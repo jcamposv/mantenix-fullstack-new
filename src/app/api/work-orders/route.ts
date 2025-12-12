@@ -50,13 +50,11 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(result.total / limit)
 
     return NextResponse.json({
-      workOrders: result.workOrders,
-      pagination: {
-        page,
-        limit,
-        total: result.total,
-        totalPages
-      }
+      items: result.items,
+      total: result.total,
+      page,
+      limit,
+      totalPages
     })
   } catch (error) {
     console.error('Error fetching work orders:', error)
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
     const session = sessionResult
 
     const body = await request.json()
-    
+
     // Validate request data
     const validationResult = createWorkOrderSchema.safeParse(body)
     if (!validationResult.success) {
@@ -88,8 +86,8 @@ export async function POST(request: NextRequest) {
 
     const workOrderData: CreateWorkOrderData = {
       ...validationResult.data,
-      scheduledDate: validationResult.data.scheduledDate 
-        ? new Date(validationResult.data.scheduledDate) 
+      scheduledDate: validationResult.data.scheduledDate
+        ? new Date(validationResult.data.scheduledDate)
         : undefined,
       ...(validationResult.data.siteId && { siteId: validationResult.data.siteId })
     } as CreateWorkOrderData

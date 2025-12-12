@@ -52,6 +52,9 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
+  // Server-side search props (optional - for controlled search)
+  searchValue?: string
+  onSearchChange?: (value: string) => void
   title?: string
   description?: string
   onAdd?: () => void
@@ -59,6 +62,14 @@ interface DataTableProps<TData, TValue> {
   loading?: boolean
   hideHeader?: boolean
   initialColumnVisibility?: VisibilityState
+  toolbar?: React.ReactNode
+  // Server-side pagination props
+  manualPagination?: boolean
+  pageCount?: number
+  pageIndex?: number
+  pageSize?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -66,17 +77,33 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = "Buscar...",
+  searchValue,
+  onSearchChange,
   title,
   description,
   onAdd,
   addLabel = "Agregar",
   loading = false,
   initialColumnVisibility = {},
+  toolbar,
+  manualPagination = false,
+  pageCount,
+  pageIndex = 0,
+  pageSize = 20,
+  onPageChange,
+  onPageSizeChange,
 }: DataTableProps<TData, TValue>) {
+  // Determine if search is controlled (server-side) or uncontrolled (client-side)
+  const isControlledSearch = searchValue !== undefined && onSearchChange !== undefined
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility)
   const [rowSelection, setRowSelection] = React.useState({})
+
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
 
   const table = useReactTable({
     data,
@@ -89,11 +116,17 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: manualPagination ? undefined : setPagination,
+    manualPagination,
+    pageCount: manualPagination ? pageCount : undefined,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination: manualPagination
+        ? { pageIndex, pageSize }
+        : pagination,
     },
   })
 
@@ -121,41 +154,53 @@ export function DataTable<TData, TValue>({
           {searchKey && (
             <Input
               placeholder={searchPlaceholder}
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+              value={
+                isControlledSearch
+                  ? searchValue
+                  : (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
               }
+              onChange={(event) => {
+                if (isControlledSearch) {
+                  onSearchChange(event.target.value)
+                } else {
+                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                }
+              }}
               className="h-8 w-[150px] lg:w-[250px]"
             />
           )}
         </div>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columnas <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+        <div className="flex items-center gap-2">
+          {toolbar}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                Columnas <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Table */}
@@ -224,7 +269,12 @@ export function DataTable<TData, TValue>({
             <Select
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => {
-                table.setPageSize(Number(value))
+                const newPageSize = Number(value)
+                if (manualPagination && onPageSizeChange) {
+                  onPageSizeChange(newPageSize)
+                } else {
+                  table.setPageSize(newPageSize)
+                }
               }}
             >
               <SelectTrigger className="h-8 w-[70px]">
@@ -247,7 +297,13 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
+              onClick={() => {
+                if (manualPagination && onPageChange) {
+                  onPageChange(1)
+                } else {
+                  table.setPageIndex(0)
+                }
+              }}
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Ir a la primera página</span>
@@ -256,7 +312,13 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
-              onClick={() => table.previousPage()}
+              onClick={() => {
+                if (manualPagination && onPageChange) {
+                  onPageChange(pageIndex)
+                } else {
+                  table.previousPage()
+                }
+              }}
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Ir a la página anterior</span>
@@ -265,7 +327,13 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
-              onClick={() => table.nextPage()}
+              onClick={() => {
+                if (manualPagination && onPageChange) {
+                  onPageChange(pageIndex + 2)
+                } else {
+                  table.nextPage()
+                }
+              }}
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Ir a la página siguiente</span>
@@ -274,7 +342,13 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              onClick={() => {
+                if (manualPagination && onPageChange) {
+                  onPageChange(pageCount || 1)
+                } else {
+                  table.setPageIndex(table.getPageCount() - 1)
+                }
+              }}
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Ir a la última página</span>

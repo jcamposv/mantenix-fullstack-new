@@ -132,7 +132,7 @@ export class InventoryRequestRepository {
     whereClause: Prisma.WorkOrderInventoryRequestWhereInput,
     page: number,
     limit: number
-  ): Promise<{ requests: WorkOrderInventoryRequestWithRelations[], total: number }> {
+  ): Promise<{ items: WorkOrderInventoryRequestWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [requests, total] = await Promise.all([
@@ -148,9 +148,9 @@ export class InventoryRequestRepository {
       prisma.workOrderInventoryRequest.count({ where: whereClause })
     ])
 
-    return { 
-      requests: requests.map(item => InventoryRequestRepository.convertToWorkOrderInventoryRequestWithRelations(item)), 
-      total 
+    return {
+      items: requests.map(item => InventoryRequestRepository.convertToWorkOrderInventoryRequestWithRelations(item)),
+      total
     }
   }
 

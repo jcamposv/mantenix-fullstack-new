@@ -78,7 +78,7 @@ export class CompanyGroupRepository {
     whereClause: Prisma.CompanyGroupWhereInput,
     page: number,
     limit: number
-  ): Promise<{ companyGroups: CompanyGroupWithRelations[], total: number }> {
+  ): Promise<{ items: CompanyGroupWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [companyGroups, total] = await Promise.all([
@@ -94,7 +94,7 @@ export class CompanyGroupRepository {
       prisma.companyGroup.count({ where: whereClause })
     ])
 
-    return { companyGroups, total }
+    return { items: companyGroups, total }
   }
 
   static async findAll(whereClause: Prisma.CompanyGroupWhereInput): Promise<CompanyGroupWithRelations[]> {

@@ -1,9 +1,3 @@
-/**
- * Work Order Cost Breakdown Card
- *
- * Displays automatic cost calculation and allows authorized users to adjust other costs
- * Following CMMS best practices for cost tracking
- */
 
 "use client"
 
@@ -12,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { DollarSign, Edit2, Save, X, Calculator } from "lucide-react"
@@ -23,6 +16,7 @@ interface WorkOrderCostBreakdownProps {
   laborCost: number | null
   partsCost: number | null
   otherCosts: number | null
+  downtimeCost: number | null
   actualCost: number | null
   status: string
   canEdit?: boolean // Only jefe/admin can edit
@@ -33,7 +27,7 @@ export function WorkOrderCostBreakdownCard({
   laborCost,
   partsCost,
   otherCosts,
-  actualCost,
+  downtimeCost,
   status,
   canEdit = false,
 }: WorkOrderCostBreakdownProps) {
@@ -43,11 +37,6 @@ export function WorkOrderCostBreakdownCard({
     otherCosts?.toString() || "0"
   )
   const [isSaving, setIsSaving] = useState(false)
-
-  // Only show if work order is completed
-  if (status !== "COMPLETED") {
-    return null
-  }
 
   const formatCurrency = (amount: number | null): string => {
     if (amount === null || amount === undefined) return "₡0.00"
@@ -107,7 +96,8 @@ export function WorkOrderCostBreakdownCard({
   const currentOtherCosts = isEditing
     ? parseFloat(editedOtherCosts) || 0
     : otherCosts || 0
-  const totalCost = currentLaborCost + currentPartsCost + currentOtherCosts
+  const currentDowntimeCost = downtimeCost || 0
+  const totalCost = currentLaborCost + currentPartsCost + currentOtherCosts + currentDowntimeCost
 
   return (
     <Card>
@@ -118,7 +108,10 @@ export function WorkOrderCostBreakdownCard({
             <div>
               <CardTitle>Desglose de Costos</CardTitle>
               <CardDescription>
-                Costos calculados automáticamente al completar la orden
+                {status === "COMPLETED"
+                  ? "Costos finales calculados automáticamente"
+                  : "Costos estimados en tiempo real"
+                }
               </CardDescription>
             </div>
           </div>
@@ -215,6 +208,32 @@ export function WorkOrderCostBreakdownCard({
           </div>
         </div>
 
+        {/* Downtime Cost - Only show if there's a cost */}
+        {currentDowntimeCost > 0 && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Costo de Parada</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pérdida de producción estimada
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-destructive">
+                  {formatCurrency(currentDowntimeCost)}
+                </p>
+                <Badge variant="secondary" className="text-xs">
+                  Auto
+                </Badge>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Edit Actions */}
         {isEditing && (
           <div className="flex items-center gap-2 pt-2">
@@ -244,7 +263,12 @@ export function WorkOrderCostBreakdownCard({
 
         {/* Total Cost */}
         <div className="flex items-center justify-between bg-primary/5 rounded-lg p-3">
-          <p className="text-base font-bold">Total</p>
+          <div>
+            <p className="text-base font-bold">Total</p>
+            {status !== "COMPLETED" && (
+              <p className="text-xs text-muted-foreground">Estimado</p>
+            )}
+          </div>
           <p className="text-2xl font-bold text-primary">
             {formatCurrency(totalCost)}
           </p>
@@ -257,6 +281,11 @@ export function WorkOrderCostBreakdownCard({
             <li>Mano de obra: Tiempo activo × tarifa por hora</li>
             <li>Repuestos: Suma de items entregados × precio unitario</li>
             <li>Otros costos: Ajustable manualmente por jefe/admin</li>
+            {currentDowntimeCost > 0 && (
+              <li className="text-destructive">
+                Costo de parada: Tiempo de downtime × (precio unitario × throughput)
+              </li>
+            )}
           </ul>
         </div>
       </CardContent>

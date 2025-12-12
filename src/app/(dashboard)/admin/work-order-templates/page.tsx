@@ -11,6 +11,7 @@ import { TableActions, createEditAction, createDeleteAction } from "@/components
 import { useTableData } from "@/components/hooks/use-table-data"
 import type { WorkOrderTemplateWithRelations, WorkOrderTemplatesResponse } from "@/types/work-order-template.types"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { usePermissions } from "@/hooks/usePermissions"
 
 
 const getStatusBadgeVariant = (status: string) => {
@@ -37,10 +38,16 @@ const getStatusLabel = (status: string) => {
 
 export default function WorkOrderTemplatesPage() {
   const router = useRouter()
+  const { hasPermission } = usePermissions()
   const { data: templates, loading, refetch } = useTableData<WorkOrderTemplateWithRelations>({
     endpoint: '/api/work-order-templates',
     transform: (data) => (data as WorkOrderTemplatesResponse).templates || (data as WorkOrderTemplatesResponse).items || (data as WorkOrderTemplateWithRelations[]) || []
   })
+
+  // Check permissions
+  const canCreate = hasPermission('work_orders.manage_templates')
+  const canEdit = hasPermission('work_orders.manage_templates')
+  const canDelete = hasPermission('work_orders.manage_templates')
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<WorkOrderTemplateWithRelations | null>(null)
@@ -162,10 +169,10 @@ export default function WorkOrderTemplatesPage() {
       cell: ({ row }) => {
         const template = row.original
         const actions = [
-          createEditAction(() => handleEdit(template.id)),
-          createDeleteAction(() => handleDelete(template))
+          ...(canEdit ? [createEditAction(() => handleEdit(template.id))] : []),
+          ...(canDelete ? [createDeleteAction(() => handleDelete(template))] : [])
         ]
-        
+
         return <TableActions actions={actions} />
       },
     },
@@ -180,8 +187,7 @@ export default function WorkOrderTemplatesPage() {
         searchPlaceholder="Buscar templates..."
         title="Templates de Órdenes de Trabajo"
         description="Gestionar templates para crear órdenes de trabajo estandarizadas"
-        onAdd={handleAddTemplate}
-        addLabel="Crear Template"
+        {...(canCreate && { onAdd: handleAddTemplate, addLabel: "Crear Template" })}
         loading={loading}
       />
 

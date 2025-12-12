@@ -128,10 +128,9 @@ export const auth = betterAuth({
   // ============================================================================
   user: {
     additionalFields: {
-      role: {
+      roleId: {
         type: "string",
         required: false,
-        defaultValue: "TECNICO"
       },
       companyId: {
         type: "string",
@@ -141,8 +140,25 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
+      isExternalUser: {
+        type: "boolean",
+        required: false,
+        defaultValue: false
+      },
+      clientCompanyId: {
+        type: "string",
+        required: false,
+      },
+      siteId: {
+        type: "string",
+        required: false,
+      },
       avatar: {
         type: "string",
+        required: false,
+      },
+      hourlyRate: {
+        type: "number",
         required: false,
       },
       timezone: {

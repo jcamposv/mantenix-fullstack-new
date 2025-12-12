@@ -20,7 +20,12 @@ export class AttendanceRepository {
     location: {
       select: {
         id: true,
-        name: true
+        name: true,
+        timezone: true,
+        workStartTime: true,
+        workEndTime: true,
+        lateToleranceMinutes: true,
+        workDays: true
       }
     },
     company: {
@@ -52,7 +57,7 @@ export class AttendanceRepository {
     whereClause: Prisma.AttendanceRecordWhereInput,
     page: number,
     limit: number
-  ): Promise<{ records: AttendanceRecordWithRelations[], total: number }> {
+  ): Promise<{ items: AttendanceRecordWithRelations[], total: number }> {
     const offset = (page - 1) * limit
 
     const [records, total] = await Promise.all([
@@ -66,7 +71,7 @@ export class AttendanceRepository {
       prisma.attendanceRecord.count({ where: whereClause })
     ])
 
-    return { records, total }
+    return { items: records, total }
   }
 
   static async findByUserAndDateRange(
@@ -150,6 +155,7 @@ export class AttendanceRepository {
     late: number
     absent: number
     justified: number
+    earlyDeparture: number
   }> {
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0, 23, 59, 59, 999)
@@ -173,7 +179,8 @@ export class AttendanceRepository {
       onTime: 0,
       late: 0,
       absent: 0,
-      justified: 0
+      justified: 0,
+      earlyDeparture: 0
     }
 
     records.forEach(record => {
@@ -190,6 +197,9 @@ export class AttendanceRepository {
         case 'JUSTIFIED':
           stats.justified++
           break
+        case 'EARLY_DEPARTURE':
+          stats.earlyDeparture++
+          break
       }
     })
 
@@ -205,6 +215,8 @@ export class AttendanceRepository {
     onTime: number
     late: number
     absent: number
+    justified: number
+    earlyDeparture: number
   }> {
     const startOfDay = new Date(date)
     startOfDay.setHours(0, 0, 0, 0)
@@ -218,7 +230,7 @@ export class AttendanceRepository {
         companyId,
         isLocked: false,
         role: {
-          in: ['TECNICO', 'SUPERVISOR', 'ADMIN_EMPRESA']
+          key: { in: ['TECNICO', 'SUPERVISOR', 'ADMIN_EMPRESA'] }
         }
       }
     })
@@ -242,7 +254,9 @@ export class AttendanceRepository {
       present: records.length,
       onTime: records.filter(r => r.status === 'ON_TIME').length,
       late: records.filter(r => r.status === 'LATE').length,
-      absent: totalEmployees - records.length
+      absent: totalEmployees - records.length,
+      justified: records.filter(r => r.status === 'JUSTIFIED').length,
+      earlyDeparture: records.filter(r => r.status === 'EARLY_DEPARTURE').length
     }
 
     return stats

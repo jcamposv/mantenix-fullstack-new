@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AuthService } from '@/server/services/auth.service'
 import { WorkOrderService } from '@/server/services/work-order.service'
+import { MaintenanceAlertHistoryRepository } from '@/server/repositories/maintenance-alert-history.repository'
 import { z } from 'zod'
 import { workOrderPrioritySchema } from '@/schemas/work-order'
 import type { WorkOrderFromTemplateData } from '@/types/work-order.types'
@@ -20,7 +21,9 @@ const createFromTemplateSchema = z.object({
   instructions: z.string().optional(),
   safetyNotes: z.string().optional(),
   tools: z.array(z.string()).optional(),
-  materials: z.array(z.string()).optional()
+  materials: z.array(z.string()).optional(),
+  // Maintenance alert integration
+  alertHistoryId: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -52,9 +55,23 @@ export async function POST(request: NextRequest) {
     // Create work order from template
     const workOrder = await WorkOrderService.createFromTemplate(session, templateData)
 
-    return NextResponse.json({ 
+    // If alertHistoryId is provided, link alert to work order (but don't resolve it yet)
+    // Alert will be auto-resolved when work order is completed (ISO 55001 workflow)
+    if (validationResult.data.alertHistoryId) {
+      try {
+        await MaintenanceAlertHistoryRepository.linkToWorkOrder(
+          validationResult.data.alertHistoryId,
+          workOrder.id
+        )
+      } catch (alertError) {
+        console.error('Error linking alert to work order:', alertError)
+        // Continue even if alert linking fails - OT was created successfully
+      }
+    }
+
+    return NextResponse.json({
       workOrder,
-      message: 'Orden de trabajo creada exitosamente desde template' 
+      message: 'Orden de trabajo creada exitosamente desde template'
     }, { status: 201 })
   } catch (error) {
     console.error('Error creating work order from template:', error)

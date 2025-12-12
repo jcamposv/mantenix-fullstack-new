@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useAlerts } from "@/hooks/useAlerts"
@@ -37,8 +39,23 @@ export function NavMain({
     }[]
   }[]
 }) {
+  const pathname = usePathname()
   const { unreadCount } = useAlerts()
   const { pendingApprovalsCount, pendingDeliveriesCount } = useInventoryRequestsCount()
+
+  // Helper function to check if a URL is active
+  const isUrlActive = (url: string): boolean => {
+    if (url === '/') {
+      return pathname === '/'
+    }
+    return pathname === url || pathname.startsWith(url + '/')
+  }
+
+  // Helper function to check if any sub-item is active
+  const hasActiveChild = (subItems?: { url: string }[]): boolean => {
+    if (!subItems) return false
+    return subItems.some(subItem => isUrlActive(subItem.url))
+  }
 
   // Helper function to get badge count for a specific URL
   const getBadgeCount = (url: string): number | null => {
@@ -56,18 +73,21 @@ export function NavMain({
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
+          const itemActive = isUrlActive(item.url)
+          const childActive = hasActiveChild(item.items)
+
           // If item has subitems, render collapsible
           if (item.items && item.items.length > 0) {
             return (
               <Collapsible
                 key={item.title}
                 asChild
-                defaultOpen={item.isActive}
+                defaultOpen={childActive} // Open if any child is active
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
+                    <SidebarMenuButton tooltip={item.title} isActive={childActive}>
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                       {item.badge && unreadCount > 0 && (
@@ -85,10 +105,12 @@ export function NavMain({
                     <SidebarMenuSub>
                       {item.items.map((subItem) => {
                         const badgeCount = subItem.badge ? getBadgeCount(subItem.url) : null
+                        const subItemActive = isUrlActive(subItem.url)
+
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild>
-                              <a href={subItem.url} className="flex items-center justify-between w-full">
+                            <SidebarMenuSubButton asChild isActive={subItemActive}>
+                              <Link href={subItem.url} className="flex items-center justify-between w-full">
                                 <span>{subItem.title}</span>
                                 {badgeCount !== null && badgeCount > 0 && (
                                   <Badge
@@ -98,7 +120,7 @@ export function NavMain({
                                     {badgeCount > 99 ? '99+' : badgeCount}
                                   </Badge>
                                 )}
-                              </a>
+                              </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         )
@@ -109,23 +131,23 @@ export function NavMain({
               </Collapsible>
             )
           }
-          
+
           // If item has no subitems, render direct link
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+              <SidebarMenuButton asChild tooltip={item.title} isActive={itemActive}>
+                <Link href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                   {item.badge && unreadCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
+                    <Badge
+                      variant="destructive"
                       className="ml-auto h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
                     >
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </Badge>
                   )}
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )

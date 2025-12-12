@@ -19,7 +19,7 @@ import { ConfirmReceiptDialog } from "@/components/inventory/confirm-receipt-dia
 import { useInventoryRequestActions } from "@/hooks/use-inventory-request-actions"
 import type { WorkOrderInventoryRequestWithRelations } from "@/types/inventory.types"
 import { Badge } from "@/components/ui/badge"
-import type { Role } from "@prisma/client"
+import type { SystemRoleKey } from "@/types/auth.types"
 
 export default function InventoryRequestDetailPage() {
   const router = useRouter()
@@ -157,10 +157,10 @@ export default function InventoryRequestDetailPage() {
           </div>
 
           {/* Actions */}
-          {session?.user && (session.user as unknown as { role?: Role; companyId?: string }).role && (session.user as unknown as { companyId?: string }).companyId && (
+          {session?.user && (session.user as unknown as { role?: SystemRoleKey; companyId?: string }).role && (session.user as unknown as { companyId?: string }).companyId && (
             <InventoryRequestActions
               status={request.status}
-              userRole={(session.user as unknown as { role: Role }).role}
+              userRole={(session.user as unknown as { role: SystemRoleKey }).role}
               userCompanyId={(session.user as unknown as { companyId: string }).companyId}
               sourceCompanyId={request.sourceCompanyId}
               destinationCompanyId={request.workOrder?.companyId}

@@ -1,23 +1,18 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { NextResponse } from "next/server"
 import { SuperAdminService } from "@/server/services/super-admin.service"
-import type { AuthenticatedSession } from "@/types/auth.types"
+import { AuthService } from "@/server/services/auth.service"
 
-export const GET = async (request: NextRequest) => {
+export const GET = async () => {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    })
+    const sessionResult = await AuthService.getAuthenticatedSession()
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "No autenticado" },
-        { status: 401 }
-      )
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
     }
 
-    const metrics = await SuperAdminService.getMetrics(session as AuthenticatedSession)
+    const session = sessionResult
+
+    const metrics = await SuperAdminService.getMetrics(session)
 
     return NextResponse.json(metrics)
   } catch (error) {

@@ -195,8 +195,11 @@ export class TimeTrackingRepository {
 
   /**
    * Calculate time summary for a work order
+   *
+   * @param workOrderId - The work order ID
+   * @param completedAt - Optional completion timestamp from work order record (used when order is completed but has no COMPLETE log)
    */
-  async getTimeSummary(workOrderId: string): Promise<TimeLogSummary> {
+  async getTimeSummary(workOrderId: string, completedAt?: Date | null): Promise<TimeLogSummary> {
     const logs = await this.getTimeLogsByWorkOrder(workOrderId)
 
     if (logs.length === 0) {
@@ -217,6 +220,14 @@ export class TimeTrackingRepository {
     let activeWorkMinutes = 0
     let pausedMinutes = 0
     const pauseBreakdown: Record<PauseReason, number> = {} as Record<PauseReason, number>
+
+    // Determine end time for calculations:
+    // 1. If there's a COMPLETE log, use its timestamp
+    // 2. If order is completed but no COMPLETE log, use completedAt
+    // 3. Otherwise, use current time (ongoing work)
+    const endTime = lastLog.action === "COMPLETE"
+      ? lastLog.timestamp
+      : (completedAt ? new Date(completedAt) : new Date())
 
     // Calculate times based on logs
     for (let i = 0; i < logs.length; i++) {
@@ -241,25 +252,31 @@ export class TimeTrackingRepository {
           }
         }
       } else {
-        // Last log - if it's an active state (START or RESUME), count time until now
+        // Last log - calculate time from this log to endTime
         if (log.action === "START" || log.action === "RESUME") {
-          const now = new Date()
-          const elapsedMs = now.getTime() - log.timestamp.getTime()
+          const elapsedMs = endTime.getTime() - log.timestamp.getTime()
           const elapsedMinutes = elapsedMs / 60000
           activeWorkMinutes += elapsedMinutes
+        } else if (log.action === "PAUSE") {
+          const elapsedMs = endTime.getTime() - log.timestamp.getTime()
+          const elapsedMinutes = elapsedMs / 60000
+          pausedMinutes += elapsedMinutes
+          if (log.pauseReason) {
+            pauseBreakdown[log.pauseReason] =
+              (pauseBreakdown[log.pauseReason] || 0) + elapsedMinutes
+          }
         }
       }
     }
 
-    // Calculate total elapsed time from first log to now (or last log if completed)
+    // Calculate total elapsed time from first log to endTime
     const firstLog = logs[0] as WorkOrderTimeLog
-    const endTime = lastLog.action === "COMPLETE" ? lastLog.timestamp : new Date()
     const totalMs = endTime.getTime() - firstLog.timestamp.getTime()
     totalElapsedMinutes = totalMs / 60000
 
     // Determine current status
     let currentStatus: TimeLogSummary["currentStatus"]
-    if (lastLog.action === "COMPLETE") {
+    if (lastLog.action === "COMPLETE" || completedAt) {
       currentStatus = "COMPLETED"
     } else if (lastLog.action === "PAUSE") {
       currentStatus = "PAUSED"
@@ -285,13 +302,93 @@ export class TimeTrackingRepository {
   }
 
   /**
+   * Calculate production line downtime cost
+   * Only applies if asset is part of a production line
+   */
+  async calculateDowntimeCost(workOrderId: string): Promise<number> {
+    // Get work order with asset and production line information
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId },
+      select: {
+        assetId: true,
+        startedAt: true,
+        completedAt: true,
+        asset: {
+          select: {
+            productionLineAssets: {
+              select: {
+                productionLine: {
+                  select: {
+                    unitPrice: true,
+                    flowConfiguration: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    // No downtime cost if no asset, no production line, or missing time data
+    if (
+      !workOrder?.assetId ||
+      !workOrder.asset?.productionLineAssets?.[0]?.productionLine ||
+      !workOrder.startedAt ||
+      !workOrder.completedAt
+    ) {
+      return 0
+    }
+
+    const productionLine = workOrder.asset.productionLineAssets[0].productionLine
+    const unitPrice = productionLine.unitPrice
+
+    // No cost calculation if no unit price set
+    if (!unitPrice) {
+      return 0
+    }
+
+    // Calculate downtime hours
+    const downtimeMs =
+      workOrder.completedAt.getTime() - workOrder.startedAt.getTime()
+    const downtimeHours = downtimeMs / (1000 * 60 * 60)
+
+    // Get production line configuration to calculate throughput
+    const flowConfig = productionLine.flowConfiguration as {
+      nodes?: Array<{ data?: { cycleTime?: number } }>
+    } | null
+
+    let theoreticalThroughput = 0
+
+    if (flowConfig?.nodes && Array.isArray(flowConfig.nodes)) {
+      // Find bottleneck (highest cycle time)
+      const bottleneckCycleTime = flowConfig.nodes.reduce((max, node) => {
+        const cycleTime = node.data?.cycleTime || 0
+        return Math.max(max, cycleTime)
+      }, 0)
+
+      // Calculate throughput: 3600 seconds / cycle time = units per hour
+      if (bottleneckCycleTime > 0) {
+        theoreticalThroughput = 3600 / bottleneckCycleTime
+      }
+    }
+
+    // Calculate downtime cost: hours × (unitPrice × throughput)
+    const costPerHour = unitPrice * theoreticalThroughput
+    const downtimeCost = downtimeHours * costPerHour
+
+    return downtimeCost
+  }
+
+  /**
    * Calculate actual cost for a work order
-   * Cost = Labor Cost + Parts Cost + Other Costs
+   * Cost = Labor Cost + Parts Cost + Other Costs + Downtime Cost
    */
   async calculateActualCost(workOrderId: string): Promise<{
     laborCost: number
     partsCost: number
     otherCosts: number
+    downtimeCost: number
     totalCost: number
   }> {
     const DEFAULT_HOURLY_RATE = 20.0 // Default rate in CRC per hour
@@ -348,13 +445,17 @@ export class TimeTrackingRepository {
 
     const otherCosts = workOrder?.otherCosts || 0
 
-    // 5. Calculate total
-    const totalCost = laborCost + partsCost + otherCosts
+    // 5. Calculate production line downtime cost
+    const downtimeCost = await this.calculateDowntimeCost(workOrderId)
+
+    // 6. Calculate total
+    const totalCost = laborCost + partsCost + otherCosts + downtimeCost
 
     return {
       laborCost,
       partsCost,
       otherCosts,
+      downtimeCost,
       totalCost,
     }
   }
@@ -378,6 +479,7 @@ export class TimeTrackingRepository {
         // Auto-calculated costs
         laborCost: costs.laborCost,
         partsCost: costs.partsCost,
+        downtimeCost: costs.downtimeCost,
         actualCost: costs.totalCost,
         // Status
         status: "COMPLETED",

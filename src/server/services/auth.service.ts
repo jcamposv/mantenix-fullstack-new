@@ -19,7 +19,17 @@ export class AuthService {
     return { user: user as AuthenticatedSession['user'] }
   }
 
+  /**
+   * @deprecated Use canUserPerformActionAsync instead
+   */
   static canUserPerformAction(userRole: string, action: string): boolean {
     return PermissionHelper.hasPermission(userRole, action)
+  }
+
+  /**
+   * Check if user can perform action (supports custom roles)
+   */
+  static async canUserPerformActionAsync(session: AuthenticatedSession, action: string): Promise<boolean> {
+    return PermissionHelper.hasPermissionAsync(session, action)
   }
 }

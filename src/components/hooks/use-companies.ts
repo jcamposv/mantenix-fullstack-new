@@ -14,7 +14,7 @@ export function useCompanies() {
       const response = await fetch('/api/admin/companies')
       if (response.ok) {
         const data = await response.json()
-        setCompanies(data.companies || data || [])
+        setCompanies(data.items || [])
       }
     } catch (error) {
       console.error('Error fetching companies:', error)

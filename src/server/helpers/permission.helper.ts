@@ -13,6 +13,7 @@ export class PermissionHelper {
     JEFE_MANTENIMIENTO: 'JEFE_MANTENIMIENTO',
     ENCARGADO_BODEGA: 'ENCARGADO_BODEGA',
     TECNICO: 'TECNICO',
+    OPERARIO: 'OPERARIO',
     SUPERVISOR: 'SUPERVISOR',
     CLIENTE_ADMIN_GENERAL: 'CLIENTE_ADMIN_GENERAL',
     CLIENTE_ADMIN_SEDE: 'CLIENTE_ADMIN_SEDE',
@@ -48,11 +49,11 @@ export class PermissionHelper {
     UPDATE_COMPANY: 'update_company',
     DELETE_COMPANY: 'delete_company',
     VIEW_COMPANIES: 'view_companies',
-    CREATE_COMPANY_GROUP: 'create_company_group',
-    UPDATE_COMPANY_GROUP: 'update_company_group',
-    DELETE_COMPANY_GROUP: 'delete_company_group',
-    VIEW_COMPANY_GROUPS: 'view_company_groups',
-    MANAGE_GROUP_COMPANIES: 'manage_group_companies',
+    CREATE_COMPANY_GROUP: 'company_groups.create',
+    UPDATE_COMPANY_GROUP: 'company_groups.update',
+    DELETE_COMPANY_GROUP: 'company_groups.delete',
+    VIEW_COMPANY_GROUPS: 'company_groups.view',
+    MANAGE_GROUP_COMPANIES: 'company_groups.manage_companies',
     CREATE_ASSET: 'create_asset',
     UPDATE_ASSET: 'update_asset',
     DELETE_ASSET: 'delete_asset',
@@ -76,6 +77,7 @@ export class PermissionHelper {
     DELETE_ATTENDANCE: 'delete_attendance',
     VIEW_ALL_ATTENDANCE: 'view_all_attendance',
     VIEW_COMPANY_ATTENDANCE: 'view_company_attendance',
+    MANAGE_ATTENDANCE: 'manage_attendance',
     MANAGE_LOCATIONS: 'manage_locations',
     // Inventory permissions
     VIEW_INVENTORY_ITEMS: 'view_inventory_items',
@@ -94,7 +96,10 @@ export class PermissionHelper {
     DELIVER_FROM_WAREHOUSE: 'deliver_from_warehouse',
     CONFIRM_RECEIPT: 'confirm_receipt',
     DELETE_INVENTORY_REQUEST: 'delete_inventory_request',
-    VIEW_INVENTORY_MOVEMENTS: 'view_inventory_movements'
+    VIEW_INVENTORY_MOVEMENTS: 'view_inventory_movements',
+    // Asset Status permissions
+    CHANGE_ASSET_STATUS: 'change_asset_status',
+    VIEW_ASSET_STATUS_HISTORY: 'view_asset_status_history'
   } as const
 
   private static readonly ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -164,7 +169,10 @@ export class PermissionHelper {
       this.PERMISSIONS.DELIVER_FROM_WAREHOUSE,
       this.PERMISSIONS.CONFIRM_RECEIPT,
       this.PERMISSIONS.DELETE_INVENTORY_REQUEST,
-      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS
+      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.ADMIN_GRUPO]: [
       // ADMIN_GRUPO tiene los mismos permisos que ADMIN_EMPRESA
@@ -229,7 +237,10 @@ export class PermissionHelper {
       this.PERMISSIONS.DELIVER_FROM_WAREHOUSE,
       this.PERMISSIONS.CONFIRM_RECEIPT,
       this.PERMISSIONS.DELETE_INVENTORY_REQUEST,
-      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS
+      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.ADMIN_EMPRESA]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -287,7 +298,10 @@ export class PermissionHelper {
       this.PERMISSIONS.DELIVER_FROM_WAREHOUSE,
       this.PERMISSIONS.CONFIRM_RECEIPT,
       this.PERMISSIONS.DELETE_INVENTORY_REQUEST,
-      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS
+      this.PERMISSIONS.VIEW_INVENTORY_MOVEMENTS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.JEFE_MANTENIMIENTO]: [
       // Work Order Management
@@ -309,7 +323,10 @@ export class PermissionHelper {
       this.PERMISSIONS.REJECT_INVENTORY_REQUEST,
       // View inventory to know what's available
       this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
-      this.PERMISSIONS.VIEW_INVENTORY_STOCK
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.ENCARGADO_BODEGA]: [
       // Inventory/Warehouse Management ONLY
@@ -338,7 +355,12 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      // Work Orders - can view work orders for their client company
+      'work_orders.view_client'
     ],
     [this.ROLES.CLIENTE_ADMIN_SEDE]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -349,13 +371,23 @@ export class PermissionHelper {
       this.PERMISSIONS.CREATE_ASSET,
       this.PERMISSIONS.UPDATE_ASSET,
       this.PERMISSIONS.DELETE_ASSET,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      // Work Orders - can view work orders for their site
+      'work_orders.view_client'
     ],
     [this.ROLES.CLIENTE_OPERARIO]: [
       this.PERMISSIONS.CREATE_ALERT,
       this.PERMISSIONS.VIEW_SITE_ALERTS,
       this.PERMISSIONS.CREATE_COMMENT,
-      this.PERMISSIONS.VIEW_ASSETS
+      this.PERMISSIONS.VIEW_ASSETS,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      // Work Orders - can view work orders for their site
+      'work_orders.view_client'
     ],
     [this.ROLES.TECNICO]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -371,7 +403,10 @@ export class PermissionHelper {
       this.PERMISSIONS.CONFIRM_RECEIPT,
       // View inventory to know what's available
       this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
-      this.PERMISSIONS.VIEW_INVENTORY_STOCK
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
     ],
     [this.ROLES.SUPERVISOR]: [
       this.PERMISSIONS.CREATE_ALERT,
@@ -390,7 +425,19 @@ export class PermissionHelper {
       this.PERMISSIONS.CONFIRM_RECEIPT,
       // View inventory
       this.PERMISSIONS.VIEW_INVENTORY_ITEMS,
-      this.PERMISSIONS.VIEW_INVENTORY_STOCK
+      this.PERMISSIONS.VIEW_INVENTORY_STOCK,
+      // Asset Status permissions
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY
+    ],
+    [this.ROLES.OPERARIO]: [
+      // Plant operators who can update asset/machine status
+      this.PERMISSIONS.VIEW_ASSETS,
+      this.PERMISSIONS.CHANGE_ASSET_STATUS,
+      this.PERMISSIONS.VIEW_ASSET_STATUS_HISTORY,
+      this.PERMISSIONS.CREATE_ALERT,
+      this.PERMISSIONS.VIEW_COMPANY_ALERTS,
+      this.PERMISSIONS.CREATE_COMMENT
     ]
   }
 
@@ -417,5 +464,50 @@ export class PermissionHelper {
     if (!this.hasPermission(session.user.role, permission)) {
       throw new Error("No tienes permisos para realizar esta acción")
     }
+  }
+
+  /**
+   * NEW RBAC METHODS - Support for custom roles
+   */
+
+  /**
+   * Check if user has permission (supports custom roles)
+   * @deprecated Use hasPermissionAsync for full custom role support
+   */
+  static async hasPermissionAsync(session: AuthenticatedSession, permission: string): Promise<boolean> {
+    const { hasPermission: checkPermission } = await import('./permission-utils');
+    return checkPermission(session, permission);
+  }
+
+  /**
+   * Check if user has any of the specified permissions
+   */
+  static async hasAnyPermission(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
+    const { hasAnyPermission: check } = await import('./permission-utils');
+    return check(session, permissions);
+  }
+
+  /**
+   * Check if user has all of the specified permissions
+   */
+  static async hasAllPermissions(session: AuthenticatedSession, permissions: string[]): Promise<boolean> {
+    const { hasAllPermissions: check } = await import('./permission-utils');
+    return check(session, permissions);
+  }
+
+  /**
+   * Require permission (throws if user doesn't have it) - supports custom roles
+   */
+  static async requirePermissionAsync(session: AuthenticatedSession, permission: string): Promise<void> {
+    const { requirePermission: require } = await import('./permission-utils');
+    return require(session, permission);
+  }
+
+  /**
+   * Get all permissions for a user (supports custom roles)
+   */
+  static async getUserPermissions(session: AuthenticatedSession): Promise<string[]> {
+    const { getUserPermissions } = await import('./permission-utils');
+    return getUserPermissions(session);
   }
 }

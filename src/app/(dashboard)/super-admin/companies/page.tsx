@@ -1,59 +1,46 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterButton } from "@/components/common/filter-button"
+import { SACompaniesFilters } from "@/components/super-admin/sa-companies-filters"
 import Image from "next/image"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
-import { useTableData } from "@/components/hooks/use-table-data"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-
-interface Company {
-  id: string
-  name: string
-  subdomain: string
-  tier: string
-  primaryColor: string
-  logo: string | null
-  createdAt: string
-  _count: {
-    users: number
-  }
-  subscription?: {
-    id: string
-    planId: string
-    plan: {
-      id: string
-      name: string
-      tier: string
-    }
-  } | null
-}
-
-interface CompaniesResponse {
-  companies?: Company[]
-  items?: Company[]
-}
+import {
+  useSACompanies,
+  type SACompanyFilters,
+  type SACompanyItem,
+} from '@/hooks/use-sa-companies'
 
 export default function CompaniesPage() {
   const router = useRouter()
-  const { data: companies, loading, refetch } = useTableData<Company>({
-    endpoint: '/api/admin/companies',
-    transform: (data) => (data as CompaniesResponse).companies || (data as CompaniesResponse).items || (data as Company[]) || []
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<SACompanyFilters>({})
+  const limit = 20
+
+  const { companies, loading, total, totalPages, refetch } = useSACompanies({
+    page,
+    limit,
+    search,
+    filters,
+    autoRefresh: false,
   })
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null)
+  const [companyToDelete, setCompanyToDelete] = useState<SACompanyItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleEdit = (companyId: string) => {
     router.push(`/super-admin/companies/${companyId}/edit`)
   }
 
-  const handleDelete = (company: Company) => {
+  const handleDelete = (company: SACompanyItem) => {
     setCompanyToDelete(company)
     setDeleteDialogOpen(true)
   }
@@ -89,7 +76,7 @@ export default function CompaniesPage() {
     router.push("/super-admin/companies/new")
   }
 
-  const columns: ColumnDef<Company>[] = [
+  const columns: ColumnDef<SACompanyItem>[] = useMemo(() => [
     {
       accessorKey: "name",
       header: "Nombre de Empresa",
@@ -156,7 +143,26 @@ export default function CompaniesPage() {
         )
       },
     },
-  ]
+  ], [])
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.hasSubscription) count++
+    return count
+  }, [filters])
+
+  const hasActiveFilters = activeFiltersCount > 0
+
+  const handleClearFilters = () => {
+    setFilters({})
+    setPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="container mx-auto py-0">
@@ -165,11 +171,29 @@ export default function CompaniesPage() {
         data={companies}
         searchKey="name"
         searchPlaceholder="Buscar empresas..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
         title="Empresas"
-        description="Gestionar todas las empresas del sistema"
+        description={`${total} empresas | Gestionar todas las empresas del sistema`}
         onAdd={handleAddCompany}
         addLabel="Agregar Empresa"
         loading={loading}
+        manualPagination={true}
+        pageCount={totalPages}
+        pageIndex={page - 1}
+        pageSize={limit}
+        onPageChange={setPage}
+        toolbar={
+          <FilterButton
+            title="Filtros de Empresas"
+            hasActiveFilters={hasActiveFilters}
+            activeFiltersCount={activeFiltersCount}
+            onReset={handleClearFilters}
+            contentClassName="w-[300px]"
+          >
+            <SACompaniesFilters filters={filters} onFiltersChange={setFilters} />
+          </FilterButton>
+        }
       />
 
       <ConfirmDialog

@@ -1,4 +1,31 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  // Serwist config
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV !== "production", // Disable in dev and build due to Turbopack incompatibility
+  cacheOnNavigation: true,
+
+  // Pre-cache critical mobile pages for offline navigation
+  additionalPrecacheEntries: [
+    // Mobile main pages
+    { url: "/mobile", revision: "1" },
+    { url: "/mobile/work-orders", revision: "1" },
+    { url: "/mobile/alerts", revision: "1" },
+    { url: "/mobile/attendance", revision: "1" },
+    { url: "/mobile/assets", revision: "1" },
+    { url: "/mobile/create-work-order", revision: "1" },
+    { url: "/mobile/create-alert", revision: "1" },
+
+    // Offline fallback page (MUST be cached)
+    { url: "/offline", revision: "1" },
+
+    // Manifest and icons
+    { url: "/manifest.json", revision: "1" },
+  ],
+});
 
 const nextConfig: NextConfig = {
   // Specify the root directory for Turbopack to avoid ambiguity with multiple lockfiles
@@ -84,4 +111,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

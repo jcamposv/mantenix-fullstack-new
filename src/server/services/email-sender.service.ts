@@ -309,4 +309,40 @@ export class EmailSenderService {
       companyId
     })
   }
+
+  /**
+   * Envía un email de alerta escalada a supervisor/admin
+   */
+  static async sendAlertEscalatedEmail(
+    to: string | string[],
+    alertTitle: string,
+    alertDescription: string,
+    alertType: string,
+    alertPriority: string,
+    siteName: string,
+    location: string,
+    reportedByName: string,
+    reportedAt: string,
+    escalationReason: string,
+    alertUrl: string,
+    companyId: string
+  ): Promise<EmailSendResponse> {
+    return await this.sendEmail({
+      to,
+      templateType: 'ALERT_ESCALATED',
+      variables: {
+        alert_title: alertTitle,
+        alert_description: alertDescription,
+        alert_type: alertType,
+        alert_priority: alertPriority,
+        site_name: siteName,
+        location: location || 'No especificada',
+        reported_by_name: reportedByName,
+        reported_at: reportedAt,
+        escalation_reason: escalationReason,
+        alert_url: alertUrl
+      },
+      companyId
+    })
+  }
 }

@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { AlertRepository } from "../repositories/alert.repository"
-import { AuthService } from "./auth.service"
+import { PermissionGuard } from "../helpers/permission-guard"
 import { NotificationService } from "./notification.service"
 import type { AuthenticatedSession } from "@/types/auth.types"
 import type { AlertFilters, PaginatedAlertsResponse, AlertWithRelations } from "@/types/alert.types"
@@ -92,10 +92,10 @@ export class AlertService {
    */
   static async getList(session: AuthenticatedSession, filters: AlertFilters, page: number, limit: number): Promise<PaginatedAlertsResponse> {
     const whereClause = this.buildWhereClause(session, undefined, filters)
-    const { alerts, total } = await AlertRepository.findMany(whereClause, page, limit)
+    const { items, total } = await AlertRepository.findMany(whereClause, page, limit)
 
     return {
-      alerts,
+      items,
       total,
       page,
       limit,
@@ -108,9 +108,7 @@ export class AlertService {
    */
   static async create(alertData: CreateAlertInput, session: AuthenticatedSession): Promise<AlertWithRelations> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'create_alert')) {
-      throw new Error("No tienes permisos para crear alertas")
-    }
+    await PermissionGuard.require(session, 'alerts.create')
 
     // Determinar siteId basado en el rol del usuario
     let siteId = alertData.siteId
@@ -154,9 +152,7 @@ export class AlertService {
    */
   static async update(id: string, validatedData: UpdateAlertInput, session: AuthenticatedSession): Promise<AlertWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'update_alert')) {
-      throw new Error("No tienes permisos para actualizar alertas")
-    }
+    await PermissionGuard.require(session, 'alerts.update')
 
     const whereClause = this.buildWhereClause(session, id)
 
@@ -201,9 +197,7 @@ export class AlertService {
    */
   static async delete(id: string, session: AuthenticatedSession): Promise<AlertWithRelations | null> {
     // Verificar permisos
-    if (!AuthService.canUserPerformAction(session.user.role, 'delete_alert')) {
-      throw new Error("No tienes permisos para eliminar alertas")
-    }
+    await PermissionGuard.require(session, 'alerts.delete')
 
     const whereClause = this.buildWhereClause(session, id)
 

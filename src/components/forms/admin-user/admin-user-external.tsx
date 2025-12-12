@@ -3,14 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Control } from "react-hook-form"
 import { AdminUserFormData, EXTERNAL_ROLES } from "@/schemas/admin-user"
-
-interface ClientCompany {
-  id: string
-  name: string
-  companyId: string
-  email: string
-  contactName: string
-}
+import type { ClientCompany } from "@/hooks/useClientCompanies"
 
 interface Site {
   id: string
@@ -107,7 +100,9 @@ export function AdminUserExternal({
                         <div>
                           <div className="font-medium">{clientCompany.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            Contacto: {clientCompany.contactName} • {clientCompany.email}
+                            {clientCompany.contactName && clientCompany.email
+                              ? `Contacto: ${clientCompany.contactName} • ${clientCompany.email}`
+                              : clientCompany.contactName || clientCompany.email || ''}
                           </div>
                         </div>
                       </SelectItem>

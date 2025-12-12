@@ -14,7 +14,7 @@ import type { CreateWorkOrderData } from "@/types/work-order.types"
 
 interface WorkOrderFormAdvancedProps {
   form: UseFormReturn<CreateWorkOrderData>
-  users?: Array<{ id: string; name: string; email: string; role: string }>
+  users?: Array<{ id: string; name: string; email: string; role: { id: string; key: string | null; name: string; color: string } }>
 }
 
 export function WorkOrderFormAdvanced({ form, users = [] }: WorkOrderFormAdvancedProps) {
@@ -26,7 +26,7 @@ export function WorkOrderFormAdvanced({ form, users = [] }: WorkOrderFormAdvance
   const watchedAssignedUsers = form.watch("assignedUserIds") || []
 
   // Filter out external users (clients)
-  const internalUsers = users.filter(user => !user.role.startsWith("CLIENTE"))
+  const internalUsers = users.filter(user => !user.role.key?.startsWith("CLIENTE"))
 
   const addTool = () => {
     if (newTool.trim()) {

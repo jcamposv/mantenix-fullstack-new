@@ -49,7 +49,7 @@ export default function SuperAdminFeaturesPage() {
 
         // Obtener features para cada empresa
         const companiesWithFeatures = await Promise.all(
-          companiesData.companies.map(async (company: Company) => {
+          companiesData.items.map(async (company: Company) => {
             try {
               const featuresRes = await fetch(`/api/admin/features/${company.id}`)
 
