@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +39,17 @@ export default function MobileWorkOrderDetailPage() {
   } = useWorkOrderManagement(workOrderId)
 
   const [showSafetyBriefing, setShowSafetyBriefing] = useState(false)
+  const formRef = useRef<HTMLDivElement>(null)
+
+  const scrollToForm = () => {
+    setShowForm(true)
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }, 100)
+  }
 
   if (loading) {
     return (
@@ -54,7 +65,7 @@ export default function MobileWorkOrderDetailPage() {
   if (error || !workOrder) {
     return (
       <div className="space-y-4 p-4">
-        <Card className="border-destructive">
+        <Card className="shadow-none border-destructive">
           <CardContent className="pt-6">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
@@ -104,7 +115,7 @@ export default function MobileWorkOrderDetailPage() {
 
       {/* Progress Indicator - Show only for active work orders */}
       {!isCompleted && (
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <Card className="shadow-none bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
           <CardContent className="py-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
@@ -157,6 +168,8 @@ export default function MobileWorkOrderDetailPage() {
             onActionComplete={fetchWorkOrder}
             onStartWork={handleStartWork}
             disabled={updating}
+            hasCustomFields={hasCustomFields && isInProgress}
+            onCompleteClick={scrollToForm}
           />
         </div>
       )}
@@ -173,49 +186,64 @@ export default function MobileWorkOrderDetailPage() {
         onRefresh={fetchWorkOrder}
       />
 
-      {/* Work Details Section - Collapsible when not the primary focus */}
+      {/* Work Details Section - Always visible during work */}
       {isInProgress && hasCustomFields && (
-        <Card className={cn(
-          "transition-all",
-          showForm && "ring-2 ring-primary/20"
-        )}>
-          <CardHeader
-            className="cursor-pointer select-none active:bg-accent/50 transition-colors"
-            onClick={() => setShowForm(!showForm)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className={cn(
-                  "h-5 w-5",
-                  showForm ? "text-primary" : "text-muted-foreground"
-                )} />
-                <CardTitle className="text-base">
-                  Formulario de Trabajo
-                  {!showForm && initialFormValues && Object.keys(initialFormValues).length > 0 && (
-                    <span className="ml-2 text-xs font-normal text-primary">(En progreso)</span>
-                  )}
-                </CardTitle>
-              </div>
-              {showForm ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+        <div ref={formRef} className="scroll-mt-4">
+          <Card className={cn(
+            "shadow-none transition-all",
+            showForm ? "ring-2 ring-primary/20 border-primary/30" : "border-border"
+          )}>
+            <CardHeader
+              className={cn(
+                "transition-colors",
+                !showForm && "cursor-pointer select-none active:bg-accent/50"
               )}
-            </div>
-          </CardHeader>
-          {showForm && workOrder.template?.customFields && (
-            <CardContent className="pt-0">
-              <WorkOrderCompleteForm
-                customFields={workOrder.template.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
-                workOrderId={workOrderId}
-                initialValues={initialFormValues}
-                onSubmit={handleCompleteWork}
-                onCancel={handleCancelWork}
-                isSubmitting={updating}
-              />
-            </CardContent>
-          )}
-        </Card>
+              onClick={() => !showForm && setShowForm(true)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    showForm ? "bg-primary text-primary-foreground" : "bg-muted"
+                  )}>
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">
+                      Formulario de Trabajo
+                    </CardTitle>
+                    {!showForm && initialFormValues && Object.keys(initialFormValues).length > 0 && (
+                      <p className="text-xs text-primary font-medium mt-0.5">
+                        Datos guardados - Toca para continuar
+                      </p>
+                    )}
+                    {!showForm && (!initialFormValues || Object.keys(initialFormValues).length === 0) && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Toca para completar
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {!showForm && (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </CardHeader>
+            {showForm && workOrder.template?.customFields && (
+              <CardContent className="pt-0 space-y-4">
+                <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                <WorkOrderCompleteForm
+                  customFields={workOrder.template.customFields as { fields: NonNullable<CustomFieldsConfig['fields']> }}
+                  workOrderId={workOrderId}
+                  initialValues={initialFormValues}
+                  onSubmit={handleCompleteWork}
+                  onCancel={handleCancelWork}
+                  isSubmitting={updating}
+                />
+              </CardContent>
+            )}
+          </Card>
+        </div>
       )}
 
       {/* Supporting Information Section */}

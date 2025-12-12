@@ -56,7 +56,7 @@ export function WorkOrderCompleteForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {customFields && (
           <>
             <WorkOrderCustomFields
@@ -67,17 +67,18 @@ export function WorkOrderCompleteForm({
             <Separator />
           </>
         )}
-        
+
         <FormField
           control={form.control}
           name="completionNotes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notas de Finalización</FormLabel>
+              <FormLabel className="text-base font-semibold">Notas de Finalización</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Describe el trabajo realizado, observaciones, problemas encontrados..."
-                  rows={3}
+                  rows={4}
+                  className="resize-none"
                   {...field}
                 />
               </FormControl>
@@ -86,34 +87,45 @@ export function WorkOrderCompleteForm({
           )}
         />
 
-        <div className="flex gap-2 pt-4">
+        {/* Info callout */}
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm">
+          <p className="font-medium text-foreground mb-1">
+            <CheckCircle2 className="h-4 w-4 inline mr-1.5 text-primary" />
+            Completar Orden de Trabajo
+          </p>
+          <p className="text-muted-foreground text-xs">
+            Al confirmar, se finalizará el tracking de tiempo y se marcará la orden de trabajo como completada.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 pt-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            size="lg"
+            className="w-full h-14 font-semibold shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+          >
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="mr-2 h-5 w-5" />
+            )}
+            Completar Orden de Trabajo
+          </Button>
           <Button
             type="button"
             onClick={handleCancel}
             disabled={isSubmitting}
-            variant="destructive"
-            className="flex-1"
-            size="sm"
+            variant="outline"
+            size="lg"
+            className="w-full h-12 font-medium border-2"
           >
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <XCircle className="mr-2 h-4 w-4" />
             )}
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1"
-            size="sm"
-          >
-            {isSubmitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-            )}
-            Completar
+            Cancelar Orden
           </Button>
         </div>
       </form>

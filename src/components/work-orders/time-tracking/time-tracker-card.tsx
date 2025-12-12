@@ -8,7 +8,7 @@
 "use client"
 
 import { useState } from "react"
-import { Play, Pause, Square, Clock } from "lucide-react"
+import { Play, Pause, Square, Clock, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,8 @@ interface TimeTrackerCardProps {
   onActionComplete?: () => void
   onStartWork?: () => Promise<void>
   disabled?: boolean
+  hasCustomFields?: boolean
+  onCompleteClick?: () => void
 }
 
 export function TimeTrackerCard({
@@ -34,6 +36,8 @@ export function TimeTrackerCard({
   onActionComplete,
   onStartWork,
   disabled = false,
+  hasCustomFields = false,
+  onCompleteClick,
 }: TimeTrackerCardProps) {
   const [showPauseDialog, setShowPauseDialog] = useState(false)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
@@ -218,7 +222,10 @@ export function TimeTrackerCard({
 
             {isTracking && !isPaused && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={cn(
+                  "gap-3",
+                  hasCustomFields ? "flex flex-col" : "grid grid-cols-2"
+                )}>
                   <Button
                     size="lg"
                     variant="outline"
@@ -230,15 +237,27 @@ export function TimeTrackerCard({
                     Pausar
                   </Button>
 
-                  <Button
-                    size="lg"
-                    onClick={() => setShowCompleteDialog(true)}
-                    disabled={disabled || isLoading}
-                    className="h-14 font-semibold shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-primary to-primary/90"
-                  >
-                    <Square className="h-5 w-5 mr-2" />
-                    Completar
-                  </Button>
+                  {hasCustomFields ? (
+                    <Button
+                      size="lg"
+                      onClick={onCompleteClick}
+                      disabled={disabled || isLoading}
+                      className="h-14 font-semibold shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-primary to-primary/90"
+                    >
+                      <FileText className="h-5 w-5 mr-2" />
+                      Siguiente: Completar Formulario
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      onClick={() => setShowCompleteDialog(true)}
+                      disabled={disabled || isLoading}
+                      className="h-14 font-semibold shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-primary to-primary/90"
+                    >
+                      <Square className="h-5 w-5 mr-2" />
+                      Completar
+                    </Button>
+                  )}
                 </div>
               </>
             )}

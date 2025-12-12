@@ -510,6 +510,124 @@ export class WorkOrderService {
   }
 
   /**
+   * Approve work order QA sign-off
+   */
+  static async qaApproveWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    comments?: string
+  ): Promise<WorkOrderWithRelations | null> {
+    // Check permissions
+    await PermissionGuard.require(session, 'work_orders.qa_signoff')
+
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      return null
+    }
+
+    // Verify work order is in PENDING_QA status
+    if (existingWorkOrder.status !== 'PENDING_QA') {
+      throw new Error('La orden de trabajo debe estar en estado PENDING_QA para aprobar QA')
+    }
+
+    // Prepare update data
+    const updateData: Prisma.WorkOrderUpdateInput = {
+      status: 'COMPLETED',
+      qaSignedOffByUser: { connect: { id: session.user.id } },
+      qaSignedOffAt: new Date(),
+      qaComments: comments || null,
+      // Clear rejection fields if they exist
+      qaRejectedByUser: { disconnect: true },
+      qaRejectedAt: null
+    }
+
+    // Set completedAt if not already set
+    if (!existingWorkOrder.completedAt) {
+      updateData.completedAt = new Date()
+    }
+
+    // Calculate costs if there are time logs (similar to completeWorkOrder)
+    const { TimeTrackingRepository } = await import("@/server/repositories/time-tracking.repository")
+    const timeTrackingRepo = new TimeTrackingRepository()
+
+    const timeLogs = await prisma.workOrderTimeLog.findMany({
+      where: { workOrderId: id },
+      take: 1,
+    })
+
+    if (timeLogs.length > 0) {
+      try {
+        const costs = await timeTrackingRepo.calculateActualCost(id)
+        const summary = await timeTrackingRepo.getTimeSummary(id)
+
+        updateData.actualDuration = summary.totalElapsedMinutes
+        updateData.activeWorkTime = summary.activeWorkMinutes
+        updateData.waitingTime = summary.pausedMinutes
+        updateData.laborCost = costs.laborCost
+        updateData.partsCost = costs.partsCost
+        updateData.downtimeCost = costs.downtimeCost
+        updateData.actualCost = costs.totalCost
+      } catch (error) {
+        console.error("Error calculating costs on QA approval:", error)
+        // Don't fail the update if cost calculation fails
+      }
+    }
+
+    const updatedWorkOrder = await WorkOrderRepository.update(id, updateData)
+
+    // Send email notifications (async, don't block response)
+    if (updatedWorkOrder) {
+      this.sendWorkOrderCompletedEmails(updatedWorkOrder, session).catch(error => {
+        console.error('Error sending work order completed emails:', error)
+      })
+    }
+
+    return updatedWorkOrder
+  }
+
+  /**
+   * Reject work order QA sign-off
+   */
+  static async qaRejectWorkOrder(
+    session: AuthenticatedSession,
+    id: string,
+    comments: string
+  ): Promise<WorkOrderWithRelations | null> {
+    // Check permissions
+    await PermissionGuard.require(session, 'work_orders.qa_signoff')
+
+    // Get existing work order
+    const existingWorkOrder = await this.getWorkOrderById(session, id)
+    if (!existingWorkOrder) {
+      return null
+    }
+
+    // Verify work order is in PENDING_QA status
+    if (existingWorkOrder.status !== 'PENDING_QA') {
+      throw new Error('La orden de trabajo debe estar en estado PENDING_QA para rechazar QA')
+    }
+
+    // Comments are required for rejection
+    if (!comments || !comments.trim()) {
+      throw new Error('Los comentarios son requeridos al rechazar QA')
+    }
+
+    // Prepare update data
+    const updateData: Prisma.WorkOrderUpdateInput = {
+      status: 'IN_PROGRESS',
+      qaRejectedByUser: { connect: { id: session.user.id } },
+      qaRejectedAt: new Date(),
+      qaComments: comments,
+      // Clear approval fields if they exist
+      qaSignedOffByUser: { disconnect: true },
+      qaSignedOffAt: null
+    }
+
+    return await WorkOrderRepository.update(id, updateData)
+  }
+
+  /**
    * Delete work order (soft delete)
    */
   static async deleteWorkOrder(
