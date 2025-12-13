@@ -12,6 +12,7 @@ import type { ServerUser, UserPermissions, CompanyFeature } from "./sidebar-type
 import {
   MAIN_NAV_ITEMS,
   SUPER_ADMIN_NAV_ITEMS,
+  SUPER_ADMIN_PANEL_GROUPS,
   CLIENT_NAV_ITEMS,
   buildAdminNavigation,
   getMainFeatureNavItems,
@@ -123,16 +124,10 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
   const adminItems = useMemo(() => {
     if (isExternalUser) return []
 
-    // For regular company/group admins: use new navigation system
-    if (!isSuperAdmin) {
-      const groups = buildAdminNavigation({
-        hasExternalClientMgmt,
-        hasAttendance,
-        hasTimeOff,
-      })
-
+    // For super admins: use SUPER_ADMIN_PANEL_GROUPS
+    if (isSuperAdmin) {
       // Flatten groups and map to NavProjects expected format
-      return groups.flatMap(group =>
+      return SUPER_ADMIN_PANEL_GROUPS.flatMap(group =>
         group.items.map(item => ({
           name: item.title,
           url: item.url,
@@ -142,10 +137,22 @@ export function useSidebarData({ companyBranding, serverUser, userPermissions, c
       )
     }
 
-    // For super admins: use SUPER_ADMIN_PANEL_GROUPS
-    // Import this from the new navigation system if needed
-    // For now, return empty as super admin has their own dashboard
-    return []
+    // For regular company/group admins: use new navigation system
+    const groups = buildAdminNavigation({
+      hasExternalClientMgmt,
+      hasAttendance,
+      hasTimeOff,
+    })
+
+    // Flatten groups and map to NavProjects expected format
+    return groups.flatMap(group =>
+      group.items.map(item => ({
+        name: item.title,
+        url: item.url,
+        icon: item.icon,
+        items: item.items,
+      }))
+    )
   }, [isSuperAdmin, isExternalUser, hasExternalClientMgmt, hasAttendance, hasTimeOff])
 
   // Company info for TeamSwitcher
