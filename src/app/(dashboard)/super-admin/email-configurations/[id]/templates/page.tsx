@@ -1,8 +1,9 @@
 "use client"
 
 import { useRouter, useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
+import useSWR from "swr"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { TableActions, createEditAction, createDeleteAction } from "@/components/common/table-actions"
@@ -33,47 +34,40 @@ interface EmailConfiguration {
   }
 }
 
+interface TemplatesResponse {
+  items: EmailTemplate[]
+}
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
 export default function EmailTemplatesPage() {
   const router = useRouter()
   const params = useParams()
   const configId = params.id as string
 
-  const [templates, setTemplates] = useState<EmailTemplate[]>([])
-  const [configuration, setConfiguration] = useState<EmailConfiguration | null>(null)
-  const [loading, setLoading] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<EmailTemplate | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-
-      // Fetch configuration details
-      const configResponse = await fetch(`/api/admin/email-configurations/${configId}`)
-      if (configResponse.ok) {
-        const configData = await configResponse.json()
-        setConfiguration(configData)
-      }
-
-      // Fetch templates
-      const templatesResponse = await fetch(`/api/admin/email-templates?emailConfigurationId=${configId}`)
-      if (templatesResponse.ok) {
-        const data = await templatesResponse.json()
-        setTemplates(data.items || [])
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      toast.error('Error al cargar los datos')
-    } finally {
-      setLoading(false)
+  // Fetch configuration details with SWR
+  const { data: configuration } = useSWR<EmailConfiguration>(
+    configId ? `/api/admin/email-configurations/${configId}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
     }
-  }
+  )
 
-  useEffect(() => {
-    fetchData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configId])
+  // Fetch templates with SWR
+  const { data: templatesData, error, isLoading, mutate } = useSWR<TemplatesResponse>(
+    configId ? `/api/admin/email-templates?emailConfigurationId=${configId}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+    }
+  )
+
+  const templates = templatesData?.items || []
 
   const handleEdit = (templateId: string) => {
     router.push(`/super-admin/email-configurations/${configId}/templates/${templateId}/edit`)
@@ -97,7 +91,8 @@ export default function EmailTemplatesPage() {
         toast.success('Template desactivado exitosamente')
         setDeleteDialogOpen(false)
         setTemplateToDelete(null)
-        fetchData()
+        // Revalidate SWR cache
+        mutate()
       } else {
         const error = await response.json()
         toast.error(error.error || 'Error al desactivar el template')
@@ -210,7 +205,7 @@ export default function EmailTemplatesPage() {
       <DataTable
         columns={columns}
         data={templates}
-        loading={loading}
+        loading={isLoading}
         onAdd={handleAddTemplate}
         addLabel="Nuevo Template"
       />

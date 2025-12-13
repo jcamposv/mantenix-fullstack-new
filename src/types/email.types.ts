@@ -131,6 +131,15 @@ export interface SendEmailData {
   cc?: string | string[]
   bcc?: string | string[]
   attachments?: EmailAttachment[]
+  brandingOverride?: {
+    brandName?: string
+    logoUrl?: string
+    logoSmallUrl?: string
+    primaryColor?: string
+    secondaryColor?: string
+    backgroundColor?: string
+    font?: string
+  }
 }
 
 // Email attachment
@@ -147,13 +156,24 @@ export interface EmailSendResponse {
   error?: string
 }
 
+export const COMMON_BRANDING_VARIABLES = [
+  "brand_name",
+  "brand_logo_url",
+  "brand_logo_small_url",
+  "brand_primary_color",
+  "brand_secondary_color",
+  "brand_background_color",
+  "brand_font"
+] as const
+
 // Available template variables by type
 export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
   WELCOME: [
     "user_name",
     "user_email",
     "company_name",
-    "login_url"
+    "login_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   USER_INVITATION: [
     "user_name",
@@ -161,7 +181,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "inviter_name",
     "company_name",
     "link_register",
-    "expiration_date"
+    "expiration_date",
+    ...COMMON_BRANDING_VARIABLES
   ],
   WORK_ORDER_CREATED: [
     "work_order_number",
@@ -173,7 +194,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "site_name",
     "scheduled_date",
     "created_by_name",
-    "work_order_url"
+    "work_order_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   WORK_ORDER_COMPLETED: [
     "work_order_number",
@@ -185,7 +207,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "site_name",
     "created_by_name",
     "scheduled_date",
-    "work_order_url"
+    "work_order_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   WORK_ORDER_CANCELLED: [
     "work_order_number",
@@ -195,7 +218,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "cancelled_by_name",
     "cancelled_at",
     "cancellation_reason",
-    "work_order_url"
+    "work_order_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   ALERT_CREATED: [
     "alert_title",
@@ -206,7 +230,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "location",
     "reported_by_name",
     "reported_at",
-    "alert_url"
+    "alert_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   ALERT_ASSIGNED: [
     "alert_title",
@@ -216,7 +241,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "assigned_to_name",
     "assigned_by_name",
     "assigned_at",
-    "alert_url"
+    "alert_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   ALERT_RESOLVED: [
     "alert_title",
@@ -225,7 +251,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "resolved_by_name",
     "resolved_at",
     "resolution_notes",
-    "alert_url"
+    "alert_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   ALERT_ESCALATED: [
     "alert_title",
@@ -237,7 +264,8 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "reported_by_name",
     "reported_at",
     "escalation_reason",
-    "alert_url"
+    "alert_url",
+    ...COMMON_BRANDING_VARIABLES
   ],
   PASSWORD_RESET: [
     "user_name",
@@ -245,6 +273,7 @@ export const TEMPLATE_VARIABLES: Record<EmailTemplateType, string[]> = {
     "admin_name",
     "company_name",
     "reset_link",
-    "expiration_date"
+    "expiration_date",
+    ...COMMON_BRANDING_VARIABLES
   ]
 }

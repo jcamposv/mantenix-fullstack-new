@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { sendInviteEmail } from "@/lib/email"
 import crypto from "crypto"
 import { AuthService } from "@/server/services/auth.service"
+import { updateBrandingSchema } from "@/lib/validations"
+import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image, hourlyRate } = body
+    const { email, role, companyId, name, isExternalUser, clientCompanyId, siteId, image, hourlyRate, branding } = body
 
     // Validate required fields
     if (!email || !role || !name) {
@@ -159,6 +161,39 @@ export async function POST(request: NextRequest) {
         )
       }
     }
+    let brandingOverride:
+      | {
+          brandName?: string
+          logoUrl?: string
+          logoSmallUrl?: string
+          primaryColor?: string
+          secondaryColor?: string
+          backgroundColor?: string
+          font?: string
+        }
+      | undefined
+    if (branding) {
+      const BrandingPayloadSchema = updateBrandingSchema.extend({
+        brandName: z.string().min(1).max(100).optional()
+      })
+      const parsed = BrandingPayloadSchema.safeParse(branding)
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Invalid branding payload", details: parsed.error.flatten() },
+          { status: 400 }
+        )
+      }
+      const b = parsed.data
+      brandingOverride = {
+        brandName: b.brandName,
+        logoUrl: b.logo,
+        logoSmallUrl: b.logoSmall,
+        primaryColor: b.primaryColor,
+        secondaryColor: b.secondaryColor,
+        backgroundColor: b.backgroundColor,
+        font: b.customFont
+      }
+    }
 
     // Find the role by key
     const roleRecord = await prisma.customRole.findUnique({
@@ -228,7 +263,8 @@ export async function POST(request: NextRequest) {
       companyName: company?.name || "Mantenix",
       role: role,
       inviteLink,
-      companyId: targetCompanyId
+      companyId: targetCompanyId,
+      brandingOverride
     })
 
     return NextResponse.json({

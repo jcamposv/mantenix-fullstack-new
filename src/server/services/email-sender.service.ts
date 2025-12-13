@@ -1,28 +1,21 @@
 import { MailerSend, EmailParams, Sender, Recipient } from "mailersend"
 import { EmailConfigurationRepository } from "../repositories/email-configuration.repository"
 import { EmailTemplateRepository } from "../repositories/email-template.repository"
+import { CompanyRepository } from "../repositories/company.repository"
 import type {
   SendEmailData,
   EmailSendResponse,
 } from "@/types/email.types"
 
-/**
- * Servicio para enviar emails a través de MailerSend
- */
 export class EmailSenderService {
 
-  /**
-   * Envía un email usando un template configurado
-   */
   static async sendEmail(data: SendEmailData): Promise<EmailSendResponse> {
     try {
-      // Obtener la configuración de email de la company
       const emailConfig = await EmailConfigurationRepository.findByCompanyId(data.companyId)
       if (!emailConfig || !emailConfig.isActive) {
         throw new Error("No hay configuración de email activa para esta empresa")
       }
 
-      // Obtener el template correspondiente
       const template = await EmailTemplateRepository.findByConfigurationAndType(
         emailConfig.id,
         data.templateType
@@ -31,43 +24,57 @@ export class EmailSenderService {
         throw new Error(`No hay template activo para el tipo: ${data.templateType}`)
       }
 
-      // Inicializar MailerSend con el API token de la configuración
       const mailerSend = new MailerSend({
         apiKey: emailConfig.apiToken,
       })
 
-      // Configurar remitente
       const sentFrom = new Sender(emailConfig.fromEmail, emailConfig.fromName)
 
-      // Configurar destinatarios
       const recipients = Array.isArray(data.to)
         ? data.to.map(email => new Recipient(email))
         : [new Recipient(data.to)]
 
-      // Crear EmailParams
+      const company = await CompanyRepository.findById(data.companyId)
+      const brandingVars: Record<string, string> = {}
+      if (company) {
+        brandingVars["brand_name"] = company.name
+        if (company.logo) brandingVars["brand_logo_url"] = company.logo
+        if (company.logoSmall) brandingVars["brand_logo_small_url"] = company.logoSmall
+        if (company.primaryColor) brandingVars["brand_primary_color"] = company.primaryColor
+        if (company.secondaryColor) brandingVars["brand_secondary_color"] = company.secondaryColor
+        if (company.backgroundColor) brandingVars["brand_background_color"] = company.backgroundColor
+        if (company.customFont) brandingVars["brand_font"] = company.customFont
+      }
+      if (data.brandingOverride) {
+        if (data.brandingOverride.brandName) brandingVars["brand_name"] = data.brandingOverride.brandName
+        if (data.brandingOverride.logoUrl) brandingVars["brand_logo_url"] = data.brandingOverride.logoUrl
+        if (data.brandingOverride.logoSmallUrl) brandingVars["brand_logo_small_url"] = data.brandingOverride.logoSmallUrl
+        if (data.brandingOverride.primaryColor) brandingVars["brand_primary_color"] = data.brandingOverride.primaryColor
+        if (data.brandingOverride.secondaryColor) brandingVars["brand_secondary_color"] = data.brandingOverride.secondaryColor
+        if (data.brandingOverride.backgroundColor) brandingVars["brand_background_color"] = data.brandingOverride.backgroundColor
+        if (data.brandingOverride.font) brandingVars["brand_font"] = data.brandingOverride.font
+      }
+      const mergedVariables = { ...brandingVars, ...data.variables }
+    
       const emailParams = new EmailParams()
         .setFrom(sentFrom)
         .setTo(recipients)
-        .setSubject(this.replaceVariables(template.subject, data.variables))
+        .setSubject(this.replaceVariables(template.subject, mergedVariables))
 
-      // Configurar reply-to si existe
       if (emailConfig.replyToEmail) {
         emailParams.setReplyTo(new Sender(emailConfig.replyToEmail))
       }
 
-      // Si el template usa un templateId de MailerSend
       if (template.templateId) {
         emailParams.setTemplateId(template.templateId)
 
-        // Agregar personalización con variables
         const personalization = recipients.map(recipient => ({
           email: recipient.email,
-          data: data.variables
+          data: mergedVariables
         }))
         emailParams.setPersonalization(personalization)
       }
 
-      // Agregar CC si existe
       if (data.cc) {
         const ccRecipients = Array.isArray(data.cc)
           ? data.cc.map(email => new Recipient(email))
@@ -75,7 +82,6 @@ export class EmailSenderService {
         emailParams.setCc(ccRecipients)
       }
 
-      // Agregar BCC si existe
       if (data.bcc) {
         const bccRecipients = Array.isArray(data.bcc)
           ? data.bcc.map(email => new Recipient(email))
@@ -83,7 +89,6 @@ export class EmailSenderService {
         emailParams.setBcc(bccRecipients)
       }
 
-      // Agregar attachments si existen
       if (data.attachments && data.attachments.length > 0) {
         const attachments = data.attachments.map(att => ({
           filename: att.filename,
@@ -93,7 +98,6 @@ export class EmailSenderService {
         emailParams.setAttachments(attachments)
       }
 
-      // Enviar el email
       const response = await mailerSend.email.send(emailParams)
 
       return {
@@ -109,10 +113,6 @@ export class EmailSenderService {
     }
   }
 
-  /**
-   * Reemplaza variables en el contenido
-   * Formato: {{variable_name}}
-   */
   private static replaceVariables(
     content: string,
     variables: Record<string, string | number | boolean>
@@ -127,9 +127,7 @@ export class EmailSenderService {
     return result
   }
 
-  /**
-   * Envía un email de bienvenida
-   */
+  
   static async sendWelcomeEmail(
     to: string,
     userName: string,
@@ -150,9 +148,7 @@ export class EmailSenderService {
     })
   }
 
-  /**
-   * Envía un email de invitación de usuario
-   */
+
   static async sendInvitationEmail(
     to: string,
     userName: string,
@@ -160,7 +156,16 @@ export class EmailSenderService {
     companyName: string,
     invitationLink: string,
     expirationDate: string,
-    companyId: string
+    companyId: string,
+    brandingOverride?: {
+      brandName?: string
+      logoUrl?: string
+      logoSmallUrl?: string
+      primaryColor?: string
+      secondaryColor?: string
+      backgroundColor?: string
+      font?: string
+    }
   ): Promise<EmailSendResponse> {
     return await this.sendEmail({
       to,
@@ -173,13 +178,11 @@ export class EmailSenderService {
         link_register: invitationLink,
         expiration_date: expirationDate
       },
-      companyId
+      companyId,
+      brandingOverride
     })
   }
 
-  /**
-   * Envía un email de orden de trabajo creada
-   */
   static async sendWorkOrderCreatedEmail(
     to: string | string[],
     workOrderNumber: string,
@@ -213,9 +216,6 @@ export class EmailSenderService {
     })
   }
 
-  /**
-   * Envía un email de orden de trabajo completada
-   */
   static async sendWorkOrderCompletedEmail(
     to: string | string[],
     workOrderNumber: string,
@@ -249,9 +249,6 @@ export class EmailSenderService {
     })
   }
 
-  /**
-   * Envía un email de alerta creada
-   */
   static async sendAlertCreatedEmail(
     to: string | string[],
     alertTitle: string,
@@ -283,9 +280,6 @@ export class EmailSenderService {
     })
   }
 
-  /**
-   * Envía un email de reseteo de contraseña
-   */
   static async sendPasswordResetEmail(
     to: string,
     userName: string,
@@ -310,9 +304,6 @@ export class EmailSenderService {
     })
   }
 
-  /**
-   * Envía un email de alerta escalada a supervisor/admin
-   */
   static async sendAlertEscalatedEmail(
     to: string | string[],
     alertTitle: string,
