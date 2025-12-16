@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,10 +14,11 @@ import {
 } from "@/components/ui/select"
 import { Package, MapPin, Building2, Search, Filter, Wrench } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { AssetStatusBadge } from "@/components/common/asset-status-badge"
-import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { OfflineStatusBanner } from "@/components/mobile/offline-status-banner"
+import { useOfflineAssets } from "@/hooks/use-offline-data"
 
+// Asset type with relations
 interface Asset {
   id: string
   name: string
@@ -47,51 +48,62 @@ const statusColors = {
 }
 
 export default function MobileAssetsPage() {
-  const { user: currentUser, loading: userLoading } = useCurrentUser()
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [showFilters, setShowFilters] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    if (!userLoading && currentUser) {
-      fetchAssets()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, currentUser, statusFilter])
+  // Offline-enabled data fetching
+  const {
+    data: assets,
+    isLoading,
+    isOffline,
+    isStale,
+    lastSyncAt,
+    refresh
+  } = useOfflineAssets({
+    statusFilter: statusFilter || undefined,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
 
-  const fetchAssets = async () => {
+  // Memoized filtered assets
+  const filteredAssets = useMemo(() => {
+    if (!assets) return []
+    return assets.filter((asset: Asset) =>
+      asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [assets, searchTerm])
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const allAssets = assets || []
+    return {
+      operativo: allAssets.filter((a: Asset) => a.status === 'OPERATIVO').length,
+      mantenimiento: allAssets.filter((a: Asset) => a.status === 'EN_MANTENIMIENTO').length,
+      fueraServicio: allAssets.filter((a: Asset) => a.status === 'FUERA_DE_SERVICIO').length,
+    }
+  }, [assets])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
     try {
-      const params = new URLSearchParams()
-      if (statusFilter) params.append('status', statusFilter)
-
-      const response = await fetch(`/api/admin/assets?${params.toString()}`)
-
-      if (response.ok) {
-        const data = await response.json()
-        setAssets(data.items || data)
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Error al cargar los activos')
-      }
-    } catch (error) {
-      console.error('Error fetching assets:', error)
-      toast.error('Error al cargar los activos')
+      await refresh()
     } finally {
-      setLoading(false)
+      setRefreshing(false)
     }
-  }
+  }, [refresh])
 
-  const filteredAssets = assets.filter(asset =>
-    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const handleClearFilters = useCallback(() => {
+    setStatusFilter("")
+    setSearchTerm("")
+  }, [])
 
-  if (loading) {
+  // Loading state
+  if (isLoading && !assets?.length) {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
@@ -112,24 +124,34 @@ export default function MobileAssetsPage() {
 
   return (
     <div className="space-y-4">
-      {/* Header con título */}
+      {/* Offline/Stale status banner */}
+      <OfflineStatusBanner
+        isOffline={isOffline}
+        isStale={isStale}
+        onRefresh={handleRefresh}
+        lastSyncAt={lastSyncAt}
+        isRefreshing={refreshing}
+        className="-mx-4 -mt-4 mb-4"
+      />
+
+      {/* Header with title */}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Wrench className="w-6 h-6" />
-          Máquinas y Activos
+          Maquinas y Activos
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gestiona el estado de las máquinas
+          Gestiona el estado de las maquinas
         </p>
       </div>
 
-      {/* Búsqueda y filtros */}
+      {/* Search and filters */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Buscar máquinas..."
+              placeholder="Buscar maquinas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -144,7 +166,7 @@ export default function MobileAssetsPage() {
           </Button>
         </div>
 
-        {/* Filtros colapsables */}
+        {/* Collapsible filters */}
         {showFilters && (
           <div className="grid grid-cols-1 gap-3 p-3 bg-muted/50 rounded-lg">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -161,10 +183,8 @@ export default function MobileAssetsPage() {
 
             <Button
               variant="outline"
-              onClick={() => {
-                setStatusFilter("")
-                fetchAssets()
-              }}
+              onClick={handleClearFilters}
+              disabled={isOffline}
             >
               Limpiar Filtros
             </Button>
@@ -172,12 +192,12 @@ export default function MobileAssetsPage() {
         )}
       </div>
 
-      {/* Estadísticas rápidas */}
+      {/* Quick stats */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {assets.filter(a => a.status === 'OPERATIVO').length}
+              {stats.operativo}
             </div>
             <div className="text-xs text-muted-foreground">Operativas</div>
           </div>
@@ -185,7 +205,7 @@ export default function MobileAssetsPage() {
         <Card className="p-3">
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">
-              {assets.filter(a => a.status === 'EN_MANTENIMIENTO').length}
+              {stats.mantenimiento}
             </div>
             <div className="text-xs text-muted-foreground">Mantenimiento</div>
           </div>
@@ -193,28 +213,28 @@ export default function MobileAssetsPage() {
         <Card className="p-3">
           <div className="text-center">
             <div className="text-2xl font-bold text-red-600">
-              {assets.filter(a => a.status === 'FUERA_DE_SERVICIO').length}
+              {stats.fueraServicio}
             </div>
             <div className="text-xs text-muted-foreground">Fuera Servicio</div>
           </div>
         </Card>
       </div>
 
-      {/* Lista de activos */}
+      {/* Asset list */}
       <div className="space-y-3">
         {filteredAssets.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-            <h3 className="font-semibold mb-2">No hay máquinas</h3>
+            <h3 className="font-semibold mb-2">No hay maquinas</h3>
             <p className="text-muted-foreground text-sm">
               {searchTerm || statusFilter
-                ? "No se encontraron máquinas con los filtros aplicados"
-                : "No hay máquinas registradas en este momento"
+                ? "No se encontraron maquinas con los filtros aplicados"
+                : "No hay maquinas registradas en este momento"
               }
             </p>
           </Card>
         ) : (
-          filteredAssets.map((asset) => (
+          filteredAssets.map((asset: Asset) => (
             <Card
               key={asset.id}
               className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.98]"
@@ -222,11 +242,11 @@ export default function MobileAssetsPage() {
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  {/* Indicador de estado */}
+                  {/* Status indicator */}
                   <div className={`w-1 h-full rounded-full ${statusColors[asset.status]} min-h-20`}></div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Header con nombre y estado */}
+                    {/* Header with name and status */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-base leading-tight">
@@ -240,26 +260,28 @@ export default function MobileAssetsPage() {
                       <AssetStatusBadge status={asset.status} />
                     </div>
 
-                    {/* Categoría si existe */}
+                    {/* Category if exists */}
                     {asset.category && (
                       <div className="text-xs text-muted-foreground mb-2">
                         {asset.category}
                       </div>
                     )}
 
-                    {/* Ubicación y sede */}
+                    {/* Location and site */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <MapPin className="w-3 h-3 shrink-0" />
                         <span className="truncate">{asset.location}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Building2 className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{asset.site.name}</span>
-                      </div>
+                      {asset.site && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Building2 className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{asset.site.name}</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Órdenes de trabajo relacionadas */}
+                    {/* Related work orders */}
                     {asset._count?.workOrders && asset._count.workOrders > 0 && (
                       <div className="mt-2 pt-2 border-t">
                         <Badge variant="outline" className="text-xs">

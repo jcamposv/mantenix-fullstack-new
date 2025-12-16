@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
 import { WorkOrderPriorityBadge } from "@/components/work-orders/work-order-priority-badge"
 import { WorkOrderTypeBadge } from "@/components/work-orders/work-order-type-badge"
+import { OfflineStatusBanner } from "@/components/mobile/offline-status-banner"
 import {
   RefreshCw,
   Building,
@@ -24,28 +25,42 @@ import {
 } from "lucide-react"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import { cn } from "@/lib/utils"
+import { useOfflineWorkOrders } from "@/hooks/use-offline-data"
 
 export default function MobileWorkOrdersPage() {
-  const [workOrders, setWorkOrders] = useState<WorkOrderWithRelations[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Offline-enabled data fetching
+  const {
+    data: workOrders,
+    isLoading,
+    error,
+    isOffline,
+    isStale,
+    lastSyncAt,
+    refresh
+  } = useOfflineWorkOrders({
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  })
+
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterPriority, setFilterPriority] = useState<string | null>(null)
   const router = useRouter()
 
-  // Filtrar órdenes activas
-  const activeWorkOrders = workOrders.filter(wo =>
-    ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status)
-  )
+  // Memoized filtered work orders
+  const { activeWorkOrders, historyWorkOrders } = useMemo(() => {
+    const orders = workOrders || []
+    return {
+      activeWorkOrders: orders.filter(wo =>
+        ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status)
+      ),
+      historyWorkOrders: orders.filter(wo =>
+        ['COMPLETED', 'CANCELLED'].includes(wo.status)
+      )
+    }
+  }, [workOrders])
 
-  // Filtrar historial
-  const historyWorkOrders = workOrders.filter(wo =>
-    ['COMPLETED', 'CANCELLED'].includes(wo.status)
-  )
-
-  // Aplicar búsqueda y filtros
-  const filterWorkOrders = (orders: WorkOrderWithRelations[]) => {
+  // Apply search and priority filters
+  const filterWorkOrders = useCallback((orders: WorkOrderWithRelations[]) => {
     return orders.filter(wo => {
       const matchesSearch = searchQuery === "" ||
         wo.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,44 +70,31 @@ export default function MobileWorkOrdersPage() {
 
       return matchesSearch && matchesPriority
     })
-  }
+  }, [searchQuery, filterPriority])
 
-  const filteredActive = filterWorkOrders(activeWorkOrders)
-  const filteredHistory = filterWorkOrders(historyWorkOrders)
+  const filteredActive = useMemo(
+    () => filterWorkOrders(activeWorkOrders),
+    [filterWorkOrders, activeWorkOrders]
+  )
+  const filteredHistory = useMemo(
+    () => filterWorkOrders(historyWorkOrders),
+    [filterWorkOrders, historyWorkOrders]
+  )
 
-  const fetchMyWorkOrders = async () => {
+  const handleViewWorkOrder = useCallback((id: string) => {
+    router.push(`/mobile/work-orders/${id}`)
+  }, [router])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
     try {
-      setError(null)
-      const response = await fetch('/api/work-orders/my')
-
-      if (!response.ok) {
-        throw new Error('Error al cargar las órdenes de trabajo')
-      }
-
-      const data = await response.json()
-      setWorkOrders(data.items || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      await refresh()
     } finally {
-      setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [refresh])
 
-  useEffect(() => {
-    fetchMyWorkOrders()
-  }, [])
-
-  const handleViewWorkOrder = (id: string) => {
-    router.push(`/mobile/work-orders/${id}`)
-  }
-
-  const handleRefresh = () => {
-    setRefreshing(true)
-    fetchMyWorkOrders()
-  }
-
-  // Calcular días restantes
+  // Calculate days remaining
   const getDaysRemaining = (scheduledDate: Date | string) => {
     const today = new Date()
     const scheduled = new Date(scheduledDate)
@@ -101,13 +103,13 @@ export default function MobileWorkOrdersPage() {
     return diffDays
   }
 
-  // Obtener color de urgencia según prioridad y tiempo
+  // Get urgency color based on priority and time
   const getUrgencyColor = (priority: string, scheduledDate?: Date | string) => {
     if (scheduledDate) {
       const daysRemaining = getDaysRemaining(scheduledDate)
-      if (daysRemaining < 0) return 'border-l-red-500' // Vencido
-      if (daysRemaining === 0) return 'border-l-orange-500' // Hoy
-      if (daysRemaining === 1) return 'border-l-yellow-500' // Mañana
+      if (daysRemaining < 0) return 'border-l-red-500' // Overdue
+      if (daysRemaining === 0) return 'border-l-orange-500' // Today
+      if (daysRemaining === 1) return 'border-l-yellow-500' // Tomorrow
     }
 
     switch (priority) {
@@ -118,7 +120,7 @@ export default function MobileWorkOrdersPage() {
     }
   }
 
-  // Componente de card mejorado
+  // Work order card component
   const MobileWorkOrderCard = ({ workOrder }: { workOrder: WorkOrderWithRelations }) => {
     const isActive = ['DRAFT', 'ASSIGNED', 'IN_PROGRESS'].includes(workOrder.status)
     const urgencyColor = getUrgencyColor(workOrder.priority, workOrder.scheduledDate ?? undefined)
@@ -151,7 +153,7 @@ export default function MobileWorkOrdersPage() {
             <ArrowRight className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0 ml-2" />
           </div>
 
-          {/* Badges compactos */}
+          {/* Compact badges */}
           <div className="flex items-center gap-1.5 mb-3 flex-wrap">
             <WorkOrderStatusBadge status={workOrder.status} />
             <WorkOrderPriorityBadge priority={workOrder.priority} />
@@ -169,7 +171,7 @@ export default function MobileWorkOrdersPage() {
               )}
             </div>
 
-            {/* Tiempo restante/fecha */}
+            {/* Remaining time/date */}
             {daysRemaining !== null && isActive && (
               <div className={cn(
                 "flex items-center gap-1 font-medium px-2 py-0.5 rounded-full",
@@ -182,7 +184,7 @@ export default function MobileWorkOrdersPage() {
                 <span>
                   {daysRemaining < 0 ? `${Math.abs(daysRemaining)}d vencido` :
                    daysRemaining === 0 ? 'Hoy' :
-                   daysRemaining === 1 ? 'Mañana' :
+                   daysRemaining === 1 ? 'Manana' :
                    `${daysRemaining}d`}
                 </span>
               </div>
@@ -200,30 +202,31 @@ export default function MobileWorkOrdersPage() {
     )
   }
 
-  // Skeleton loader profesional
+  // Skeleton loader
   const SkeletonCard = () => (
     <Card className="border-l-4 border-l-gray-200 animate-pulse">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-24" />
-            <div className="h-4 bg-gray-200 rounded w-full" />
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
           </div>
         </div>
         <div className="flex gap-2 mb-3">
-          <div className="h-5 bg-gray-200 rounded-full w-20" />
-          <div className="h-5 bg-gray-200 rounded-full w-16" />
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-20" />
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-16" />
         </div>
-        <div className="h-3 bg-gray-200 rounded w-32" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32" />
       </CardContent>
     </Card>
   )
 
-  if (loading) {
+  // Loading state
+  if (isLoading && !workOrders?.length) {
     return (
       <div className="h-full flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-lg font-semibold">Mis Órdenes</h1>
+          <h1 className="text-lg font-semibold">Mis Ordenes</h1>
         </div>
         <div className="flex-1 p-4 space-y-3">
           <SkeletonCard />
@@ -234,11 +237,14 @@ export default function MobileWorkOrdersPage() {
     )
   }
 
-  if (error) {
+  // Error state (only show if no cached data)
+  if (error && !workOrders?.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 px-4">
         <AlertCircle className="h-12 w-12 text-destructive" />
-        <p className="text-sm text-destructive text-center">{error}</p>
+        <p className="text-sm text-destructive text-center">
+          {error.message || 'Error al cargar las ordenes de trabajo'}
+        </p>
         <Button onClick={handleRefresh} variant="outline" size="sm">
           <RefreshCw className="mr-2 h-4 w-4" />
           Reintentar
@@ -249,11 +255,20 @@ export default function MobileWorkOrdersPage() {
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header mejorado */}
+      {/* Offline/Stale status banner */}
+      <OfflineStatusBanner
+        isOffline={isOffline}
+        isStale={isStale}
+        onRefresh={handleRefresh}
+        lastSyncAt={lastSyncAt}
+        isRefreshing={refreshing}
+      />
+
+      {/* Enhanced header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className="text-xl font-bold">Mis Órdenes</h1>
+            <h1 className="text-xl font-bold">Mis Ordenes</h1>
             <p className="text-xs text-muted-foreground">
               {filteredActive.length} activa{filteredActive.length !== 1 ? 's' : ''}
             </p>
@@ -262,18 +277,18 @@ export default function MobileWorkOrdersPage() {
             onClick={handleRefresh}
             variant="ghost"
             size="sm"
-            disabled={refreshing}
+            disabled={refreshing || isOffline}
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
           </Button>
         </div>
 
-        {/* Búsqueda */}
+        {/* Search */}
         <div className="px-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por número o título..."
+              placeholder="Buscar por numero o titulo..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9"
@@ -281,7 +296,7 @@ export default function MobileWorkOrdersPage() {
           </div>
         </div>
 
-        {/* Filtros rápidos */}
+        {/* Quick filters */}
         <div className="px-4 pb-3">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <Button
@@ -345,7 +360,7 @@ export default function MobileWorkOrdersPage() {
           </TabsList>
         </div>
 
-        {/* Contenido de tabs */}
+        {/* Tab content */}
         <TabsContent value="active" className="flex-1 mt-0 overflow-y-auto">
           {filteredActive.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -354,7 +369,7 @@ export default function MobileWorkOrdersPage() {
                   <Filter className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-sm font-medium">Sin resultados</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    No hay órdenes que coincidan con tu búsqueda
+                    No hay ordenes que coincidan con tu busqueda
                   </p>
                   <Button
                     variant="outline"
@@ -371,9 +386,9 @@ export default function MobileWorkOrdersPage() {
               ) : (
                 <>
                   <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-sm font-medium">Sin órdenes activas</h3>
+                  <h3 className="text-sm font-medium">Sin ordenes activas</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    No tienes órdenes de trabajo pendientes
+                    No tienes ordenes de trabajo pendientes
                   </p>
                 </>
               )}
@@ -393,7 +408,7 @@ export default function MobileWorkOrdersPage() {
               <Clock className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-sm font-medium">Sin historial</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                {searchQuery || filterPriority ? 'No hay órdenes que coincidan con tu búsqueda' : 'No tienes órdenes completadas aún'}
+                {searchQuery || filterPriority ? 'No hay ordenes que coincidan con tu busqueda' : 'No tienes ordenes completadas aun'}
               </p>
             </div>
           ) : (
