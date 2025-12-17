@@ -52,7 +52,19 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'mantenix-prod-brand.s3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'mantenix-assets-dev.s3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mantenix-assets-prod.s3.amazonaws.com',
         port: '',
         pathname: '/**',
       },
@@ -62,6 +74,13 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'mantenix-assets-prod.s3.us-east-1.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      
       {
         protocol: 'https',
         hostname: '*.s3.amazonaws.com',
