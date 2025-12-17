@@ -7,7 +7,7 @@ import type { JSAStatus } from "@/types/job-safety-analysis.types"
 import type { RCAStatus, RCAType } from "@/types/root-cause-analysis.types"
 
 // Define JsonValue type since it's not exported from Prisma client
-type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
+export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
 
 // Enum types from Prisma
 export type WorkOrderType = "PREVENTIVO" | "CORRECTIVO" | "REPARACION"
