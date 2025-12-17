@@ -12,6 +12,15 @@ interface InviteEmailData {
   role: string
   inviteLink: string
   companyId: string
+  brandingOverride?: {
+    brandName?: string
+    logoUrl?: string
+    logoSmallUrl?: string
+    primaryColor?: string
+    secondaryColor?: string
+    backgroundColor?: string
+    font?: string
+  }
 }
 
 export async function sendInviteEmail(data: InviteEmailData) {
@@ -28,7 +37,8 @@ export async function sendInviteEmail(data: InviteEmailData) {
       data.companyName,
       data.inviteLink,
       expirationDate,
-      data.companyId
+      data.companyId,
+      data.brandingOverride
     )
 
     if (!result.success) {

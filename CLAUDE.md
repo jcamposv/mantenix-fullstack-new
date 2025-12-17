@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `npm run db:seed` - Seed database with demo data
   - `npm run db:studio` - Open Prisma Studio
   - `npm run db:reset` - Reset database completely
+- **Admin**: `npm run create-admin` - Create initial admin user
 
 ## Architecture Overview
 
@@ -113,7 +114,8 @@ export function UserList() {
 **Role-based permissions:**
 - Custom role system (no hardcoded enum)
 - Roles stored in `CustomRole` table with `interfaceType` field
-- Hierarchy: SUPER_ADMIN > ADMIN_EMPRESA > SUPERVISOR > TECNICO > CLIENTE_ADMIN > CLIENTE_OPERATIVO
+- Hierarchy: SUPER_ADMIN > ADMIN_GRUPO > ADMIN_EMPRESA > SUPERVISOR > TECNICO > CLIENTE_ADMIN > CLIENTE_OPERATIVO
+- ADMIN_GRUPO can access all companies within their corporate group
 - Permission checks via `PermissionService.checkUserPermission()`
 
 **Common patterns:**
@@ -275,10 +277,15 @@ export function MyComponent() {
 }
 ```
 
-**Key hooks:**
-- `useTableData` - Server-side pagination wrapper (legacy, prefer direct SWR)
-- `useMaintenanceAlertsManagement` - Maintenance alerts with filters
-- React Hook Form hooks - Form state management
+**Key hooks** (`/src/hooks/`):
+- `use-server-table` - Server-side pagination with SWR
+- `use-maintenance-alerts-management` - Maintenance alerts with filters
+- `useCurrentUser` - Current authenticated user data
+- `useCompanyFeatures` - Feature flag checks
+- `usePermissions` - Permission checks for current user
+- `use-work-order-management` - Work order CRUD operations
+- `use-assets-management` - Asset CRUD with pagination
+- `use-network-status` / `use-offline-queue` - PWA offline support
 
 ### API Route Patterns
 
@@ -401,8 +408,8 @@ src/
 │   ├── common/                   # Shared components
 │   └── [feature]/                # Feature-specific components
 ├── server/
-│   ├── repositories/             # Data access layer (42 repositories)
-│   └── services/                 # Business logic layer (43 services)
+│   ├── repositories/             # Data access layer (~52 repositories)
+│   └── services/                 # Business logic layer (~54 services)
 ├── lib/
 │   ├── auth.ts                   # Better Auth config
 │   ├── auth-client.ts            # Client auth hooks
@@ -459,6 +466,14 @@ npm run build         # Successful build
 ```
 
 **Turbopack** is enabled for both dev and build for faster performance.
+
+### PWA Support
+
+**Serwist** for service worker and offline capabilities:
+- Configuration in `next.config.js` with `@serwist/next`
+- Service worker hooks: `use-service-worker`, `use-network-status`, `use-offline-queue`
+- Mobile field tech pages (`/src/app/(field)/`) designed for offline-first
+- PWA manifest via `PwaManifestService`
 
 ### Common Gotchas
 

@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, CheckCircle2, AlertCircle, FileText, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, FileText, ChevronDown } from "lucide-react"
 import { WorkOrderHeader } from "@/components/forms/mobile/work-order-complete/work-order-header"
 import { WorkOrderCompleteForm } from "@/components/forms/mobile/work-order-complete/work-order-complete-form"
 import { WorkOrderReadonlyView } from "@/components/forms/mobile/work-order-complete/work-order-readonly-view"
@@ -13,6 +13,7 @@ import { WorkOrderInventoryRequestsMobile } from "@/components/forms/mobile/work
 import { TimeTrackerCard, TimeSummaryCard } from "@/components/work-orders/time-tracking"
 import { SafetyDocumentsCard } from "@/components/mobile/safety-documents/safety-documents-card"
 import { SafetyBriefingDialog } from "@/components/workflow/safety-briefing-dialog"
+import { OfflineStatusBanner } from "@/components/mobile/offline-status-banner"
 import { useWorkOrderManagement } from "@/hooks/use-work-order-management"
 import type { CustomFieldsConfig } from "@/schemas/work-order-template"
 import { cn } from "@/lib/utils"
@@ -31,12 +32,26 @@ export default function MobileWorkOrderDetailPage() {
     updating,
     showForm,
     initialFormValues,
+    isOffline,
+    isStale,
     setShowForm,
     fetchWorkOrder,
     handleStartWork,
     handleCompleteWork,
     handleCancelWork
   } = useWorkOrderManagement(workOrderId)
+
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    if (isOffline) return
+    setRefreshing(true)
+    try {
+      await fetchWorkOrder()
+    } finally {
+      setRefreshing(false)
+    }
+  }, [fetchWorkOrder, isOffline])
 
   const [showSafetyBriefing, setShowSafetyBriefing] = useState(false)
   const formRef = useRef<HTMLDivElement>(null)
@@ -105,6 +120,15 @@ export default function MobileWorkOrderDetailPage() {
 
   return (
     <div className="space-y-4 pb-6">
+      {/* Offline/Stale status banner */}
+      <OfflineStatusBanner
+        isOffline={isOffline}
+        isStale={isStale}
+        onRefresh={handleRefresh}
+        isRefreshing={refreshing}
+        className="-mx-4 -mt-4 mb-4"
+      />
+
       {/* Header with back navigation and quick info */}
       <WorkOrderHeader
         workOrder={workOrder}
