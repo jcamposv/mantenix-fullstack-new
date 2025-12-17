@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { MobileFooter, MobileFooterContent } from "@/components/mobile/mobile-footer"
 import { MobileNavigation } from "@/components/mobile/mobile-nav-server"
 import { MobileHeader } from "@/components/mobile/mobile-header"
+import { OfflineDataPreloader } from "@/components/mobile/offline-data-preloader"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import type { CompanyBranding } from "@/types/branding"
@@ -103,6 +104,7 @@ export default async function FieldLayout({
         </MobileFooter>
 
         <PWABrandingUpdater />
+        <OfflineDataPreloader preloadInterval={5 * 60 * 1000} />
         <Toaster />
       </div>
     </PWAProvider>
