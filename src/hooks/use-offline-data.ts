@@ -145,9 +145,9 @@ export function useOfflineData<T extends { id: string }>({
             data: item,
             syncedAt: now,
             pendingSync: false,
-          })) as StoreDataMap[typeof storeKey][]
+          })) as unknown as StoreDataMap[typeof storeKey][]
 
-          await table.bulkPut(items)
+          await (table as unknown as { bulkPut: (items: unknown[]) => Promise<void> }).bulkPut(items)
 
           // Update sync metadata
           await updateSyncMeta(storeKey, freshData.length)
@@ -180,7 +180,7 @@ export function useOfflineData<T extends { id: string }>({
           }
 
           // Return the data from cache
-          return cached.map((item) => item.data as T)
+          return cached.map((item) => item.data as unknown as T)
         }
       } catch (error) {
         console.error(`[useOfflineData] IndexedDB error:`, error)

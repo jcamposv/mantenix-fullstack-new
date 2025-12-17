@@ -39,7 +39,15 @@ export default function MobileWorkOrdersPage() {
     refresh
   } = useOfflineWorkOrders({
     staleTime: 10 * 60 * 1000, // 10 minutes
-  })
+  }) as {
+    data: WorkOrderWithRelations[] | undefined
+    isLoading: boolean
+    error: Error | undefined
+    isOffline: boolean
+    isStale: boolean
+    lastSyncAt: number | null
+    refresh: () => Promise<void>
+  }
 
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")

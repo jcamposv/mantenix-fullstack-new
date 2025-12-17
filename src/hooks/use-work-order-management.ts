@@ -19,7 +19,7 @@ import { useState, useCallback, useEffect } from "react"
 import useSWR from "swr"
 import { toast } from "sonner"
 import type { MobileCompleteWorkOrderData } from "@/schemas/mobile-work-order"
-import type { WorkOrderWithRelations } from "@/types/work-order.types"
+import type { WorkOrderWithRelations, JsonValue } from "@/types/work-order.types"
 import {
   isOfflineDBAvailable,
   getOfflineWorkOrder,
@@ -157,8 +157,9 @@ export function useWorkOrderManagement(
     if (!workOrder) return
 
     const defaultCustomFieldValues: Record<string, unknown> = {}
-    if (workOrder.template?.customFields?.fields) {
-      const fields = workOrder.template.customFields.fields as Array<{
+    const customFields = workOrder.template?.customFields as { fields?: Array<{ id: string; type: string }> } | null
+    if (customFields?.fields) {
+      const fields = customFields.fields as Array<{
         id: string
         type: string
       }>
@@ -213,7 +214,7 @@ export function useWorkOrderManagement(
         // Offline: Optimistic update + queue mutation
         const updated = await updateOfflineWorkOrder(workOrder.id, {
           status: "IN_PROGRESS",
-          startedAt: new Date(),
+          startedAt: new Date().toISOString(),
         })
 
         if (updated) {
@@ -272,12 +273,12 @@ export function useWorkOrderManagement(
           // Offline: Optimistic update + queue mutation
           const updated = await updateOfflineWorkOrder(workOrder.id, {
             status: "COMPLETED",
-            completedAt: new Date(),
+            completedAt: new Date().toISOString(),
             completionNotes: data.completionNotes,
             observations: data.observations,
-            customFieldValues: data.customFieldValues as Record<string, unknown>,
+            customFieldValues: data.customFieldValues as unknown as JsonValue,
             actualDuration: data.actualDuration,
-            actualCost: data.actualCost ? String(data.actualCost) : null,
+            actualCost: data.actualCost ? Number(data.actualCost) : null,
           })
 
           if (updated) {

@@ -65,7 +65,14 @@ export default function MobileAssetsPage() {
   } = useOfflineAssets({
     statusFilter: statusFilter || undefined,
     staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  }) as {
+    data: Asset[] | undefined
+    isLoading: boolean
+    isOffline: boolean
+    isStale: boolean
+    lastSyncAt: number | null
+    refresh: () => Promise<void>
+  }
 
   // Memoized filtered assets
   const filteredAssets = useMemo(() => {
