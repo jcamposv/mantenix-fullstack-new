@@ -31,6 +31,8 @@ export const CLIENT_NAV_ITEMS: NavigationItem[] = [
   },
 
   // 2. Work Orders - View and track service provider work
+  // NOTA: Se eliminó "Historial" porque es redundante con "Lista de Órdenes"
+  // que ya muestra todas las órdenes incluyendo completadas/históricas.
   {
     title: 'Órdenes de Trabajo',
     url: '/client/work-orders',
@@ -44,14 +46,12 @@ export const CLIENT_NAV_ITEMS: NavigationItem[] = [
         title: 'Lista de Órdenes',
         url: '/client/work-orders/list',
       },
-      {
-        title: 'Historial',
-        url: '/client/work-orders/history',
-      },
     ],
   },
 
   // 3. Alerts - Report issues and track responses
+  // NOTA: Se eliminó "Historial" porque es redundante con "Mis Alertas"
+  // que ya muestra todas las alertas incluyendo las resueltas/cerradas.
   {
     title: 'Alertas',
     url: '/client/alerts',
@@ -65,10 +65,6 @@ export const CLIENT_NAV_ITEMS: NavigationItem[] = [
       {
         title: 'Crear Alerta',
         url: '/client/alerts/new',
-      },
-      {
-        title: 'Historial',
-        url: '/client/alerts/history',
       },
     ],
   },

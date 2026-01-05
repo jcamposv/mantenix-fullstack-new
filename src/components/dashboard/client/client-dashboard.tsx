@@ -13,14 +13,17 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { WorkOrderStats as ClientStats } from './work-order-stats'
-import { ProviderPerformance } from './provider-performance'
 import { CriticalOrders } from './critical-orders'
 import { SiteMetrics } from './site-metrics'
 import { DashboardLoading } from '../shared/dashboard-loading'
 import { DashboardError } from '../shared/dashboard-error'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Calendar, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
+
+// NOTA DE NEGOCIO: Se eliminó ProviderPerformance de esta vista.
+// Las métricas de rendimiento del proveedor (SLA, tiempos de respuesta/resolución,
+// calidad de servicio) son información interna que NO debe exponerse al cliente.
+// El cliente solo ve métricas operativas de SUS órdenes de trabajo.
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -32,7 +35,8 @@ export function ClientDashboard() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   // Fetch client work orders stats
-  const { data: stats, error, isLoading } = useSWR(
+  // La respuesta del API es { stats: { total, byStatus: {...}, overdue, ... } }
+  const { data: statsData, error, isLoading } = useSWR(
     `/api/client/work-orders/stats?refresh=${refreshKey}`,
     fetcher,
     {
@@ -50,14 +54,9 @@ export function ClientDashboard() {
     }
   )
 
-  // Fetch provider performance metrics
-  const { data: providerData, isLoading: providerLoading } = useSWR(
-    `/api/client/work-orders/provider-metrics?refresh=${refreshKey}`,
-    fetcher,
-    {
-      refreshInterval: 60000,
-    }
-  )
+  // NOTA: Se eliminó el fetch de provider-metrics.
+  // Esas métricas (SLA, tiempos de respuesta/resolución) son internas del proveedor
+  // y no deben exponerse al cliente externo.
 
   // Fetch site metrics
   const { data: siteData, isLoading: siteLoading } = useSWR(
@@ -93,7 +92,23 @@ export function ClientDashboard() {
     )
   }
 
-  const hasData = stats && stats.total > 0
+  // NOTA: Anteriormente se usaba `hasData = stats?.total > 0` para ocultar TODO el dashboard
+  // cuando no había órdenes. Esto era incorrecto porque impedía ver el dashboard completo.
+  // Ahora el dashboard siempre se muestra, y cada sección maneja internamente su estado vacío.
+  // Las stats con valores en 0 siguen siendo información útil para el cliente.
+  //
+  // La respuesta del API viene como { stats: { total, byStatus: {...}, overdue, ... } }
+  // Transformamos al formato que espera el componente WorkOrderStats
+  const rawStats = statsData?.stats
+  const safeStats = {
+    total: rawStats?.total ?? 0,
+    pending: (rawStats?.byStatus?.DRAFT ?? 0) +
+             (rawStats?.byStatus?.PENDING_APPROVAL ?? 0) +
+             (rawStats?.byStatus?.ASSIGNED ?? 0),
+    inProgress: rawStats?.byStatus?.IN_PROGRESS ?? 0,
+    completed: rawStats?.byStatus?.COMPLETED ?? 0,
+    overdue: rawStats?.overdue ?? 0,
+  }
 
   return (
     <div className="container mx-auto py-0">
@@ -103,7 +118,7 @@ export function ClientDashboard() {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">Dashboard Cliente</h1>
             <p className="text-muted-foreground">
-              Monitoreo de órdenes de trabajo y rendimiento del proveedor
+              Resumen de órdenes de trabajo y estado de sus instalaciones
             </p>
           </div>
 
@@ -122,57 +137,25 @@ export function ClientDashboard() {
           </div>
         </div>
 
-        {/* No data message */}
-        {!hasData && (
-          <Card className="border-dashed shadow-none">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                No hay órdenes de trabajo
-              </h3>
-              <p className="text-sm text-muted-foreground text-center max-w-md">
-                No se encontraron órdenes de trabajo para su empresa.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Stats Overview - Siempre visible, muestra 0 si no hay órdenes */}
+        <ClientStats stats={safeStats} loading={isLoading} />
 
-        {/* Stats Overview */}
-        {hasData && (
-          <>
-            <ClientStats stats={stats} loading={isLoading} />
+        {/* Main Content Grid - Siempre visible */}
+        {/* NOTA: Se eliminó ProviderPerformance (métricas internas del proveedor).
+            El cliente solo ve: órdenes críticas y distribución por sede. */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Órdenes Críticas - Información accionable para el cliente */}
+          <CriticalOrders
+            orders={criticalData?.orders || []}
+            loading={criticalLoading}
+          />
 
-            {/* Main Content Grid */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Left Column - 2/3 width */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Provider Performance */}
-                <ProviderPerformance
-                  slaCompliance={providerData?.metrics?.slaCompliance ?? 0}
-                  avgResponseTime={providerData?.metrics?.avgResponseTime ?? 0}
-                  avgResolutionTime={providerData?.metrics?.avgResolutionTime ?? 0}
-                  serviceRating={providerData?.metrics?.serviceRating}
-                  loading={providerLoading}
-                />
-
-                {/* Site Metrics */}
-                <SiteMetrics
-                  sites={siteData?.sites || []}
-                  loading={siteLoading}
-                />
-              </div>
-
-              {/* Right Column - 1/3 width */}
-              <div className="space-y-6">
-                {/* Critical Orders */}
-                <CriticalOrders
-                  orders={criticalData?.orders || []}
-                  loading={criticalLoading}
-                />
-              </div>
-            </div>
-          </>
-        )}
+          {/* Métricas por Sede - Distribución de órdenes por ubicación */}
+          <SiteMetrics
+            sites={siteData?.sites || []}
+            loading={siteLoading}
+          />
+        </div>
       </div>
     </div>
   )

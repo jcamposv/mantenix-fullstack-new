@@ -62,14 +62,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/mov', 'video/avi']
+    // NOTA: Los tipos MIME de video deben incluir todos los formatos comunes de móviles:
+    // - video/quicktime: Formato nativo de iOS (.mov)
+    // - video/mp4: Formato estándar (.mp4)
+    // - video/webm: Formato web (.webm)
+    // - video/3gpp, video/3gpp2: Formatos móviles (.3gp, .3g2)
+    // - video/x-msvideo: Formato AVI (.avi)
+    // - video/x-matroska: Formato MKV (.mkv)
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
+    const allowedVideoTypes = [
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',  // iOS MOV format - este era el problema: faltaba este tipo
+      'video/3gpp',       // Mobile 3GP format
+      'video/3gpp2',      // Mobile 3G2 format
+      'video/x-msvideo',  // AVI format
+      'video/x-matroska', // MKV format
+      'video/ogg'         // OGG video format
+    ]
     const allowedTypes = isVideo ? allowedVideoTypes : allowedImageTypes
 
     if (!allowedTypes.includes(file.type)) {
-      const expectedType = isVideo ? 'videos' : 'images'
-      return NextResponse.json({ 
-        error: `Invalid file type. Only ${expectedType} are allowed.` 
+      const expectedType = isVideo ? 'videos (MP4, MOV, WebM, 3GP)' : 'imágenes (JPEG, PNG, GIF, WebP)'
+      console.error(`Invalid file type: ${file.type}. Expected ${expectedType}`)
+      return NextResponse.json({
+        error: `Tipo de archivo no válido: ${file.type}. Solo se permiten ${expectedType}.`
       }, { status: 400 })
     }
 

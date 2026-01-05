@@ -8,6 +8,7 @@ import { MediaCaptureModal } from "./media-capture-modal"
 import { SignedMediaPreview } from "./signed-media-preview"
 import { compressImage, shouldCompressImage } from "@/lib/image-compression"
 import { normalizeMediaValue, type MediaItem } from "@/types/media.types"
+import { toast } from "sonner"
 import type { CustomField } from "@/schemas/work-order-template"
 
 interface MediaFieldProps {
@@ -28,6 +29,9 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
 
   const isVideo = field.type.includes("VIDEO")
 
+  // Sube archivos a S3 a través del endpoint de media.
+  // Anteriormente los videos fallaban silenciosamente porque el tipo MIME 'video/quicktime'
+  // (formato nativo de iOS) no estaba en la lista de tipos permitidos del backend.
   const uploadFiles = async (files: File[]) => {
     const uploadPromises = files.map(async (file) => {
       const formData = new FormData()
@@ -42,7 +46,10 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to upload ${file.name}`)
+        // Extraer mensaje de error del servidor para mostrar al usuario
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `Error al subir ${file.name}`
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
@@ -60,7 +67,7 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
     setUploading(true)
 
     try {
-      // Compress large images before upload
+      // Compress large images before upload (videos no se comprimen)
       const processedFiles = await Promise.all(
         fileArray.map(async (file) => {
           if (shouldCompressImage(file)) {
@@ -82,11 +89,22 @@ export function MediaField({ field, workOrderId, readOnly = false }: MediaFieldP
       const newMediaItems: MediaItem[] = urls.map(url => ({ url }))
       const allMediaItems = [...mediaItems, ...newMediaItems]
 
-      form.setValue(`customFieldValues.${field.id}`, allMediaItems)
+      form.setValue(`customFieldValues.${field.id}`, allMediaItems, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true
+      })
+
       setMediaFiles([]) // Clear local files after upload
+
+      // Notificar éxito al usuario
+      const mediaType = isVideo ? 'Video' : 'Imagen'
+      toast.success(`${mediaType} subido correctamente`)
     } catch (error) {
       console.error('Error uploading files:', error)
-      // TODO: Add toast notification for error
+      // Mostrar error al usuario - ahora el mensaje del backend se propaga correctamente
+      const errorMessage = error instanceof Error ? error.message : 'Error al subir archivo'
+      toast.error(errorMessage)
     } finally {
       setUploading(false)
     }
