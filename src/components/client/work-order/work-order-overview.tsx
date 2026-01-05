@@ -15,10 +15,13 @@ import {
   AlignLeft,
   ToggleLeft,
   ChevronDown,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Video as VideoIcon
 } from "lucide-react"
 import type { WorkOrderWithRelations } from "@/types/work-order.types"
 import type { CustomFieldsConfig, CustomField } from "@/schemas/work-order-template"
+import { MediaDisplay } from "@/components/work-orders/media-display"
+import { normalizeMediaValue } from "@/types/media.types"
 
 interface WorkOrderOverviewProps {
   workOrder: WorkOrderWithRelations
@@ -37,6 +40,8 @@ function getFieldIcon(type: string) {
     case "RADIO": return ChevronDown
     case "IMAGE_BEFORE":
     case "IMAGE_AFTER": return ImageIcon
+    case "VIDEO_BEFORE":
+    case "VIDEO_AFTER": return VideoIcon
     default: return FileText
   }
 }
@@ -223,28 +228,41 @@ function renderFieldDisplay(field: CustomField, value: unknown) {
         </div>
       )
 
+    // Campos de imagen y video: Anteriormente se mostraba "[object Object]" porque
+    // el valor es un objeto MediaItem {url, note} y se usaba String(value).
+    // Ahora usamos normalizeMediaValue() para convertir el valor a un array de MediaItem[]
+    // y MediaDisplay para renderizar cada imagen/video con su URL firmada.
     case "IMAGE_BEFORE":
     case "IMAGE_AFTER":
-      const images = Array.isArray(value) ? value : value ? [value] : []
+    case "VIDEO_BEFORE":
+    case "VIDEO_AFTER":
+      const isVideo = field.type.includes("VIDEO")
+      const mediaItems = normalizeMediaValue(value)
       return (
         <div>
-          {images.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {images.map((img, idx) => (
-                <div
+          {mediaItems.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {mediaItems.map((item, idx) => (
+                <MediaDisplay
                   key={idx}
-                  className="flex items-center gap-2 p-2 rounded-md border bg-primary/5 border-primary/20"
-                >
-                  <ImageIcon className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                  <span className="text-xs font-medium truncate">{String(img)}</span>
-                </div>
+                  url={item.url}
+                  isVideo={isVideo}
+                  fieldLabel={`${field.label}${mediaItems.length > 1 ? ` (${idx + 1})` : ''}`}
+                  note={item.note}
+                />
               ))}
             </div>
           ) : (
             <div className="flex items-center justify-center py-6 px-4 rounded-md border-2 border-dashed bg-muted/20">
               <div className="text-center">
-                <ImageIcon className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1.5" />
-                <p className="text-xs text-muted-foreground">Sin imagen</p>
+                {isVideo ? (
+                  <VideoIcon className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1.5" />
+                ) : (
+                  <ImageIcon className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1.5" />
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {isVideo ? "Sin video" : "Sin imagen"}
+                </p>
               </div>
             </div>
           )}
@@ -308,7 +326,7 @@ export function WorkOrderOverview({ workOrder }: WorkOrderOverviewProps) {
                 const FieldIcon = getFieldIcon(field.type)
 
                 // Los campos grandes ocupan todo el ancho
-                const isFullWidth = ['CHECKLIST', 'TEXTAREA', 'IMAGE_BEFORE', 'IMAGE_AFTER'].includes(field.type)
+                const isFullWidth = ['CHECKLIST', 'TEXTAREA', 'IMAGE_BEFORE', 'IMAGE_AFTER', 'VIDEO_BEFORE', 'VIDEO_AFTER'].includes(field.type)
 
                 return (
                   <div
