@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { List } from "lucide-react"
 import { WorkOrderStats } from "@/components/dashboard/client/work-order-stats"
-import { ProviderPerformance } from "@/components/dashboard/client/provider-performance"
 import { CriticalOrders } from "@/components/dashboard/client/critical-orders"
 import { SiteMetrics } from "@/components/dashboard/client/site-metrics"
-import { AIInsightsCard } from "@/components/dashboard/shared/ai-insights-card"
 import { DashboardFilters, DatePeriod } from "@/components/dashboard/shared/dashboard-filters"
+
+// NOTA DE NEGOCIO: Se eliminaron ProviderPerformance y AIInsightsCard de esta vista.
+// Las métricas de rendimiento del proveedor (SLA, tiempos de respuesta/resolución,
+// calidad de servicio) son información interna que NO debe exponerse al cliente.
+// Los insights de IA también pueden contener evaluaciones del rendimiento.
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { WorkOrderStatusBadge } from "@/components/work-orders/work-order-status-badge"
@@ -65,12 +68,6 @@ export default function ClientWorkOrdersPage() {
   const [recentOrders, setRecentOrders] = useState<WorkOrderWithRelations[]>([])
   const [criticalOrders, setCriticalOrders] = useState<CriticalOrder[]>([])
   const [siteMetrics, setSiteMetrics] = useState<SiteMetric[]>([])
-  const [providerMetrics, setProviderMetrics] = useState({
-    slaCompliance: 0,
-    avgResponseTime: 0,
-    avgResolutionTime: 0,
-    serviceRating: 0,
-  })
   const [loading, setLoading] = useState(true)
 
   // Calculate the effective date range based on period selection
@@ -95,22 +92,20 @@ export default function ClientWorkOrdersPage() {
         const queryString = params.toString()
         const queryParam = queryString ? `?${queryString}` : ''
 
-        const [statsRes, ordersRes, criticalRes, providerRes, sitesRes] = await Promise.all([
+        const [statsRes, ordersRes, criticalRes, sitesRes] = await Promise.all([
           fetch(`/api/client/work-orders/stats${queryParam}`),
           fetch(`/api/client/work-orders?limit=10&${queryString}`),
           fetch(`/api/client/work-orders/critical${queryParam}`),
-          fetch(`/api/client/work-orders/provider-metrics${queryParam}`),
           fetch(`/api/client/work-orders/site-metrics${queryParam}`),
         ])
 
-        if (!statsRes.ok || !ordersRes.ok || !criticalRes.ok || !providerRes.ok || !sitesRes.ok) {
+        if (!statsRes.ok || !ordersRes.ok || !criticalRes.ok || !sitesRes.ok) {
           throw new Error("Error al cargar datos")
         }
 
         const statsData = await statsRes.json()
         const ordersData = await ordersRes.json()
         const criticalData = await criticalRes.json()
-        const providerData = await providerRes.json()
         const sitesData = await sitesRes.json()
 
         // Calculate stats from the service response
@@ -124,7 +119,6 @@ export default function ClientWorkOrdersPage() {
         setStats(calculatedStats)
         setRecentOrders(ordersData.items)
         setCriticalOrders(criticalData.orders)
-        setProviderMetrics(providerData.metrics)
         setSiteMetrics(sitesData.sites)
       } catch (error) {
         console.error("Error fetching data:", error)
@@ -218,18 +212,6 @@ export default function ClientWorkOrdersPage() {
 
         {/* KPI Stats */}
         <WorkOrderStats stats={stats} loading={loading} />
-
-        {/* AI Insights */}
-        <AIInsightsCard dateRange={effectiveDateRange} />
-
-        {/* Provider Performance Metrics */}
-        <ProviderPerformance
-          slaCompliance={providerMetrics.slaCompliance}
-          avgResponseTime={providerMetrics.avgResponseTime}
-          avgResolutionTime={providerMetrics.avgResolutionTime}
-          serviceRating={providerMetrics.serviceRating}
-          loading={loading}
-        />
 
         {/* Critical Orders and Site Metrics - Two columns */}
         <div className="grid gap-6 lg:grid-cols-2">

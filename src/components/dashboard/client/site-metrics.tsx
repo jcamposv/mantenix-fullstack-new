@@ -78,10 +78,10 @@ export function SiteMetrics({ sites, loading = false }: SiteMetricsProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Rendimiento por Sede
+              Estado por Sede
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Comparativa de servicio por ubicación
+              Distribución de órdenes por ubicación
             </p>
           </div>
           <Badge variant="secondary">
@@ -133,7 +133,7 @@ export function SiteMetrics({ sites, loading = false }: SiteMetricsProps) {
                   )}>
                     {site.completionRate}%
                   </div>
-                  <p className="text-xs text-muted-foreground">efectividad</p>
+                  <p className="text-xs text-muted-foreground">completado</p>
                 </div>
               </div>
 
@@ -154,16 +154,9 @@ export function SiteMetrics({ sites, loading = false }: SiteMetricsProps) {
                 />
               </div>
 
-              {/* Average Resolution Time */}
-              {site.avgResolutionTime !== undefined && (
-                <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Tiempo promedio de resolución</span>
-                  <Badge variant="outline">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {site.avgResolutionTime.toFixed(1)} horas
-                  </Badge>
-                </div>
-              )}
+              {/* NOTA DE NEGOCIO: Se eliminó avgResolutionTime de esta vista.
+                  El tiempo de resolución es una métrica interna del proveedor
+                  que NO debe exponerse al cliente externo. */}
             </div>
           ))}
         </div>
